@@ -475,6 +475,8 @@ export interface PhaseStatus {
   phase_id: string;
   phase_type: string;
   phase_index: number;
+  /** DAG node id (set when DAG path active — T7+) */
+  node_id?: string;
   state: PhaseState;
   step_number: number;
   total_steps: number;
