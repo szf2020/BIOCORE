@@ -4271,19 +4271,48 @@ function wireReactorEvents(reactorId: string): void {
     broadcast('state_update', { reactor_id: reactorId, ...data }, data?.batch_id, reactorId);
   });
 
-  // Phase启动/完成
+  // Phase启动/完成 — T16: payload_version=2 + node_id; phase_index retained for legacy v1 consumers (remove in T24)
   ctrl.on('phase_started', (data: any) => {
-    broadcast('step_progress', { reactor_id: reactorId, event: 'phase_started', ...data }, null, reactorId);
+    broadcast('step_progress', {
+      reactor_id: reactorId,
+      event: 'phase_started',
+      payload_version: 2,
+      batch_id: ctrl.currentBatchId,
+      node_id: ctrl.currentNodeId,
+      phase_id: data.phase_id,
+      phase_type: data.phase_type,
+      phase_index: data.index ?? data.phase_index,   // legacy for v1 consumers; remove in T24
+      total_steps: data.total_steps,
+    }, null, reactorId);
   });
   ctrl.on('phase_completed', (data: any) => {
-    broadcast('step_progress', { reactor_id: reactorId, event: 'phase_completed', ...data }, null, reactorId);
+    broadcast('step_progress', {
+      reactor_id: reactorId,
+      event: 'phase_completed',
+      payload_version: 2,
+      batch_id: ctrl.currentBatchId,
+      node_id: ctrl.currentNodeId,
+      phase_id: data.phase_id,
+      phase_type: data.phase_type,
+      phase_index: data.index ?? data.phase_index,   // legacy for v1 consumers; remove in T24
+    }, null, reactorId);
   });
 
   // T15: branch_evaluated 审计桥 — DAG 分支求值结果落到 audit_logs
   // (T13 controller 端已发出该事件; 这里是 server 端唯一的 audit/broadcast 落点)
   ctrl.on('branch_evaluated', (data: any) => {
-    // 广播给前端，用于在 DAG 视图上回放分支决策
-    broadcast('branch_evaluated', { reactor_id: reactorId, ...data }, data?.batch_id, reactorId);
+    // 广播给前端，用于在 DAG 视图上回放分支决策 — T16: payload_version=2 + explicit node_id
+    broadcast('branch_evaluated', {
+      reactor_id: reactorId,
+      type: 'branch_evaluated',
+      payload_version: 2,
+      batch_id: data?.batch_id ?? ctrl.currentBatchId,
+      node_id: data?.node_id ?? null,
+      expression: data?.expression,
+      result: data?.result,
+      skipped: data?.skipped,
+      pv_snapshot: data?.pv_snapshot,
+    }, data?.batch_id, reactorId);
     // 写入审计日志 (target_kind = 'node_id', graceful 兜底 'unknown')
     try {
       sqlite.writeAuditLog({
