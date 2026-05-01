@@ -199,9 +199,10 @@ import { runMigrations } from './migrator';
 mkdirSync(DATA_DIR, { recursive: true });
 const sqlite = new SQLiteService(`${DATA_DIR}/biocore.db`);
 
-// 运行 schema migrations (向前迁移, 不可回滚)
-// IIFE 因为 top-level await 在 CommonJS 中受限
-(async () => {
+// v1.7.3 H7: server.listen 必须等到 migrations 完成后再触发。
+// 这是一个 Promise, 在文件底部的 start() 中被 await。
+// 失败 → 致命退出, 不再 fire-and-forget。
+const migrationsReady: Promise<void> = (async () => {
   try {
     await runMigrations(sqlite.getDatabase());
   } catch (e) {
@@ -211,6 +212,8 @@ const sqlite = new SQLiteService(`${DATA_DIR}/biocore.db`);
 })();
 
 // 注入 sqlite 引用到 auth middleware (用于 API Key 验证)
+// 注: 此处仅设引用, 不依赖 migrations; 真正的 API Key 校验发生在请求时,
+// 那时 migrations 已 await 完成 (start() 中)。
 setAuthDb(sqlite.getDatabase());
 
 const varManager = new VariableMappingManager(sqlite.getDatabase());
@@ -810,16 +813,8 @@ apiRouter.use('/notifications', createNotificationsRouter({
 app.use('/api/v1', v1ResponseWrapper, authMiddleware, apiRouter);
 app.use('/api', v0DeprecationMw, authMiddleware, apiRouter);
 
-// 角色权限检查辅助函数
-const ROLE_LEVELS: Record<string, number> = { viewer: 0, operator: 1, engineer: 2, admin: 3 };
-function requireRole(minRole: string) {
-  return (req: any, res: any, next: any) => {
-    const userLevel = ROLE_LEVELS[req.user?.role] ?? 0;
-    const required = ROLE_LEVELS[minRole] ?? 0;
-    if (userLevel < required) return res.status(403).json({ error: `需要${minRole}或更高权限` });
-    next();
-  };
-}
+// v1.7.3: requireRole 已迁至 middlewares/auth.ts 并改为 spread-args 工厂,
+// 旧版 (基于 ROLE_LEVELS 数值层级) 从未被调用, 已删除以避免与 import 冲突。
 
 const server = http.createServer(app);
 
@@ -4644,7 +4639,11 @@ async function gracefulShutdown(signal: string): Promise<void> {
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
-server.listen(PORT, () => {
+// v1.7.3 H7: 必须等 migrations 完成才能 server.listen, 防止启动时
+// 处理请求却撞上未迁移的 schema (e.g. 缺列 / 缺表)。
+async function start(): Promise<void> {
+  await migrationsReady;
+  server.listen(PORT, () => {
   const VER = process.env.npm_package_version ?? '0.3.2';
   console.log(`
   ╔══════════════════════════════════════════════╗
@@ -4730,6 +4729,12 @@ server.listen(PORT, () => {
       return running;
     },
   });
+  });
+}
+
+start().catch((e) => {
+  console.error('[BOOT] 启动失败:', e);
+  process.exit(1);
 });
 
 export { app, server, wss, broadcast, sqlite, reactorManager };
