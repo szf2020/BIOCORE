@@ -471,12 +471,19 @@ export class BatchController extends EventEmitter {
    * Provides a `evaluateExpression` impl backed by condition-evaluator,
    * with the most recent PV snapshot + phase_elapsed_min as fields.
    *
+   * T13: every call to evaluateExpression is recorded on the returned ctx's
+   * `_evaluations` side-channel array, so readyNextPhase() can emit a
+   * `branch_evaluated` event per evaluation (for audit log T15 / WS T16).
+   *
    * Note: BatchController does not currently retain a PV snapshot at this layer
    * (PV is read inline in tickInternal). Until a tracker is added (T11+), we
    * pass an empty fields object — this matches the DAG spec's PV-missing
    * behavior (branch falls back to default_branch ?? 'false').
    */
-  private buildEvalContext(): DAGEvalContext {
+  private buildEvalContext(): DAGEvalContext & {
+    _evaluations: Array<{ expression: string; result: boolean; pv: Record<string, any>; skipped: boolean }>;
+  } {
+    const evaluations: Array<{ expression: string; result: boolean; pv: Record<string, any>; skipped: boolean }> = [];
     const lastPV: Record<string, number> = (this as any).lastSampledPV ?? {};
     // Best-effort: derive phase_elapsed_min from the currently running PhaseStatus's started_at
     const runningPS = this.phaseStatuses.find(p => p.state === 'running');
@@ -484,15 +491,23 @@ export class BatchController extends EventEmitter {
     const phaseStartedMs = startedIso ? Date.parse(startedIso) : Date.now();
     const phaseElapsedMin = (Date.now() - phaseStartedMs) / 60_000;
 
-    return {
+    const ctx: DAGEvalContext & {
+      _evaluations: Array<{ expression: string; result: boolean; pv: Record<string, any>; skipped: boolean }>;
+    } = {
       evaluateExpression: (expr: string): boolean => {
         const fields = { ...lastPV, phase_elapsed_min: phaseElapsedMin };
         const result = evaluateConditionExpression(expr, fields as any);
-        if (result.ok) return result.value;
-        // Parse / runtime error → throw so DAGExecutor uses default_branch fallback
+        if (result.ok) {
+          evaluations.push({ expression: expr, result: result.value, pv: fields, skipped: false });
+          return result.value;
+        }
+        // Parse / runtime error → record skipped=true and throw so DAGExecutor uses default_branch fallback
+        evaluations.push({ expression: expr, result: false, pv: fields, skipped: true });
         throw new Error(result.error);
       },
+      _evaluations: evaluations,
     };
+    return ctx;
   }
 
   /** 将下一个pending Phase标记为ready; 顺序模式下自动启动 */
@@ -503,15 +518,37 @@ export class BatchController extends EventEmitter {
     }
 
     const ctx = this.buildEvalContext();
+    // T13: track which branch node(s) were traversed during this advance pass
+    // by recording the node id BEFORE each advance() call. Branch nodes are
+    // pause points the loop steps through; pairing the node id with the
+    // evaluation index gives accurate node_id attribution for IF/ELSE DAGs.
+    const branchNodeIds: string[] = [];
     // advance() may need to traverse branch → next phase; loop until we land
     // on a phase or end node (DAGExecutor.advance handles single hops only).
     let guard = 0;
     while (true) {
+      const beforeNode = this.dagExecutor.getCurrentNode();
+      if (beforeNode?.type === 'branch') {
+        branchNodeIds.push(beforeNode.id);
+      }
       const ok = this.dagExecutor.advance(ctx);
       if (!ok) break;
       const cur = this.dagExecutor.getCurrentNode();
       if (!cur || cur.type === 'phase' || cur.type === 'end') break;
       if (++guard > 1000) break; // safety: avoid infinite loop on malformed DAGs
+    }
+
+    // T13: emit branch_evaluated events for each evaluation captured on ctx._evaluations
+    const evals = ctx._evaluations;
+    for (let i = 0; i < evals.length; i++) {
+      const ev = evals[i];
+      this.emit('branch_evaluated', {
+        node_id: branchNodeIds[i],
+        expression: ev.expression,
+        result: ev.result,
+        skipped: ev.skipped,
+        pv_snapshot: ev.pv,
+      });
     }
 
     const nextNode = this.dagExecutor.getCurrentNode();

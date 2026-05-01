@@ -164,3 +164,92 @@ describe('BatchController DAG runtime — resumeBatch (T12)', () => {
     ctrl.destroy();
   });
 });
+
+describe('BatchController DAG runtime — branch_evaluated event (T13)', () => {
+  // Helper: build a recipe with a v2 DAG containing a single branch node
+  // (IF/ELSE between p_a → b → p_t / p_f → end). Uses recipe.dag (schema_version=2)
+  // so linearToDagIfNeeded picks the explicit DAG instead of synthesising one.
+  function makeBranchRecipe(recipeId: string) {
+    return {
+      recipe_id: recipeId,
+      version: '1.0.0',
+      phases: [
+        { type: 'fermentation', phase_id: 'A', params: {} },
+        { type: 'feeding', phase_id: 'TRUE', params: {} },
+        { type: 'feeding', phase_id: 'FALSE', params: {} },
+      ],
+      dag: {
+        schema_version: 2,
+        nodes: [
+          { id: 's', type: 'start' },
+          { id: 'p_a', type: 'phase', phase_id: 'A', phase_type: 'fermentation', params: {} },
+          { id: 'b', type: 'branch', expression: 'OD600 > 5' },
+          { id: 'p_t', type: 'phase', phase_id: 'TRUE', phase_type: 'feeding', params: {} },
+          { id: 'p_f', type: 'phase', phase_id: 'FALSE', phase_type: 'feeding', params: {} },
+          { id: 'e', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', from: 's', to: 'p_a' },
+          { id: 'e2', from: 'p_a', to: 'b' },
+          { id: 'e3', from: 'b', to: 'p_t', label: 'true' },
+          { id: 'e4', from: 'b', to: 'p_f', label: 'false' },
+          { id: 'e5', from: 'p_t', to: 'e' },
+          { id: 'e6', from: 'p_f', to: 'e' },
+        ],
+      },
+    } as any;
+  }
+
+  it('emits branch_evaluated event with PV snapshot and result (T13)', () => {
+    const ctrl = makeCtrl();
+    // resumeBatch with savedNodeId=p_a parks the executor at the phase before
+    // the branch; readyNextPhase() will then advance through the branch node.
+    ctrl.resumeBatch('B-T13', makeBranchRecipe('TEST_T13'), 'p_a');
+    expect(ctrl.currentNodeId).toBe('p_a');
+
+    // Inject PV so OD600 > 5 evaluates to true
+    (ctrl as any).lastSampledPV = { OD600: 6 };
+
+    const events: any[] = [];
+    ctrl.on('branch_evaluated', (e) => events.push(e));
+
+    // Trigger advance from p_a — should traverse branch node b and land on p_t.
+    (ctrl as any).readyNextPhase(0);
+
+    expect(events.length).toBeGreaterThanOrEqual(1);
+    expect(events[0].expression).toBe('OD600 > 5');
+    expect(events[0].result).toBe(true);
+    expect(events[0].pv_snapshot.OD600).toBe(6);
+    expect(events[0].skipped).toBe(false);
+    expect(events[0].node_id).toBe('b');
+    // And the executor should have landed on p_t (true branch)
+    expect(ctrl.currentNodeId).toBe('p_t');
+
+    ctrl.destroy();
+  });
+
+  it('emits branch_evaluated when PV missing — eval returns false silently, lands on false branch (T13)', () => {
+    const ctrl = makeCtrl();
+    ctrl.resumeBatch('B-T13-MISS', makeBranchRecipe('TEST_T13_MISS'), 'p_a');
+
+    // No PV — OD600 missing. condition-evaluator returns false silently
+    // (does not throw), so result=false, skipped=false, branch falls to p_f.
+    const events: any[] = [];
+    ctrl.on('branch_evaluated', (e) => events.push(e));
+
+    (ctrl as any).readyNextPhase(0);
+
+    expect(events.length).toBeGreaterThanOrEqual(1);
+    const ev = events[0];
+    expect(ev.expression).toBe('OD600 > 5');
+    expect(ev.result).toBe(false);
+    expect(ev.skipped).toBe(false);
+    expect(ev.node_id).toBe('b');
+    // PV snapshot still includes phase_elapsed_min even when sampled PV empty
+    expect(ev.pv_snapshot).toBeDefined();
+    // Executor lands on the false branch
+    expect(ctrl.currentNodeId).toBe('p_f');
+
+    ctrl.destroy();
+  });
+});
