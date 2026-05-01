@@ -129,3 +129,38 @@ describe('BatchController DAG runtime — nodeId-based public API (T10)', () => 
     ctrl.destroy();
   });
 });
+
+describe('BatchController DAG runtime — resumeBatch (T12)', () => {
+  it('resumeBatch with savedNodeId restores intermediate phase as running', () => {
+    const ctrl = makeCtrl();
+    const recipe = {
+      recipe_id: 'TEST_T12',
+      version: '1.0.0',
+      phases: [
+        { type: 'fermentation', phase_id: 'P0', params: {} },
+        { type: 'feeding', phase_id: 'P1', params: {} },
+        { type: 'feeding', phase_id: 'P2', params: {} },
+      ],
+    };
+    ctrl.resumeBatch('B-T12-1', recipe as any, 'n_1');
+    expect(ctrl.currentNodeId).toBe('n_1');
+    const statuses = (ctrl as any).getPhaseStatuses();
+    // Phases sorted by phase_index — n_0 done, n_1 running, n_2 still pending
+    expect(statuses[0].state).toBe('completed');
+    expect(statuses[1].state).toBe('running');
+    expect(statuses[2].state).toBe('pending');
+    ctrl.destroy();
+  });
+
+  it('resumeBatch with NULL savedNodeId starts from beginning (R1 fallback)', () => {
+    const ctrl = makeCtrl();
+    const recipe = {
+      recipe_id: 'TEST_T12_NULL',
+      version: '1.0.0',
+      phases: [{ type: 'fermentation', phase_id: 'P0', params: {} }],
+    };
+    ctrl.resumeBatch('B-T12-2', recipe as any, null);
+    expect(ctrl.currentNodeId).toBe('n_0');
+    ctrl.destroy();
+  });
+});

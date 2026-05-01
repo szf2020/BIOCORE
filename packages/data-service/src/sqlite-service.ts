@@ -910,3 +910,26 @@ export function setRules(db: Database.Database, rules: Array<Omit<NotificationRu
   });
   tx();
 }
+
+// ─── B1.1 DAG runtime — current_node_id persistence (T12) ────
+// Persist/read the DAG node currently being executed so a crashed
+// batch can be resumed via BatchController.resumeBatch().
+// Column added by migration 023.
+
+export function updateBatchCurrentNodeId(
+  db: Database.Database,
+  batchId: string,
+  nodeId: string | null,
+): void {
+  db.prepare('UPDATE batches SET current_node_id = ? WHERE batch_id = ?').run(nodeId, batchId);
+}
+
+export function getBatchCurrentNodeId(
+  db: Database.Database,
+  batchId: string,
+): string | null {
+  const row = db
+    .prepare('SELECT current_node_id FROM batches WHERE batch_id = ?')
+    .get(batchId) as { current_node_id: string | null } | undefined;
+  return row?.current_node_id ?? null;
+}

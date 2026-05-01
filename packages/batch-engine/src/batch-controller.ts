@@ -29,6 +29,12 @@ export interface BatchControllerConfig {
   getTemplateSteps?: (phaseType: string) => StepDefinition[] | null;
   // IL/RF 连锁故障配置 (从数据库读取)
   getInterlockConfigs?: () => any[];
+  // T12: 持久化钩子 — 由 server 注入, 把 currentNodeId 落 SQLite 用于崩溃恢复
+  // 不直接 import data-service 以避免 batch-engine ↔ data-service 循环依赖
+  persist?: {
+    /** Called whenever currentNodeId changes; persist to batches table for crash recovery. */
+    updateCurrentNodeId?: (batchId: string, nodeId: string | null) => void;
+  };
 }
 
 export class BatchController extends EventEmitter {
@@ -61,6 +67,20 @@ export class BatchController extends EventEmitter {
     if (!this.dag || !this._currentNodeId) return null;
     const node = this.dag.nodes.find(n => n.id === this._currentNodeId);
     return node && node.type === 'phase' ? (node as DAGPhaseNode) : null;
+  }
+
+  /**
+   * T12: Push current node id to the optional persistence layer (SQLite via injected callback).
+   * Safe-guarded so call sites can fire-and-forget without checking config presence.
+   */
+  private persistCurrentNodeId(): void {
+    if (!this.config.persist?.updateCurrentNodeId) return;
+    if (!this.batchId) return; // Pre-batch (idle) — nothing to persist against
+    try {
+      this.config.persist.updateCurrentNodeId(this.batchId, this._currentNodeId);
+    } catch {
+      // Persistence failure must not crash the runtime; collector/admin can re-sync from runtime state
+    }
   }
 
   /** Array view of phaseStatuses sorted by phase_index (transitional shim until all consumers move to nodeId). */
@@ -160,6 +180,8 @@ export class BatchController extends EventEmitter {
     this.dagExecutor = new DAGExecutor(this.dag);
     this.dagExecutor.start();
     this._currentNodeId = this.dagExecutor.getCurrentNode()?.id ?? null;
+    // T12: persist initial node id for crash recovery
+    this.persistCurrentNodeId();
 
     // T8: 初始化所有Phase状态 (Map keyed by node id), 顺序与 DAG 中 phase 节点顺序一致
     // 第一个phase为ready, 其余为pending; 优先从数据库模板读取步骤定义, 回退到硬编码
@@ -255,6 +277,10 @@ export class BatchController extends EventEmitter {
 
   reset(): void {
     if (this.currentState === 'stopped' || this.currentState === 'complete') {
+      // T12: persist current_node_id = NULL BEFORE we wipe batchId
+      // (persistCurrentNodeId is a no-op once batchId is cleared)
+      this._currentNodeId = null;
+      this.persistCurrentNodeId();
       this.stepEngine = null;
       this.recipe = null;
       this.batchId = '';
@@ -262,7 +288,6 @@ export class BatchController extends EventEmitter {
       this.phaseStatusesMap.clear();
       this.dag = null;
       this.dagExecutor = null;
-      this._currentNodeId = null;
       this.actor.send({ type: 'cmd_reset' });
       this.emit('batch_reset');
     }
@@ -375,6 +400,72 @@ export class BatchController extends EventEmitter {
     return this.phaseStatuses.map(ps => ({ ...ps }));
   }
 
+  // ── T12: 崩溃恢复 — resumeBatch ──
+
+  /**
+   * Restore controller runtime state for an existing batch (crash recovery / server restart).
+   * Rebuilds DAG + DAGExecutor + phaseStatusesMap from the recipe, then jumps to savedNodeId.
+   *
+   * If `savedNodeId` is null, falls back to first node (R1 fallback — equivalent to a fresh run
+   * minus the state-machine transitions; caller can drive start() separately if needed).
+   *
+   * Note: this method intentionally does NOT touch the XState actor or restart polling — that
+   * remains the caller's responsibility. resumeBatch is a state-rebuild primitive only.
+   */
+  resumeBatch(batchId: string, recipe: Recipe, savedNodeId: string | null): void {
+    this.batchId = batchId;
+    this.recipe = recipe;
+    this.dag = this.linearToDagIfNeeded(recipe);
+    this.dagExecutor = new DAGExecutor(this.dag);
+
+    // Rebuild phaseStatuses from DAG phase nodes (parallels start()'s init)
+    this.phaseStatusesMap.clear();
+    const phaseNodes = (this.dag?.nodes ?? []).filter(n => n.type === 'phase');
+    phaseNodes.forEach((node, idx) => {
+      const phaseFromRecipe = recipe.phases?.[idx];
+      const phaseId = (node as any).phase_id ?? phaseFromRecipe?.phase_id ?? `phase_${idx}`;
+      const phaseType = (node as any).phase_type ?? phaseFromRecipe?.type ?? 'unknown';
+      const steps = this.resolveStepDefinitions(phaseType);
+      this.phaseStatusesMap.set(node.id, {
+        phase_id: phaseId,
+        phase_type: phaseType,
+        phase_index: idx,
+        node_id: node.id,
+        state: 'pending' as PhaseState,
+        step_number: 0,
+        total_steps: steps.length,
+        step_name: steps.length > 0 ? steps[0].name : '',
+      });
+    });
+
+    this.dagExecutor.start();
+
+    if (savedNodeId) {
+      // Walk Map in insertion (phase_index) order: phases before savedNodeId → completed,
+      // savedNodeId itself → running, the rest stay pending.
+      for (const ps of this.phaseStatusesMap.values()) {
+        if (ps.node_id === savedNodeId) {
+          ps.state = 'running';
+          break;
+        }
+        ps.state = 'completed';
+      }
+      this._currentNodeId = savedNodeId;
+      // Sync phaseIndex shim for any remaining index-based code paths
+      const resumedPs = this.phaseStatusesMap.get(savedNodeId);
+      if (resumedPs) this.phaseIndex = resumedPs.phase_index;
+    } else {
+      // R1 fallback: no saved node → start from current (first) node
+      this._currentNodeId = this.dagExecutor.getCurrentNode()?.id ?? null;
+      this.phaseIndex = 0;
+    }
+
+    // Persist the resumed node id (idempotent — DB already has it, but keep the invariant)
+    this.persistCurrentNodeId();
+
+    this.emit('batch_resumed', { batch_id: batchId, node_id: this._currentNodeId });
+  }
+
   /**
    * Build the evaluation context for branch nodes.
    * Provides a `evaluateExpression` impl backed by condition-evaluator,
@@ -432,6 +523,8 @@ export class BatchController extends EventEmitter {
 
     if (nextNode.type === 'phase') {
       this._currentNodeId = nextNode.id;
+      // T12: persist after DAG executor advances to a new phase node
+      this.persistCurrentNodeId();
       const ps = this.phaseStatusesMap.get(nextNode.id);
       if (!ps) return;
 
