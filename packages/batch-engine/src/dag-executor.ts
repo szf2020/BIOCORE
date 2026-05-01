@@ -235,6 +235,49 @@ export class DAGExecutor {
 }
 
 // ============================================================
+// linearToDag — v1 线性 phases[] → v2 RecipeDAG (T6)
+//
+// 转换规则: start → n_0 → n_1 → ... → n_{n-1} → end
+// 节点 ID 确定式格式: n_start / n_<index> / n_end
+// 边 ID 格式: e_start_0 / e_<i>_<i+1> / e_<n-1>_end / e_start_end (空配方)
+// ============================================================
+export function linearToDag(phases: Array<{ phase_id?: string; type: string; params?: Record<string, any> }>): RecipeDAG {
+  const nodes: DAGNode[] = [];
+  const edges: DAGEdge[] = [];
+
+  // 1. start 节点
+  nodes.push({ id: 'n_start', type: 'start' });
+
+  // 2. 每个 phase 一个节点
+  phases.forEach((p, i) => {
+    nodes.push({
+      id: `n_${i}`,
+      type: 'phase',
+      phase_id: p.phase_id ?? `phase_${i}`,
+      phase_type: p.type,
+      params: p.params ?? {},
+    } as DAGPhaseNode);
+  });
+
+  // 3. end 节点
+  nodes.push({ id: 'n_end', type: 'end' });
+
+  // 4. 边: start → 0 → 1 → ... → n-1 → end
+  if (phases.length === 0) {
+    // 空配方: start → end
+    edges.push({ id: 'e_start_end', from: 'n_start', to: 'n_end' });
+  } else {
+    edges.push({ id: 'e_start_0', from: 'n_start', to: 'n_0' });
+    for (let i = 0; i < phases.length - 1; i++) {
+      edges.push({ id: `e_${i}_${i + 1}`, from: `n_${i}`, to: `n_${i + 1}` });
+    }
+    edges.push({ id: `e_${phases.length - 1}_end`, from: `n_${phases.length - 1}`, to: 'n_end' });
+  }
+
+  return { schema_version: 2, nodes, edges };
+}
+
+// ============================================================
 // 自测块
 // ============================================================
 if (require.main === module) {
