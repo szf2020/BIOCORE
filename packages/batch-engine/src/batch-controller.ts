@@ -15,6 +15,7 @@ import type {
   StepDefinition,
 } from '@biocore/types';
 import type { PhaseState, PhaseStatus } from './index';
+import { DAGExecutor, type RecipeDAG, type DAGEvalContext } from './dag-executor';
 
 export interface BatchControllerConfig {
   // PLC读写函数 (由外部注入)
@@ -41,6 +42,11 @@ export class BatchController extends EventEmitter {
   private batchStartTime = 0;
   private ticking = false;
   private phaseStatuses: PhaseStatus[] = [];
+
+  // DAG runtime fields (T4 plumbing — wired up in T7+)
+  private currentNodeId: string | null = null;
+  private dag: RecipeDAG | null = null;
+  private dagExecutor: DAGExecutor | null = null;
 
   // 状态码 → PLC VW2
   private static STATE_CODES: Record<BatchState, number> = {
