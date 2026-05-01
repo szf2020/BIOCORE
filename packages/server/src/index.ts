@@ -20,7 +20,7 @@ import Database from 'better-sqlite3';
 import { readFileSync } from 'fs';
 import { resolve as pathResolve } from 'path';
 import { v0DeprecationMw, API_V0_SUNSET } from './middlewares/deprecation';
-import { authMiddleware, setAuthDb, hashApiKey } from './middlewares/auth';
+import { authMiddleware, setAuthDb, hashApiKey, requireRole } from './middlewares/auth';
 import { traceMw } from './middlewares/trace';
 import { v1ResponseWrapper } from './middlewares/response-wrapper';
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -85,7 +85,7 @@ const RUNTIME_GUARD_OOM_THRESHOLD_MB =
     : undefined;  // undefined = MetricsCollector/MemoryWatchdog auto = RAM × 20%
 
 export const metricsCollector = new MetricsCollector({
-  serviceVersion: process.env.npm_package_version ?? '0.3.2',
+  serviceVersion: process.env.npm_package_version ?? '0.3.3',
   oomThresholdMb: RUNTIME_GUARD_OOM_THRESHOLD_MB,
 });
 metricsCollector.start();
@@ -199,9 +199,10 @@ import { runMigrations } from './migrator';
 mkdirSync(DATA_DIR, { recursive: true });
 const sqlite = new SQLiteService(`${DATA_DIR}/biocore.db`);
 
-// 运行 schema migrations (向前迁移, 不可回滚)
-// IIFE 因为 top-level await 在 CommonJS 中受限
-(async () => {
+// v1.7.3 H7: server.listen 必须等到 migrations 完成后再触发。
+// 这是一个 Promise, 在文件底部的 start() 中被 await。
+// 失败 → 致命退出, 不再 fire-and-forget。
+const migrationsReady: Promise<void> = (async () => {
   try {
     await runMigrations(sqlite.getDatabase());
   } catch (e) {
@@ -211,6 +212,8 @@ const sqlite = new SQLiteService(`${DATA_DIR}/biocore.db`);
 })();
 
 // 注入 sqlite 引用到 auth middleware (用于 API Key 验证)
+// 注: 此处仅设引用, 不依赖 migrations; 真正的 API Key 校验发生在请求时,
+// 那时 migrations 已 await 完成 (start() 中)。
 setAuthDb(sqlite.getDatabase());
 
 const varManager = new VariableMappingManager(sqlite.getDatabase());
@@ -621,11 +624,13 @@ try {
     if (existing) {
       db.prepare('UPDATE users SET password_hash = ?, display_name = ?, role = ?, is_active = 1 WHERE username = ?')
         .run(`${salt}:${hash}`, '系统管理员', 'admin', 'admin');
-      console.log(`[${new Date().toISOString()}] [INFO] 默认admin密码已重置为 admin123`);
+      // v1.7.3 C3-partial: 不再把默认密码字面值写进日志
+      console.log('[BOOT] Default admin account password reset. Password set in DB; reset via reset-admin script before production.');
     } else {
       db.prepare(`INSERT INTO users (user_id, username, display_name, password_hash, role)
         VALUES (?, ?, ?, ?, ?)`).run('admin-001', 'admin', '系统管理员', `${salt}:${hash}`, 'admin');
-      console.log(`[${new Date().toISOString()}] [INFO] 已创建默认admin用户 (admin/admin123)`);
+      // v1.7.3 C3-partial: 不再把默认密码字面值写进日志
+      console.log('[BOOT] Default admin account created. Password set in DB; reset via reset-admin script before production.');
     }
   }
 } catch (e) { console.error(`[${new Date().toISOString()}] [ERROR] 初始化admin失败:`, e); }
@@ -633,10 +638,20 @@ try {
 // ─── Express ───────────────────────────────────────────────
 
 const app: ReturnType<typeof express> = express();
-// CORS: 开发模式允许所有 origin, 生产通过 ALLOWED_ORIGINS 环境变量限制
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
-  : true; // true = 允许所有 (仅开发)
+// CORS (v1.7.3 H4 收紧):
+//   - 生产 (NODE_ENV=production): 必须设置 ALLOWED_ORIGINS, 否则启动失败
+//   - 开发: 默认 'http://localhost:3000' (绝不再用 origin: true + credentials: true)
+//   - origin: true 与 credentials: true 同时使用会反射任意 origin, 是 CSRF 风险
+let allowedOrigins: string | string[];
+if (process.env.ALLOWED_ORIGINS) {
+  allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
+} else if (process.env.NODE_ENV === 'production') {
+  console.error('[CORS] FATAL: ALLOWED_ORIGINS env var is required in production. Set ALLOWED_ORIGINS=https://your.domain (comma-separated for multiple).');
+  process.exit(1);
+} else {
+  allowedOrigins = 'http://localhost:3000';
+  console.warn('[CORS] dev fallback origin = http://localhost:3000 (set ALLOWED_ORIGINS to override)');
+}
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,
@@ -800,16 +815,8 @@ apiRouter.use('/notifications', createNotificationsRouter({
 app.use('/api/v1', v1ResponseWrapper, authMiddleware, apiRouter);
 app.use('/api', v0DeprecationMw, authMiddleware, apiRouter);
 
-// 角色权限检查辅助函数
-const ROLE_LEVELS: Record<string, number> = { viewer: 0, operator: 1, engineer: 2, admin: 3 };
-function requireRole(minRole: string) {
-  return (req: any, res: any, next: any) => {
-    const userLevel = ROLE_LEVELS[req.user?.role] ?? 0;
-    const required = ROLE_LEVELS[minRole] ?? 0;
-    if (userLevel < required) return res.status(403).json({ error: `需要${minRole}或更高权限` });
-    next();
-  };
-}
+// v1.7.3: requireRole 已迁至 middlewares/auth.ts 并改为 spread-args 工厂,
+// 旧版 (基于 ROLE_LEVELS 数值层级) 从未被调用, 已删除以避免与 import 冲突。
 
 const server = http.createServer(app);
 
@@ -1064,7 +1071,7 @@ apiRouter.get('/users', (req: any, res) => {
   res.json(rows);
 });
 
-apiRouter.post('/users', (req: any, res) => {
+apiRouter.post('/users', requireRole('admin'), (req: any, res) => {
   const { username, display_name, password, role } = req.body;
   if (!username || !password || !display_name) return res.status(400).json({ error: '缺少必填字段' });
   if (!['admin', 'engineer', 'operator', 'viewer'].includes(role)) return res.status(400).json({ error: '无效角色' });
@@ -1078,7 +1085,7 @@ apiRouter.post('/users', (req: any, res) => {
   res.json({ user_id: userId, username, display_name, role });
 });
 
-apiRouter.put('/users/:id', (req: any, res) => {
+apiRouter.put('/users/:id', requireRole('admin'), (req: any, res) => {
   const { display_name, role, is_active, password } = req.body;
   const updates: string[] = [];
   const params: any[] = [];
@@ -2075,7 +2082,7 @@ apiRouter.post('/recipes/validate-expression', (req, res) => {
  *     responses:
  *       200: { description: 批准成功 }
  */
-apiRouter.post('/recipes/:id/approve', (req, res) => {
+apiRouter.post('/recipes/:id/approve', requireRole('admin'), (req, res) => {
   sqlite.approveRecipe(req.params.id, req.body.version, req.body.approved_by || 'admin-001');
   writeRecipeAudit(req as any, 'recipe_approve', req.params.id, req.body.version, undefined, {
     approved_by: req.body.approved_by || 'admin-001',
@@ -2084,7 +2091,7 @@ apiRouter.post('/recipes/:id/approve', (req, res) => {
 });
 
 // 锁定/解锁配方 (draft↔approved↔archived)
-apiRouter.post('/recipes/:id/status', (req, res) => {
+apiRouter.post('/recipes/:id/status', requireRole('admin'), (req, res) => {
   const { version, status } = req.body;
   if (!['draft', 'approved', 'archived', 'superseded', 'deprecated', 'pending_deprecation'].includes(status)) {
     return res.status(400).json({ error: '无效状态' });
@@ -3801,7 +3808,7 @@ apiRouter.get('/reactors/:id/running-faults', (_req, res) => {
 });
 
 // POST /api/reactors — 注册新反应器
-apiRouter.post('/reactors', (req, res) => {
+apiRouter.post('/reactors', requireRole('admin'), (req, res) => {
   const { reactorId } = req.body;
   if (!reactorId) return res.status(400).json({ error: '缺少 reactorId' });
   try {
@@ -3873,7 +3880,7 @@ apiRouter.post('/reactors', (req, res) => {
  *       404: { description: 配方不存在 }
  *       400: { description: 缺少 recipe_id }
  */
-apiRouter.post('/reactors/:id/download-recipe', async (req, res) => {
+apiRouter.post('/reactors/:id/download-recipe', requireRole('admin', 'engineer'), async (req, res) => {
   const { recipe_id, version } = req.body;
   if (!recipe_id) return res.status(400).json({ error: '缺少 recipe_id' });
 
@@ -3946,7 +3953,7 @@ apiRouter.get('/reactors/:id/recipe', (req, res) => {
 });
 
 // POST /api/reactors/:id/start — 用已下载的配方启动批次
-apiRouter.post('/reactors/:id/start', async (req, res) => {
+apiRouter.post('/reactors/:id/start', requireRole('admin', 'engineer', 'operator', 'service'), async (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.id);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
 
@@ -4079,21 +4086,21 @@ apiRouter.post('/reactors/:id/hold', (req, res) => {
   res.json({ success: true, state: ctrl.currentState });
 });
 
-apiRouter.post('/reactors/:id/restart', (req, res) => {
+apiRouter.post('/reactors/:id/restart', requireRole('admin', 'engineer', 'operator'), (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.id);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
   ctrl.restart();
   res.json({ success: true, state: ctrl.currentState });
 });
 
-apiRouter.post('/reactors/:id/stop', (req, res) => {
+apiRouter.post('/reactors/:id/stop', requireRole('admin', 'engineer', 'operator', 'service'), (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.id);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
   ctrl.stop();
   res.json({ success: true, state: ctrl.currentState });
 });
 
-apiRouter.post('/reactors/:id/estop', (req, res) => {
+apiRouter.post('/reactors/:id/estop', requireRole('admin', 'engineer', 'operator', 'service'), (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.id);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
   ctrl.estop();
@@ -4570,7 +4577,7 @@ apiRouter.get('/trends', async (req: any, res) => {
 
 apiRouter.get('/status', (_req, res) => {
   res.json({
-    version: process.env.npm_package_version ?? '0.3.2',
+    version: process.env.npm_package_version ?? '0.3.3',
     uptime: process.uptime(),
     ws_clients: wss.clients.size,
     heartbeats: [...heartbeats.entries()].map(([id, s]) => ({
@@ -4634,8 +4641,12 @@ async function gracefulShutdown(signal: string): Promise<void> {
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
-server.listen(PORT, () => {
-  const VER = process.env.npm_package_version ?? '0.3.2';
+// v1.7.3 H7: 必须等 migrations 完成才能 server.listen, 防止启动时
+// 处理请求却撞上未迁移的 schema (e.g. 缺列 / 缺表)。
+async function start(): Promise<void> {
+  await migrationsReady;
+  server.listen(PORT, () => {
+  const VER = process.env.npm_package_version ?? '0.3.3';
   console.log(`
   ╔══════════════════════════════════════════════╗
   ║         BIOCore Server v${VER}                ║
@@ -4720,6 +4731,12 @@ server.listen(PORT, () => {
       return running;
     },
   });
+  });
+}
+
+start().catch((e) => {
+  console.error('[BOOT] 启动失败:', e);
+  process.exit(1);
 });
 
 export { app, server, wss, broadcast, sqlite, reactorManager };

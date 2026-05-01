@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { FileText, Download, RefreshCw, ChevronRight } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -43,6 +44,15 @@ function renderMarkdown(md: string): string {
     .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc text-foreground/90">$1</li>')
     .replace(/\n\n/g, '</p><p class="text-foreground/90 text-sm leading-relaxed mb-2 indent-8">')
     .replace(/^(?!<[hlu])(.+)$/gm, '<p class="text-foreground/90 text-sm leading-relaxed mb-2">$1</p>');
+}
+
+// v1.7.3 H3: AI 报告内容来自 LLM, 可能包含恶意 HTML/script。
+// dangerouslySetInnerHTML 之前必须 sanitize 防止 stored XSS。
+// DOMPurify 仅在浏览器端工作 (依赖 window/DOM); SSR 时跳过, 'use client'
+// 已经声明在文件顶部, 实际渲染发生在客户端。
+function sanitizeHtml(html: string): string {
+  if (typeof window === 'undefined') return '';
+  return DOMPurify.sanitize(html);
 }
 
 export function ReportPreview({ sessionId, report, onRefine, refining }: ReportPreviewProps) {
@@ -147,7 +157,7 @@ export function ReportPreview({ sessionId, report, onRefine, refining }: ReportP
                 )}
                 <div
                   className="prose-sm"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(section.content) }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(section.content)) }}
                 />
               </div>
             ))}
