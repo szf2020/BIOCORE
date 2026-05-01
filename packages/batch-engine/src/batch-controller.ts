@@ -512,7 +512,10 @@ export class BatchController extends EventEmitter {
     this.phaseIndex = index;
     // 优先用数据库模板的步骤定义
     const templateSteps = this.resolveStepDefinitions(phase.type);
-    this.stepEngine = new StepEngine(phase.type, index, phase.phase_id, phase.params || {}, templateSteps);
+    // T11: resolve node_id for this phase index (available from phaseStatusesMap set in T8)
+    const psForNode = this.getPhaseStatusByIndex(index);
+    const nodeId = psForNode?.node_id;
+    this.stepEngine = new StepEngine(phase.type, index, phase.phase_id, phase.params || {}, templateSteps, nodeId);
 
     this.stepEngine.on('step_completed', (log) => this.emit('step_completed', log));
     this.stepEngine.on('step_started', (info) => {
