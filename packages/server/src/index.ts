@@ -85,7 +85,7 @@ const RUNTIME_GUARD_OOM_THRESHOLD_MB =
     : undefined;  // undefined = MetricsCollector/MemoryWatchdog auto = RAM × 20%
 
 export const metricsCollector = new MetricsCollector({
-  serviceVersion: process.env.npm_package_version ?? '0.3.1',
+  serviceVersion: process.env.npm_package_version ?? '0.3.2',
   oomThresholdMb: RUNTIME_GUARD_OOM_THRESHOLD_MB,
 });
 metricsCollector.start();
@@ -192,7 +192,7 @@ const DATA_DIR = process.env.DATA_DIR || './data';
 
 // ─── SQLite 初始化 ─────────────────────────────────────────
 
-import { SQLiteService } from '../../data-service/src/sqlite-service';
+import { SQLiteService, getOrphanBatches, markBatchHeldForRecovery } from '../../data-service/src/sqlite-service';
 import { mkdirSync } from 'fs';
 import { runMigrations } from './migrator';
 
@@ -4259,11 +4259,16 @@ function wireReactorEvents(reactorId: string): void {
       state,
     }, null, reactorId);
 
-    // 批次进入 running 时初始化 CUSUM 基线
+    // v1.7.2: 批次进入 running 时初始化 CUSUM 基线 — 任何异常都不能冒到 emit 链
+    // 上, 否则会经 actor.subscribe → uncaughtException → SIGTERM 整服务重启.
     if (state === 'running' && ctrl.currentBatchId) {
-      const detMap = getCusumKey(ctrl.currentBatchId);
-      initCusumBaselines(detMap);
-      console.log(`[${new Date().toISOString()}] [INFO] [CUSUM] 批次 ${ctrl.currentBatchId} 检测器已初始化`);
+      try {
+        const detMap = getCusumKey(ctrl.currentBatchId);
+        initCusumBaselines(detMap);
+        console.log(`[${new Date().toISOString()}] [INFO] [CUSUM] 批次 ${ctrl.currentBatchId} 检测器已初始化`);
+      } catch (e) {
+        console.error(`[CUSUM] 批次 ${ctrl.currentBatchId} 基线初始化失败:`, (e as Error).message);
+      }
     }
   });
 
@@ -4356,7 +4361,11 @@ function wireReactorEvents(reactorId: string): void {
   // 批次完成/停止
   ctrl.on('batch_completed', (data: any) => {
     broadcast('state_update', { reactor_id: reactorId, event: 'batch_completed', ...data }, data?.batch_id, reactorId);
-    if (data?.batch_id) clearCusumDetectors(data.batch_id);  // P1 修复: 清理内存
+    // v1.7.2: 包 try/catch — 见 state_changed 同源原因
+    if (data?.batch_id) {
+      try { clearCusumDetectors(data.batch_id); }
+      catch (e) { console.warn(`[CUSUM] 清理 ${data.batch_id} 检测器失败:`, (e as Error).message); }
+    }
     // KPI + SPC 自动计算 (参考 DELMIA Apriso MPI)
     if (data?.batch_id) {
       try {
@@ -4384,7 +4393,11 @@ function wireReactorEvents(reactorId: string): void {
   });
   ctrl.on('batch_stopped', (data: any) => {
     broadcast('state_update', { reactor_id: reactorId, event: 'batch_stopped', ...data }, null, reactorId);
-    if (data?.batch_id) clearCusumDetectors(data.batch_id);  // P1 修复: 清理内存
+    // v1.7.2: 包 try/catch — 见 state_changed 同源原因
+    if (data?.batch_id) {
+      try { clearCusumDetectors(data.batch_id); }
+      catch (e) { console.warn(`[CUSUM] 清理 ${data.batch_id} 检测器失败:`, (e as Error).message); }
+    }
   });
 }
 
@@ -4557,7 +4570,7 @@ apiRouter.get('/trends', async (req: any, res) => {
 
 apiRouter.get('/status', (_req, res) => {
   res.json({
-    version: process.env.npm_package_version ?? '0.3.1',
+    version: process.env.npm_package_version ?? '0.3.2',
     uptime: process.uptime(),
     ws_clients: wss.clients.size,
     heartbeats: [...heartbeats.entries()].map(([id, s]) => ({
@@ -4622,7 +4635,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 server.listen(PORT, () => {
-  const VER = process.env.npm_package_version ?? '0.3.1';
+  const VER = process.env.npm_package_version ?? '0.3.2';
   console.log(`
   ╔══════════════════════════════════════════════╗
   ║         BIOCore Server v${VER}                ║
@@ -4633,6 +4646,51 @@ server.listen(PORT, () => {
   ║  安全模式: 测试只读, 地址校验                ║
   ╚══════════════════════════════════════════════╝
   `);
+
+  // v1.7.2: boot-time crash-recovery scan.
+  // Any batch left in current_state ∈ {running, held, paused} when this server
+  // process starts is by definition orphaned — its previous engine died with
+  // the previous process. We do NOT auto-resume the engine; PVs may have
+  // drifted, alarms may have been missed, and a 24h fermentation should not
+  // silently restart unattended. Instead, mark each as 'held' with an
+  // explicit recovery reason so they appear in the operator's hold queue
+  // for explicit resume/abort decisions, and write an audit row each.
+  try {
+    const recoveryReason = `server_restart_recovery@${new Date().toISOString()}`;
+    const orphans = getOrphanBatches(sqlite.getDatabase());
+    if (orphans.length > 0) {
+      console.warn(`[BOOT] 检测到 ${orphans.length} 个遗留批次 (上次进程崩溃前未结束), 标记为 held 等待操作员处理`);
+      for (const o of orphans) {
+        try {
+          markBatchHeldForRecovery(sqlite.getDatabase(), o.batch_id, recoveryReason);
+          sqlite.writeAuditLog({
+            user_id: 'system',
+            action: 'batch_held_for_recovery',
+            target_type: 'batch',
+            target_id: o.batch_id,
+            target_kind: 'batch_id',
+            batch_id: o.batch_id,
+            reason: recoveryReason,
+            new_value: JSON.stringify({
+              prev_state: o.current_state,
+              recipe_id: o.recipe_id,
+              recipe_version: o.recipe_version,
+              reactor_id: o.reactor_id,
+              current_node_id: o.current_node_id,
+              current_phase_index: o.current_phase_index,
+            }),
+          });
+          console.warn(`[BOOT]   - ${o.batch_id} (reactor=${o.reactor_id}, prev_state=${o.current_state}, node=${o.current_node_id ?? 'NULL'})`);
+        } catch (e) {
+          console.error(`[BOOT] 标记批次 ${o.batch_id} 为 held 失败:`, (e as Error).message);
+        }
+      }
+    } else {
+      console.log('[BOOT] 无遗留批次需恢复');
+    }
+  } catch (e) {
+    console.error('[BOOT] 崩溃恢复扫描失败 (server 仍正常启动):', (e as Error).message);
+  }
 
   // 启动 AI 建议生成后台引擎
   suggestionEngineHandle = startSuggestionEngine({
