@@ -14,7 +14,14 @@ import { createHash, timingSafeEqual } from 'crypto';
 import type Database from 'better-sqlite3';
 
 // router 内部路径 (不带 /api 前缀)
-export const PUBLIC_PATHS = ['/auth/login', '/status', '/docs', '/docs.json', '/ai/report', '/admin/health/liveness', '/admin/metrics'];
+// v1.7.3 安全收紧:
+//   - 移除 /ai/report 和 /admin/metrics (H1+H2: 不应公开)
+//   - 改为精确匹配 (req.path === p), 防止前缀绕过
+//   - 仅 swagger UI 需要子路径 (CSS/JS), 单独走 DOCS_PUBLIC_PREFIXES
+export const PUBLIC_PATHS = ['/auth/login', '/status', '/docs.json', '/admin/health/liveness'];
+
+// 仅这些前缀仍按 startsWith 匹配 (swagger-ui-express 提供 /docs, /docs/swagger-ui.css 等)
+export const DOCS_PUBLIC_PREFIXES = ['/docs'];
 
 const JWT_SECRET = process.env.JWT_SECRET || 'biocore-dev-secret-change-in-production';
 const AUTH_ENABLED = process.env.AUTH_ENABLED !== 'false';
@@ -80,8 +87,12 @@ function verifyApiKey(apiKey: string): { keyId: string; scopes: string[] } | nul
 }
 
 export function authMiddleware(req: any, res: Response, next: NextFunction): void {
-  // 公开路径直接放行
-  if (PUBLIC_PATHS.some(p => req.path === p || req.path.startsWith(p + '/'))) {
+  // 公开路径直接放行 (v1.7.3: 精确匹配, 防前缀绕过)
+  if (PUBLIC_PATHS.includes(req.path)) {
+    return next();
+  }
+  // swagger UI 子路径 (e.g. /docs/swagger-ui.css) 仍走前缀
+  if (DOCS_PUBLIC_PREFIXES.some(p => req.path === p || req.path.startsWith(p + '/'))) {
     return next();
   }
 
