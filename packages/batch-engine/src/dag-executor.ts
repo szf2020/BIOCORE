@@ -32,6 +32,11 @@ export interface DAGPhaseNode extends DAGNodeBase {
 export interface DAGBranchNode extends DAGNodeBase {
   type: 'branch';
   expression: string;
+  /**
+   * Fallback branch to take when `ctx.evaluateExpression` throws
+   * (e.g., PV not yet available). Defaults to `'false'` when omitted.
+   */
+  default_branch?: 'true' | 'false';
 }
 export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode;
 
@@ -110,8 +115,14 @@ export class DAGExecutor {
 
     let nextId: string;
     if (node.type === 'branch') {
-      const expr = (node as DAGBranchNode).expression;
-      const result = ctx?.evaluateExpression(expr) ?? false;
+      const branchNode = node as DAGBranchNode;
+      const expr = branchNode.expression;
+      let result: boolean;
+      try {
+        result = ctx?.evaluateExpression(expr) ?? false;
+      } catch {
+        result = (branchNode.default_branch ?? 'false') === 'true';
+      }
       const targetLabel = result ? 'true' : 'false';
       const targetEdge = outEdges.find(e => e.label === targetLabel);
       if (!targetEdge) {
@@ -130,25 +141,21 @@ export class DAGExecutor {
     this.currentNodeId = nextId;
     this.visited.add(nextId);
 
-    // 如果推进到的是 branch, 继续推进到下一个 phase/end (branch 节点不暂停)
-    const nextNode = this.getNode(nextId);
-    if (nextNode && nextNode.type === 'branch') {
-      return this.advance(ctx);
-    }
     return true;
   }
 
   /**
-   * 从当前节点起推进到第一个 phase 或 end 节点。
+   * 从当前节点起推进到第一个 phase、branch 或 end 节点。
    * 用于 start() 初始化时跳过 start 节点。
+   * Branch 节点作为暂停点保留，等待调用方提供 ctx 后再 advance()。
    */
   private advanceToPhaseOrEnd(ctx?: DAGEvalContext): void {
     let guard = 0;
     while (this.currentNodeId) {
       const node = this.getNode(this.currentNodeId);
       if (!node) break;
-      if (node.type === 'phase' || node.type === 'end') break;
-      // start / branch 节点需要推进
+      if (node.type === 'phase' || node.type === 'end' || node.type === 'branch') break;
+      // start 节点需要推进
       const ok = this.advance(ctx);
       if (!ok) break;
       if (++guard > 1000) throw new Error('advanceToPhaseOrEnd 防护: 超过 1000 次推进');
