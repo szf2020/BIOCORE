@@ -9,6 +9,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@biocore/data-service": "workspace:*",
+    "@biocore/notifier": "workspace:*",
     "@biocore/runtime-guard": "workspace:*",
     "@influxdata/influxdb-client": "^1.33.0",
     "@types/papaparse": "^5.5.2",

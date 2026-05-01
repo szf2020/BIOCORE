@@ -154,6 +154,12 @@ importers:
 
   packages/server:
     dependencies:
+      '@biocore/data-service':
+        specifier: workspace:*
+        version: link:../data-service
+      '@biocore/notifier':
+        specifier: workspace:*
+        version: link:../notifier
       '@biocore/runtime-guard':
         specifier: workspace:*
         version: link:../runtime-guard

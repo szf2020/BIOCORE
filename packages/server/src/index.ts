@@ -42,6 +42,7 @@ import {
   MetricsCollector,
   writeDiagnosticDump,
 } from '@biocore/runtime-guard';
+import { AlertRouter, type ChannelDef, type Rule } from '@biocore/notifier';
 
 // ─── Mini .env 加载 (无 dotenv 依赖) ────────────────────────
 // 从项目根 .env 读取 KEY=VALUE 行,注入 process.env (已存在的不覆盖)
@@ -89,6 +90,12 @@ export const metricsCollector = new MetricsCollector({
 });
 metricsCollector.start();
 
+// T40: forward-declared AlertRouter ref so the crash/OOM closures below
+// (installed BEFORE sqlite is up) can fire notifier events once the router
+// is constructed later in boot. Closures capture this `let` so swapping the
+// reference at AlertRouter construction time becomes visible to them.
+let alertRouterRef: AlertRouter | undefined;
+
 export const memWd = new MemoryWatchdog({
   thresholdMb: RUNTIME_GUARD_OOM_THRESHOLD_MB,
   graceSamples: RUNTIME_GUARD_OOM_GRACE,
@@ -102,6 +109,18 @@ export const memWd = new MemoryWatchdog({
       });
     } catch (e) {
       console.error('[runtime-guard] dump on OOM failed:', e);
+    }
+    // T40: emit oom_threshold to AlertRouter (if up) so configured channels alert.
+    if (alertRouterRef) {
+      try {
+        await alertRouterRef.emit('oom_threshold', {
+          rss_mb: info.rss_mb,
+          threshold_mb: info.threshold_mb,
+          samples: info.samples,
+        });
+      } catch (e) {
+        console.error('[notifier] emit oom_threshold failed:', e);
+      }
     }
     if (process.env.NODE_ENV === 'production') {
       console.error('[runtime-guard] sending SIGTERM for supervisor restart');
@@ -123,6 +142,19 @@ installCrashHandlers({
       });
     } catch (e) {
       console.error('[runtime-guard] dump failed:', e);
+    }
+    // T40: emit uncaught_exception to AlertRouter (if up). Best-effort —
+    // crash dump is the source of truth; notifier is a courtesy ping.
+    if (alertRouterRef) {
+      try {
+        await alertRouterRef.emit('uncaught_exception', {
+          message: err.message,
+          stack: err.stack,
+          code: (err as { code?: string }).code,
+        });
+      } catch {
+        /* swallow — already crashing */
+      }
     }
   },
 });
@@ -149,6 +181,8 @@ import { createAdminHealthRouter } from './routes/admin-health';
 import { createAdminMetricsRouter } from './routes/admin-metrics';
 import { createAdminCrashesRouter } from './routes/admin-crashes';
 import { EventStream, createEventsSseRouter } from './routes/events-sse';
+import { createNotificationsRouter } from './routes/notifications';
+import { listChannels as listNotifChannels, listRules as listNotifRules } from '@biocore/data-service';
 
 // JWT 认证
 import { createHash, randomBytes } from 'crypto';
@@ -700,6 +734,64 @@ apiRouter.use('/events', createEventsSseRouter(
   eventStream,
   Number(process.env.BIOCORE_SSE_MAX_CLIENTS ?? 100),
 ));
+
+// T40: AlertRouter — global instance fed by runtime-guard hooks (crash + OOM)
+// and admin /api/v1/notifications routes; on successful send it republishes to
+// eventStream so SSE subscribers also see the event.
+//
+// Init timing: migrations IIFE above is fire-and-forget. listChannels/listRules
+// query the notification_* tables created by migration 022. We wrap in try/catch
+// inside helpers (or here) so a fresh DB pre-migration just yields empty maps.
+function buildAlertChannels(db: Database.Database): Record<string, ChannelDef> {
+  const out: Record<string, ChannelDef> = {};
+  try {
+    for (const c of listNotifChannels(db)) {
+      if (c.enabled) {
+        out[c.id] = { type: c.type, config: c.config as { webhook_url: string; secret?: string } };
+      }
+    }
+  } catch (e) {
+    // Pre-migration boot — tables may not exist yet. Empty map is correct.
+    console.warn('[notifier] listChannels failed (probably pre-migration):', (e as Error).message);
+  }
+  return out;
+}
+
+function buildAlertRules(db: Database.Database): Rule[] {
+  try {
+    return listNotifRules(db).map(r => ({
+      event_type: r.event_type as Rule['event_type'],
+      channel_id: r.channel_id,
+      enabled: r.enabled,
+      min_severity: r.min_severity,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+const NOTIFIER_THROTTLE_MS = Number(process.env.BIOCORE_NOTIFIER_THROTTLE_MIN ?? 5) * 60_000;
+export const alertRouter = new AlertRouter({
+  channels: buildAlertChannels(sqlite.getDatabase()),
+  rules: buildAlertRules(sqlite.getDatabase()),
+  throttleMs: NOTIFIER_THROTTLE_MS,
+});
+
+// onSent: forward successful (non-throttled) emits to SSE so external listeners
+// see the same notifier traffic as the configured chat channels.
+alertRouter.onSent = (type, payload) => {
+  eventStream.publish(type, payload);
+};
+
+// Wire ref so the runtime-guard closures (installed before sqlite was up) can fire.
+alertRouterRef = alertRouter;
+
+console.log(`[notifier] AlertRouter ready (channels=${Object.keys(buildAlertChannels(sqlite.getDatabase())).length})`);
+
+apiRouter.use('/notifications', createNotificationsRouter({
+  db: sqlite.getDatabase(),
+  alertRouter,
+}));
 
 // 双挂载:
 //   /api/v1/* — 新路径, 走 v1ResponseWrapper → authMiddleware → apiRouter
