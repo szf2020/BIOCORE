@@ -18,6 +18,8 @@ export interface StepEvalResult {
 
 export interface StepLogEntry {
   phase_index: number;
+  /** DAG node id corresponding to the running phase (T11; populated when DAG path active). */
+  node_id?: string;
   phase_id: string;
   phase_type: PhaseType;
   step_number: number;
@@ -47,6 +49,7 @@ export class StepEngine extends EventEmitter {
   private phaseType: PhaseType;
   private phaseIndex: number;
   private phaseId: string;
+  private nodeId: string | undefined;
 
   // 运行时累积器
   private accumulators = new Map<string, number>();
@@ -61,6 +64,8 @@ export class StepEngine extends EventEmitter {
     phaseParams: Record<string, any> = {},
     /** 外部注入的步骤定义 (来自数据库模板), 为空则回退硬编码 */
     injectedSteps?: StepDefinition[],
+    /** DAG node id (T11; optional — populated when DAG path active). */
+    nodeId?: string,
   ) {
     super();
     const rawSteps = (injectedSteps && injectedSteps.length > 0)
@@ -71,6 +76,7 @@ export class StepEngine extends EventEmitter {
     this.phaseIndex = phaseIndex;
     this.phaseId = phaseId;
     this.phaseParams = phaseParams;
+    this.nodeId = nodeId;
     this.applyParamsToConditions();
   }
 
@@ -278,6 +284,7 @@ export class StepEngine extends EventEmitter {
   ): StepLogEntry {
     return {
       phase_index: this.phaseIndex,
+      node_id: this.nodeId,
       phase_id: this.phaseId,
       phase_type: this.phaseType,
       step_number: stepDef.step_number,

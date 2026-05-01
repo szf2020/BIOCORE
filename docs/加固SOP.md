@@ -338,3 +338,23 @@ curl http://localhost:3001/api/v1/admin/health/liveness
 **文档版本：** v1.0（Sprint 4 Track A 完成）
 **配套 spec：** `docs/superpowers/specs/2026-05-01-nodejs-hardening-design.md`
 **反馈：** 现场运维有疑问请联系 BIOCore 团队
+
+## 11. Branch 求值故障排查
+
+### 现象 1：OD600 采集后 branch 永远走 false
+- 检查 condition-evaluator 字段名是否匹配（区分大小写）
+- 查 `audit_logs` 找 `branch_evaluated` 行，看 `details.pv_snapshot` 是否含 OD600
+- 若 `pv_snapshot` 中 OD600 为空，说明运行时 PV 采样未关联到 BatchController.lastSampledPV — 检查 PLC driver 是否在 onSample 时回写
+
+### 现象 2：current_node_id 卡死
+- 确认 dagExecutor 是否被外部代码意外重置
+- 查 `audit_logs` 看 `phase_started` 序列是否中断
+- 重启服务通常会用 `batches.current_node_id` 自动续跑
+
+### 现象 3：升级后老批次启动失败
+- 升级前应停掉所有 running 批次（决策 #2）
+- 若误升，已存在的 idle 批次 `current_node_id IS NULL` → resumeBatch 自动从第一节点开始（R1 fallback），audit_logs 会写一行 `batch_resumed_from_null` 警告
+
+### 现象 4：分支节点配置错误
+- DAG 含环 → DAGExecutor.advance 抛 `MaxStepsExceeded`，启动批次时 BV 校验拒绝
+- DAG 含 unreachable phase → 启动时 BV-16 拒绝

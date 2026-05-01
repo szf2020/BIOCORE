@@ -32,6 +32,11 @@ export interface DAGPhaseNode extends DAGNodeBase {
 export interface DAGBranchNode extends DAGNodeBase {
   type: 'branch';
   expression: string;
+  /**
+   * Fallback branch to take when `ctx.evaluateExpression` throws
+   * (e.g., PV not yet available). Defaults to `'false'` when omitted.
+   */
+  default_branch?: 'true' | 'false';
 }
 export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode;
 
@@ -110,8 +115,14 @@ export class DAGExecutor {
 
     let nextId: string;
     if (node.type === 'branch') {
-      const expr = (node as DAGBranchNode).expression;
-      const result = ctx?.evaluateExpression(expr) ?? false;
+      const branchNode = node as DAGBranchNode;
+      const expr = branchNode.expression;
+      let result: boolean;
+      try {
+        result = ctx?.evaluateExpression(expr) ?? false;
+      } catch {
+        result = (branchNode.default_branch ?? 'false') === 'true';
+      }
       const targetLabel = result ? 'true' : 'false';
       const targetEdge = outEdges.find(e => e.label === targetLabel);
       if (!targetEdge) {
@@ -130,25 +141,21 @@ export class DAGExecutor {
     this.currentNodeId = nextId;
     this.visited.add(nextId);
 
-    // 如果推进到的是 branch, 继续推进到下一个 phase/end (branch 节点不暂停)
-    const nextNode = this.getNode(nextId);
-    if (nextNode && nextNode.type === 'branch') {
-      return this.advance(ctx);
-    }
     return true;
   }
 
   /**
-   * 从当前节点起推进到第一个 phase 或 end 节点。
+   * 从当前节点起推进到第一个 phase、branch 或 end 节点。
    * 用于 start() 初始化时跳过 start 节点。
+   * Branch 节点作为暂停点保留，等待调用方提供 ctx 后再 advance()。
    */
   private advanceToPhaseOrEnd(ctx?: DAGEvalContext): void {
     let guard = 0;
     while (this.currentNodeId) {
       const node = this.getNode(this.currentNodeId);
       if (!node) break;
-      if (node.type === 'phase' || node.type === 'end') break;
-      // start / branch 节点需要推进
+      if (node.type === 'phase' || node.type === 'end' || node.type === 'branch') break;
+      // start 节点需要推进
       const ok = this.advance(ctx);
       if (!ok) break;
       if (++guard > 1000) throw new Error('advanceToPhaseOrEnd 防护: 超过 1000 次推进');
@@ -225,6 +232,49 @@ export class DAGExecutor {
   private getNode(id: string): DAGNode | null {
     return this.dag.nodes.find(n => n.id === id) || null;
   }
+}
+
+// ============================================================
+// linearToDag — v1 线性 phases[] → v2 RecipeDAG (T6)
+//
+// 转换规则: start → n_0 → n_1 → ... → n_{n-1} → end
+// 节点 ID 确定式格式: n_start / n_<index> / n_end
+// 边 ID 格式: e_start_0 / e_<i>_<i+1> / e_<n-1>_end / e_start_end (空配方)
+// ============================================================
+export function linearToDag(phases: Array<{ phase_id?: string; type: string; params?: Record<string, any> }>): RecipeDAG {
+  const nodes: DAGNode[] = [];
+  const edges: DAGEdge[] = [];
+
+  // 1. start 节点
+  nodes.push({ id: 'n_start', type: 'start' });
+
+  // 2. 每个 phase 一个节点
+  phases.forEach((p, i) => {
+    nodes.push({
+      id: `n_${i}`,
+      type: 'phase',
+      phase_id: p.phase_id ?? `phase_${i}`,
+      phase_type: p.type,
+      params: p.params ?? {},
+    } as DAGPhaseNode);
+  });
+
+  // 3. end 节点
+  nodes.push({ id: 'n_end', type: 'end' });
+
+  // 4. 边: start → 0 → 1 → ... → n-1 → end
+  if (phases.length === 0) {
+    // 空配方: start → end
+    edges.push({ id: 'e_start_end', from: 'n_start', to: 'n_end' });
+  } else {
+    edges.push({ id: 'e_start_0', from: 'n_start', to: 'n_0' });
+    for (let i = 0; i < phases.length - 1; i++) {
+      edges.push({ id: `e_${i}_${i + 1}`, from: `n_${i}`, to: `n_${i + 1}` });
+    }
+    edges.push({ id: `e_${phases.length - 1}_end`, from: `n_${phases.length - 1}`, to: 'n_end' });
+  }
+
+  return { schema_version: 2, nodes, edges };
 }
 
 // ============================================================

@@ -424,4 +424,7 @@ export {
   type NotificationRule,
 } from './sqlite-service';
 
+// T12: B1.1 DAG runtime — current_node_id persistence helpers
+export { updateBatchCurrentNodeId, getBatchCurrentNodeId } from './sqlite-service';
+
 export { InfluxService as default };

@@ -89,13 +89,17 @@ export class SQLiteService {
     batch_id?: string; target_id?: string; old_value?: string;
     new_value?: string; reason?: string; ip_address?: string;
     trace_id?: string;
+    // T15: target_kind disambiguates the semantics of target_id
+    // (e.g. 'phase_index' vs 'node_id' vs 'recipe_id').
+    target_kind?: 'phase_index' | 'node_id' | 'recipe_id' | 'batch_id' | 'user_id' | 'channel_id';
   }): void {
     this.db.prepare(`
-      INSERT INTO audit_logs (batch_id, user_id, action, target_type, target_id, old_value, new_value, reason, ip_address, trace_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO audit_logs (batch_id, user_id, action, target_type, target_id, old_value, new_value, reason, ip_address, trace_id, target_kind)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(log.batch_id || null, log.user_id, log.action, log.target_type,
       log.target_id || null, log.old_value || null, log.new_value || null,
-      log.reason || null, log.ip_address || null, log.trace_id || null);
+      log.reason || null, log.ip_address || null, log.trace_id || null,
+      log.target_kind || null);
   }
 
   getAuditLogs(batchId?: string, limit = 100): any[] {
@@ -909,4 +913,27 @@ export function setRules(db: Database.Database, rules: Array<Omit<NotificationRu
     }
   });
   tx();
+}
+
+// ─── B1.1 DAG runtime — current_node_id persistence (T12) ────
+// Persist/read the DAG node currently being executed so a crashed
+// batch can be resumed via BatchController.resumeBatch().
+// Column added by migration 023.
+
+export function updateBatchCurrentNodeId(
+  db: Database.Database,
+  batchId: string,
+  nodeId: string | null,
+): void {
+  db.prepare('UPDATE batches SET current_node_id = ? WHERE batch_id = ?').run(nodeId, batchId);
+}
+
+export function getBatchCurrentNodeId(
+  db: Database.Database,
+  batchId: string,
+): string | null {
+  const row = db
+    .prepare('SELECT current_node_id FROM batches WHERE batch_id = ?')
+    .get(batchId) as { current_node_id: string | null } | undefined;
+  return row?.current_node_id ?? null;
 }

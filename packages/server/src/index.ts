@@ -3984,35 +3984,62 @@ apiRouter.get('/reactors/:reactorId/phases', (req, res) => {
   res.json(ctrl.getPhaseStatuses());
 });
 
-// POST /api/reactors/:reactorId/phases/:phaseIndex/start
-apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/start', (req, res) => {
-  const ctrl = reactorManager.getReactor(req.params.reactorId);
-  if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  const result = ctrl.startPhaseByIndex(parseInt(req.params.phaseIndex));
-  res.json(result);
-});
+// T24: numeric phase index path translates to nodeId via phase_index lookup
+// (deprecated; emits Deprecation + Sunset headers — external consumers should migrate to nodeId).
+function resolvePhaseRef(ctrl: ReturnType<typeof reactorManager.getReactor>, ref: string, res: any): string | null {
+  if (!ctrl) return null;
+  if (/^\d+$/.test(ref)) {
+    res.set('Deprecation', 'true').set('Sunset', '2026-12-01');
+    const idx = parseInt(ref);
+    const ps = ctrl.getPhaseStatuses().find(s => s.phase_index === idx);
+    if (!ps?.node_id) {
+      res.status(404).json({ error: `Phase index ${idx} not found` });
+      return null;
+    }
+    return ps.node_id;
+  }
+  return ref;
+}
 
-// POST /api/reactors/:reactorId/phases/:phaseIndex/hold
-apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/hold', (req, res) => {
+// POST /api/reactors/:reactorId/phases/:phaseRef/start
+// phaseRef is a DAG nodeId. Numeric index is deprecated but still accepted (translated to nodeId).
+apiRouter.post('/reactors/:reactorId/phases/:phaseRef/start', (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.reactorId);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  ctrl.holdPhase(parseInt(req.params.phaseIndex), req.body.reason);
+  const nodeId = resolvePhaseRef(ctrl, req.params.phaseRef, res);
+  if (!nodeId) return; // resolvePhaseRef already sent 404
+  const result = ctrl.startPhase(nodeId);
+  if (!result.success) return res.status(400).json({ error: result.message });
   res.json({ success: true });
 });
 
-// POST /api/reactors/:reactorId/phases/:phaseIndex/skip
-apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/skip', (req, res) => {
+// POST /api/reactors/:reactorId/phases/:phaseRef/hold
+apiRouter.post('/reactors/:reactorId/phases/:phaseRef/hold', (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.reactorId);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  ctrl.skipPhase(parseInt(req.params.phaseIndex));
+  const nodeId = resolvePhaseRef(ctrl, req.params.phaseRef, res);
+  if (!nodeId) return;
+  ctrl.holdPhase(nodeId, req.body.reason);
   res.json({ success: true });
 });
 
-// POST /api/reactors/:reactorId/phases/:phaseIndex/restart
-apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/restart', (req, res) => {
+// POST /api/reactors/:reactorId/phases/:phaseRef/skip
+apiRouter.post('/reactors/:reactorId/phases/:phaseRef/skip', (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.reactorId);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  ctrl.restartPhase(parseInt(req.params.phaseIndex));
+  const nodeId = resolvePhaseRef(ctrl, req.params.phaseRef, res);
+  if (!nodeId) return;
+  ctrl.skipPhase(nodeId);
+  res.json({ success: true });
+});
+
+// POST /api/reactors/:reactorId/phases/:phaseRef/restart
+apiRouter.post('/reactors/:reactorId/phases/:phaseRef/restart', (req, res) => {
+  const ctrl = reactorManager.getReactor(req.params.reactorId);
+  if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
+  const nodeId = resolvePhaseRef(ctrl, req.params.phaseRef, res);
+  if (!nodeId) return;
+  ctrl.restartPhase(nodeId);
   res.json({ success: true });
 });
 
@@ -4232,12 +4259,65 @@ function wireReactorEvents(reactorId: string): void {
     broadcast('state_update', { reactor_id: reactorId, ...data }, data?.batch_id, reactorId);
   });
 
-  // Phase启动/完成
+  // Phase启动/完成 — T16/T24: payload_version=2 + node_id (legacy phase_index removed in T24)
   ctrl.on('phase_started', (data: any) => {
-    broadcast('step_progress', { reactor_id: reactorId, event: 'phase_started', ...data }, null, reactorId);
+    broadcast('step_progress', {
+      reactor_id: reactorId,
+      event: 'phase_started',
+      payload_version: 2,
+      batch_id: ctrl.currentBatchId,
+      node_id: ctrl.currentNodeId,
+      phase_id: data.phase_id,
+      phase_type: data.phase_type,
+      total_steps: data.total_steps,
+    }, null, reactorId);
   });
   ctrl.on('phase_completed', (data: any) => {
-    broadcast('step_progress', { reactor_id: reactorId, event: 'phase_completed', ...data }, null, reactorId);
+    broadcast('step_progress', {
+      reactor_id: reactorId,
+      event: 'phase_completed',
+      payload_version: 2,
+      batch_id: ctrl.currentBatchId,
+      node_id: ctrl.currentNodeId,
+      phase_id: data.phase_id,
+      phase_type: data.phase_type,
+    }, null, reactorId);
+  });
+
+  // T15: branch_evaluated 审计桥 — DAG 分支求值结果落到 audit_logs
+  // (T13 controller 端已发出该事件; 这里是 server 端唯一的 audit/broadcast 落点)
+  ctrl.on('branch_evaluated', (data: any) => {
+    // 广播给前端，用于在 DAG 视图上回放分支决策 — T16: payload_version=2 + explicit node_id
+    broadcast('branch_evaluated', {
+      reactor_id: reactorId,
+      type: 'branch_evaluated',
+      payload_version: 2,
+      batch_id: data?.batch_id ?? ctrl.currentBatchId,
+      node_id: data?.node_id ?? null,
+      expression: data?.expression,
+      result: data?.result,
+      skipped: data?.skipped,
+      pv_snapshot: data?.pv_snapshot,
+    }, data?.batch_id, reactorId);
+    // 写入审计日志 (target_kind = 'node_id', graceful 兜底 'unknown')
+    try {
+      sqlite.writeAuditLog({
+        user_id: 'system',
+        action: 'branch_evaluated',
+        target_type: 'branch',
+        target_id: data?.node_id ?? 'unknown',
+        target_kind: 'node_id',
+        batch_id: ctrl.currentBatchId || undefined,
+        new_value: JSON.stringify({
+          expression: data?.expression,
+          result: data?.result,
+          skipped: data?.skipped,
+          pv_snapshot: data?.pv_snapshot,
+        }),
+      });
+    } catch (e) {
+      console.warn(`[AUDIT] branch_evaluated 写入失败:`, (e as Error).message);
+    }
   });
 
   // Step完成

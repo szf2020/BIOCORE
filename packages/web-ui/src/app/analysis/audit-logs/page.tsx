@@ -27,11 +27,13 @@ interface AuditLog {
   action: string;
   target_type: string;
   target_id: string | null;
+  target_kind?: 'phase_index' | 'node_id' | 'recipe_id' | 'batch_id' | 'user_id' | 'channel_id' | null;
   old_value: string | null;
   new_value: string | null;
   reason: string | null;
   ip_address: string | null;
   trace_id: string | null;
+  details?: Record<string, unknown> | string | null;
   timestamp: string;
 }
 
@@ -76,11 +78,25 @@ const ACTION_STYLE: Record<string, { label: string; color: string }> = {
   ai_suggestion_reject:  { label: '拒绝AI建议',   color: 'bg-orange-500/15 text-orange-600 border-orange-500/30' },
   maintenance_backup:    { label: '数据备份',     color: 'bg-cyan-500/15 text-cyan-600 border-cyan-500/30' },
   maintenance_log_cleanup: { label: '清理日志',   color: 'bg-orange-500/15 text-orange-600 border-orange-500/30' },
-  maintenance_config_update: { label: '更新维护配置', color: 'bg-blue-500/15 text-blue-600 border-blue-500/30' },
+  maintenance_config_update:  { label: '更新维护配置', color: 'bg-blue-500/15 text-blue-600 border-blue-500/30' },
+  branch_evaluated:           { label: '分支评估',     color: 'bg-amber-500/15 text-amber-700 border-amber-500/30' },
+  branch_evaluation_skipped:  { label: '分支已跳过',   color: 'bg-orange-500/15 text-orange-600 border-orange-500/30' },
 };
 
 function actionLabel(action: string): { label: string; color: string } {
   return ACTION_STYLE[action] || { label: action, color: 'bg-gray-500/15 text-gray-400 border-gray-500/30' };
+}
+
+function renderTarget(
+  target_id: string | null | undefined,
+  target_kind: AuditLog['target_kind'],
+): React.ReactNode {
+  if (target_id == null) return <span className="text-gray-400">—</span>;
+  if (target_kind === 'node_id')
+    return <code className="font-mono text-[10px]">node:{target_id}</code>;
+  if (target_kind === 'phase_index' || !target_kind)
+    return <span>Phase {target_id}</span>;
+  return <code className="font-mono text-[10px]">{target_kind}:{target_id}</code>;
 }
 
 export default function AuditLogsPage() {
@@ -231,7 +247,9 @@ export default function AuditLogsPage() {
                     </td>
                     <td className="px-3 py-2">
                       <div className="text-muted-foreground">{l.target_type}</div>
-                      {l.target_id && <div className="font-mono text-[10px]">{l.target_id}</div>}
+                      {l.target_id && (
+                        <div className="mt-0.5">{renderTarget(l.target_id, l.target_kind)}</div>
+                      )}
                       {l.batch_id && <div className="text-[10px] text-blue-600">batch: {l.batch_id}</div>}
                     </td>
                     <td className="px-3 py-2 max-w-xs">
@@ -242,6 +260,21 @@ export default function AuditLogsPage() {
                         <div className="text-emerald-600 text-[10px] truncate" title={l.new_value}>{l.new_value}</div>
                       )}
                       {!l.old_value && !l.new_value && <span className="text-muted-foreground/50">—</span>}
+                      {l.action === 'branch_evaluated' && l.details && (() => {
+                        try {
+                          const d = typeof l.details === 'string' ? JSON.parse(l.details) : l.details as Record<string, unknown>;
+                          return (
+                            <div className="text-xs text-amber-700 mt-1">
+                              <span className="font-mono">{String(d.expression)}</span>
+                              {' → '}
+                              <span className="font-semibold">{String(d.result)}</span>
+                              {d.skipped && <span className="ml-1 text-orange-500">(skipped)</span>}
+                            </div>
+                          );
+                        } catch {
+                          return null;
+                        }
+                      })()}
                     </td>
                     <td className="px-3 py-2 max-w-xs truncate text-muted-foreground" title={l.reason || ''}>
                       {l.reason || '—'}

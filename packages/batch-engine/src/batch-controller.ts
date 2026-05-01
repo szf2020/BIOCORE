@@ -15,6 +15,8 @@ import type {
   StepDefinition,
 } from '@biocore/types';
 import type { PhaseState, PhaseStatus } from './index';
+import { DAGExecutor, type RecipeDAG, type DAGEvalContext, type DAGPhaseNode, linearToDag } from './dag-executor';
+import { evaluateExpression as evaluateConditionExpression } from './condition-evaluator';
 
 export interface BatchControllerConfig {
   // PLC读写函数 (由外部注入)
@@ -27,6 +29,12 @@ export interface BatchControllerConfig {
   getTemplateSteps?: (phaseType: string) => StepDefinition[] | null;
   // IL/RF 连锁故障配置 (从数据库读取)
   getInterlockConfigs?: () => any[];
+  // T12: 持久化钩子 — 由 server 注入, 把 currentNodeId 落 SQLite 用于崩溃恢复
+  // 不直接 import data-service 以避免 batch-engine ↔ data-service 循环依赖
+  persist?: {
+    /** Called whenever currentNodeId changes; persist to batches table for crash recovery. */
+    updateCurrentNodeId?: (batchId: string, nodeId: string | null) => void;
+  };
 }
 
 export class BatchController extends EventEmitter {
@@ -40,7 +48,53 @@ export class BatchController extends EventEmitter {
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private batchStartTime = 0;
   private ticking = false;
-  private phaseStatuses: PhaseStatus[] = [];
+  // T8: phaseStatuses now keyed by DAG node id; array view exposed via getter
+  private phaseStatusesMap: Map<string, PhaseStatus> = new Map();
+
+  // DAG runtime fields (T4 plumbing — wired up in T7+)
+  // T10: backing field renamed to _currentNodeId; public getter exposes it.
+  private _currentNodeId: string | null = null;
+  private dag: RecipeDAG | null = null;
+  private dagExecutor: DAGExecutor | null = null;
+
+  /** Current DAG node id (T10 — public getter; backing field is `_currentNodeId`). */
+  get currentNodeId(): string | null {
+    return this._currentNodeId;
+  }
+
+  /** Current DAG phase node, or null if not running a phase node (T10). */
+  get currentPhaseNode(): DAGPhaseNode | null {
+    if (!this.dag || !this._currentNodeId) return null;
+    const node = this.dag.nodes.find(n => n.id === this._currentNodeId);
+    return node && node.type === 'phase' ? (node as DAGPhaseNode) : null;
+  }
+
+  /**
+   * T12: Push current node id to the optional persistence layer (SQLite via injected callback).
+   * Safe-guarded so call sites can fire-and-forget without checking config presence.
+   */
+  private persistCurrentNodeId(): void {
+    if (!this.config.persist?.updateCurrentNodeId) return;
+    if (!this.batchId) return; // Pre-batch (idle) — nothing to persist against
+    try {
+      this.config.persist.updateCurrentNodeId(this.batchId, this._currentNodeId);
+    } catch {
+      // Persistence failure must not crash the runtime; collector/admin can re-sync from runtime state
+    }
+  }
+
+  /** Array view of phaseStatuses sorted by phase_index (transitional shim until all consumers move to nodeId). */
+  private get phaseStatuses(): PhaseStatus[] {
+    return Array.from(this.phaseStatusesMap.values()).sort((a, b) => a.phase_index - b.phase_index);
+  }
+
+  /** Lookup PhaseStatus by phase_index (transitional helper for index-based code paths). */
+  private getPhaseStatusByIndex(idx: number): PhaseStatus | undefined {
+    for (const ps of this.phaseStatusesMap.values()) {
+      if (ps.phase_index === idx) return ps;
+    }
+    return undefined;
+  }
 
   // 状态码 → PLC VW2
   private static STATE_CODES: Record<BatchState, number> = {
@@ -121,19 +175,33 @@ export class BatchController extends EventEmitter {
     this.phaseIndex = 0;
     this.batchStartTime = Date.now();
 
-    // 初始化所有Phase状态: 第一个为ready, 其余为pending
-    // 优先从数据库模板读取步骤定义, 回退到硬编码
-    this.phaseStatuses = recipe.phases.map((phase, idx) => {
-      const steps = this.resolveStepDefinitions(phase.type);
-      return {
-        phase_id: phase.phase_id,
-        phase_type: phase.type,
+    // T7: parallel DAG runtime initialization (does not affect old phaseIndex path yet)
+    this.dag = this.linearToDagIfNeeded(recipe);
+    this.dagExecutor = new DAGExecutor(this.dag);
+    this.dagExecutor.start();
+    this._currentNodeId = this.dagExecutor.getCurrentNode()?.id ?? null;
+    // T12: persist initial node id for crash recovery
+    this.persistCurrentNodeId();
+
+    // T8: 初始化所有Phase状态 (Map keyed by node id), 顺序与 DAG 中 phase 节点顺序一致
+    // 第一个phase为ready, 其余为pending; 优先从数据库模板读取步骤定义, 回退到硬编码
+    this.phaseStatusesMap.clear();
+    const phaseNodes = (this.dag?.nodes ?? []).filter(n => n.type === 'phase');
+    phaseNodes.forEach((node, idx) => {
+      const phaseFromRecipe = recipe.phases?.[idx];
+      const phaseId = (node as any).phase_id ?? phaseFromRecipe?.phase_id ?? `phase_${idx}`;
+      const phaseType = (node as any).phase_type ?? phaseFromRecipe?.type ?? 'unknown';
+      const steps = this.resolveStepDefinitions(phaseType);
+      this.phaseStatusesMap.set(node.id, {
+        phase_id: phaseId,
+        phase_type: phaseType,
         phase_index: idx,
+        node_id: node.id,
         state: (idx === 0 ? 'ready' : 'pending') as PhaseState,
         step_number: 0,
         total_steps: steps.length,
         step_name: steps.length > 0 ? steps[0].name : '',
-      };
+      });
     });
 
     // Transition state machine first
@@ -151,7 +219,7 @@ export class BatchController extends EventEmitter {
 
     // 顺序模式: 自动启动第一个Phase
     if (recipe.execution_mode === 'sequential') {
-      this.startPhaseByIndex(0);
+      this.startPhaseInternal(0);
       return { success: true, message: `批次${batchId}已启动 (顺序模式), Phase自动执行` };
     }
 
@@ -209,24 +277,65 @@ export class BatchController extends EventEmitter {
 
   reset(): void {
     if (this.currentState === 'stopped' || this.currentState === 'complete') {
+      // T12: persist current_node_id = NULL BEFORE we wipe batchId
+      // (persistCurrentNodeId is a no-op once batchId is cleared)
+      this._currentNodeId = null;
+      this.persistCurrentNodeId();
       this.stepEngine = null;
       this.recipe = null;
       this.batchId = '';
       this.phaseIndex = 0;
-      this.phaseStatuses = [];
+      this.phaseStatusesMap.clear();
+      this.dag = null;
+      this.dagExecutor = null;
       this.actor.send({ type: 'cmd_reset' });
       this.emit('batch_reset');
     }
   }
 
-  // ── Phase级控制命令 ──
+  // ── Phase级控制命令 (nodeId-based public API; T10 + T24) ──
 
-  /** 手动启动指定Phase */
-  startPhaseByIndex(phaseIndex: number): { success: boolean; message: string } {
+  /** 启动指定Phase (by DAG node id) */
+  startPhase(nodeId: string): { success: boolean; message: string } {
+    if (!this.dag) return { success: false, message: '无活跃配方' };
+    const node = this.dag.nodes.find(n => n.id === nodeId);
+    if (!node || node.type !== 'phase') {
+      return { success: false, message: `节点 ${nodeId} 不存在或非 phase 节点` };
+    }
+    const ps = this.phaseStatusesMap.get(nodeId);
+    if (!ps) return { success: false, message: `Phase状态不存在: ${nodeId}` };
+    return this.startPhaseInternal(ps.phase_index);
+  }
+
+  /** Hold指定Phase (by DAG node id) */
+  holdPhase(nodeId: string, reason?: string): void {
+    const ps = this.phaseStatusesMap.get(nodeId);
+    if (!ps) return;
+    this.holdPhaseInternal(ps.phase_index, reason);
+  }
+
+  /** 恢复held Phase (by DAG node id) */
+  restartPhase(nodeId: string): void {
+    const ps = this.phaseStatusesMap.get(nodeId);
+    if (!ps) return;
+    this.restartPhaseInternal(ps.phase_index);
+  }
+
+  /** 跳过指定Phase (by DAG node id) */
+  skipPhase(nodeId: string): void {
+    const ps = this.phaseStatusesMap.get(nodeId);
+    if (!ps) return;
+    this.skipPhaseInternal(ps.phase_index);
+  }
+
+  // ── Internal index-based primitives (private; not part of the public API) ──
+
+  /** Internal: start phase by index. Public callers use startPhase(nodeId). */
+  private startPhaseInternal(phaseIndex: number): { success: boolean; message: string } {
     if (!this.recipe || phaseIndex < 0 || phaseIndex >= this.recipe.phases.length) {
       return { success: false, message: '无效的Phase索引' };
     }
-    const ps = this.phaseStatuses[phaseIndex];
+    const ps = this.getPhaseStatusByIndex(phaseIndex);
     if (!ps) return { success: false, message: 'Phase状态不存在' };
     if (ps.state !== 'ready' && ps.state !== 'pending') {
       return { success: false, message: `Phase ${phaseIndex} 当前状态 ${ps.state} 不允许启动` };
@@ -249,9 +358,9 @@ export class BatchController extends EventEmitter {
     return { success: true, message: `Phase ${phaseIndex} 已启动` };
   }
 
-  /** Hold指定Phase */
-  holdPhase(phaseIndex: number, reason?: string): void {
-    const ps = this.phaseStatuses[phaseIndex];
+  /** Internal: hold phase by index. Public callers use holdPhase(nodeId). */
+  private holdPhaseInternal(phaseIndex: number, reason?: string): void {
+    const ps = this.getPhaseStatusByIndex(phaseIndex);
     if (!ps || ps.state !== 'running') return;
     ps.state = 'held';
     ps.hold_reason = reason || '操作员手动Hold';
@@ -259,9 +368,9 @@ export class BatchController extends EventEmitter {
     this.broadcastStateUpdate();
   }
 
-  /** 恢复held Phase */
-  restartPhase(phaseIndex: number): void {
-    const ps = this.phaseStatuses[phaseIndex];
+  /** Internal: restart held phase by index. Public callers use restartPhase(nodeId). */
+  private restartPhaseInternal(phaseIndex: number): void {
+    const ps = this.getPhaseStatusByIndex(phaseIndex);
     if (!ps || ps.state !== 'held') return;
     ps.state = 'running';
     ps.hold_reason = undefined;
@@ -269,9 +378,9 @@ export class BatchController extends EventEmitter {
     this.broadcastStateUpdate();
   }
 
-  /** 跳过指定Phase */
-  skipPhase(phaseIndex: number): void {
-    const ps = this.phaseStatuses[phaseIndex];
+  /** Internal: skip phase by index. Public callers use skipPhase(nodeId). */
+  private skipPhaseInternal(phaseIndex: number): void {
+    const ps = this.getPhaseStatusByIndex(phaseIndex);
     if (!ps || ps.state === 'completed' || ps.state === 'skipped') return;
     const wasRunning = ps.state === 'running';
     ps.state = 'skipped';
@@ -291,18 +400,179 @@ export class BatchController extends EventEmitter {
     return this.phaseStatuses.map(ps => ({ ...ps }));
   }
 
-  /** 将下一个pending Phase标记为ready; 顺序模式下自动启动 */
-  private readyNextPhase(afterIndex: number): void {
-    for (let i = afterIndex + 1; i < this.phaseStatuses.length; i++) {
-      if (this.phaseStatuses[i].state === 'pending') {
-        if (this.recipe?.execution_mode === 'sequential') {
-          // 顺序模式: 自动启动下一个Phase
-          this.startPhaseByIndex(i);
-        } else {
-          // 自由模式: 仅标记为ready, 等操作员手动启动
-          this.phaseStatuses[i].state = 'ready';
+  // ── T12: 崩溃恢复 — resumeBatch ──
+
+  /**
+   * Restore controller runtime state for an existing batch (crash recovery / server restart).
+   * Rebuilds DAG + DAGExecutor + phaseStatusesMap from the recipe, then jumps to savedNodeId.
+   *
+   * If `savedNodeId` is null, falls back to first node (R1 fallback — equivalent to a fresh run
+   * minus the state-machine transitions; caller can drive start() separately if needed).
+   *
+   * Note: this method intentionally does NOT touch the XState actor or restart polling — that
+   * remains the caller's responsibility. resumeBatch is a state-rebuild primitive only.
+   */
+  resumeBatch(batchId: string, recipe: Recipe, savedNodeId: string | null): void {
+    this.batchId = batchId;
+    this.recipe = recipe;
+    this.dag = this.linearToDagIfNeeded(recipe);
+    this.dagExecutor = new DAGExecutor(this.dag);
+
+    // Rebuild phaseStatuses from DAG phase nodes (parallels start()'s init)
+    this.phaseStatusesMap.clear();
+    const phaseNodes = (this.dag?.nodes ?? []).filter(n => n.type === 'phase');
+    phaseNodes.forEach((node, idx) => {
+      const phaseFromRecipe = recipe.phases?.[idx];
+      const phaseId = (node as any).phase_id ?? phaseFromRecipe?.phase_id ?? `phase_${idx}`;
+      const phaseType = (node as any).phase_type ?? phaseFromRecipe?.type ?? 'unknown';
+      const steps = this.resolveStepDefinitions(phaseType);
+      this.phaseStatusesMap.set(node.id, {
+        phase_id: phaseId,
+        phase_type: phaseType,
+        phase_index: idx,
+        node_id: node.id,
+        state: 'pending' as PhaseState,
+        step_number: 0,
+        total_steps: steps.length,
+        step_name: steps.length > 0 ? steps[0].name : '',
+      });
+    });
+
+    this.dagExecutor.start();
+
+    if (savedNodeId) {
+      // Walk Map in insertion (phase_index) order: phases before savedNodeId → completed,
+      // savedNodeId itself → running, the rest stay pending.
+      for (const ps of this.phaseStatusesMap.values()) {
+        if (ps.node_id === savedNodeId) {
+          ps.state = 'running';
+          break;
         }
-        break;
+        ps.state = 'completed';
+      }
+      this._currentNodeId = savedNodeId;
+      // Sync phaseIndex shim for any remaining index-based code paths
+      const resumedPs = this.phaseStatusesMap.get(savedNodeId);
+      if (resumedPs) this.phaseIndex = resumedPs.phase_index;
+    } else {
+      // R1 fallback: no saved node → start from current (first) node
+      this._currentNodeId = this.dagExecutor.getCurrentNode()?.id ?? null;
+      this.phaseIndex = 0;
+    }
+
+    // Persist the resumed node id (idempotent — DB already has it, but keep the invariant)
+    this.persistCurrentNodeId();
+
+    this.emit('batch_resumed', { batch_id: batchId, node_id: this._currentNodeId });
+  }
+
+  /**
+   * Build the evaluation context for branch nodes.
+   * Provides a `evaluateExpression` impl backed by condition-evaluator,
+   * with the most recent PV snapshot + phase_elapsed_min as fields.
+   *
+   * T13: every call to evaluateExpression is recorded on the returned ctx's
+   * `_evaluations` side-channel array, so readyNextPhase() can emit a
+   * `branch_evaluated` event per evaluation (for audit log T15 / WS T16).
+   *
+   * Note: BatchController does not currently retain a PV snapshot at this layer
+   * (PV is read inline in tickInternal). Until a tracker is added (T11+), we
+   * pass an empty fields object — this matches the DAG spec's PV-missing
+   * behavior (branch falls back to default_branch ?? 'false').
+   */
+  private buildEvalContext(): DAGEvalContext & {
+    _evaluations: Array<{ expression: string; result: boolean; pv: Record<string, any>; skipped: boolean }>;
+  } {
+    const evaluations: Array<{ expression: string; result: boolean; pv: Record<string, any>; skipped: boolean }> = [];
+    const lastPV: Record<string, number> = (this as any).lastSampledPV ?? {};
+    // Best-effort: derive phase_elapsed_min from the currently running PhaseStatus's started_at
+    const runningPS = this.phaseStatuses.find(p => p.state === 'running');
+    const startedIso = runningPS?.started_at;
+    const phaseStartedMs = startedIso ? Date.parse(startedIso) : Date.now();
+    const phaseElapsedMin = (Date.now() - phaseStartedMs) / 60_000;
+
+    const ctx: DAGEvalContext & {
+      _evaluations: Array<{ expression: string; result: boolean; pv: Record<string, any>; skipped: boolean }>;
+    } = {
+      evaluateExpression: (expr: string): boolean => {
+        const fields = { ...lastPV, phase_elapsed_min: phaseElapsedMin };
+        const result = evaluateConditionExpression(expr, fields as any);
+        if (result.ok) {
+          evaluations.push({ expression: expr, result: result.value, pv: fields, skipped: false });
+          return result.value;
+        }
+        // Parse / runtime error → record skipped=true and throw so DAGExecutor uses default_branch fallback
+        evaluations.push({ expression: expr, result: false, pv: fields, skipped: true });
+        throw new Error(result.error);
+      },
+      _evaluations: evaluations,
+    };
+    return ctx;
+  }
+
+  /** 将下一个pending Phase标记为ready; 顺序模式下自动启动 */
+  private readyNextPhase(_afterIndex: number): void {
+    if (!this.dagExecutor || !this.dag) {
+      // Defensive: should never happen if start() was called
+      return;
+    }
+
+    const ctx = this.buildEvalContext();
+    // T13: track which branch node(s) were traversed during this advance pass
+    // by recording the node id BEFORE each advance() call. Branch nodes are
+    // pause points the loop steps through; pairing the node id with the
+    // evaluation index gives accurate node_id attribution for IF/ELSE DAGs.
+    const branchNodeIds: string[] = [];
+    // advance() may need to traverse branch → next phase; loop until we land
+    // on a phase or end node (DAGExecutor.advance handles single hops only).
+    let guard = 0;
+    while (true) {
+      const beforeNode = this.dagExecutor.getCurrentNode();
+      if (beforeNode?.type === 'branch') {
+        branchNodeIds.push(beforeNode.id);
+      }
+      const ok = this.dagExecutor.advance(ctx);
+      if (!ok) break;
+      const cur = this.dagExecutor.getCurrentNode();
+      if (!cur || cur.type === 'phase' || cur.type === 'end') break;
+      if (++guard > 1000) break; // safety: avoid infinite loop on malformed DAGs
+    }
+
+    // T13: emit branch_evaluated events for each evaluation captured on ctx._evaluations
+    const evals = ctx._evaluations;
+    for (let i = 0; i < evals.length; i++) {
+      const ev = evals[i];
+      this.emit('branch_evaluated', {
+        node_id: branchNodeIds[i],
+        expression: ev.expression,
+        result: ev.result,
+        skipped: ev.skipped,
+        pv_snapshot: ev.pv,
+      });
+    }
+
+    const nextNode = this.dagExecutor.getCurrentNode();
+    if (!nextNode || nextNode.type === 'end') {
+      // No more phases. Caller (tickInternal / skipPhase) will run
+      // checkAllPhasesComplete() which transitions the batch to complete.
+      return;
+    }
+
+    if (nextNode.type === 'phase') {
+      this._currentNodeId = nextNode.id;
+      // T12: persist after DAG executor advances to a new phase node
+      this.persistCurrentNodeId();
+      const ps = this.phaseStatusesMap.get(nextNode.id);
+      if (!ps) return;
+
+      if (this.recipe?.execution_mode === 'sequential') {
+        // 顺序模式: 自动启动下一个Phase (preserves old behavior)
+        this.startPhaseInternal(ps.phase_index);
+      } else {
+        // 自由模式: 仅标记为ready, 等操作员手动启动
+        if (ps.state === 'pending') {
+          ps.state = 'ready';
+        }
       }
     }
   }
@@ -329,6 +599,15 @@ export class BatchController extends EventEmitter {
 
   // ── 内部方法 ──
 
+  private linearToDagIfNeeded(recipe: Recipe): RecipeDAG {
+    // Prefer v2 DAG if present
+    const maybeDag = (recipe as any).dag;
+    if (maybeDag && maybeDag.schema_version === 2) {
+      return maybeDag as RecipeDAG;
+    }
+    return linearToDag((recipe as any).phases ?? []);
+  }
+
   /**
    * 解析步骤定义: 优先从数据库模板读取, 回退到硬编码
    */
@@ -338,6 +617,17 @@ export class BatchController extends EventEmitter {
       if (dbSteps && dbSteps.length > 0) return dbSteps;
     }
     return getStepDefinitions(phaseType as any);
+  }
+
+  /**
+   * T10: thin wrapper that takes a DAG phase node directly.
+   * Delegates via phase_index (DAG node order matches recipe.phases for v1 recipes).
+   * T14+ may make this the authoritative path.
+   */
+  private launchPhaseEngineByNode(node: DAGPhaseNode): void {
+    const ps = this.phaseStatusesMap.get(node.id);
+    if (!ps) return;
+    this.launchPhaseEngine(ps.phase_index);
   }
 
   private launchPhaseEngine(index: number): void {
@@ -352,19 +642,23 @@ export class BatchController extends EventEmitter {
     this.phaseIndex = index;
     // 优先用数据库模板的步骤定义
     const templateSteps = this.resolveStepDefinitions(phase.type);
-    this.stepEngine = new StepEngine(phase.type, index, phase.phase_id, phase.params || {}, templateSteps);
+    // T11: resolve node_id for this phase index (available from phaseStatusesMap set in T8)
+    const psForNode = this.getPhaseStatusByIndex(index);
+    const nodeId = psForNode?.node_id;
+    this.stepEngine = new StepEngine(phase.type, index, phase.phase_id, phase.params || {}, templateSteps, nodeId);
 
     this.stepEngine.on('step_completed', (log) => this.emit('step_completed', log));
     this.stepEngine.on('step_started', (info) => {
       // 同步step信息到phaseStatuses
-      if (this.phaseStatuses[index]) {
-        this.phaseStatuses[index].step_number = info.step_number ?? 0;
-        this.phaseStatuses[index].step_name = info.step_name ?? '';
+      const ps = this.getPhaseStatusByIndex(index);
+      if (ps) {
+        ps.step_number = info.step_number ?? 0;
+        ps.step_name = info.step_name ?? '';
       }
       this.emit('step_started', info);
     });
     this.stepEngine.on('step_timeout', (log) => {
-      this.holdPhase(index, `Step超时: ${log.step_name}`);
+      this.holdPhaseInternal(index, `Step超时: ${log.step_name}`);
     });
 
     this.emit('phase_started', {
@@ -437,7 +731,7 @@ export class BatchController extends EventEmitter {
         break;
       }
       case 'timeout_hold':
-        this.holdPhase(runningPS.phase_index, result.reason);
+        this.holdPhaseInternal(runningPS.phase_index, result.reason);
         break;
 
       case 'step_advanced':
@@ -485,7 +779,7 @@ export class BatchController extends EventEmitter {
 
     // 找到当前活跃Phase (running or 最后一个有意义的)
     const activePS = this.phaseStatuses.find(ps => ps.state === 'running')
-      || this.phaseStatuses[this.phaseIndex];
+      || this.getPhaseStatusByIndex(this.phaseIndex);
     const phase = this.recipe.phases[activePS?.phase_index ?? this.phaseIndex];
 
     // 推导batch状态: 如果有phase running -> batch running, 全部done -> complete

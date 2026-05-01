@@ -208,7 +208,8 @@ export interface DAGPhaseNode extends DAGNodeBase {
 
 export interface DAGBranchNode extends DAGNodeBase {
   type: 'branch';
-  expression: string;     // 例如 'OD600 > 5'
+  expression: string;          // 例如 'OD600 > 5'
+  default_branch?: 'true' | 'false'; // PV 字段缺失时的回退分支
 }
 
 export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode;
@@ -224,6 +225,28 @@ export interface RecipeDAG {
   schema_version: 2;
   nodes: DAGNode[];
   edges: DAGEdge[];
+}
+
+// ─── 批次运行时实时状态 (T18) ───────────────────────────────
+
+/** Per-batch runtime state updated by step_progress WS events */
+export interface BatchRuntimeState {
+  batch_id: string;
+  phase_id: string;
+  phase_type?: string;       // T18: from payload_version 2
+  node_id?: string | null;   // T18: DAG node id (v2 only)
+  last_event?: string;       // 'phase_started' | 'phase_completed'
+}
+
+/** Single branch evaluation event recorded by the realtime store (T18) */
+export interface BranchEvaluationEntry {
+  ts: string;                          // ISO timestamp received
+  batch_id: string;
+  node_id: string | null;
+  expression: string;
+  result: boolean;
+  skipped: boolean;
+  pv_snapshot?: Record<string, any>;
 }
 
 // ─── 批次 ───────────────────────────────────────────────────
