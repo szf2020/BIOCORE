@@ -4,3 +4,4 @@
 //   T29-T32 channels (webhook / feishu / dingtalk / telegram)
 //   T33 AlertRouter
 export { eventTypes, validatePayload, type EventType, type EventPayload } from './event-types';
+export { Throttler, type ThrottlerOptions } from './throttler';
