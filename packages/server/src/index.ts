@@ -4390,6 +4390,9 @@ async function gracefulShutdown(signal: string): Promise<void> {
     }
     // 6. 关闭 SQLite (确保 WAL 同步)
     sqlite.close();
+    // 7. 停 runtime-guard timers (T23: metricsCollector + memWd)
+    try { metricsCollector.stop(); } catch { /* ignore */ }
+    try { memWd.stop(); } catch { /* ignore */ }
     clearTimeout(forceTimer);
     console.log(`[${new Date().toISOString()}] [INFO] [Server] 已优雅关闭`);
     process.exit(0);
