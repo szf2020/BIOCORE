@@ -109,13 +109,12 @@ describe('CommWatchdog timer cleanup (risk #4 regression guard)', () => {
     wd.destroy();
   });
 
-  // ── KNOWN BUG: it.fails locks in the current (broken) behavior ─────────
-  // destroy() 不解绑 plc 上的 listener, 反复 new+destroy 同一 plc 会让旧实例
-  // 仍响应 comm_loss, 触发 setTimeout 副作用 → timer 数 ≫ N. 修复后 (在
-  // destroy() 中 plc.off(...) 解绑 4 个 handler) 应改回 it() 并通过.
-  // 期望: setDelta === N (每周期仅当前实例 1 次 setTimeout).
-  // 现状: setDelta === N*(N+1)/2 (前 i 个旧实例每次 emit 都重新 set).
-  it.fails('does not accumulate timers across many destroy/create cycles on same plc', () => {
+  // ── REGRESSION GUARD (T12 修复): destroy() 必须解绑 plc 上的 4 个 listener ──
+  // 修复前: 反复 new+destroy 同一 plc, 旧实例仍响应 comm_loss → setTimeout 累积
+  // (sum 1..N = N*(N+1)/2), 同时触发 MaxListenersExceededWarning.
+  // 修复后: comm-watchdog.ts destroy() 调用 plc.off(...) 解绑 4 个 handler →
+  // 每周期仅当前实例 1 次 setTimeout, setDelta === N.
+  it('does not accumulate timers across many destroy/create cycles on same plc', () => {
     const setSpy = vi.spyOn(globalThis, 'setTimeout');
 
     const plc = makeFakePlc();
