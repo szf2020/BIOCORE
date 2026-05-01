@@ -10,6 +10,8 @@ import type {
   CalculatedParams,
   Alarm,
   WSMessage,
+  BatchRuntimeState,
+  BranchEvaluationEntry,
 } from '@/types';
 
 interface HeartbeatStatus {
@@ -85,6 +87,11 @@ interface RealtimeState {
     airflow: number[];
   };
 
+  // T18: per-batch DAG runtime state (keyed by batch_id)
+  batchRuntime: Record<string, BatchRuntimeState>;
+  // T18: ring buffer of recent branch evaluation events (capped at 50)
+  recentBranchEvaluations: BranchEvaluationEntry[];
+
   // Actions
   connect: (url?: string) => void;
   disconnect: () => void;
@@ -119,6 +126,8 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
   reactorStates: {},
   reactorRecipes: {},
   trendBuffer: { timestamps: [], temperature: [], pH: [], DO: [], rpm: [], airflow: [] },
+  batchRuntime: {},
+  recentBranchEvaluations: [],
 
   connect: (baseUrl = 'ws://localhost:3001/ws') => {
     if (ws?.readyState === WebSocket.OPEN || ws?.readyState === WebSocket.CONNECTING) return;
@@ -231,9 +240,49 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
           set({ heartbeatStatus: msg.payload as HeartbeatStatus });
           break;
 
-        case 'step_progress':
-          set({ stepProgress: msg.payload as StepProgress });
+        case 'step_progress': {
+          const payload = msg.payload as Record<string, any>;
+          const eventType: string | undefined = payload.type;
+
+          if (eventType === 'phase_started' || eventType === 'phase_completed') {
+            const isV2 = payload.payload_version === 2;
+            const nodeId: string | null = isV2 ? (payload.node_id ?? null) : null;
+            const batchId: string = payload.batch_id ?? msg.batch_id ?? '';
+            set((s) => ({
+              batchRuntime: {
+                ...s.batchRuntime,
+                [batchId]: {
+                  batch_id: batchId,
+                  node_id: nodeId,
+                  phase_id: payload.phase_id ?? '',
+                  phase_type: payload.phase_type,
+                  phase_index: payload.phase_index,  // keep for legacy until T24
+                  last_event: eventType,
+                },
+              },
+            }));
+          } else if (eventType === 'branch_evaluated') {
+            const batchId: string = payload.batch_id ?? msg.batch_id ?? '';
+            set((s) => ({
+              recentBranchEvaluations: [
+                {
+                  ts: new Date().toISOString(),
+                  batch_id: batchId,
+                  node_id: payload.node_id ?? null,
+                  expression: payload.expression ?? '',
+                  result: Boolean(payload.result),
+                  skipped: Boolean(payload.skipped),
+                  pv_snapshot: payload.pv_snapshot,
+                },
+                ...(s.recentBranchEvaluations ?? []),
+              ].slice(0, 50),
+            }));
+          } else {
+            // Legacy / unknown step_progress shape — keep old behaviour
+            set({ stepProgress: payload as StepProgress });
+          }
           break;
+        }
 
         case 'ai_suggestion':
           const suggestion = msg.payload as AiSuggestion;
