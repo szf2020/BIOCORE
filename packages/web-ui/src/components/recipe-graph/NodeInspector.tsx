@@ -260,10 +260,32 @@ export function NodeInspector({ node, template, allTemplates, onChange, onClose 
         )}
 
         {type === 'branch' && (
-          <ConditionExpressionEditor
-            value={data.expression || ''}
-            onChange={(expression, valid) => updateData({ expression, valid })}
-          />
+          <>
+            <ConditionExpressionEditor
+              value={data.expression || ''}
+              onChange={(expression, valid) => updateData({ expression, valid })}
+            />
+            <div className="pt-2 border-t border-border/40">
+              <Label className="text-xs">默认分支（PV 缺失回退）</Label>
+              <select
+                className="h-7 w-full text-xs font-mono mt-1 rounded bg-background border border-border px-1"
+                value={data.default_branch ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  updateData({
+                    default_branch: v === '' ? undefined : (v as 'true' | 'false'),
+                  });
+                }}
+              >
+                <option value="">不设置（PV 缺失时走 false）</option>
+                <option value="true">true</option>
+                <option value="false">false</option>
+              </select>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                当表达式所需的 PV 字段缺失时使用此分支
+              </p>
+            </div>
+          </>
         )}
 
         {(type === 'start' || type === 'end') && (

@@ -208,7 +208,8 @@ export interface DAGPhaseNode extends DAGNodeBase {
 
 export interface DAGBranchNode extends DAGNodeBase {
   type: 'branch';
-  expression: string;     // 例如 'OD600 > 5'
+  expression: string;          // 例如 'OD600 > 5'
+  default_branch?: 'true' | 'false'; // PV 字段缺失时的回退分支
 }
 
 export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode;

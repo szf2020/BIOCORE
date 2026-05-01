@@ -125,6 +125,7 @@ export interface DAGPhaseNode extends DAGNodeBase {
 export interface DAGBranchNode extends DAGNodeBase {
     type: 'branch';
     expression: string;
+    default_branch?: 'true' | 'false';
 }
 export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode;
 export interface DAGEdge {
