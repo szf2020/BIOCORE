@@ -16,6 +16,7 @@ import type {
 } from '@biocore/types';
 import type { PhaseState, PhaseStatus } from './index';
 import { DAGExecutor, type RecipeDAG, type DAGEvalContext, linearToDag } from './dag-executor';
+import { evaluateExpression as evaluateConditionExpression } from './condition-evaluator';
 
 export interface BatchControllerConfig {
   // PLC读写函数 (由外部注入)
@@ -326,21 +327,74 @@ export class BatchController extends EventEmitter {
     return this.phaseStatuses.map(ps => ({ ...ps }));
   }
 
+  /**
+   * Build the evaluation context for branch nodes.
+   * Provides a `evaluateExpression` impl backed by condition-evaluator,
+   * with the most recent PV snapshot + phase_elapsed_min as fields.
+   *
+   * Note: BatchController does not currently retain a PV snapshot at this layer
+   * (PV is read inline in tickInternal). Until a tracker is added (T11+), we
+   * pass an empty fields object — this matches the DAG spec's PV-missing
+   * behavior (branch falls back to default_branch ?? 'false').
+   */
+  private buildEvalContext(): DAGEvalContext {
+    const lastPV: Record<string, number> = (this as any).lastSampledPV ?? {};
+    // Best-effort: derive phase_elapsed_min from the currently running PhaseStatus's started_at
+    const runningPS = this.phaseStatuses.find(p => p.state === 'running');
+    const startedIso = runningPS?.started_at;
+    const phaseStartedMs = startedIso ? Date.parse(startedIso) : Date.now();
+    const phaseElapsedMin = (Date.now() - phaseStartedMs) / 60_000;
+
+    return {
+      evaluateExpression: (expr: string): boolean => {
+        const fields = { ...lastPV, phase_elapsed_min: phaseElapsedMin };
+        const result = evaluateConditionExpression(expr, fields as any);
+        if (result.ok) return result.value;
+        // Parse / runtime error → throw so DAGExecutor uses default_branch fallback
+        throw new Error(result.error);
+      },
+    };
+  }
+
   /** 将下一个pending Phase标记为ready; 顺序模式下自动启动 */
-  private readyNextPhase(afterIndex: number): void {
-    const ordered = this.phaseStatuses; // sorted by phase_index via getter
-    for (let i = afterIndex + 1; i < ordered.length; i++) {
-      const next = ordered[i];
-      if (next.state === 'pending') {
-        if (this.recipe?.execution_mode === 'sequential') {
-          // 顺序模式: 自动启动下一个Phase
-          this.startPhaseByIndex(i);
-        } else {
-          // 自由模式: 仅标记为ready, 等操作员手动启动
-          // 注意: ordered[i] 与 Map 中存的对象同引用, 直接改即可生效
-          next.state = 'ready';
+  private readyNextPhase(_afterIndex: number): void {
+    if (!this.dagExecutor || !this.dag) {
+      // Defensive: should never happen if start() was called
+      return;
+    }
+
+    const ctx = this.buildEvalContext();
+    // advance() may need to traverse branch → next phase; loop until we land
+    // on a phase or end node (DAGExecutor.advance handles single hops only).
+    let guard = 0;
+    while (true) {
+      const ok = this.dagExecutor.advance(ctx);
+      if (!ok) break;
+      const cur = this.dagExecutor.getCurrentNode();
+      if (!cur || cur.type === 'phase' || cur.type === 'end') break;
+      if (++guard > 1000) break; // safety: avoid infinite loop on malformed DAGs
+    }
+
+    const nextNode = this.dagExecutor.getCurrentNode();
+    if (!nextNode || nextNode.type === 'end') {
+      // No more phases. Caller (tickInternal / skipPhase) will run
+      // checkAllPhasesComplete() which transitions the batch to complete.
+      return;
+    }
+
+    if (nextNode.type === 'phase') {
+      this.currentNodeId = nextNode.id;
+      const ps = this.phaseStatusesMap.get(nextNode.id);
+      if (!ps) return;
+
+      if (this.recipe?.execution_mode === 'sequential') {
+        // 顺序模式: 自动启动下一个Phase (preserves old behavior)
+        this.startPhaseByIndex(ps.phase_index);
+      } else {
+        // 自由模式: 仅标记为ready, 等操作员手动启动
+        if (ps.state === 'pending') {
+          ps.state = 'ready';
         }
-        break;
       }
     }
   }
