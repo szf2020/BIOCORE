@@ -9,7 +9,7 @@
 // 存储: api_keys 表 含 key_id (公开) + salt + sha256(salt+rawKey)
 // ============================================================
 
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, RequestHandler, Response, NextFunction } from 'express';
 import { createHash, timingSafeEqual } from 'crypto';
 import type Database from 'better-sqlite3';
 
@@ -125,4 +125,43 @@ export function authMiddleware(req: any, res: Response, next: NextFunction): voi
   }
   req.user = payload;
   next();
+}
+
+// ============================================================
+// requireRole — role-based access control middleware factory
+// (v1.7.3 P0)
+//
+// 用法:
+//   apiRouter.post('/users', requireRole('admin'), handler);
+//   apiRouter.post('/reactors/:id/start',
+//     requireRole('admin', 'engineer', 'operator', 'service'),
+//     handler);
+//
+// 行为:
+// - !req.user                                → 401 Unauthorized
+// - req.user.role === 'admin'                → 通过 (admin 拥有全部权限)
+// - !allowedRoles.includes(req.user.role)    → 403 Forbidden
+// - 其余                                     → next()
+//
+// 重要: API Key 在 authMiddleware 中被赋予 role='service'。
+// 'service' 必须显式出现在 allowedRoles 中才放行 —— 例如
+// requireRole('admin') 会拒绝 service 角色的 API Key。
+// ============================================================
+export function requireRole(...allowedRoles: string[]): RequestHandler {
+  return (req: any, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      res.status(401).json({ error: '未授权: 缺少身份信息' });
+      return;
+    }
+    const role = req.user.role;
+    // admin > everything
+    if (role === 'admin') {
+      return next();
+    }
+    if (!allowedRoles.includes(role)) {
+      res.status(403).json({ error: `Forbidden: requires role ${allowedRoles.join('|')}` });
+      return;
+    }
+    next();
+  };
 }
