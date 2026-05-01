@@ -1,7 +1,5 @@
-# BIOCore 开发环境 Docker Compose
-# 仅包含 InfluxDB (SQLite为嵌入式无需容器)
-
-version: '3.8'
+# BIOCore Compose — InfluxDB + biocore-server
+# Hardened for 7×24 production runs (Sprint 4 Track A, T24)
 
 services:
   influxdb:
@@ -21,6 +19,60 @@ services:
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=biocore-dev-token
       - DOCKER_INFLUXDB_INIT_RETENTION=365d
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  biocore-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: biocore-server:local
+    container_name: biocore-server
+    restart: unless-stopped
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    environment:
+      # Runtime-guard 加固 (T22-T23)
+      - NODE_OPTIONS=--max-old-space-size=2048
+      - BIOCORE_OOM_THRESHOLD_MB=auto
+      - BIOCORE_OOM_GRACE_SAMPLES=3
+      - BIOCORE_DIAGNOSTIC_DUMP_DIR=/app/crashes
+      - BIOCORE_DIAGNOSTIC_KEEP_LAST=50
+      - NODE_ENV=production
+      # InfluxDB 连接
+      - INFLUX_URL=http://influxdb:8086
+      - INFLUX_TOKEN=biocore-dev-token
+      - INFLUX_ORG=biocore
+      - INFLUX_BUCKET=fermentation
+      # SQLite 路径 (映射到 host volume)
+      - DATA_DIR=/app/data
+      - SQLITE_PATH=/app/data/biocore.db
+      # PORT
+      - PORT=3001
+      # 生产部署前必须设为 false（默认从 .env 读，未设为 false 时上方 env 优先）
+      - MOCK_PLC=${MOCK_PLC:-false}
+    volumes:
+      - ./crashes:/app/crashes
+      - ./data:/app/data
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "node", "scripts/healthcheck.mjs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "10"
 
 volumes:
   influxdb_data:
