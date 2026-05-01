@@ -3984,35 +3984,74 @@ apiRouter.get('/reactors/:reactorId/phases', (req, res) => {
   res.json(ctrl.getPhaseStatuses());
 });
 
-// POST /api/reactors/:reactorId/phases/:phaseIndex/start
-apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/start', (req, res) => {
+// POST /api/reactors/:reactorId/phases/:phaseRef/start
+// phaseRef may be a numeric index (deprecated) or a nodeId string (preferred).
+// Numeric path emits Deprecation + Sunset headers; T24 will remove the numeric branch.
+apiRouter.post('/reactors/:reactorId/phases/:phaseRef/start', (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.reactorId);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  const result = ctrl.startPhaseByIndex(parseInt(req.params.phaseIndex));
-  res.json(result);
-});
-
-// POST /api/reactors/:reactorId/phases/:phaseIndex/hold
-apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/hold', (req, res) => {
-  const ctrl = reactorManager.getReactor(req.params.reactorId);
-  if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  ctrl.holdPhaseByIndex(parseInt(req.params.phaseIndex), req.body.reason);
+  const ref = req.params.phaseRef;
+  if (/^\d+$/.test(ref)) {
+    // Deprecated: numeric index path
+    res.set('Deprecation', 'true').set('Sunset', '2026-12-01');
+    const result = ctrl.startPhaseByIndex(parseInt(ref));
+    if (!result.success) return res.status(400).json({ error: result.message });
+    return res.json({ success: true });
+  }
+  // New: nodeId path
+  const result = ctrl.startPhase(ref);
+  if (!result.success) return res.status(400).json({ error: result.message });
   res.json({ success: true });
 });
 
-// POST /api/reactors/:reactorId/phases/:phaseIndex/skip
-apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/skip', (req, res) => {
+// POST /api/reactors/:reactorId/phases/:phaseRef/hold
+// phaseRef may be a numeric index (deprecated) or a nodeId string (preferred).
+apiRouter.post('/reactors/:reactorId/phases/:phaseRef/hold', (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.reactorId);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  ctrl.skipPhaseByIndex(parseInt(req.params.phaseIndex));
+  const ref = req.params.phaseRef;
+  if (/^\d+$/.test(ref)) {
+    // Deprecated: numeric index path
+    res.set('Deprecation', 'true').set('Sunset', '2026-12-01');
+    ctrl.holdPhaseByIndex(parseInt(ref), req.body.reason);
+    return res.json({ success: true });
+  }
+  // New: nodeId path
+  ctrl.holdPhase(ref, req.body.reason);
   res.json({ success: true });
 });
 
-// POST /api/reactors/:reactorId/phases/:phaseIndex/restart
-apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/restart', (req, res) => {
+// POST /api/reactors/:reactorId/phases/:phaseRef/skip
+// phaseRef may be a numeric index (deprecated) or a nodeId string (preferred).
+apiRouter.post('/reactors/:reactorId/phases/:phaseRef/skip', (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.reactorId);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  ctrl.restartPhaseByIndex(parseInt(req.params.phaseIndex));
+  const ref = req.params.phaseRef;
+  if (/^\d+$/.test(ref)) {
+    // Deprecated: numeric index path
+    res.set('Deprecation', 'true').set('Sunset', '2026-12-01');
+    ctrl.skipPhaseByIndex(parseInt(ref));
+    return res.json({ success: true });
+  }
+  // New: nodeId path
+  ctrl.skipPhase(ref);
+  res.json({ success: true });
+});
+
+// POST /api/reactors/:reactorId/phases/:phaseRef/restart
+// phaseRef may be a numeric index (deprecated) or a nodeId string (preferred).
+apiRouter.post('/reactors/:reactorId/phases/:phaseRef/restart', (req, res) => {
+  const ctrl = reactorManager.getReactor(req.params.reactorId);
+  if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
+  const ref = req.params.phaseRef;
+  if (/^\d+$/.test(ref)) {
+    // Deprecated: numeric index path
+    res.set('Deprecation', 'true').set('Sunset', '2026-12-01');
+    ctrl.restartPhaseByIndex(parseInt(ref));
+    return res.json({ success: true });
+  }
+  // New: nodeId path
+  ctrl.restartPhase(ref);
   res.json({ success: true });
 });
 
