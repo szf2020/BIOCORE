@@ -5,3 +5,4 @@
 export { RingBuffer } from './ring-buffer';
 export { inspectHandles, type HandlesReport } from './handles-inspector';
 export { EventLoopMonitor, type EventLoopSnapshot } from './event-loop-monitor';
+export { writeDiagnosticDump, listDiagnosticDumps, readDiagnosticDump, type Dump, type DumpOptions } from './diagnostic-dump';
