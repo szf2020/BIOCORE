@@ -8,4 +8,5 @@ export { Throttler, type ThrottlerOptions } from './throttler';
 export { sendWebhook } from './channels/webhook';
 export { sendFeishu } from './channels/feishu';
 export { sendDingtalk } from './channels/dingtalk';
+export { sendTelegram } from './channels/telegram';
 export type { Channel, ChannelConfig, ChannelMessage, SendResult } from './channels/types';
