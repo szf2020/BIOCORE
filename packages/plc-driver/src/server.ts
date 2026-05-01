@@ -1,6 +1,12 @@
 // ============================================================
 // BIOCore Server — 主入口
 // 职责: Express API + WebSocket + 模块编排
+//
+// SECURITY (v1.7.3): 此 standalone server 默认仅绑定 127.0.0.1。
+// 它不带任何鉴权中间件 (无 authMiddleware)，跨 package 加 auth
+// 会导致循环依赖。如果必须公开暴露 PLC 配置 API，请改走主 server
+// (packages/server) 并设置 AUTH_ENABLED=true，由其反代到此 driver。
+// 强行设置 BIND_HOST=0.0.0.0 会触发启动告警。
 // ============================================================
 
 import express from 'express';
@@ -240,13 +246,18 @@ app.get('/api/data/trend/:batchId', async (req, res) => {
 // ─── 启动服务器 ─────────────────────────────────────────────
 
 const PORT = parseInt(process.env.PORT || '3001');
+const BIND_HOST = process.env.BIND_HOST || '127.0.0.1';
 
-server.listen(PORT, () => {
+if (BIND_HOST === '0.0.0.0' || BIND_HOST === '::') {
+  console.warn('[plc-driver] WARNING: bound to all interfaces without auth — set AUTH_ENABLED=true on main server and route through it instead.');
+}
+
+server.listen(PORT, BIND_HOST, () => {
   console.log(`
   ╔══════════════════════════════════════════════╗
   ║         BIOCore Server v0.1.0                ║
-  ║         http://localhost:${PORT}               ║
-  ║         WebSocket: ws://localhost:${PORT}/ws    ║
+  ║         http://${BIND_HOST}:${PORT}               ║
+  ║         WebSocket: ws://${BIND_HOST}:${PORT}/ws    ║
   ╠══════════════════════════════════════════════╣
   ║  SQLite:  ./data/biocore.db                  ║
   ║  InfluxDB: ${process.env.INFLUX_URL || 'http://localhost:8086'}     ║
