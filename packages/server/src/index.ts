@@ -145,6 +145,7 @@ import { registerCusumRoutes, initCusumBaselines, getDefaultBaselines } from './
 import { registerBatchIntelligenceRoutes } from './batch-intelligence-routes';
 import { startSuggestionEngine } from './ai-suggestion-engine';
 import { registerAiReportRoutes, detectReportIntent } from './ai-report-routes';
+import { createAdminHealthRouter } from './routes/admin-health';
 
 // JWT 认证
 import { createHash, randomBytes } from 'crypto';
@@ -669,6 +670,14 @@ registerSpcRoutes(apiRouter, sqlite);
 registerCusumRoutes(apiRouter, cusumDetectors, sqlite);
 registerBatchIntelligenceRoutes(apiRouter, sqlite, influxQueryApi, rootCauseAnalyzer);
 registerAiReportRoutes(apiRouter, sqlite, influxQueryApi);
+
+// T36: runtime-guard exposure (admin health endpoints).
+// /liveness is in PUBLIC_PATHS (auth.ts) so docker healthcheck can probe it.
+// / and /timeseries are admin-gated inside the router.
+apiRouter.use('/admin/health', createAdminHealthRouter({
+  metricsCollector,
+  crashesDir: RUNTIME_GUARD_DUMP_DIR,
+}));
 
 // 双挂载:
 //   /api/v1/* — 新路径, 走 v1ResponseWrapper → authMiddleware → apiRouter
