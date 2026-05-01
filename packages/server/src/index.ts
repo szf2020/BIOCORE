@@ -20,7 +20,7 @@ import Database from 'better-sqlite3';
 import { readFileSync } from 'fs';
 import { resolve as pathResolve } from 'path';
 import { v0DeprecationMw, API_V0_SUNSET } from './middlewares/deprecation';
-import { authMiddleware, setAuthDb, hashApiKey } from './middlewares/auth';
+import { authMiddleware, setAuthDb, hashApiKey, requireRole } from './middlewares/auth';
 import { traceMw } from './middlewares/trace';
 import { v1ResponseWrapper } from './middlewares/response-wrapper';
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -1064,7 +1064,7 @@ apiRouter.get('/users', (req: any, res) => {
   res.json(rows);
 });
 
-apiRouter.post('/users', (req: any, res) => {
+apiRouter.post('/users', requireRole('admin'), (req: any, res) => {
   const { username, display_name, password, role } = req.body;
   if (!username || !password || !display_name) return res.status(400).json({ error: '缺少必填字段' });
   if (!['admin', 'engineer', 'operator', 'viewer'].includes(role)) return res.status(400).json({ error: '无效角色' });
@@ -1078,7 +1078,7 @@ apiRouter.post('/users', (req: any, res) => {
   res.json({ user_id: userId, username, display_name, role });
 });
 
-apiRouter.put('/users/:id', (req: any, res) => {
+apiRouter.put('/users/:id', requireRole('admin'), (req: any, res) => {
   const { display_name, role, is_active, password } = req.body;
   const updates: string[] = [];
   const params: any[] = [];
@@ -2075,7 +2075,7 @@ apiRouter.post('/recipes/validate-expression', (req, res) => {
  *     responses:
  *       200: { description: 批准成功 }
  */
-apiRouter.post('/recipes/:id/approve', (req, res) => {
+apiRouter.post('/recipes/:id/approve', requireRole('admin'), (req, res) => {
   sqlite.approveRecipe(req.params.id, req.body.version, req.body.approved_by || 'admin-001');
   writeRecipeAudit(req as any, 'recipe_approve', req.params.id, req.body.version, undefined, {
     approved_by: req.body.approved_by || 'admin-001',
@@ -2084,7 +2084,7 @@ apiRouter.post('/recipes/:id/approve', (req, res) => {
 });
 
 // 锁定/解锁配方 (draft↔approved↔archived)
-apiRouter.post('/recipes/:id/status', (req, res) => {
+apiRouter.post('/recipes/:id/status', requireRole('admin'), (req, res) => {
   const { version, status } = req.body;
   if (!['draft', 'approved', 'archived', 'superseded', 'deprecated', 'pending_deprecation'].includes(status)) {
     return res.status(400).json({ error: '无效状态' });
@@ -3801,7 +3801,7 @@ apiRouter.get('/reactors/:id/running-faults', (_req, res) => {
 });
 
 // POST /api/reactors — 注册新反应器
-apiRouter.post('/reactors', (req, res) => {
+apiRouter.post('/reactors', requireRole('admin'), (req, res) => {
   const { reactorId } = req.body;
   if (!reactorId) return res.status(400).json({ error: '缺少 reactorId' });
   try {
@@ -3873,7 +3873,7 @@ apiRouter.post('/reactors', (req, res) => {
  *       404: { description: 配方不存在 }
  *       400: { description: 缺少 recipe_id }
  */
-apiRouter.post('/reactors/:id/download-recipe', async (req, res) => {
+apiRouter.post('/reactors/:id/download-recipe', requireRole('admin', 'engineer'), async (req, res) => {
   const { recipe_id, version } = req.body;
   if (!recipe_id) return res.status(400).json({ error: '缺少 recipe_id' });
 
@@ -3946,7 +3946,7 @@ apiRouter.get('/reactors/:id/recipe', (req, res) => {
 });
 
 // POST /api/reactors/:id/start — 用已下载的配方启动批次
-apiRouter.post('/reactors/:id/start', async (req, res) => {
+apiRouter.post('/reactors/:id/start', requireRole('admin', 'engineer', 'operator', 'service'), async (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.id);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
 
@@ -4079,21 +4079,21 @@ apiRouter.post('/reactors/:id/hold', (req, res) => {
   res.json({ success: true, state: ctrl.currentState });
 });
 
-apiRouter.post('/reactors/:id/restart', (req, res) => {
+apiRouter.post('/reactors/:id/restart', requireRole('admin', 'engineer', 'operator'), (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.id);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
   ctrl.restart();
   res.json({ success: true, state: ctrl.currentState });
 });
 
-apiRouter.post('/reactors/:id/stop', (req, res) => {
+apiRouter.post('/reactors/:id/stop', requireRole('admin', 'engineer', 'operator', 'service'), (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.id);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
   ctrl.stop();
   res.json({ success: true, state: ctrl.currentState });
 });
 
-apiRouter.post('/reactors/:id/estop', (req, res) => {
+apiRouter.post('/reactors/:id/estop', requireRole('admin', 'engineer', 'operator', 'service'), (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.id);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
   ctrl.estop();
