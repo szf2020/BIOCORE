@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="s3-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#F1F5F9"/>
+    </linearGradient>
+    <filter id="s3-card-shadow" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#1E293B" flood-opacity="0.08"/>
+    </filter>
+    <filter id="s3-deep-shadow" x="-3%" y="-3%" width="106%" height="112%">
+      <feDropShadow dx="0" dy="3" stdDeviation="8" flood-color="#1E293B" flood-opacity="0.12"/>
+    </filter>
+    <linearGradient id="s3-accent-bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1E40AF"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#s3-bg)"/>
+
+  <!-- Top accent bar -->
+  <rect x="0" y="0" width="1280" height="4" fill="url(#s3-accent-bar)"/>
+
+  <!-- Part indicator -->
+  <rect x="80" y="22" width="4" height="24" rx="2" fill="#1E40AF"/>
+  <text x="94" y="40" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">第一部分 | 工业级硬件底座与安全体系</text>
+
+  <!-- Page title -->
+  <text x="80" y="78" font-family="Source Serif Pro, Georgia, serif" font-size="26" font-weight="700" fill="#1E293B">工业级硬件底座</text>
+  <text x="80" y="102" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="14" fill="#64748B">西门子 S7-200 SMART G2 — 8AI / 4AO / 14DI / 10DQ / 8PID</text>
+  <rect x="80" y="114" width="80" height="2" rx="1" fill="#1E40AF"/>
+  <rect x="168" y="114" width="30" height="2" rx="1" fill="#059669"/>
+
+  <!-- ==================== LEFT COLUMN (wider): I/O Spec Table ==================== -->
+  <g transform="translate(80, 140)">
+    <!-- Section header -->
+    <text x="0" y="16" font-family="Source Serif Pro, Georgia, serif" font-size="15" font-weight="600" fill="#1E293B">I/O 规格表</text>
+
+    <!-- Table card -->
+    <rect x="0" y="28" width="660" height="232" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" filter="url(#s3-card-shadow)"/>
+
+    <!-- Table header -->
+    <rect x="1" y="29" width="658" height="34" rx="7" fill="#F1F5F9"/>
+    <text x="20" y="51" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#475569">I/O 类型</text>
+    <text x="240" y="51" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#475569">数量</text>
+    <text x="360" y="51" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#475569">典型用途</text>
+
+    <!-- Row 1: AI -->
+    <rect x="1" y="63" width="658" height="38" fill="#FFFFFF"/>
+    <text x="20" y="87" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="14" fill="#1E293B">模拟输入 AI</text>
+    <text x="240" y="87" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" fill="#1E40AF">8 路</text>
+    <text x="360" y="87" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">PT100 / pH / DO / 罐压 / 气流 / 称重</text>
+    <line x1="16" y1="101" x2="644" y2="101" stroke="#F1F5F9" stroke-width="1"/>
+
+    <!-- Row 2: AO -->
+    <rect x="1" y="101" width="658" height="38" fill="#FAFBFC"/>
+    <text x="20" y="125" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="14" fill="#1E293B">模拟输出 AO</text>
+    <text x="240" y="125" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" fill="#1E40AF">4 路</text>
+    <text x="360" y="125" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">蒸汽阀 / 冷却阀 / 空气阀</text>
+    <line x1="16" y1="139" x2="644" y2="139" stroke="#F1F5F9" stroke-width="1"/>
+
+    <!-- Row 3: DI -->
+    <rect x="1" y="139" width="658" height="38" fill="#FFFFFF"/>
+    <text x="20" y="163" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="14" fill="#1E293B">数字输入 DI</text>
+    <text x="240" y="163" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" fill="#1E40AF">14 路</text>
+    <text x="360" y="163" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">急停 / 阀位确认 / 盖锁 / 压力开关</text>
+    <line x1="16" y1="177" x2="644" y2="177" stroke="#F1F5F9" stroke-width="1"/>
+
+    <!-- Row 4: DQ -->
+    <rect x="1" y="177" width="658" height="38" fill="#FAFBFC"/>
+    <text x="20" y="201" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="14" fill="#1E293B">数字输出 DQ</text>
+    <text x="240" y="201" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" fill="#1E40AF">10 路</text>
+    <text x="360" y="201" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">4 台蠕动泵 + 电磁阀组</text>
+    <line x1="16" y1="215" x2="644" y2="215" stroke="#F1F5F9" stroke-width="1"/>
+
+    <!-- Row 5: PID -->
+    <rect x="1" y="215" width="658" height="44" rx="0" fill="#FFFFFF"/>
+    <text x="20" y="241" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="14" fill="#1E293B">PID 回路</text>
+    <text x="240" y="241" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" fill="#059669">8 路</text>
+    <text x="360" y="241" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">温度 / 搅拌 / DO / pH / 罐压</text>
+  </g>
+
+  <!-- Communication specs section -->
+  <g transform="translate(80, 406)">
+    <text x="0" y="16" font-family="Source Serif Pro, Georgia, serif" font-size="15" font-weight="600" fill="#1E293B">通讯接口</text>
+
+    <rect x="0" y="28" width="660" height="112" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" filter="url(#s3-card-shadow)"/>
+
+    <circle cx="24" cy="54" r="5" fill="#059669"/>
+    <text x="38" y="58" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="14" fill="#1E293B">SB CM01 RS485 Modbus RTU</text>
+    <text x="280" y="58" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">VFD 变频器 + 扩展设备</text>
+
+    <line x1="20" y1="70" x2="640" y2="70" stroke="#F1F5F9" stroke-width="1"/>
+
+    <circle cx="24" cy="88" r="5" fill="#059669"/>
+    <text x="38" y="92" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="14" fill="#1E293B">SB CM02 RS232</text>
+    <text x="200" y="92" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">补充通讯端口</text>
+
+    <line x1="20" y1="104" x2="640" y2="104" stroke="#F1F5F9" stroke-width="1"/>
+
+    <circle cx="24" cy="122" r="5" fill="#1E40AF"/>
+    <text x="38" y="126" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="14" fill="#1E293B">内置以太网 RJ45</text>
+    <text x="210" y="126" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">S7 协议主通讯链路 (TCP:102)</text>
+  </g>
+
+  <!-- ==================== RIGHT COLUMN (narrower): Architecture + Cost ==================== -->
+
+  <!-- Mini Architecture Diagram -->
+  <g transform="translate(780, 140)">
+    <text x="0" y="16" font-family="Source Serif Pro, Georgia, serif" font-size="15" font-weight="600" fill="#1E293B">系统定位</text>
+
+    <rect x="0" y="28" width="420" height="240" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" filter="url(#s3-card-shadow)"/>
+
+    <!-- Browser layer -->
+    <rect x="30" y="48" width="360" height="46" rx="6" fill="#EFF6FF" stroke="#1E40AF" stroke-width="1"/>
+    <text x="210" y="76" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="500" fill="#1E40AF">浏览器 (Next.js 14)</text>
+
+    <!-- Arrow -->
+    <line x1="210" y1="94" x2="210" y2="114" stroke="#CBD5E1" stroke-width="1.5"/>
+    <polygon points="210,118 205,110 215,110" fill="#CBD5E1"/>
+
+    <!-- Server layer -->
+    <rect x="30" y="118" width="360" height="46" rx="6" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+    <text x="210" y="146" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="500" fill="#059669">服务器 (Node.js + 9 包)</text>
+
+    <!-- Arrow -->
+    <line x1="210" y1="164" x2="210" y2="184" stroke="#CBD5E1" stroke-width="1.5"/>
+    <polygon points="210,188 205,180 215,180" fill="#CBD5E1"/>
+
+    <!-- PLC layer - highlighted -->
+    <rect x="30" y="188" width="360" height="46" rx="6" fill="#FFF7ED" stroke="#D97706" stroke-width="2"/>
+    <text x="210" y="216" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="700" fill="#D97706">PLC (S7-200 SMART G2)</text>
+
+    <!-- "Current page" indicator -->
+    <rect x="340" y="198" width="40" height="20" rx="10" fill="#D97706"/>
+    <text x="360" y="212" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#FFFFFF">本页</text>
+  </g>
+
+  <!-- Cost Badge -->
+  <g transform="translate(780, 420)">
+    <rect x="0" y="0" width="420" height="130" rx="8" fill="#FFFFFF" stroke="#1E40AF" stroke-width="1" filter="url(#s3-deep-shadow)"/>
+
+    <!-- Inner accent line top -->
+    <rect x="1" y="1" width="418" height="4" rx="8" fill="#1E40AF" opacity="0.1"/>
+
+    <text x="210" y="36" text-anchor="middle" font-family="Source Serif Pro, Georgia, serif" font-size="14" font-weight="600" fill="#475569">硬件 BOM 成本</text>
+
+    <text x="210" y="82" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="42" font-weight="700" fill="#1E40AF">&#165;3,100</text>
+
+    <text x="210" y="110" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#94A3B8">不含传感器和执行机构（发酵罐自带）</text>
+  </g>
+
+  <!-- Key highlight pills at bottom of right column -->
+  <g transform="translate(780, 570)">
+    <rect x="0" y="0" width="130" height="32" rx="16" fill="#EFF6FF" stroke="#1E40AF" stroke-width="0.5"/>
+    <text x="65" y="21" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" fill="#1E40AF">8 PID</text>
+
+    <rect x="145" y="0" width="130" height="32" rx="16" fill="#F0FDF4" stroke="#059669" stroke-width="0.5"/>
+    <text x="210" y="21" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" fill="#059669">44 I/O</text>
+
+    <rect x="290" y="0" width="130" height="32" rx="16" fill="#FFF7ED" stroke="#D97706" stroke-width="0.5"/>
+    <text x="355" y="21" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" fill="#D97706">RS485</text>
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="678" width="1280" height="42" fill="#FFFFFF"/>
+  <rect x="0" y="678" width="1280" height="1" fill="#E2E8F0"/>
+  <text x="80" y="704" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="704" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">工业级硬件底座</text>
+  <text x="1200" y="704" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#94A3B8">03 / 18</text>
+</svg>

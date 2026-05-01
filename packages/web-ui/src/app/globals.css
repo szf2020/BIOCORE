@@ -1,0 +1,278 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+ * Clinical Architect Design System
+ * Light mode first, data-as-primary-inhabitant philosophy
+ * No 1px borders — use tonal layering instead
+ * ============================================================ */
+
+@layer base {
+  :root {
+    /* Material Design 3 token mapping (Clinical Architect palette)
+     * Shadcn-compatible HSL vars (backwards-compatible with existing components) */
+
+    /* Surface hierarchy — light clinical layers */
+    --background: 160 16% 97%;           /* surface #f7faf8 */
+    --foreground: 180 10% 11%;           /* on-surface #181c1c */
+    --card: 0 0% 100%;                   /* surface-container-lowest #ffffff */
+    --card-foreground: 180 10% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 180 10% 11%;
+    --muted: 162 12% 95%;                /* surface-container-low #f1f4f3 */
+    --muted-foreground: 177 8% 27%;      /* on-surface-variant #3e4947 */
+    --accent: 160 10% 92%;               /* surface-container #ebefed */
+    --accent-foreground: 180 10% 11%;
+    --secondary: 160 10% 92%;
+    --secondary-foreground: 180 10% 11%;
+
+    /* Primary — Clinical Teal */
+    --primary: 175 100% 18%;             /* #005c55 */
+    --primary-foreground: 0 0% 100%;
+
+    /* Destructive / Error */
+    --destructive: 3 76% 41%;            /* #ba1a1a */
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders — ghost borders, 20% opacity outline-variant */
+    --border: 175 11% 77%;               /* outline-variant #bdc9c6 */
+    --input: 175 11% 77%;
+    --ring: 175 100% 18%;
+    --radius: 0.5rem;                    /* xl = 8px, "clinical sharp" */
+  }
+
+  /* Dark mode kept for future (not active by default) */
+  .dark {
+    --background: 180 4% 11%;
+    --foreground: 160 2% 89%;
+    --card: 180 4% 13%;
+    --card-foreground: 160 2% 89%;
+    --primary: 173 45% 70%;
+    --primary-foreground: 180 100% 6%;
+    --muted: 180 4% 18%;
+    --muted-foreground: 175 8% 70%;
+    --border: 175 8% 30%;
+    --input: 175 8% 30%;
+  }
+
+  * { @apply border-border; }
+
+  html { background: hsl(var(--background)); }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1, "cv11" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.005em;
+  }
+
+  /* Data & Metrics — JetBrains Mono with tabular numerics */
+  code, pre, .font-mono, .font-data {
+    font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  /* Headline typography — tight tracking, semibold */
+  h1, h2, h3, h4 {
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+  }
+
+  /* Native select — light theme */
+  select {
+    @apply bg-card text-foreground;
+    color-scheme: light;
+  }
+  select option { @apply bg-card text-foreground; }
+}
+
+@layer components {
+  /* ─── Clinical Surface Layers ────────────────────────────── */
+  .surface-base { background: hsl(var(--background)); }
+  .surface-low  { background: hsl(var(--muted)); }        /* surface-container-low */
+  .surface-mid  { background: hsl(var(--accent)); }       /* surface-container */
+  .surface-high { background: hsl(var(--card)); }         /* surface-container-lowest (white) */
+
+  /* ─── MES Panels — tonal layering, no borders ───────────── */
+  .mes-panel {
+    @apply bg-card rounded-xl;
+    box-shadow: 0 1px 2px rgba(19, 27, 46, 0.03);
+  }
+
+  .mes-panel-header {
+    @apply px-4 py-3 flex items-center justify-between;
+    background: hsl(var(--muted) / 0.4);
+    border-radius: 0.5rem 0.5rem 0 0;
+  }
+
+  .mes-panel-title {
+    @apply text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground;
+  }
+
+  .mes-panel-body { @apply p-4; }
+
+  /* ─── Metric Card — signature bio-component ─────────────── */
+  .metric-card {
+    @apply rounded-xl bg-card p-5 transition-colors;
+  }
+  .metric-card:hover {
+    background: hsl(var(--accent));
+  }
+  .metric-card .value {
+    @apply font-mono text-2xl font-semibold text-foreground;
+    letter-spacing: -0.02em;
+  }
+  .metric-card .label {
+    @apply text-xs uppercase tracking-wider text-muted-foreground;
+  }
+  .metric-card .unit {
+    @apply text-xs font-mono text-muted-foreground ml-1;
+  }
+
+  /* ─── Phase Strip — horizontal fermentation progress ───── */
+  .phase-strip {
+    @apply relative h-1 w-full rounded-full overflow-hidden;
+    background: hsl(var(--muted));
+  }
+  .phase-strip-fill {
+    @apply absolute left-0 top-0 h-full rounded-full;
+    background: linear-gradient(90deg, #005c55 0%, #0f766e 100%);
+  }
+
+  /* ─── Primary Button gradient (machined feel) ─────────────*/
+  .btn-primary-gradient {
+    background: linear-gradient(180deg, #0f766e 0%, #005c55 100%);
+    color: white;
+    border-radius: 0.375rem;
+    transition: all 150ms;
+  }
+  .btn-primary-gradient:hover {
+    background: linear-gradient(180deg, #14857d 0%, #006a63 100%);
+    box-shadow: 0 2px 8px rgba(0, 92, 85, 0.2);
+  }
+
+  /* ─── Status LED indicator ─────────────────────────────── */
+  .status-led {
+    @apply w-2 h-2 rounded-full flex-shrink-0;
+  }
+
+  .status-led-idle { @apply bg-[#8c8c8c]; }
+  .status-led-running { background: #10B981; animation: led-pulse 1.5s ease-in-out infinite; }
+  .status-led-held { background: #B45309; animation: led-pulse 2s ease-in-out infinite; }
+  .status-led-paused { background: #B45309; }
+  .status-led-stopped { background: #BA1A1A; }
+  .status-led-complete { background: #1E40AF; }
+  .status-led-failed { background: #BA1A1A; }
+
+  /* ─── Clinical Pill Badges (high-saturation text on tinted bg) */
+  .mes-badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide;
+  }
+
+  .mes-badge-idle { @apply bg-[#8c8c8c]/10 text-[#6b7280]; }
+  .mes-badge-running { background: rgba(16,185,129,0.1); color: #047857; }
+  .mes-badge-held { background: rgba(180,83,9,0.1); color: #B45309; }
+  .mes-badge-paused { background: rgba(180,83,9,0.1); color: #B45309; }
+  .mes-badge-stopped { background: rgba(186,26,26,0.1); color: #BA1A1A; }
+  .mes-badge-complete { background: rgba(30,64,175,0.1); color: #1E40AF; }
+  .mes-badge-failed { background: rgba(186,26,26,0.1); color: #BA1A1A; }
+  .mes-badge-skipped { background: rgba(114,46,209,0.1); color: #722ed1; }
+  .mes-badge-draft { @apply bg-[#8c8c8c]/10 text-[#6b7280]; }
+  .mes-badge-approved { background: rgba(16,185,129,0.1); color: #047857; }
+  .mes-badge-archived { background: rgba(180,83,9,0.1); color: #B45309; }
+
+  /* ─── Clinical Scrollbar (minimal, laboratory feel) ─── */
+  .mes-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+  .mes-scroll::-webkit-scrollbar-track { background: transparent; }
+  .mes-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+  .mes-scroll::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+
+  /* Apply clinical scrollbar globally */
+  body::-webkit-scrollbar { width: 8px; height: 8px; }
+  body::-webkit-scrollbar-track { background: hsl(var(--background)); }
+  body::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 4px;
+  }
+
+  /* ─── Glass Tooltip — inverse-surface with blur ──── */
+  .glass-tooltip {
+    background: rgba(45, 49, 48, 0.95);
+    backdrop-filter: blur(20px);
+    color: hsl(var(--card));
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
+    box-shadow: 0 8px 24px rgba(19, 27, 46, 0.12);
+  }
+
+  /* ─── Clinical Data Table ─── */
+  .clinical-table {
+    @apply w-full text-sm;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .clinical-table thead th {
+    @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2 text-left;
+    background: hsl(var(--muted) / 0.5);
+  }
+  .clinical-table tbody tr {
+    height: 36px;
+    transition: background 120ms;
+  }
+  .clinical-table tbody tr:hover {
+    background: hsl(var(--muted) / 0.4);
+  }
+  .clinical-table td {
+    @apply px-3 py-2 text-foreground;
+  }
+  .clinical-table td.numeric {
+    @apply font-mono text-right;
+  }
+}
+
+@layer utilities {
+  /* Ambient shadow — never pure black, always on-surface tint */
+  .shadow-clinical {
+    box-shadow: 0 4px 20px rgba(19, 27, 46, 0.04), 0 2px 8px rgba(19, 27, 46, 0.06);
+  }
+  .shadow-modal {
+    box-shadow: 0 20px 40px rgba(19, 27, 46, 0.08), 0 8px 16px rgba(19, 27, 46, 0.04);
+  }
+
+  /* Loading overlay */
+  .mes-loading-overlay {
+    @apply absolute inset-0 flex items-center justify-center rounded-xl z-10;
+    background: hsl(var(--background) / 0.7);
+    backdrop-filter: blur(4px);
+  }
+
+  .mes-spinner {
+    @apply w-6 h-6 rounded-full;
+    border: 2px solid hsl(var(--border));
+    border-top-color: hsl(var(--primary));
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* Tabular numerics helper */
+  .tabular-nums { font-variant-numeric: tabular-nums lining-nums; }
+
+  /* Ghost border — 20% opacity outline-variant */
+  .ghost-border { border: 1px solid hsl(var(--border) / 0.2); }
+}
+
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

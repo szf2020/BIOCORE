@@ -1,0 +1,394 @@
+{
+  "title": "BIOCore 实验室发酵罐智能控制平台",
+  "subtitle": "工业级可靠性 + 本地 AI 智能 + 开放架构 — 成本仅为竞品 1/5",
+  "total_pages": 18,
+  "approved": true,
+  "framework": "pyramid_principle",
+  "central_thesis": "BIOCore 以工业级 PLC 可靠性为底座、本地 AI 为引擎、开放架构为生态，在 1/5 成本下为实验室提供超越传统封闭控制器的专业级发酵过程控制能力。",
+  "cover": {
+    "index": 1,
+    "title": "BIOCore 实验室发酵罐智能控制平台",
+    "subtitle": "工业 PLC 可靠性 | 本地 AI 零云依赖 | 8 罐并行 | 成本 1/5",
+    "type": "cover",
+    "layout_type": "full_bleed",
+    "key_points": [
+      "产品一句话定位：用工业 PLC 的可靠性 + 本地 AI 的智能 + 开放架构的灵活性，以竞品 1/5 成本提供专业级发酵控制",
+      "目标受众：工艺工程师 / 研发人员",
+      "视觉：深蓝科技底色 + 发酵罐轮廓 + 核心数字标签"
+    ],
+    "data_elements": [],
+    "notes": "封面需突出四大核心卖点的数字标签：100% 离线、ISA-88、8 罐并行、1/5 成本"
+  },
+  "table_of_contents": {
+    "index": 2,
+    "title": "技术架构总览",
+    "subtitle": "三层解耦架构 — 浏览器层 / 服务层 / PLC 层",
+    "type": "overview",
+    "layout_type": "single_focus",
+    "key_points": [
+      "展示 BIOCore 三层架构全景图：Browser → Node.js Server → PLC",
+      "标注 9 个后端包的职责分布",
+      "核心技术栈：Next.js 14 + Express + node-snap7 + Ollama + InfluxDB + SQLite",
+      "强调三层解耦设计的工程优势：独立升级、故障隔离、灵活部署"
+    ],
+    "data_elements": [
+      { "type": "chart", "chart_type": "timeline", "data_points": ["浏览器层: Next.js 14 + React 18 + ECharts", "服务层: 9 个后端包（Express + 97+ API）", "PLC 层: S7-200 SMART G2 + 8 PID 回路"] }
+    ],
+    "notes": "此页兼具目录和架构概览功能，以三层架构图为核心视觉元素，各模块展开在后续页面中详述"
+  },
+  "parts": [
+    {
+      "title": "第一部分：工业级硬件底座与安全体系",
+      "key_message": "基于西门子 S7-200 SMART PLC + ISA-88 国际标准 + 5 层安全防护，提供与工业 SCADA 同等的过程控制可靠性",
+      "pages": [
+        {
+          "index": 3,
+          "title": "工业级硬件底座",
+          "subtitle": "西门子 S7-200 SMART G2 — 8AI/4AO/14DI/10DQ/8PID",
+          "type": "content",
+          "layout_type": "two_column_asymmetric",
+          "key_points": [
+            "S7-200 SMART G2 ST30 主机 + SB CM01/CM02 信号板",
+            "8 路 AI 覆盖全部关键传感器（PT100/pH/DO/罐压/气流/称重）",
+            "4 路 AO 驱动执行机构（蒸汽阀/冷却阀/空气阀）",
+            "14 DI + 10 DQ 实现完整互锁与泵阀控制",
+            "8 路独立 PID 回路：温度/搅拌/DO/pH/罐压",
+            "RS485 Modbus RTU 连接 VFD 变频器",
+            "硬件 BOM 仅 ¥3,100"
+          ],
+          "data_elements": [
+            { "type": "table", "columns": ["I/O 类型", "数量", "典型用途"], "rows": [["模拟输入 AI", "8 路", "PT100/pH/DO/罐压/气流/称重"], ["模拟输出 AO", "4 路", "蒸汽阀/冷却阀/空气阀"], ["数字输入 DI", "14 路", "急停/阀位确认/盖锁/压力开关"], ["数字输出 DQ", "10 路", "4 台蠕动泵 + 电磁阀组"], ["PID 回路", "8 路", "温度/搅拌/DO/pH/罐压"]] },
+            { "type": "metric", "label": "硬件成本", "value": "¥3,100", "unit": "", "delta": "" }
+          ],
+          "notes": "左侧为 I/O 规格表，右侧为三层架构示意图（浏览器→服务器→PLC），突出工业级硬件底座"
+        },
+        {
+          "index": 4,
+          "title": "双向心跳安全协议",
+          "subtitle": "PC ←→ PLC 双向监控，3 秒超时自动保护",
+          "type": "content",
+          "layout_type": "horizontal_split",
+          "key_points": [
+            "PC 端每秒写入 VB400 递增计数器 → PLC 接收",
+            "PLC 端每秒回写 VB401 确认计数器 → PC 接收",
+            "任一方向 3 秒无响应 → 立即触发安全保护",
+            "PC 崩溃：PLC 自动 Hold 批次 + 独立维持搅拌/温控/pH",
+            "网络中断：PLC 进入独立安全运行模式",
+            "正常恢复：心跳双向恢复后自动从 Hold 状态继续批次",
+            "断线重连：指数退避策略（1s → 5s → 30s）"
+          ],
+          "data_elements": [
+            { "type": "table", "columns": ["故障场景", "触发条件", "PLC 响应"], "rows": [["PC 软件崩溃", "VB400 停止更新 >3s", "自动 Hold + 独立维持关键控制"], ["网络中断", "心跳链路断开", "PLC 独立安全运行模式"], ["PLC 无响应", "VB401 停止更新 >3s", "PC 报警 + 橙色警告"], ["正常恢复", "心跳双向恢复", "自动恢复批次执行"]] },
+            { "type": "metric", "label": "超时阈值", "value": "3", "unit": "秒", "delta": "" },
+            { "type": "metric", "label": "通讯丢包率", "value": "<0.01%", "unit": "", "delta": "" }
+          ],
+          "notes": "上半部分为心跳流程动画示意（PC ←→ PLC 双向箭头 + 计数器），下半部分为故障场景响应矩阵"
+        },
+        {
+          "index": 5,
+          "title": "ISA-88 批次控制引擎",
+          "subtitle": "6 状态机 + 14 种 Phase + 3 种执行模式",
+          "type": "content",
+          "layout_type": "hero_grid",
+          "key_points": [
+            "遵循 ANSI/ISA-88（IEC 61512）国际批次控制标准",
+            "6 状态机：Idle → Running → Complete，含 Paused/Held/Stopped 保护路径",
+            "XState v5 状态机引擎确保状态转换的确定性和可审计性",
+            "14 种 Phase 覆盖全发酵生命周期：系统操作/温控/过程控制/发酵主体/清洗灭菌",
+            "顺序模式（成熟工艺自动推进）/ 自由模式（工艺摸索）/ DAG 分支模式（条件路由）",
+            "F0 灭菌积分实时计算（SIP 阶段，目标 F0 >= 20 min）"
+          ],
+          "data_elements": [
+            { "type": "chart", "chart_type": "timeline", "data_points": ["Idle 闲置", "Running 运行", "Paused 暂停", "Held 保持", "Stopped 停止", "Complete 完成"] },
+            { "type": "metric", "label": "Phase 类型", "value": "14", "unit": "种", "delta": "" },
+            { "type": "metric", "label": "执行模式", "value": "3", "unit": "种", "delta": "" }
+          ],
+          "notes": "主视觉为 ISA-88 六状态转换流程图（Hold 路径高亮），辅以 14 Phase 分类网格"
+        },
+        {
+          "index": 6,
+          "title": "5 层安全防护体系",
+          "subtitle": "从启动互锁到 AI 建议缓冲 — 层层递进的纵深防御",
+          "type": "content",
+          "layout_type": "single_focus",
+          "key_points": [
+            "第 1 层：10 项启动前互锁（IL-01~IL-10）— 传感器/VFD/急停/盖锁/蒸汽/心跳/校准/冷却/配方/报警",
+            "第 2 层：11 项运行故障监测（RF-01~RF-11）— 温度偏差/pH 失控/DO 过低/罐压超限/搅拌故障/通讯断线/传感器超量程/补料泵故障/泡沫检测/冷却失效/紧急停止",
+            "第 3 层：双向心跳通讯安全 — 3 秒超时自动保护",
+            "第 4 层：PLC 独立安全程序 — 最终防线，即使 PC 完全失联仍保持关键控制",
+            "第 5 层：AI 建议缓冲区 — Human-in-the-Loop，AI 永不直接控制 PLC"
+          ],
+          "data_elements": [
+            { "type": "comparison_bar", "items": [{"label": "启动互锁", "value": 10}, {"label": "运行监测", "value": 11}, {"label": "心跳保护", "value": 1}, {"label": "PLC 独立安全", "value": 1}, {"label": "AI 缓冲区", "value": 1}] }
+          ],
+          "notes": "核心视觉为洋葱式分层防护图（5 层同心圆或金字塔），从外到内层层递进。强调与工业 IEC 61511 SIL 1 同等保护深度。"
+        }
+      ]
+    },
+    {
+      "title": "第二部分：本地 AI 智能模块",
+      "key_message": "100% 离线运行的 AI 引擎（Ollama + Qwen2.5-7B），覆盖异常检测、软测量、补料优化、根因分析全链路，且 AI 永不直接控制 PLC",
+      "pages": [
+        {
+          "index": 7,
+          "title": "本地 AI 技术栈",
+          "subtitle": "Ollama + Qwen2.5-7B — 100% 离线，零云依赖",
+          "type": "content",
+          "layout_type": "two_column_symmetric",
+          "key_points": [
+            "核心定位：数据不出实验室，100% 离线运行",
+            "Ollama 本地模型管理 + Qwen2.5-7B 中文理解强",
+            "标准 PC 部署（无需 GPU 服务器），支持气隙环境",
+            "本地推理延迟 <100ms（云端 API 受网络抖动）",
+            "无使用成本：一次部署，长期运行（vs 云端 API 按量计费）",
+            "8 大 AI 模块：LLM 对话/CUSUM/DTW/软测量/补料优化/根因分析/事件检测/代谢推断",
+            "数据主权：工艺配方和菌株数据完全在本地，符合 EU AI Act 方向"
+          ],
+          "data_elements": [
+            { "type": "metric", "label": "离线率", "value": "100%", "unit": "", "delta": "零云依赖" },
+            { "type": "metric", "label": "推理延迟", "value": "<100", "unit": "ms", "delta": "" },
+            { "type": "metric", "label": "AI 模块", "value": "8", "unit": "个", "delta": "" },
+            { "type": "table", "columns": ["模块", "技术", "功能"], "rows": [["LLM 对话", "Qwen2.5-7B", "自然语言查询/批次摘要"], ["异常检测", "CUSUM", "参数漂移提前预警"], ["批次匹配", "DTW", "历史相似批次检索"], ["软测量", "OLS/ONNX", "OD600/残糖在线推断"], ["补料优化", "Monod 动力学", "最优补料速率计算"], ["根因分析", "知识库匹配", "报警自动溯源"], ["事件检测", "统计特征", "DO Spike/代谢状态识别"], ["代谢推断", "碱消耗分析", "生长阶段判断"]] }
+          ],
+          "notes": "左列为 AI 技术栈架构（Ollama + Qwen2.5-7B + 各算法模块），右列为 8 大模块功能矩阵"
+        },
+        {
+          "index": 8,
+          "title": "AI 安全哲学 — 建议缓冲区",
+          "subtitle": "AI 是顾问，不是操作员 — Human-in-the-Loop",
+          "type": "content",
+          "layout_type": "single_focus",
+          "key_points": [
+            "AI 推理引擎 → 生成建议（参数值 + 置信度 + 推理依据）",
+            "写入建议缓冲区（pending 状态，不执行）",
+            "界面展示建议卡片 → 操作员审核（Accept / Reject）",
+            "仅 Accept 后 → 写入 PLC 设定值寄存器",
+            "核心原则：AI 永不直接控制 PLC，所有 AI 建议必须经人工确认",
+            "区别于全自动闭环 AI 系统，在实验室安全规范内实现 AI 辅助",
+            "不可篡改审计日志记录每次 Accept/Reject 操作"
+          ],
+          "data_elements": [
+            { "type": "chart", "chart_type": "timeline", "data_points": ["AI 推理引擎", "生成建议(参数+置信度+理由)", "写入缓冲区(pending)", "操作员审核", "Accept→写入PLC / Reject→记录"] }
+          ],
+          "notes": "核心视觉为流程图：AI → 缓冲区 → 人工确认 → PLC。用红色斜杠标注「AI ✕ PLC 直连」。对比竞品：云端 AI 控制 vs 本地 AI 建议。"
+        },
+        {
+          "index": 9,
+          "title": "CUSUM 异常检测与根因分析",
+          "subtitle": "比传统阈值报警提前 5-15 分钟预警",
+          "type": "content",
+          "layout_type": "two_column_asymmetric",
+          "key_points": [
+            "CUSUM（累积和控制图）：专为检测小幅过程漂移设计",
+            "传统阈值报警：单点超限即报警，问题已发生后才响应，高误报率",
+            "CUSUM：累积偏差趋势识别，提前 5-15 分钟预警，低误报率",
+            "实时监测温度、pH、DO、搅拌速率、补料速率全部关键参数",
+            "报警触发联动根因分析：自动回溯 30 分钟前后参数趋势",
+            "知识库模式匹配 + LLM 自然语言解释 → 候选根因列表",
+            "科学依据：FDA CPV 4.0 框架推动 AI 驱动异常检测成为行业标准"
+          ],
+          "data_elements": [
+            { "type": "table", "columns": ["对比维度", "传统阈值报警", "CUSUM 检测"], "rows": [["检测机制", "单点超限", "累积偏差趋势"], ["响应时机", "问题已发生后", "提前 5-15 分钟"], ["误报率", "高（敏感于噪声）", "低（噪声抑制）"], ["早期漂移", "不可见", "可见"]] },
+            { "type": "metric", "label": "提前预警", "value": "5-15", "unit": "分钟", "delta": "" }
+          ],
+          "notes": "左大列为 CUSUM 图表示例（对比传统阈值线 vs CUSUM 累积曲线），右列为根因分析流程图"
+        },
+        {
+          "index": 10,
+          "title": "软测量与补料优化",
+          "subtitle": "在线推断 OD600/残糖/产物 — 减少 80% 取样频率",
+          "type": "content",
+          "layout_type": "two_column_symmetric",
+          "key_points": [
+            "软测量推断矩阵：OD600（生物量）/ 残糖浓度 / 产物浓度 / 生长阶段",
+            "输入变量：OUR/kLa/μ/RQ 等实时计算参数",
+            "v1 算法：OLS 线性回归 | v2 规划：ONNX 神经网络",
+            "每分钟更新推断值（vs 传统 2-4 小时手动取样）",
+            "补料优化：Monod 动力学 + 指数补料策略",
+            "F(t) = (μ_set x X x V) / (Y_xs x C_f) 实时动态调整",
+            "DO-stat 监测底物消耗 → DO Spike 信号触发 Fed-batch 切换"
+          ],
+          "data_elements": [
+            { "type": "table", "columns": ["推断目标", "算法(v1)", "算法(v2)", "所需输入"], "rows": [["OD600 生物量", "OLS 回归", "ONNX 神经网络", "DO消耗/碱消耗/OUR"], ["残糖浓度", "OLS 回归", "ONNX 神经网络", "RQ/OUR/补料累积"], ["产物浓度", "OLS 回归", "ONNX 神经网络", "OUR积分/时间"], ["生长阶段", "碱消耗分析", "—", "碱消耗/DO/RQ"]] },
+            { "type": "metric", "label": "更新频率", "value": "1", "unit": "次/分钟", "delta": "vs 传统 2-4h" },
+            { "type": "metric", "label": "取样减少", "value": "80%", "unit": "", "delta": "" }
+          ],
+          "notes": "左列为软测量推断矩阵 + 计算参数（OUR/kLa/μ/RQ/F0），右列为 Monod 补料优化公式 + 指数补料曲线示意图"
+        }
+      ]
+    },
+    {
+      "title": "第三部分：数据架构与开放生态",
+      "key_message": "双数据库架构 + 14 页 Web 前端 + 97+ REST API，实现从数据采集到分析优化的全链路数字化，且完全开放集成",
+      "pages": [
+        {
+          "index": 11,
+          "title": "双数据库与实时数据流",
+          "subtitle": "InfluxDB 时序存储 + SQLite 业务数据 — <1s 延迟",
+          "type": "content",
+          "layout_type": "two_column_asymmetric",
+          "key_points": [
+            "InfluxDB：时序数据（温度/pH/DO 等），1 分钟聚合写入，365 天原始 + 永久降采样归档",
+            "SQLite：业务数据（配方/批次/审计/报警/取样），WAL 高并发，不可篡改审计（触发器禁止 UPDATE/DELETE）",
+            "数据流：PLC 1Hz 采集 → WebSocket <1s 推送 → 60s 聚合 → 实时计算（OUR/kLa/μ/RQ/F0）→ 持久化",
+            "离线取样数据集成：Web UI 录入 + CSV 导入，自动与批次数据关联",
+            "10 个 WebSocket 实时频道（过程数据/状态变更/报警/AI 建议等）",
+            "符合 FDA 21 CFR Part 11 电子记录不可篡改原则"
+          ],
+          "data_elements": [
+            { "type": "chart", "chart_type": "timeline", "data_points": ["PLC 1Hz 采集", "WebSocket 实时推送(<1s)", "60s 聚合计算", "InfluxDB 持久化", "ai-analytics 异常检测"] },
+            { "type": "metric", "label": "数据延迟", "value": "<1", "unit": "秒", "delta": "" },
+            { "type": "metric", "label": "WebSocket 频道", "value": "10", "unit": "个", "delta": "" }
+          ],
+          "notes": "左大列为数据流架构图（从 PLC 到前端的完整链路），右列为双数据库对比卡片"
+        },
+        {
+          "index": 12,
+          "title": "现代化 Web 前端",
+          "subtitle": "14 个功能页面 — 深色工业主题 + 实时仪表盘",
+          "type": "content",
+          "layout_type": "mixed_grid",
+          "key_points": [
+            "技术栈：Next.js 14 + React 18 + shadcn/ui + Tailwind CSS + ECharts",
+            "Dashboard 主控制台：8 罐切换 + 实时参数卡片 + 趋势曲线 + Phase 进度条",
+            "配方 DAG 编辑器：@xyflow/react 可视化图编辑 + 条件分支表达式",
+            "数据分析：批次对比 + 数据浏览器 + KPI/OEE 仪表盘 + SPC 控制图",
+            "设备管理：PLC 配置 + 传感器校准向导 + 公式系数在线修改",
+            "安全合规：不可篡改审计日志 + 4 级角色权限 + API 密钥管理",
+            "UI 风格：深色 MES 主题（#141414 + #1677ff）+ JetBrains Mono 数值 + 状态 LED"
+          ],
+          "data_elements": [
+            { "type": "metric", "label": "功能页面", "value": "14", "unit": "个", "delta": "" },
+            { "type": "metric", "label": "首屏加载", "value": "<3", "unit": "秒", "delta": "" }
+          ],
+          "notes": "网格布局展示 4-6 个核心页面的截图/模拟图：Dashboard、DAG 编辑器、数据浏览器、SPC 控制图等"
+        },
+        {
+          "index": 13,
+          "title": "开放 API 与系统集成",
+          "subtitle": "97+ REST API 端点 + 10 WebSocket 频道 — 完全开放生态",
+          "type": "content",
+          "layout_type": "dashboard",
+          "key_points": [
+            "REST API：97+ 端点覆盖 PLC/配方/批次/报警/KPI/DoE 全部功能",
+            "WebSocket：10 个实时频道（过程数据/状态变更/报警/AI 建议等）",
+            "双鉴权：JWT（前端 24h 过期）+ API Key（MES 长期有效，哈希存储）",
+            "统一响应格式：{code, msg, data, trace_id} 支持跨系统追踪",
+            "Swagger/OpenAPI 文档自动生成",
+            "MES/LIMS 集成：取样记录 REST API 供外部系统拉取",
+            "安全：时序安全比较防时序攻击 + 文件上传校验（MIME + 魔术字节 + 20MB）"
+          ],
+          "data_elements": [
+            { "type": "metric", "label": "REST API", "value": "97+", "unit": "端点", "delta": "" },
+            { "type": "metric", "label": "WebSocket", "value": "10", "unit": "频道", "delta": "" },
+            { "type": "metric", "label": "JWT 过期", "value": "24", "unit": "小时", "delta": "" },
+            { "type": "comparison_bar", "items": [{"label": "Eppendorf API", "value": 0}, {"label": "Sartorius API", "value": 10}, {"label": "LUCULLUS SDK", "value": 20}, {"label": "BIOCore API", "value": 97}] }
+          ],
+          "notes": "仪表盘式布局：左上 API 端点统计指标，右上鉴权流程，下方为 API 覆盖范围矩阵 + 竞品 API 开放度对比"
+        }
+      ]
+    },
+    {
+      "title": "第四部分：实验设计、竞争优势与商业价值",
+      "key_message": "7 种 DoE + 贝叶斯优化使实验次数减半，结合 1/5 成本和 8 罐并行，为实验室提供最高性价比的专业级发酵控制方案",
+      "pages": [
+        {
+          "index": 14,
+          "title": "实验设计与贝叶斯优化",
+          "subtitle": "7 种 DoE 方法 + 高斯过程优化 — 实验次数减半",
+          "type": "content",
+          "layout_type": "two_column_symmetric",
+          "key_points": [
+            "7 种设计方法：全因子/CCD/LHS/Plackett-Burman/Box-Behnken/DSD/分数因子",
+            "分析工具：极差分析/ANOVA/响应曲面/田口信噪比/贝叶斯优化",
+            "贝叶斯优化：高斯过程 + UCB 采集函数，约 10 次实验收敛（vs CCD 约 25 次）",
+            "多保真度优化：摇瓶 → 小型罐 → 贝叶斯收敛 → 确认实验",
+            "典型案例：4 因素优化，47 次实验 14 周完成（vs 全因子 81 次 20+ 周）",
+            "SPC 控制图：X-bar/R 图 + EWMA + Cp/Cpk 过程能力分析 + Western Electric 规则"
+          ],
+          "data_elements": [
+            { "type": "metric", "label": "DoE 方法", "value": "7", "unit": "种", "delta": "" },
+            { "type": "metric", "label": "实验减少", "value": "~50%", "unit": "", "delta": "vs OFAT" },
+            { "type": "comparison_bar", "items": [{"label": "全因子(81次)", "value": 81}, {"label": "BIOCore 优化(47次)", "value": 47}] }
+          ],
+          "notes": "左列为 7 种 DoE 方法矩阵，右列为贝叶斯优化收敛曲线 + 多保真度四阶段工作流图"
+        },
+        {
+          "index": 15,
+          "title": "典型应用案例",
+          "subtitle": "E.coli Fed-batch / 酵母抗 Crabtree / CHO 细胞培养",
+          "type": "content",
+          "layout_type": "three_column",
+          "key_points": [
+            "案例 1 — E.coli Fed-batch：准备→SIP(F0>=20)→升温37°C→批次6h→DO Spike触发补料→指数补料12h→降温诱导25°C→8h→排液",
+            "AI 价值：CUSUM 检测 DO Spike 提前 5-15 min + 软测量 OD600 减少 60% 取样 + 凌晨无需值守",
+            "案例 2 — 酵母抗 Crabtree：DO-stat 补料 + AI 监测 RQ > 1.1 建议降速 + 碱消耗振荡检测溢流代谢",
+            "案例 3 — CHO 细胞培养：低搅拌(80-120rpm) + 严格 pH(±0.05)/温度(±0.3°C) + 软测量 VCD 推断",
+            "每个案例展示 BIOCore 全栈能力：PLC 控制 + AI 辅助 + 数据分析"
+          ],
+          "data_elements": [
+            { "type": "chart", "chart_type": "timeline", "data_points": ["准备/SIP", "升温 37°C", "Batch 6h", "DO Spike→补料", "指数补料 12h", "降温诱导 25°C", "诱导 8h", "排液"] }
+          ],
+          "notes": "三列布局，每列一个案例卡片，顶部为发酵类型标签，中间为关键工艺流程，底部为 AI 辅助价值亮点"
+        },
+        {
+          "index": 16,
+          "title": "竞品对比矩阵",
+          "subtitle": "BIOCore vs Eppendorf vs Sartorius vs LUCULLUS — 9 维度全面对比",
+          "type": "content",
+          "layout_type": "single_focus",
+          "key_points": [
+            "9 维度对比：成本/并行罐数/AI 功能/数据格式/配方灵活性/DoE/审计追踪/部署方式/扩展性",
+            "成本维度：¥3,500-7,000 vs ¥32,000-85,000（1/5 至 1/14）",
+            "AI 维度：本地 100% 离线 vs 无/云端",
+            "并行维度：8 罐/单 PC vs 1 罐/控制器（Eppendorf 8 罐需 ¥256,000-360,000）",
+            "数据维度：开放 REST API vs 专有格式",
+            "BIOCore 在 9 个维度中 7 个维度领先或持平"
+          ],
+          "data_elements": [
+            { "type": "table", "columns": ["维度", "Eppendorf BioFlo", "Sartorius BioPAT", "LUCULLUS", "BIOCore"], "rows": [["成本", "¥32K-45K", "¥50K-85K+", "¥40K-60K", "¥3.5K-7K"], ["并行罐数", "1 罐/控制器", "4-24 罐", "依赖第三方", "8 罐/单PC"], ["AI 功能", "无", "云端", "无", "本地离线"], ["数据格式", "专有", "专有", "专有", "REST API+InfluxDB"], ["配方", "固定模板", "固定模板", "可编程", "DAG 条件分支"], ["DoE", "无", "部分", "无", "7种+贝叶斯"], ["审计追踪", "基础", "GMP 级", "GMP 级", "不可篡改"], ["部署方式", "专用硬件", "专用硬件", "PC 软件", "PC+Docker+PLC"], ["扩展性", "封闭", "封闭", "SDK", "开源+97+ API"]] }
+          ],
+          "notes": "全幅竞品对比表格，BIOCore 列用强调色高亮，优势项加绿色标记"
+        },
+        {
+          "index": 17,
+          "title": "成本与商业价值",
+          "subtitle": "¥3,500 起步 — 硬件 BOM 透明，软件社区版免费",
+          "type": "content",
+          "layout_type": "dashboard",
+          "key_points": [
+            "硬件 BOM 透明：PLC ¥1,200 + 信号板 ¥400 + AI 模块 ¥800 + AO 模块 ¥700 = ¥3,100",
+            "社区版免费（MIT 开源）：基础控制+Dashboard+配方管理+数据记录",
+            "专业版订阅：+多罐并行+SPC+KPI+DoE+配方审批",
+            "AI Edition：+CUSUM+软测量+DTW+LLM 对话",
+            "AI Pro：+贝叶斯优化+根因分析+补料优化+实验自动化",
+            "8 罐场景成本优势：¥3,500-7,000 vs Eppendorf 8 台 ¥256,000-360,000（36-51 倍差距）",
+            "市场背景：精准发酵生物反应器市场 CAGR 29.5%，2034 年 $7.6B"
+          ],
+          "data_elements": [
+            { "type": "comparison_bar", "items": [{"label": "BIOCore", "value": 7}, {"label": "Eppendorf BioFlo", "value": 45}, {"label": "LUCULLUS", "value": 60}, {"label": "Sartorius BioPAT", "value": 85}] },
+            { "type": "metric", "label": "起步成本", "value": "¥3,500", "unit": "", "delta": "" },
+            { "type": "metric", "label": "8 罐成本倍差", "value": "36-51x", "unit": "", "delta": "vs Eppendorf" },
+            { "type": "metric", "label": "市场 CAGR", "value": "29.5%", "unit": "", "delta": "2025-2034" }
+          ],
+          "notes": "仪表盘式布局：左上为成本柱状对比图（千元单位），右上为 4 版本阶梯卡片，下方为硬件 BOM 透明清单 + 市场规模数据"
+        }
+      ]
+    }
+  ],
+  "end_page": {
+    "index": 18,
+    "title": "开始使用 BIOCore",
+    "subtitle": "工业级可靠 | 本地 AI 智能 | 完全开放 | 成本 1/5",
+    "type": "end",
+    "layout_type": "full_bleed",
+    "key_points": [
+      "核心记忆点回顾：100% 离线 AI / ISA-88 工业标准 / 8 罐并行 / 1/5 成本",
+      "下一步行动：社区版免费下载 / 技术架构详细交流 / PLC 调试支持",
+      "联系方式 / GitHub 仓库 / 技术文档入口",
+      "开发路线图：MVP → 数据分析 → AI 智能 → 高级控制 → 生态"
+    ],
+    "data_elements": [],
+    "notes": "呼应封面设计风格，深蓝底色 + 4 个核心指标大数字 + CTA 行动按钮"
+  }
+}

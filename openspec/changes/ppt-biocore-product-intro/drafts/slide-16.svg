@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg16" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#122040"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bg16)"/>
+  <rect x="0" y="0" width="1280" height="4" fill="#8b5cf6"/>
+
+  <!-- Part indicator -->
+  <rect x="80" y="24" width="8" height="30" rx="2" fill="#8b5cf6"/>
+  <text x="100" y="45" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">第四部分 | 实验设计、竞争优势与商业价值</text>
+
+  <!-- Page title -->
+  <text x="80" y="85" font-family="Microsoft YaHei, sans-serif" font-size="26" font-weight="bold" fill="#ffffff">竞品对比矩阵</text>
+  <text x="80" y="112" font-family="Microsoft YaHei, sans-serif" font-size="14" fill="#7a8faa">BIOCore vs Eppendorf vs Sartorius vs LUCULLUS — 9 维度全面对比</text>
+  <rect x="80" y="122" width="80" height="2" fill="#8b5cf6" rx="1"/>
+
+  <!-- Full comparison table -->
+  <g transform="translate(80, 145)">
+    <!-- Table header -->
+    <rect x="0" y="0" width="1120" height="40" rx="6" fill="#1e2d45"/>
+    <text x="20" y="26" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#7a8faa">维度</text>
+    <text x="220" y="26" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#7a8faa">Eppendorf BioFlo</text>
+    <text x="440" y="26" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#7a8faa">Sartorius BioPAT</text>
+    <text x="660" y="26" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#7a8faa">LUCULLUS</text>
+    <!-- BIOCore column highlight -->
+    <rect x="850" y="0" width="270" height="40" rx="0" fill="#22c55e" opacity="0.1"/>
+    <text x="985" y="26" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="13" font-weight="bold" fill="#22c55e">BIOCore</text>
+
+    <!-- BIOCore column background strip -->
+    <rect x="850" y="40" width="270" height="460" fill="#22c55e" opacity="0.03"/>
+
+    <!-- Row 1: Cost -->
+    <rect x="0" y="44" width="1120" height="46" fill="#141e30"/>
+    <text x="20" y="72" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">成本</text>
+    <text x="220" y="72" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">32K-45K</text>
+    <text x="440" y="72" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">50K-85K+</text>
+    <text x="660" y="72" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">40K-60K</text>
+    <text x="870" y="72" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#22c55e">3.5K-7K</text>
+    <circle cx="1100" cy="67" r="6" fill="#22c55e" opacity="0.3"/>
+    <text x="1100" y="71" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="8" fill="#22c55e">W</text>
+
+    <!-- Row 2: Parallel tanks -->
+    <rect x="0" y="93" width="1120" height="46" fill="#111a2a"/>
+    <text x="20" y="121" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">并行罐数</text>
+    <text x="220" y="121" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">1 罐/控制器</text>
+    <text x="440" y="121" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">4-24 罐</text>
+    <text x="660" y="121" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">依赖第三方</text>
+    <text x="870" y="121" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#22c55e">8 罐/单PC</text>
+    <circle cx="1100" cy="116" r="6" fill="#22c55e" opacity="0.3"/>
+    <text x="1100" y="120" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="8" fill="#22c55e">W</text>
+
+    <!-- Row 3: AI -->
+    <rect x="0" y="142" width="1120" height="46" fill="#141e30"/>
+    <text x="20" y="170" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">AI 功能</text>
+    <text x="220" y="170" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#ef4444">无</text>
+    <text x="440" y="170" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">云端</text>
+    <text x="660" y="170" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#ef4444">无</text>
+    <text x="870" y="170" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#22c55e">本地离线</text>
+    <circle cx="1100" cy="165" r="6" fill="#22c55e" opacity="0.3"/>
+    <text x="1100" y="169" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="8" fill="#22c55e">W</text>
+
+    <!-- Row 4: Data -->
+    <rect x="0" y="191" width="1120" height="46" fill="#111a2a"/>
+    <text x="20" y="219" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">数据格式</text>
+    <text x="220" y="219" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#ef4444">专有</text>
+    <text x="440" y="219" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#ef4444">专有</text>
+    <text x="660" y="219" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#ef4444">专有</text>
+    <text x="870" y="219" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#22c55e">REST API+InfluxDB</text>
+    <circle cx="1100" cy="214" r="6" fill="#22c55e" opacity="0.3"/>
+    <text x="1100" y="218" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="8" fill="#22c55e">W</text>
+
+    <!-- Row 5: Recipe -->
+    <rect x="0" y="240" width="1120" height="46" fill="#141e30"/>
+    <text x="20" y="268" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">配方</text>
+    <text x="220" y="268" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">固定模板</text>
+    <text x="440" y="268" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">固定模板</text>
+    <text x="660" y="268" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#22c55e">可编程</text>
+    <text x="870" y="268" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#22c55e">DAG 条件分支</text>
+    <circle cx="1100" cy="263" r="6" fill="#22c55e" opacity="0.3"/>
+    <text x="1100" y="267" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="8" fill="#22c55e">W</text>
+
+    <!-- Row 6: DoE -->
+    <rect x="0" y="289" width="1120" height="46" fill="#111a2a"/>
+    <text x="20" y="317" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">DoE</text>
+    <text x="220" y="317" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#ef4444">无</text>
+    <text x="440" y="317" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">部分</text>
+    <text x="660" y="317" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#ef4444">无</text>
+    <text x="870" y="317" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#22c55e">7 种+贝叶斯</text>
+    <circle cx="1100" cy="312" r="6" fill="#22c55e" opacity="0.3"/>
+    <text x="1100" y="316" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="8" fill="#22c55e">W</text>
+
+    <!-- Row 7: Audit -->
+    <rect x="0" y="338" width="1120" height="46" fill="#141e30"/>
+    <text x="20" y="366" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">审计追踪</text>
+    <text x="220" y="366" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">基础</text>
+    <text x="440" y="366" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#22c55e">GMP 级</text>
+    <text x="660" y="366" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#22c55e">GMP 级</text>
+    <text x="870" y="366" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#22c55e">不可篡改</text>
+
+    <!-- Row 8: Deploy -->
+    <rect x="0" y="387" width="1120" height="46" fill="#111a2a"/>
+    <text x="20" y="415" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">部署方式</text>
+    <text x="220" y="415" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">专用硬件</text>
+    <text x="440" y="415" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">专用硬件</text>
+    <text x="660" y="415" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">PC 软件</text>
+    <text x="870" y="415" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#22c55e">PC+Docker+PLC</text>
+
+    <!-- Row 9: Extensibility -->
+    <rect x="0" y="436" width="1120" height="46" fill="#141e30"/>
+    <text x="20" y="464" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">扩展性</text>
+    <text x="220" y="464" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#ef4444">封闭</text>
+    <text x="440" y="464" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#ef4444">封闭</text>
+    <text x="660" y="464" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">SDK</text>
+    <text x="870" y="464" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#22c55e">开源+97+ API</text>
+    <circle cx="1100" cy="459" r="6" fill="#22c55e" opacity="0.3"/>
+    <text x="1100" y="463" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="8" fill="#22c55e">W</text>
+  </g>
+
+  <!-- Summary -->
+  <g transform="translate(80, 640)">
+    <rect x="0" y="0" width="1120" height="30" rx="6" fill="#22c55e" opacity="0.08"/>
+    <text x="560" y="20" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="13" font-weight="bold" fill="#22c55e">BIOCore 在 9 个维度中 7 个维度领先（W），2 个持平</text>
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="680" width="1280" height="40" fill="#0d1a2e"/>
+  <text x="80" y="706" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="706" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#3a5070">竞品对比矩阵</text>
+  <text x="1200" y="706" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#4a6080">16 / 18</text>
+</svg>

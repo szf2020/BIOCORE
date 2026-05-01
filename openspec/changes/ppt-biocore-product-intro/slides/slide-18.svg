@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="s18-bg" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="s18-accent-line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1E40AF"/>
+      <stop offset="50%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+    <filter id="s18-glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="s18-shadow" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+    <filter id="s18-shadow-sm" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#000000" flood-opacity="0.2"/>
+    </filter>
+    <radialGradient id="s18-orb1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1E40AF" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#1E40AF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="s18-orb2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#059669" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#059669" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#s18-bg)"/>
+
+  <!-- Decorative elements -->
+  <g data-decorative="true">
+    <!-- Top accent gradient line -->
+    <rect x="0" y="0" width="1280" height="4" fill="url(#s18-accent-line)"/>
+
+    <!-- Subtle grid -->
+    <g opacity="0.04" stroke="#94A3B8" stroke-width="0.5">
+      <line x1="0" y1="180" x2="1280" y2="180"/>
+      <line x1="0" y1="360" x2="1280" y2="360"/>
+      <line x1="0" y1="540" x2="1280" y2="540"/>
+      <line x1="320" y1="0" x2="320" y2="720"/>
+      <line x1="640" y1="0" x2="640" y2="720"/>
+      <line x1="960" y1="0" x2="960" y2="720"/>
+    </g>
+
+    <!-- Background orbs -->
+    <circle cx="200" cy="300" r="300" fill="url(#s18-orb1)"/>
+    <circle cx="1100" cy="500" r="250" fill="url(#s18-orb2)"/>
+  </g>
+
+  <!-- Main title -->
+  <text x="640" y="172" text-anchor="middle" font-family="'Source Serif Pro', Georgia, 'Microsoft YaHei', serif" font-size="42" font-weight="700" fill="#F8FAFC">开始使用 BIOCore</text>
+
+  <!-- Subtitle -->
+  <text x="640" y="216" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="17" fill="#94A3B8" letter-spacing="1">工业级可靠 | 本地 AI 智能 | 完全开放 | 成本 1/5</text>
+
+  <!-- Gradient divider -->
+  <g data-decorative="true">
+    <rect x="480" y="236" width="320" height="3" rx="1.5" fill="url(#s18-accent-line)"/>
+  </g>
+
+  <!-- Four core metrics -->
+  <g>
+    <!-- Card 1: 100% Offline AI -->
+    <rect x="100" y="272" width="250" height="100" rx="12" fill="#1E293B" stroke="#1E40AF" stroke-width="1.5" filter="url(#s18-shadow)"/>
+    <text x="225" y="312" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="32" font-weight="700" fill="#3B82F6">100%</text>
+    <text x="225" y="338" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="14" fill="#94A3B8">离线 AI 运行</text>
+    <text x="225" y="358" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B">数据不出实验室</text>
+
+    <!-- Card 2: ISA-88 -->
+    <rect x="375" y="272" width="250" height="100" rx="12" fill="#1E293B" stroke="#059669" stroke-width="1.5" filter="url(#s18-shadow)"/>
+    <text x="500" y="312" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="32" font-weight="700" fill="#10B981">ISA-88</text>
+    <text x="500" y="338" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="14" fill="#94A3B8">工业批次标准</text>
+    <text x="500" y="358" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B">5 层安全防护</text>
+
+    <!-- Card 3: 8 tanks -->
+    <rect x="650" y="272" width="250" height="100" rx="12" fill="#1E293B" stroke="#D97706" stroke-width="1.5" filter="url(#s18-shadow)"/>
+    <text x="775" y="312" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="32" font-weight="700" fill="#F59E0B">8 罐</text>
+    <text x="775" y="338" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="14" fill="#94A3B8">单 PC 并行</text>
+    <text x="775" y="358" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B">97+ REST API</text>
+
+    <!-- Card 4: 1/5 cost -->
+    <rect x="925" y="272" width="250" height="100" rx="12" fill="#1E293B" stroke="#7C3AED" stroke-width="1.5" filter="url(#s18-shadow)"/>
+    <text x="1050" y="312" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="32" font-weight="700" fill="#A78BFA">1/5</text>
+    <text x="1050" y="338" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="14" fill="#94A3B8">竞品成本</text>
+    <text x="1050" y="358" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B">¥3,500 起步</text>
+  </g>
+
+  <!-- Call to action buttons -->
+  <g>
+    <!-- CTA 1: Free download -->
+    <rect x="160" y="408" width="280" height="56" rx="10" fill="#1E40AF" opacity="0.12" stroke="#1E40AF" stroke-width="1.5" filter="url(#s18-shadow-sm)"/>
+    <text x="300" y="433" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="15" font-weight="700" fill="#3B82F6">社区版免费下载</text>
+    <text x="300" y="452" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B">MIT 开源 | GitHub</text>
+
+    <!-- CTA 2: Tech discussion -->
+    <rect x="480" y="408" width="280" height="56" rx="10" fill="#059669" opacity="0.12" stroke="#059669" stroke-width="1.5" filter="url(#s18-shadow-sm)"/>
+    <text x="620" y="433" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="15" font-weight="700" fill="#10B981">技术架构交流</text>
+    <text x="620" y="452" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B">深入讨论方案设计</text>
+
+    <!-- CTA 3: PLC debug support -->
+    <rect x="800" y="408" width="280" height="56" rx="10" fill="#D97706" opacity="0.12" stroke="#D97706" stroke-width="1.5" filter="url(#s18-shadow-sm)"/>
+    <text x="940" y="433" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="15" font-weight="700" fill="#F59E0B">PLC 调试支持</text>
+    <text x="940" y="452" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B">硬件部署 + 现场调试</text>
+  </g>
+
+  <!-- Roadmap timeline -->
+  <g>
+    <text x="120" y="510" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" fill="#64748B" letter-spacing="0.5">开发路线图</text>
+
+    <!-- Timeline line -->
+    <line x1="180" y1="542" x2="1100" y2="542" stroke="#334155" stroke-width="2"/>
+
+    <!-- Phase 1: MVP -->
+    <circle cx="180" cy="542" r="8" fill="#059669"/>
+    <circle cx="180" cy="542" r="4" fill="#0F172A"/>
+    <text x="180" y="568" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" font-weight="600" fill="#10B981">MVP</text>
+    <text x="180" y="584" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B">基础控制</text>
+
+    <!-- Phase 2: Data -->
+    <circle cx="410" cy="542" r="8" fill="#1E40AF"/>
+    <circle cx="410" cy="542" r="4" fill="#0F172A"/>
+    <text x="410" y="568" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" font-weight="600" fill="#3B82F6">数据分析</text>
+    <text x="410" y="584" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B">KPI/SPC/DoE</text>
+
+    <!-- Phase 3: AI -->
+    <circle cx="640" cy="542" r="8" fill="#D97706"/>
+    <circle cx="640" cy="542" r="4" fill="#0F172A"/>
+    <text x="640" y="568" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" font-weight="600" fill="#F59E0B">AI 智能</text>
+    <text x="640" y="584" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B">CUSUM/DTW/LLM</text>
+
+    <!-- Phase 4: Advanced -->
+    <circle cx="870" cy="542" r="8" fill="#7C3AED"/>
+    <circle cx="870" cy="542" r="4" fill="#0F172A"/>
+    <text x="870" y="568" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" font-weight="600" fill="#A78BFA">高级控制</text>
+    <text x="870" y="584" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B">贝叶斯/自动化</text>
+
+    <!-- Phase 5: Ecosystem -->
+    <circle cx="1100" cy="542" r="8" fill="#475569" stroke="#64748B" stroke-width="1"/>
+    <circle cx="1100" cy="542" r="4" fill="#0F172A"/>
+    <text x="1100" y="568" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" font-weight="600" fill="#94A3B8">生态</text>
+    <text x="1100" y="584" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B">插件/社区/集成</text>
+  </g>
+
+  <!-- Contact / Links bar -->
+  <g>
+    <rect x="120" y="608" width="1040" height="44" rx="8" fill="#1E293B" stroke="#334155" stroke-width="1" filter="url(#s18-shadow-sm)"/>
+    <text x="160" y="635" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" fill="#94A3B8">GitHub</text>
+    <text x="230" y="635" font-family="'JetBrains Mono', monospace" font-size="13" fill="#3B82F6">github.com/biocore</text>
+    <text x="490" y="635" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" fill="#94A3B8">技术文档</text>
+    <text x="570" y="635" font-family="'JetBrains Mono', monospace" font-size="13" fill="#3B82F6">docs.biocore.io</text>
+    <text x="790" y="635" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" fill="#94A3B8">联系我们</text>
+    <text x="870" y="635" font-family="'JetBrains Mono', monospace" font-size="13" fill="#3B82F6">contact@biocore.io</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="640" y="680" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#475569">BIOCore 实验室发酵罐智能控制平台 | 产品介绍</text>
+  <text x="1200" y="680" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="12" fill="#475569">18 / 18</text>
+</svg>

@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg9" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#122040"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bg9)"/>
+  <rect x="0" y="0" width="1280" height="4" fill="#22c55e"/>
+
+  <!-- Part indicator -->
+  <rect x="80" y="24" width="8" height="30" rx="2" fill="#22c55e"/>
+  <text x="100" y="45" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">第二部分 | 本地 AI 智能模块</text>
+
+  <!-- Page title -->
+  <text x="80" y="85" font-family="Microsoft YaHei, sans-serif" font-size="26" font-weight="bold" fill="#ffffff">CUSUM 异常检测与根因分析</text>
+  <text x="80" y="112" font-family="Microsoft YaHei, sans-serif" font-size="14" fill="#7a8faa">比传统阈值报警提前 5-15 分钟预警</text>
+  <rect x="80" y="122" width="80" height="2" fill="#22c55e" rx="1"/>
+
+  <!-- Left larger column: CUSUM chart visualization -->
+  <g transform="translate(80, 150)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#b0c4e8">CUSUM 检测 vs 传统阈值报警</text>
+
+    <!-- Chart area -->
+    <rect x="0" y="18" width="680" height="280" rx="8" fill="#111a2a" stroke="#1e2d45" stroke-width="1"/>
+
+    <!-- Y axis -->
+    <line x1="50" y1="40" x2="50" y2="275" stroke="#2a3a50" stroke-width="1"/>
+    <text x="15" y="160" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#4a6080" transform="rotate(-90, 15, 160)">温度偏差</text>
+
+    <!-- X axis -->
+    <line x1="50" y1="275" x2="650" y2="275" stroke="#2a3a50" stroke-width="1"/>
+    <text x="350" y="295" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#4a6080">时间 (分钟)</text>
+
+    <!-- Traditional threshold lines -->
+    <line x1="50" y1="80" x2="650" y2="80" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,4" opacity="0.5"/>
+    <text x="655" y="84" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#ef4444">上限</text>
+    <line x1="50" y1="230" x2="650" y2="230" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,4" opacity="0.5"/>
+    <text x="655" y="234" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#ef4444">下限</text>
+
+    <!-- Normal data line (noisy, stays within bounds) -->
+    <polyline points="60,155 90,148 120,162 150,145 180,158 210,150 240,160 270,142 300,155 330,138 360,148 390,135 420,140 450,128 480,120 510,108 540,95 570,85 600,78" fill="none" stroke="#7a8faa" stroke-width="1.5" opacity="0.6"/>
+
+    <!-- CUSUM cumulative line (detects earlier) -->
+    <polyline points="60,200 90,198 120,197 150,193 180,192 210,188 240,186 270,180 300,175 330,168 360,158 390,145 420,130 450,112 480,95 510,80 540,65 570,52 600,42" fill="none" stroke="#22c55e" stroke-width="2"/>
+
+    <!-- CUSUM detection point (earlier) -->
+    <circle cx="390" cy="145" r="6" fill="none" stroke="#22c55e" stroke-width="2"/>
+    <line x1="390" y1="155" x2="390" y2="260" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="390" y="270" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" font-weight="bold" fill="#22c55e">CUSUM 检测</text>
+
+    <!-- Traditional detection point (later) -->
+    <circle cx="570" cy="85" r="6" fill="none" stroke="#ef4444" stroke-width="2"/>
+    <line x1="570" y1="90" x2="570" y2="260" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="570" y="270" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" font-weight="bold" fill="#ef4444">阈值报警</text>
+
+    <!-- Time difference annotation -->
+    <line x1="390" y1="45" x2="570" y2="45" stroke="#f59e0b" stroke-width="2"/>
+    <polygon points="390,45 397,41 397,49" fill="#f59e0b"/>
+    <polygon points="570,45 563,41 563,49" fill="#f59e0b"/>
+    <rect x="440" y="32" width="80" height="22" rx="4" fill="#f59e0b" opacity="0.2"/>
+    <text x="480" y="48" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#f59e0b">5-15 min</text>
+
+    <!-- Legend -->
+    <line x1="70" y1="35" x2="100" y2="35" stroke="#22c55e" stroke-width="2"/>
+    <text x="108" y="39" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#22c55e">CUSUM 累积曲线</text>
+    <line x1="250" y1="35" x2="280" y2="35" stroke="#7a8faa" stroke-width="1.5" opacity="0.6"/>
+    <text x="288" y="39" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">原始数据</text>
+  </g>
+
+  <!-- Right column: Comparison table -->
+  <g transform="translate(800, 150)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#b0c4e8">对比分析</text>
+
+    <!-- Table -->
+    <rect x="0" y="15" width="400" height="30" rx="4" fill="#1e2d45"/>
+    <text x="15" y="35" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#7a8faa">维度</text>
+    <text x="130" y="35" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#ef4444">传统阈值</text>
+    <text x="280" y="35" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#22c55e">CUSUM</text>
+
+    <rect x="0" y="48" width="400" height="35" fill="#141e30"/>
+    <text x="15" y="70" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">检测机制</text>
+    <text x="130" y="70" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">单点超限</text>
+    <text x="280" y="70" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#22c55e">累积偏差趋势</text>
+
+    <rect x="0" y="85" width="400" height="35" fill="#111a2a"/>
+    <text x="15" y="107" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">响应时机</text>
+    <text x="130" y="107" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">问题已发生后</text>
+    <text x="280" y="107" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#22c55e">提前 5-15 min</text>
+
+    <rect x="0" y="122" width="400" height="35" fill="#141e30"/>
+    <text x="15" y="144" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">误报率</text>
+    <text x="130" y="144" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#ef4444">高（敏感于噪声）</text>
+    <text x="280" y="144" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#22c55e">低（噪声抑制）</text>
+
+    <rect x="0" y="159" width="400" height="35" fill="#111a2a"/>
+    <text x="15" y="181" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">早期漂移</text>
+    <text x="130" y="181" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#ef4444">不可见</text>
+    <text x="280" y="181" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#22c55e">可见</text>
+  </g>
+
+  <!-- Root Cause Analysis flow -->
+  <g transform="translate(800, 380)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#b0c4e8">根因分析联动</text>
+
+    <rect x="0" y="18" width="400" height="40" rx="6" fill="#1a2744" stroke="#f59e0b" stroke-width="1"/>
+    <text x="15" y="44" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#f59e0b">报警触发</text>
+    <text x="120" y="44" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">自动回溯 30 min 参数趋势</text>
+
+    <line x1="200" y1="58" x2="200" y2="72" stroke="#3a5070" stroke-width="1"/>
+    <polygon points="200,72 195,66 205,66" fill="#3a5070"/>
+
+    <rect x="0" y="72" width="400" height="40" rx="6" fill="#1a2744" stroke="#8b5cf6" stroke-width="1"/>
+    <text x="15" y="98" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#8b5cf6">知识库匹配</text>
+    <text x="140" y="98" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">模式匹配候选根因</text>
+
+    <line x1="200" y1="112" x2="200" y2="126" stroke="#3a5070" stroke-width="1"/>
+    <polygon points="200,126 195,120 205,120" fill="#3a5070"/>
+
+    <rect x="0" y="126" width="400" height="40" rx="6" fill="#1a2744" stroke="#22c55e" stroke-width="1"/>
+    <text x="15" y="152" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#22c55e">LLM 解释</text>
+    <text x="120" y="152" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">自然语言根因报告</text>
+  </g>
+
+  <!-- Metric badge -->
+  <g transform="translate(80, 470)">
+    <rect x="0" y="0" width="220" height="70" rx="10" fill="#1a2744" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="110" y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="26" font-weight="bold" fill="#22c55e">5-15 min</text>
+    <text x="110" y="52" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">提前预警时间</text>
+  </g>
+
+  <!-- FDA note -->
+  <g transform="translate(80, 570)">
+    <rect x="0" y="0" width="680" height="40" rx="6" fill="#1a2744" stroke="#3a5070" stroke-width="0.5"/>
+    <text x="20" y="25" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">科学依据：FDA CPV 4.0 框架推动 AI 驱动异常检测成为实时过程验证的行业标准方向</text>
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="680" width="1280" height="40" fill="#0d1a2e"/>
+  <text x="80" y="706" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="706" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#3a5070">CUSUM 异常检测与根因分析</text>
+  <text x="1200" y="706" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#4a6080">09 / 18</text>
+</svg>

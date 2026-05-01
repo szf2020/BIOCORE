@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg11" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#122040"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bg11)"/>
+  <rect x="0" y="0" width="1280" height="4" fill="#f59e0b"/>
+
+  <!-- Part indicator -->
+  <rect x="80" y="24" width="8" height="30" rx="2" fill="#f59e0b"/>
+  <text x="100" y="45" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">第三部分 | 数据架构与开放生态</text>
+
+  <!-- Page title -->
+  <text x="80" y="85" font-family="Microsoft YaHei, sans-serif" font-size="26" font-weight="bold" fill="#ffffff">双数据库与实时数据流</text>
+  <text x="80" y="112" font-family="Microsoft YaHei, sans-serif" font-size="14" fill="#7a8faa">InfluxDB 时序存储 + SQLite 业务数据 — &lt;1s 延迟</text>
+  <rect x="80" y="122" width="80" height="2" fill="#f59e0b" rx="1"/>
+
+  <!-- Left larger column: Data flow architecture -->
+  <g transform="translate(80, 150)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#b0c4e8">数据流架构</text>
+
+    <!-- Pipeline steps -->
+    <!-- Step 1: PLC -->
+    <rect x="0" y="25" width="150" height="55" rx="8" fill="#1a2744" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="75" y="50" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="13" font-weight="bold" fill="#f59e0b">PLC 采集</text>
+    <text x="75" y="68" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#7a8faa">1 Hz</text>
+
+    <line x1="150" y1="52" x2="175" y2="52" stroke="#3a5070" stroke-width="1.5"/>
+    <polygon points="175,52 169,47 169,57" fill="#3a5070"/>
+
+    <!-- Step 2: WebSocket -->
+    <rect x="175" y="25" width="170" height="55" rx="8" fill="#1a2744" stroke="#1677ff" stroke-width="1.5"/>
+    <text x="260" y="50" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="13" font-weight="bold" fill="#1677ff">WebSocket 推送</text>
+    <text x="260" y="68" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#7a8faa">&lt;1s 延迟</text>
+
+    <line x1="345" y1="52" x2="370" y2="52" stroke="#3a5070" stroke-width="1.5"/>
+    <polygon points="370,52 364,47 364,57" fill="#3a5070"/>
+
+    <!-- Step 3: Aggregation -->
+    <rect x="370" y="25" width="150" height="55" rx="8" fill="#1a2744" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="445" y="50" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="13" font-weight="bold" fill="#22c55e">60s 聚合</text>
+    <text x="445" y="68" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#7a8faa">OUR/kLa/mu/RQ</text>
+
+    <line x1="520" y1="52" x2="545" y2="52" stroke="#3a5070" stroke-width="1.5"/>
+    <polygon points="545,52 539,47 539,57" fill="#3a5070"/>
+
+    <!-- Step 4: Persist -->
+    <rect x="545" y="25" width="150" height="55" rx="8" fill="#1a2744" stroke="#8b5cf6" stroke-width="1.5"/>
+    <text x="620" y="50" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="13" font-weight="bold" fill="#8b5cf6">持久化</text>
+    <text x="620" y="68" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#7a8faa">InfluxDB</text>
+
+    <!-- Branch arrow to AI -->
+    <line x1="445" y1="80" x2="445" y2="105" stroke="#3a5070" stroke-width="1"/>
+    <polygon points="445,105 440,99 450,99" fill="#3a5070"/>
+
+    <rect x="370" y="105" width="150" height="40" rx="6" fill="#162030" stroke="#22c55e" stroke-width="1"/>
+    <text x="445" y="130" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#22c55e">AI 异常检测</text>
+  </g>
+
+  <!-- Dual database comparison cards -->
+  <g transform="translate(80, 320)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#b0c4e8">双数据库架构</text>
+
+    <!-- InfluxDB card -->
+    <rect x="0" y="18" width="540" height="120" rx="10" fill="#1a2744" stroke="#f59e0b" stroke-width="1.5"/>
+    <rect x="0" y="18" width="6" height="120" rx="3" fill="#f59e0b"/>
+    <text x="25" y="45" font-family="JetBrains Mono, monospace" font-size="16" font-weight="bold" fill="#f59e0b">InfluxDB</text>
+    <text x="140" y="45" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#b0c4e8">时序数据存储</text>
+    <text x="25" y="70" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">温度 / pH / DO / 搅拌 / 气流 / 称重等过程数据</text>
+    <text x="25" y="92" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">1 分钟聚合写入 | 365 天原始数据 | 永久降采样归档</text>
+    <text x="25" y="114" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">适用：高频采集、趋势分析、历史回放</text>
+
+    <!-- SQLite card -->
+    <rect x="0" y="152" width="540" height="120" rx="10" fill="#1a2744" stroke="#1677ff" stroke-width="1.5"/>
+    <rect x="0" y="152" width="6" height="120" rx="3" fill="#1677ff"/>
+    <text x="25" y="179" font-family="JetBrains Mono, monospace" font-size="16" font-weight="bold" fill="#1677ff">SQLite</text>
+    <text x="100" y="179" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#b0c4e8">业务数据存储</text>
+    <text x="25" y="204" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">配方 / 批次 / 审计日志 / 报警 / 取样记录</text>
+    <text x="25" y="226" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">WAL 高并发 | 不可篡改审计（触发器禁止 UPDATE/DELETE）</text>
+    <text x="25" y="248" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">适用：结构化业务数据、FDA 21 CFR Part 11 合规</text>
+  </g>
+
+  <!-- Right side: metrics and WebSocket channels -->
+  <g transform="translate(680, 150)">
+    <!-- Metrics -->
+    <rect x="0" y="0" width="180" height="75" rx="10" fill="#1a2744" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="90" y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="26" font-weight="bold" fill="#f59e0b">&lt;1s</text>
+    <text x="90" y="55" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">数据延迟</text>
+
+    <rect x="200" y="0" width="180" height="75" rx="10" fill="#1a2744" stroke="#1677ff" stroke-width="1.5"/>
+    <text x="290" y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="26" font-weight="bold" fill="#1677ff">10</text>
+    <text x="290" y="55" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">WebSocket 频道</text>
+
+    <rect x="400" y="0" width="180" height="75" rx="10" fill="#1a2744" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="490" y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="26" font-weight="bold" fill="#22c55e">365</text>
+    <text x="490" y="55" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">天原始数据保留</text>
+  </g>
+
+  <!-- WebSocket channel list -->
+  <g transform="translate(680, 320)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="bold" fill="#b0c4e8">10 个 WebSocket 实时频道</text>
+
+    <g transform="translate(0, 18)">
+      <rect x="0" y="0" width="280" height="26" rx="4" fill="#162030" stroke="#1e2d45" stroke-width="0.5"/>
+      <text x="10" y="18" font-family="JetBrains Mono, monospace" font-size="10" fill="#f59e0b">process-data</text>
+      <text x="150" y="18" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#5a7090">过程数据</text>
+
+      <rect x="290" y="0" width="280" height="26" rx="4" fill="#162030" stroke="#1e2d45" stroke-width="0.5"/>
+      <text x="300" y="18" font-family="JetBrains Mono, monospace" font-size="10" fill="#f59e0b">state-change</text>
+      <text x="440" y="18" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#5a7090">状态变更</text>
+
+      <rect x="0" y="32" width="280" height="26" rx="4" fill="#162030" stroke="#1e2d45" stroke-width="0.5"/>
+      <text x="10" y="50" font-family="JetBrains Mono, monospace" font-size="10" fill="#f59e0b">alarms</text>
+      <text x="150" y="50" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#5a7090">报警推送</text>
+
+      <rect x="290" y="32" width="280" height="26" rx="4" fill="#162030" stroke="#1e2d45" stroke-width="0.5"/>
+      <text x="300" y="50" font-family="JetBrains Mono, monospace" font-size="10" fill="#f59e0b">ai-suggestions</text>
+      <text x="440" y="50" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#5a7090">AI 建议</text>
+
+      <rect x="0" y="64" width="280" height="26" rx="4" fill="#162030" stroke="#1e2d45" stroke-width="0.5"/>
+      <text x="10" y="82" font-family="JetBrains Mono, monospace" font-size="10" fill="#f59e0b">batch-progress</text>
+      <text x="150" y="82" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#5a7090">批次进度</text>
+
+      <rect x="290" y="64" width="280" height="26" rx="4" fill="#162030" stroke="#1e2d45" stroke-width="0.5"/>
+      <text x="300" y="82" font-family="JetBrains Mono, monospace" font-size="10" fill="#f59e0b">heartbeat</text>
+      <text x="440" y="82" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#5a7090">心跳状态</text>
+    </g>
+  </g>
+
+  <!-- FDA compliance note -->
+  <g transform="translate(680, 530)">
+    <rect x="0" y="0" width="520" height="40" rx="6" fill="#1a2744" stroke="#3a5070" stroke-width="0.5"/>
+    <text x="15" y="25" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">符合 FDA 21 CFR Part 11 电子记录不可篡改原则</text>
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="680" width="1280" height="40" fill="#0d1a2e"/>
+  <text x="80" y="706" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="706" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#3a5070">双数据库与实时数据流</text>
+  <text x="1200" y="706" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#4a6080">11 / 18</text>
+</svg>

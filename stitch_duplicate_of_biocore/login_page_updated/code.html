@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BIO-FERMENT MES | Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#bdc9c6",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#0f766e",
+                    "surface-bright": "#f7faf8",
+                    "on-primary-fixed-variant": "#00504a",
+                    "inverse-primary": "#80d5cb",
+                    "error": "#ba1a1a",
+                    "on-error": "#ffffff",
+                    "primary": "#005c55",
+                    "surface-tint": "#006a63",
+                    "surface-container-high": "#e5e9e7",
+                    "secondary-fixed-dim": "#b8c4ff",
+                    "secondary-fixed": "#dde1ff",
+                    "inverse-surface": "#2d3130",
+                    "on-surface": "#181c1c",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed": "#00201d",
+                    "on-tertiary": "#ffffff",
+                    "tertiary": "#863b00",
+                    "tertiary-fixed": "#ffdbca",
+                    "inverse-on-surface": "#eef1f0",
+                    "surface-container-low": "#f1f4f3",
+                    "on-surface-variant": "#3e4947",
+                    "on-background": "#181c1c",
+                    "surface-container-highest": "#e0e3e1",
+                    "surface-variant": "#e0e3e1",
+                    "on-tertiary-fixed-variant": "#763300",
+                    "on-secondary-container": "#00217a",
+                    "surface-dim": "#d7dbd9",
+                    "primary-fixed": "#9cf2e8",
+                    "primary-fixed-dim": "#80d5cb",
+                    "on-primary": "#ffffff",
+                    "on-primary-container": "#a3faef",
+                    "outline": "#6e7977",
+                    "on-secondary-fixed-variant": "#173bab",
+                    "on-tertiary-container": "#ffe4d7",
+                    "secondary": "#3755c3",
+                    "on-secondary-fixed": "#001453",
+                    "on-error-container": "#93000a",
+                    "error-container": "#ffdad6",
+                    "surface": "#f7faf8",
+                    "on-tertiary-fixed": "#331200",
+                    "secondary-container": "#708cfd",
+                    "background": "#f7faf8",
+                    "tertiary-fixed-dim": "#ffb68e",
+                    "surface-container": "#ebefed",
+                    "tertiary-container": "#ac4d01"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .lining-nums { font-variant-numeric: lining-nums tabular-nums; }
+        .clinical-shadow { box-shadow: 0px 4px 20px rgba(24, 28, 28, 0.04), 0px 2px 8px rgba(24, 28, 28, 0.06); }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body overflow-hidden">
+<main class="flex h-screen w-full">
+<!-- LEFT SIDE: BRANDING & IMAGERY -->
+<section class="hidden lg:flex w-1/2 relative bg-primary-container overflow-hidden items-center justify-center">
+<!-- Background Layer -->
+<div class="absolute inset-0 z-0 opacity-40 mix-blend-overlay">
+<img class="w-full h-full object-cover" data-alt="Close-up of a high-tech bioreactor stainless steel surface with blue and green laboratory lighting reflections in a modern facility" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCybt_B8d4yk1-4tJRrfYMG4M13tEzk8yoIJ1ZAJ8li1WZQQJKmmTZstaIrG07kzLKkI9rIoXFqD_HpoimDylL8LbypVxMhrJNKKSzuHJAwT32JAptdA9JYXP9UFMSggaz0RRrGJBqx-VsSGFMhVjJ31lWxxGPM-iHSTLyjqZfSN4byq6QY3bpDcDGPSF0CYYrPh8z9s7oytKvbnrhBZ37jGEnsJNV0PBRm7DCWBPGbUppDSyQTTvolRax9kFoV4004dpkB_yYXJmSh"/>
+</div>
+<!-- Pattern Overlay -->
+<div class="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] z-10"></div>
+<!-- Brand Identity Container -->
+<div class="relative z-20 px-12 max-w-xl">
+<div class="flex flex-col space-y-6">
+<div class="flex items-center space-y-2">
+<div class="w-12 h-1 px-1 bg-tertiary-fixed-dim"></div>
+<span class="ml-4 text-white font-headline text-xs tracking-[0.2em] font-bold uppercase">Manufacturing Execution System</span>
+</div>
+<h1 class="text-6xl font-extrabold text-on-primary-container tracking-tighter leading-none">
+                        BIO-FERMENT <br/>
+<span class="text-white">MES</span>
+</h1>
+<p class="text-on-primary-container/80 text-lg font-medium max-w-md">
+                        Precision biological manufacturing control for high-output laboratory environments. High-stakes monitoring for Unit 04 infrastructure.
+                    </p>
+<div class="pt-12 grid grid-cols-2 gap-8 border-t border-white/10">
+<div class="space-y-1">
+<div class="text-tertiary-fixed-dim font-headline text-3xl font-bold lining-nums">99.98%</div>
+<div class="text-white/60 text-[10px] uppercase tracking-widest font-bold">Uptime Reliability</div>
+</div>
+<div class="space-y-1">
+<div class="text-tertiary-fixed-dim font-headline text-3xl font-bold lining-nums">4.2ms</div>
+<div class="text-white/60 text-[10px] uppercase tracking-widest font-bold">Latency Standard</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Terminal Aesthetic Footer -->
+<div class="absolute bottom-8 left-12 right-12 flex justify-between items-end opacity-40">
+<div class="text-[10px] text-white font-mono uppercase tracking-widest leading-relaxed">
+                    System Node: BIO-MES-04<br/>
+                    Status: Standby_Mode
+                </div>
+<div class="text-[10px] text-white font-mono uppercase tracking-widest">
+                    Version 2.4.0-Clinical
+                </div>
+</div>
+</section>
+<!-- RIGHT SIDE: LOGIN INTERFACE -->
+<section class="w-full lg:w-1/2 flex items-center justify-center bg-surface p-6 sm:p-12">
+<div class="w-full max-w-md space-y-10">
+<!-- Welcome Header -->
+<header class="space-y-2">
+<div class="flex items-center space-x-2 text-tertiary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">security</span>
+<span class="text-[10px] font-bold tracking-[0.2em] uppercase">Secure Access Portal</span>
+</div>
+<h2 class="text-3xl font-bold text-on-surface tracking-tight">Welcome Back</h2>
+<p class="text-on-surface-variant text-sm">Please authenticate to access laboratory controls.</p>
+</header>
+<!-- Login Form -->
+<form class="space-y-6">
+<!-- Bilingual Input: Operator ID -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="text-[10px] font-bold text-on-surface uppercase tracking-wider" for="operator_id">
+                                Operator ID <span class="text-on-surface-variant font-medium ml-1">/ 运营商ID</span>
+</label>
+<span class="material-symbols-outlined text-on-surface-variant text-base">badge</span>
+</div>
+<input class="w-full h-12 px-4 bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:outline-none text-on-surface placeholder:text-outline-variant transition-all font-medium text-sm" id="operator_id" name="operator_id" placeholder="OP-XXXXX-XX" type="text"/>
+</div>
+<!-- Bilingual Input: System Password -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="text-[10px] font-bold text-on-surface uppercase tracking-wider" for="password">
+                                System Password <span class="text-on-surface-variant font-medium ml-1">/ 系统密码</span>
+</label>
+<span class="material-symbols-outlined text-on-surface-variant text-base">lock</span>
+</div>
+<input class="w-full h-12 px-4 bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:outline-none text-on-surface placeholder:text-outline-variant transition-all font-medium text-sm" id="password" name="password" placeholder="••••••••••••" type="password"/>
+</div>
+<!-- Options -->
+<div class="flex items-center justify-between">
+<label class="flex items-center space-x-2 cursor-pointer group">
+<div class="relative flex items-center">
+<input class="peer h-4 w-4 border-2 border-outline-variant rounded-sm checked:bg-primary checked:border-primary transition-all appearance-none" type="checkbox"/>
+<span class="material-symbols-outlined absolute text-[12px] text-white opacity-0 peer-checked:opacity-100 left-[2px] pointer-events-none">check</span>
+</div>
+<span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide group-hover:text-on-surface transition-colors">Persistent Session</span>
+</label>
+<a class="text-[11px] font-bold text-primary uppercase tracking-wide hover:text-primary-container transition-colors" href="#">Request Access Reset</a>
+</div>
+<!-- Warning Indicator (Muted Copper) -->
+<div class="bg-tertiary-fixed-dim/20 p-3 rounded flex items-start space-x-3 border-l-2 border-tertiary">
+<span class="material-symbols-outlined text-tertiary text-lg" style="font-variation-settings: 'FILL' 1;">report_problem</span>
+<div class="space-y-0.5">
+<p class="text-[11px] font-bold text-on-tertiary-fixed-variant uppercase tracking-tight leading-none">Security Protocol Active</p>
+<p class="text-[10px] text-on-tertiary-fixed-variant/80">Multiple failed attempts will trigger system lockout and notify Unit 04 admin.</p>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="pt-4 space-y-3">
+<button class="w-full h-12 bg-primary text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center space-x-2 hover:bg-primary-container transition-all active:scale-[0.98]" type="submit">
+<span>Initialize Access</span>
+<span class="material-symbols-outlined text-sm">login</span>
+</button>
+<button class="w-full h-12 bg-surface-container-high text-on-surface-variant font-bold text-xs uppercase tracking-widest flex items-center justify-center space-x-2 hover:bg-surface-container-highest transition-all" type="button">
+<span class="material-symbols-outlined text-sm">fingerprint</span>
+<span>Biometric Verification</span>
+</button>
+</div>
+</form>
+<!-- Footer -->
+<footer class="pt-12 flex items-center justify-between border-t border-outline-variant/20">
+<div class="flex items-center space-x-4">
+<div class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Network Online</span>
+</div>
+<span class="text-outline-variant text-[10px] uppercase tracking-widest">|</span>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest lining-nums">SVR-774-P</span>
+</div>
+<div class="flex space-x-4">
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-lg">language</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-lg">settings</span>
+</button>
+</div>
+</footer>
+</div>
+</section>
+</main>
+</body></html>

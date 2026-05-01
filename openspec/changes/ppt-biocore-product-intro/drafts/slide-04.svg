@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg4" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#122040"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bg4)"/>
+  <rect x="0" y="0" width="1280" height="4" fill="#1677ff"/>
+
+  <!-- Part indicator -->
+  <rect x="80" y="24" width="8" height="30" rx="2" fill="#1677ff"/>
+  <text x="100" y="45" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">第一部分 | 工业级硬件底座与安全体系</text>
+
+  <!-- Page title -->
+  <text x="80" y="85" font-family="Microsoft YaHei, sans-serif" font-size="26" font-weight="bold" fill="#ffffff">双向心跳安全协议</text>
+  <text x="80" y="112" font-family="Microsoft YaHei, sans-serif" font-size="14" fill="#7a8faa">PC &lt;-&gt; PLC 双向监控，3 秒超时自动保护</text>
+  <rect x="80" y="122" width="80" height="2" fill="#1677ff" rx="1"/>
+
+  <!-- TOP HALF: Heartbeat flow diagram -->
+  <g transform="translate(80, 145)">
+    <!-- PC Box -->
+    <rect x="50" y="20" width="200" height="80" rx="8" fill="#1a2744" stroke="#1677ff" stroke-width="1.5"/>
+    <text x="150" y="55" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="bold" fill="#1677ff">PC 端</text>
+    <text x="150" y="78" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#7a8faa">Node.js Server</text>
+
+    <!-- PLC Box -->
+    <rect x="850" y="20" width="200" height="80" rx="8" fill="#1a2744" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="950" y="55" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="bold" fill="#f59e0b">PLC 端</text>
+    <text x="950" y="78" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#7a8faa">S7-200 SMART</text>
+
+    <!-- Forward arrow: PC -> PLC -->
+    <line x1="250" y1="45" x2="845" y2="45" stroke="#1677ff" stroke-width="1.5" stroke-dasharray="8,4"/>
+    <polygon points="845,45 835,40 835,50" fill="#1677ff"/>
+    <rect x="440" y="30" width="220" height="28" rx="4" fill="#162030"/>
+    <text x="550" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#1677ff">VB400 递增计数器 (1Hz)</text>
+
+    <!-- Return arrow: PLC -> PC -->
+    <line x1="850" y1="75" x2="255" y2="75" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="8,4"/>
+    <polygon points="255,75 265,70 265,80" fill="#f59e0b"/>
+    <rect x="440" y="62" width="220" height="28" rx="4" fill="#162030"/>
+    <text x="550" y="82" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#f59e0b">VB401 确认计数器 (1Hz)</text>
+
+    <!-- Timeout indicator -->
+    <rect x="450" y="100" width="200" height="36" rx="6" fill="#1a2744" stroke="#ef4444" stroke-width="1"/>
+    <text x="550" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold" fill="#ef4444">超时阈值: 3 秒</text>
+  </g>
+
+  <!-- Metrics on right side of flow -->
+  <g transform="translate(1060, 170)">
+    <text x="0" y="0" font-family="JetBrains Mono, monospace" font-size="28" font-weight="bold" fill="#22c55e">&lt;0.01%</text>
+    <text x="0" y="22" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">通讯丢包率</text>
+  </g>
+
+  <!-- Horizontal divider -->
+  <line x1="80" y1="310" x2="1200" y2="310" stroke="#1e2d45" stroke-width="1"/>
+
+  <!-- BOTTOM HALF: Fault response matrix table -->
+  <g transform="translate(80, 325)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#b0c4e8">故障场景响应矩阵</text>
+
+    <!-- Table header -->
+    <rect x="0" y="15" width="1120" height="35" rx="4" fill="#1e2d45"/>
+    <text x="20" y="38" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#7a8faa">故障场景</text>
+    <text x="280" y="38" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#7a8faa">触发条件</text>
+    <text x="600" y="38" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#7a8faa">PLC 响应</text>
+
+    <!-- Row 1 -->
+    <rect x="0" y="53" width="1120" height="40" fill="#141e30"/>
+    <rect x="0" y="53" width="5" height="40" fill="#ef4444"/>
+    <text x="20" y="78" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#ffffff">PC 软件崩溃</text>
+    <text x="280" y="78" font-family="JetBrains Mono, monospace" font-size="12" fill="#7a8faa">VB400 停止更新 &gt;3s</text>
+    <text x="600" y="78" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#f59e0b">自动 Hold + 独立维持搅拌/温控/pH</text>
+
+    <!-- Row 2 -->
+    <rect x="0" y="96" width="1120" height="40" fill="#111a2a"/>
+    <rect x="0" y="96" width="5" height="40" fill="#ef4444"/>
+    <text x="20" y="121" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#ffffff">网络中断</text>
+    <text x="280" y="121" font-family="JetBrains Mono, monospace" font-size="12" fill="#7a8faa">心跳链路断开</text>
+    <text x="600" y="121" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#f59e0b">PLC 独立安全运行模式</text>
+
+    <!-- Row 3 -->
+    <rect x="0" y="139" width="1120" height="40" fill="#141e30"/>
+    <rect x="0" y="139" width="5" height="40" fill="#f59e0b"/>
+    <text x="20" y="164" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#ffffff">PLC 无响应</text>
+    <text x="280" y="164" font-family="JetBrains Mono, monospace" font-size="12" fill="#7a8faa">VB401 停止更新 &gt;3s</text>
+    <text x="600" y="164" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#f59e0b">PC 报警 + 橙色警告</text>
+
+    <!-- Row 4 -->
+    <rect x="0" y="182" width="1120" height="40" fill="#111a2a"/>
+    <rect x="0" y="182" width="5" height="40" fill="#22c55e"/>
+    <text x="20" y="207" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#ffffff">正常恢复</text>
+    <text x="280" y="207" font-family="JetBrains Mono, monospace" font-size="12" fill="#7a8faa">心跳双向恢复</text>
+    <text x="600" y="207" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#22c55e">自动恢复批次执行</text>
+  </g>
+
+  <!-- Reconnect strategy note -->
+  <g transform="translate(80, 580)">
+    <rect x="0" y="0" width="1120" height="40" rx="6" fill="#1a2744" stroke="#3a5070" stroke-width="0.5"/>
+    <text x="20" y="25" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">断线重连策略：指数退避</text>
+    <text x="260" y="25" font-family="JetBrains Mono, monospace" font-size="13" font-weight="bold" fill="#1677ff">1s  ->  5s  ->  30s</text>
+    <text x="500" y="25" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#5a7090">防止网络抖动引发频繁重连风暴</text>
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="680" width="1280" height="40" fill="#0d1a2e"/>
+  <text x="80" y="706" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="706" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#3a5070">双向心跳安全协议</text>
+  <text x="1200" y="706" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#4a6080">04 / 18</text>
+</svg>

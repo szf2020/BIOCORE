@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg10" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#122040"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bg10)"/>
+  <rect x="0" y="0" width="1280" height="4" fill="#22c55e"/>
+
+  <!-- Part indicator -->
+  <rect x="80" y="24" width="8" height="30" rx="2" fill="#22c55e"/>
+  <text x="100" y="45" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">第二部分 | 本地 AI 智能模块</text>
+
+  <!-- Page title -->
+  <text x="80" y="85" font-family="Microsoft YaHei, sans-serif" font-size="26" font-weight="bold" fill="#ffffff">软测量与补料优化</text>
+  <text x="80" y="112" font-family="Microsoft YaHei, sans-serif" font-size="14" fill="#7a8faa">在线推断 OD600/残糖/产物 — 减少 80% 取样频率</text>
+  <rect x="80" y="122" width="80" height="2" fill="#22c55e" rx="1"/>
+
+  <!-- Left column: Soft Sensor Inference Matrix -->
+  <g transform="translate(80, 150)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#b0c4e8">软测量推断矩阵</text>
+
+    <!-- Table header -->
+    <rect x="0" y="15" width="540" height="30" rx="4" fill="#1e2d45"/>
+    <text x="15" y="35" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#7a8faa">推断目标</text>
+    <text x="145" y="35" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#7a8faa">v1 算法</text>
+    <text x="260" y="35" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#7a8faa">v2 规划</text>
+    <text x="380" y="35" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#7a8faa">所需输入</text>
+
+    <!-- Row 1 -->
+    <rect x="0" y="48" width="540" height="32" fill="#141e30"/>
+    <text x="15" y="69" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">OD600 生物量</text>
+    <text x="145" y="69" font-family="JetBrains Mono, monospace" font-size="10" fill="#22c55e">OLS 回归</text>
+    <text x="260" y="69" font-family="JetBrains Mono, monospace" font-size="10" fill="#8b5cf6">ONNX 神经网络</text>
+    <text x="380" y="69" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">DO/碱消耗/OUR</text>
+
+    <!-- Row 2 -->
+    <rect x="0" y="82" width="540" height="32" fill="#111a2a"/>
+    <text x="15" y="103" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">残糖浓度</text>
+    <text x="145" y="103" font-family="JetBrains Mono, monospace" font-size="10" fill="#22c55e">OLS 回归</text>
+    <text x="260" y="103" font-family="JetBrains Mono, monospace" font-size="10" fill="#8b5cf6">ONNX 神经网络</text>
+    <text x="380" y="103" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">RQ/OUR/补料累积</text>
+
+    <!-- Row 3 -->
+    <rect x="0" y="116" width="540" height="32" fill="#141e30"/>
+    <text x="15" y="137" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">产物浓度</text>
+    <text x="145" y="137" font-family="JetBrains Mono, monospace" font-size="10" fill="#22c55e">OLS 回归</text>
+    <text x="260" y="137" font-family="JetBrains Mono, monospace" font-size="10" fill="#8b5cf6">ONNX 神经网络</text>
+    <text x="380" y="137" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">OUR 积分/时间</text>
+
+    <!-- Row 4 -->
+    <rect x="0" y="150" width="540" height="32" fill="#111a2a"/>
+    <text x="15" y="171" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">生长阶段</text>
+    <text x="145" y="171" font-family="JetBrains Mono, monospace" font-size="10" fill="#22c55e">碱消耗分析</text>
+    <text x="260" y="171" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#5a7090">--</text>
+    <text x="380" y="171" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">碱消耗/DO/RQ</text>
+
+    <!-- Metrics -->
+    <g transform="translate(0, 205)">
+      <rect x="0" y="0" width="165" height="65" rx="8" fill="#1a2744" stroke="#22c55e" stroke-width="1"/>
+      <text x="82" y="28" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" font-weight="bold" fill="#22c55e">1 次/min</text>
+      <text x="82" y="48" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">更新频率</text>
+
+      <rect x="185" y="0" width="165" height="65" rx="8" fill="#1a2744" stroke="#1677ff" stroke-width="1"/>
+      <text x="268" y="28" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" font-weight="bold" fill="#1677ff">80%</text>
+      <text x="268" y="48" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">取样减少</text>
+
+      <rect x="370" y="0" width="170" height="65" rx="8" fill="#1a2744" stroke="#f59e0b" stroke-width="1"/>
+      <text x="455" y="28" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="14" fill="#f59e0b">vs 传统 2-4h</text>
+      <text x="455" y="48" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">手动取样间隔</text>
+    </g>
+
+    <!-- Computed parameters -->
+    <g transform="translate(0, 295)">
+      <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="13" font-weight="bold" fill="#b0c4e8">实时计算参数</text>
+      <g transform="translate(0, 15)">
+        <rect x="0" y="0" width="100" height="28" rx="4" fill="#162030" stroke="#1e2d45" stroke-width="0.5"/>
+        <text x="50" y="18" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#22c55e">OUR</text>
+        <rect x="110" y="0" width="100" height="28" rx="4" fill="#162030" stroke="#1e2d45" stroke-width="0.5"/>
+        <text x="160" y="18" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#22c55e">kLa</text>
+        <rect x="220" y="0" width="100" height="28" rx="4" fill="#162030" stroke="#1e2d45" stroke-width="0.5"/>
+        <text x="270" y="18" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#22c55e">mu</text>
+        <rect x="330" y="0" width="100" height="28" rx="4" fill="#162030" stroke="#1e2d45" stroke-width="0.5"/>
+        <text x="380" y="18" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#22c55e">RQ</text>
+        <rect x="440" y="0" width="100" height="28" rx="4" fill="#162030" stroke="#1e2d45" stroke-width="0.5"/>
+        <text x="490" y="18" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#22c55e">F0</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Right column: Monod Feeding Optimization -->
+  <g transform="translate(680, 150)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#b0c4e8">Monod 补料优化</text>
+
+    <!-- Formula box -->
+    <rect x="0" y="18" width="520" height="70" rx="8" fill="#1a2744" stroke="#f59e0b" stroke-width="1"/>
+    <text x="260" y="45" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="15" fill="#f59e0b">F(t) = (mu_set * X * V) / (Y_xs * C_f)</text>
+    <text x="260" y="70" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">实时动态调整补料速率</text>
+
+    <!-- Exponential feeding curve (simplified) -->
+    <rect x="0" y="105" width="520" height="200" rx="8" fill="#111a2a" stroke="#1e2d45" stroke-width="1"/>
+
+    <!-- Axes -->
+    <line x1="50" y1="125" x2="50" y2="280" stroke="#2a3a50" stroke-width="1"/>
+    <line x1="50" y1="280" x2="490" y2="280" stroke="#2a3a50" stroke-width="1"/>
+    <text x="20" y="200" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#4a6080" transform="rotate(-90, 20, 200)">补料速率</text>
+    <text x="270" y="298" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#4a6080">时间</text>
+
+    <!-- Exponential curve -->
+    <path d="M 60,270 Q 150,265 220,250 Q 300,220 360,175 Q 420,125 470,115" fill="none" stroke="#f59e0b" stroke-width="2"/>
+
+    <!-- DO Spike marker -->
+    <line x1="220" y1="125" x2="220" y2="275" stroke="#22c55e" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="220" y="120" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#22c55e">DO Spike</text>
+    <text x="220" y="133" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="8" fill="#5a7090">Fed-batch 切换</text>
+
+    <!-- Phase labels -->
+    <text x="135" y="145" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">Batch</text>
+    <text x="360" y="145" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#f59e0b">指数补料</text>
+
+    <!-- Strategy cards -->
+    <g transform="translate(0, 320)">
+      <rect x="0" y="0" width="250" height="50" rx="6" fill="#1a2744" stroke="#22c55e" stroke-width="1"/>
+      <text x="15" y="22" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#22c55e">DO-stat 监测</text>
+      <text x="15" y="40" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#5a7090">底物消耗 DO Spike 自动触发</text>
+
+      <rect x="270" y="0" width="250" height="50" rx="6" fill="#1a2744" stroke="#f59e0b" stroke-width="1"/>
+      <text x="285" y="22" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#f59e0b">指数补料策略</text>
+      <text x="285" y="40" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#5a7090">Monod 动力学实时计算</text>
+    </g>
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="680" width="1280" height="40" fill="#0d1a2e"/>
+  <text x="80" y="706" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="706" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#3a5070">软测量与补料优化</text>
+  <text x="1200" y="706" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#4a6080">10 / 18</text>
+</svg>

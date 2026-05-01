@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg15" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#122040"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bg15)"/>
+  <rect x="0" y="0" width="1280" height="4" fill="#8b5cf6"/>
+
+  <!-- Part indicator -->
+  <rect x="80" y="24" width="8" height="30" rx="2" fill="#8b5cf6"/>
+  <text x="100" y="45" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">第四部分 | 实验设计、竞争优势与商业价值</text>
+
+  <!-- Page title -->
+  <text x="80" y="85" font-family="Microsoft YaHei, sans-serif" font-size="26" font-weight="bold" fill="#ffffff">典型应用案例</text>
+  <text x="80" y="112" font-family="Microsoft YaHei, sans-serif" font-size="14" fill="#7a8faa">E.coli Fed-batch / 酵母抗 Crabtree / CHO 细胞培养</text>
+  <rect x="80" y="122" width="80" height="2" fill="#8b5cf6" rx="1"/>
+
+  <!-- Three columns -->
+  <!-- Column 1: E.coli -->
+  <g transform="translate(80, 145)">
+    <rect x="0" y="0" width="360" height="490" rx="10" fill="#1a2744" stroke="#22c55e" stroke-width="1.5"/>
+
+    <!-- Header tag -->
+    <rect x="0" y="0" width="360" height="50" rx="10" fill="#22c55e" opacity="0.1"/>
+    <rect x="0" y="40" width="360" height="10" fill="#1a2744"/>
+    <text x="180" y="30" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="bold" fill="#22c55e">E.coli Fed-batch</text>
+
+    <!-- Process flow -->
+    <g transform="translate(15, 65)">
+      <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">工艺流程</text>
+
+      <rect x="0" y="12" width="330" height="24" rx="4" fill="#162030"/>
+      <text x="10" y="29" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">准备 -> SIP (F0>=20) -> 升温 37C</text>
+
+      <rect x="0" y="40" width="330" height="24" rx="4" fill="#111a2a"/>
+      <text x="10" y="57" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">Batch 培养 6h -> DO Spike 触发补料</text>
+
+      <rect x="0" y="68" width="330" height="24" rx="4" fill="#162030"/>
+      <text x="10" y="85" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">指数补料 12h -> 降温诱导 25C</text>
+
+      <rect x="0" y="96" width="330" height="24" rx="4" fill="#111a2a"/>
+      <text x="10" y="113" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">诱导表达 8h -> 排液收获</text>
+    </g>
+
+    <!-- Key params -->
+    <g transform="translate(15, 200)">
+      <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">关键参数</text>
+      <text x="0" y="20" font-family="JetBrains Mono, monospace" font-size="11" fill="#22c55e">T: 37C -> 25C</text>
+      <text x="160" y="20" font-family="JetBrains Mono, monospace" font-size="11" fill="#22c55e">pH: 7.0</text>
+      <text x="0" y="40" font-family="JetBrains Mono, monospace" font-size="11" fill="#22c55e">DO: 30%</text>
+      <text x="160" y="40" font-family="JetBrains Mono, monospace" font-size="11" fill="#22c55e">F0 >= 20</text>
+    </g>
+
+    <!-- AI value -->
+    <g transform="translate(15, 270)">
+      <rect x="0" y="0" width="330" height="1" fill="#1e2d45"/>
+      <text x="0" y="20" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#22c55e">AI 辅助价值</text>
+
+      <circle cx="8" cy="40" r="3" fill="#22c55e"/>
+      <text x="18" y="44" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">CUSUM 检测 DO Spike 提前 5-15 min</text>
+
+      <circle cx="8" cy="62" r="3" fill="#22c55e"/>
+      <text x="18" y="66" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">软测量 OD600 减少 60% 取样</text>
+
+      <circle cx="8" cy="84" r="3" fill="#22c55e"/>
+      <text x="18" y="88" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">凌晨无需值守自动运行</text>
+    </g>
+
+    <!-- BIOCore stack highlight -->
+    <g transform="translate(15, 410)">
+      <rect x="0" y="0" width="100" height="22" rx="4" fill="#22c55e" opacity="0.15"/>
+      <text x="50" y="15" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#22c55e">PLC 控制</text>
+      <rect x="110" y="0" width="100" height="22" rx="4" fill="#22c55e" opacity="0.15"/>
+      <text x="160" y="15" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#22c55e">AI 辅助</text>
+      <rect x="220" y="0" width="100" height="22" rx="4" fill="#22c55e" opacity="0.15"/>
+      <text x="270" y="15" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#22c55e">数据分析</text>
+    </g>
+  </g>
+
+  <!-- Column 2: Yeast -->
+  <g transform="translate(460, 145)">
+    <rect x="0" y="0" width="360" height="490" rx="10" fill="#1a2744" stroke="#f59e0b" stroke-width="1.5"/>
+
+    <!-- Header tag -->
+    <rect x="0" y="0" width="360" height="50" rx="10" fill="#f59e0b" opacity="0.1"/>
+    <rect x="0" y="40" width="360" height="10" fill="#1a2744"/>
+    <text x="180" y="30" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="bold" fill="#f59e0b">酵母抗 Crabtree</text>
+
+    <!-- Process focus -->
+    <g transform="translate(15, 65)">
+      <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">工艺要点</text>
+
+      <rect x="0" y="12" width="330" height="24" rx="4" fill="#162030"/>
+      <text x="10" y="29" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">DO-stat 补料策略控制碳源</text>
+
+      <rect x="0" y="40" width="330" height="24" rx="4" fill="#111a2a"/>
+      <text x="10" y="57" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">严格控制葡萄糖浓度避免 Crabtree 效应</text>
+
+      <rect x="0" y="68" width="330" height="24" rx="4" fill="#162030"/>
+      <text x="10" y="85" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">RQ 监测：RQ > 1.1 提示溢流代谢</text>
+
+      <rect x="0" y="96" width="330" height="24" rx="4" fill="#111a2a"/>
+      <text x="10" y="113" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">碱消耗振荡检测代谢状态切换</text>
+    </g>
+
+    <!-- Key params -->
+    <g transform="translate(15, 200)">
+      <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">关键参数</text>
+      <text x="0" y="20" font-family="JetBrains Mono, monospace" font-size="11" fill="#f59e0b">T: 30C</text>
+      <text x="160" y="20" font-family="JetBrains Mono, monospace" font-size="11" fill="#f59e0b">pH: 5.0-5.5</text>
+      <text x="0" y="40" font-family="JetBrains Mono, monospace" font-size="11" fill="#f59e0b">RQ &lt; 1.1</text>
+      <text x="160" y="40" font-family="JetBrains Mono, monospace" font-size="11" fill="#f59e0b">DO-stat</text>
+    </g>
+
+    <!-- AI value -->
+    <g transform="translate(15, 270)">
+      <rect x="0" y="0" width="330" height="1" fill="#1e2d45"/>
+      <text x="0" y="20" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#f59e0b">AI 辅助价值</text>
+
+      <circle cx="8" cy="40" r="3" fill="#f59e0b"/>
+      <text x="18" y="44" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">AI 监测 RQ > 1.1 建议降低补料速率</text>
+
+      <circle cx="8" cy="62" r="3" fill="#f59e0b"/>
+      <text x="18" y="66" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">碱消耗振荡检测溢流代谢</text>
+
+      <circle cx="8" cy="84" r="3" fill="#f59e0b"/>
+      <text x="18" y="88" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">自动 DO-stat 补料切换</text>
+    </g>
+
+    <g transform="translate(15, 410)">
+      <rect x="0" y="0" width="100" height="22" rx="4" fill="#f59e0b" opacity="0.15"/>
+      <text x="50" y="15" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#f59e0b">PLC 控制</text>
+      <rect x="110" y="0" width="100" height="22" rx="4" fill="#f59e0b" opacity="0.15"/>
+      <text x="160" y="15" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#f59e0b">AI 辅助</text>
+      <rect x="220" y="0" width="100" height="22" rx="4" fill="#f59e0b" opacity="0.15"/>
+      <text x="270" y="15" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#f59e0b">数据分析</text>
+    </g>
+  </g>
+
+  <!-- Column 3: CHO -->
+  <g transform="translate(840, 145)">
+    <rect x="0" y="0" width="360" height="490" rx="10" fill="#1a2744" stroke="#1677ff" stroke-width="1.5"/>
+
+    <!-- Header tag -->
+    <rect x="0" y="0" width="360" height="50" rx="10" fill="#1677ff" opacity="0.1"/>
+    <rect x="0" y="40" width="360" height="10" fill="#1a2744"/>
+    <text x="180" y="30" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="bold" fill="#1677ff">CHO 细胞培养</text>
+
+    <!-- Process focus -->
+    <g transform="translate(15, 65)">
+      <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">工艺要点</text>
+
+      <rect x="0" y="12" width="330" height="24" rx="4" fill="#162030"/>
+      <text x="10" y="29" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">低剪切搅拌 80-120 rpm 保护细胞</text>
+
+      <rect x="0" y="40" width="330" height="24" rx="4" fill="#111a2a"/>
+      <text x="10" y="57" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">严格温度控制 37.0 +/- 0.3C</text>
+
+      <rect x="0" y="68" width="330" height="24" rx="4" fill="#162030"/>
+      <text x="10" y="85" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">精确 pH 控制 7.0 +/- 0.05</text>
+
+      <rect x="0" y="96" width="330" height="24" rx="4" fill="#111a2a"/>
+      <text x="10" y="113" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">长周期培养 7-14 天连续监控</text>
+    </g>
+
+    <!-- Key params -->
+    <g transform="translate(15, 200)">
+      <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">关键参数</text>
+      <text x="0" y="20" font-family="JetBrains Mono, monospace" font-size="11" fill="#1677ff">T: 37.0 +/- 0.3C</text>
+      <text x="0" y="40" font-family="JetBrains Mono, monospace" font-size="11" fill="#1677ff">pH: 7.0 +/- 0.05</text>
+      <text x="0" y="60" font-family="JetBrains Mono, monospace" font-size="11" fill="#1677ff">RPM: 80-120</text>
+    </g>
+
+    <!-- AI value -->
+    <g transform="translate(15, 290)">
+      <rect x="0" y="0" width="330" height="1" fill="#1e2d45"/>
+      <text x="0" y="20" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#1677ff">AI 辅助价值</text>
+
+      <circle cx="8" cy="40" r="3" fill="#1677ff"/>
+      <text x="18" y="44" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">软测量 VCD (活细胞密度) 推断</text>
+
+      <circle cx="8" cy="62" r="3" fill="#1677ff"/>
+      <text x="18" y="66" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">长周期 CUSUM 漂移检测</text>
+
+      <circle cx="8" cy="84" r="3" fill="#1677ff"/>
+      <text x="18" y="88" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">7-14 天无人值守持续监控</text>
+    </g>
+
+    <g transform="translate(15, 410)">
+      <rect x="0" y="0" width="100" height="22" rx="4" fill="#1677ff" opacity="0.15"/>
+      <text x="50" y="15" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#1677ff">PLC 控制</text>
+      <rect x="110" y="0" width="100" height="22" rx="4" fill="#1677ff" opacity="0.15"/>
+      <text x="160" y="15" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#1677ff">AI 辅助</text>
+      <rect x="220" y="0" width="100" height="22" rx="4" fill="#1677ff" opacity="0.15"/>
+      <text x="270" y="15" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="9" fill="#1677ff">数据分析</text>
+    </g>
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="680" width="1280" height="40" fill="#0d1a2e"/>
+  <text x="80" y="706" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="706" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#3a5070">典型应用案例</text>
+  <text x="1200" y="706" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#4a6080">15 / 18</text>
+</svg>

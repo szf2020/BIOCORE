@@ -1,0 +1,34 @@
+{
+  "total_slides": 18,
+  "review_engine": "technical-validation-only",
+  "slides": [
+    { "index": 1, "file": "slides/slide-01.svg", "final_score": 8.0, "fix_rounds": 0, "status": "passed" },
+    { "index": 2, "file": "slides/slide-02.svg", "final_score": 8.0, "fix_rounds": 0, "status": "passed" },
+    { "index": 3, "file": "slides/slide-03.svg", "final_score": 7.8, "fix_rounds": 0, "status": "passed" },
+    { "index": 4, "file": "slides/slide-04.svg", "final_score": 8.0, "fix_rounds": 0, "status": "passed" },
+    { "index": 5, "file": "slides/slide-05.svg", "final_score": 8.0, "fix_rounds": 0, "status": "passed" },
+    { "index": 6, "file": "slides/slide-06.svg", "final_score": 8.0, "fix_rounds": 0, "status": "passed" },
+    { "index": 7, "file": "slides/slide-07.svg", "final_score": 8.0, "fix_rounds": 0, "status": "passed" },
+    { "index": 8, "file": "slides/slide-08.svg", "final_score": 8.0, "fix_rounds": 0, "status": "passed" },
+    { "index": 9, "file": "slides/slide-09.svg", "final_score": 8.0, "fix_rounds": 0, "status": "passed" },
+    { "index": 10, "file": "slides/slide-10.svg", "final_score": 8.0, "fix_rounds": 0, "status": "passed" },
+    { "index": 11, "file": "slides/slide-11.svg", "final_score": 8.0, "fix_rounds": 0, "status": "passed" },
+    { "index": 12, "file": "slides/slide-12.svg", "final_score": 7.5, "fix_rounds": 0, "status": "accepted_with_warning", "warning": "WCAG contrast issue on bottom note text #94A3B8" },
+    { "index": 13, "file": "slides/slide-13.svg", "final_score": 7.8, "fix_rounds": 0, "status": "passed" },
+    { "index": 14, "file": "slides/slide-14.svg", "final_score": 8.3, "fix_rounds": 0, "status": "passed" },
+    { "index": 15, "file": "slides/slide-15.svg", "final_score": 8.5, "fix_rounds": 0, "status": "passed" },
+    { "index": 16, "file": "slides/slide-16.svg", "final_score": 8.7, "fix_rounds": 0, "status": "passed" },
+    { "index": 17, "file": "slides/slide-17.svg", "final_score": 7.8, "fix_rounds": 0, "status": "passed" },
+    { "index": 18, "file": "slides/slide-18.svg", "final_score": 8.2, "fix_rounds": 0, "status": "passed" }
+  ],
+  "holistic": {
+    "score": null,
+    "status": "skipped",
+    "issues": ["Gemini unavailable — holistic review not performed"]
+  },
+  "summary": {
+    "passed": 17,
+    "accepted_with_warning": 1,
+    "avg_score": 8.03
+  }
+}

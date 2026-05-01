@@ -1,0 +1,23 @@
+{
+  "name": "@biocore/batch-engine",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@biocore/types": "workspace:*",
+    "@biocore/plc-driver": "workspace:*",
+    "xstate": "^5.18.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "vitest": "^1.2.0"
+  }
+}

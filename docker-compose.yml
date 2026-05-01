@@ -1,0 +1,27 @@
+# BIOCore 开发环境 Docker Compose
+# 仅包含 InfluxDB (SQLite为嵌入式无需容器)
+
+version: '3.8'
+
+services:
+  influxdb:
+    image: influxdb:2.7
+    container_name: biocore-influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=biocore123
+      - DOCKER_INFLUXDB_INIT_ORG=biocore
+      - DOCKER_INFLUXDB_INIT_BUCKET=fermentation
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=biocore-dev-token
+      - DOCKER_INFLUXDB_INIT_RETENTION=365d
+    restart: unless-stopped
+
+volumes:
+  influxdb_data:
+  influxdb_config:

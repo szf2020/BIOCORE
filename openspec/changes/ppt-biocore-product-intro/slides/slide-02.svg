@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="s2-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#F1F5F9"/>
+    </linearGradient>
+    <filter id="s2-card-shadow" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#1E293B" flood-opacity="0.08"/>
+    </filter>
+    <filter id="s2-deep-shadow" x="-3%" y="-3%" width="106%" height="112%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#1E293B" flood-opacity="0.12"/>
+    </filter>
+    <linearGradient id="s2-accent-bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1E40AF"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#s2-bg)"/>
+
+  <!-- Top accent bar -->
+  <rect x="0" y="0" width="1280" height="4" fill="url(#s2-accent-bar)"/>
+
+  <!-- Page header -->
+  <text x="80" y="52" font-family="Source Serif Pro, Georgia, serif" font-size="28" font-weight="700" fill="#1E293B">技术架构总览</text>
+  <text x="80" y="78" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="15" fill="#64748B">三层解耦架构 — 浏览器层 / 服务层 / PLC 层</text>
+  <rect x="80" y="90" width="80" height="2" rx="1" fill="#1E40AF"/>
+  <rect x="168" y="90" width="30" height="2" rx="1" fill="#059669"/>
+
+  <!-- === LAYER 1: BROWSER === -->
+  <rect x="300" y="112" width="640" height="108" rx="8" fill="#FFFFFF" stroke="#1E40AF" stroke-width="1.5" filter="url(#s2-card-shadow)"/>
+  <!-- Layer label pill -->
+  <rect x="316" y="122" width="72" height="22" rx="11" fill="#1E40AF"/>
+  <text x="352" y="137" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#FFFFFF">浏览器层</text>
+  <!-- Content -->
+  <text x="400" y="137" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">Browser</text>
+  <text x="316" y="162" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="14" font-weight="600" fill="#1E293B">Next.js 14 + React 18 + ECharts</text>
+  <text x="316" y="182" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">14 个功能页面 | shadcn/ui | Tailwind CSS | 深色 MES 主题</text>
+  <!-- Browser icon -->
+  <rect x="868" y="132" width="48" height="34" rx="4" fill="none" stroke="#1E40AF" stroke-width="1" opacity="0.4"/>
+  <line x1="868" y1="154" x2="916" y2="154" stroke="#1E40AF" stroke-width="1" opacity="0.4"/>
+  <circle cx="876" cy="162" r="2" fill="#1E40AF" opacity="0.3"/>
+  <circle cx="884" cy="162" r="2" fill="#1E40AF" opacity="0.3"/>
+
+  <!-- Arrow: Browser -> Server -->
+  <line x1="620" y1="220" x2="620" y2="248" stroke="#94A3B8" stroke-width="1.5"/>
+  <polygon points="620,252 614,244 626,244" fill="#94A3B8"/>
+  <rect x="632" y="227" width="186" height="22" rx="11" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="0.5"/>
+  <text x="725" y="242" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#64748B">WebSocket + REST API</text>
+
+  <!-- === LAYER 2: SERVER === -->
+  <rect x="300" y="256" width="640" height="158" rx="8" fill="#FFFFFF" stroke="#059669" stroke-width="1.5" filter="url(#s2-card-shadow)"/>
+  <!-- Layer label pill -->
+  <rect x="316" y="266" width="60" height="22" rx="11" fill="#059669"/>
+  <text x="346" y="281" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#FFFFFF">服务层</text>
+  <!-- Content -->
+  <text x="388" y="281" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">Server</text>
+  <text x="316" y="304" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="14" font-weight="600" fill="#1E293B">Node.js + Express + 9 个后端包</text>
+
+  <!-- 9 backend package pills -->
+  <g transform="translate(316, 318)">
+    <rect x="0" y="0" width="108" height="26" rx="6" fill="#F0FDF4" stroke="#059669" stroke-width="0.5"/>
+    <text x="54" y="17" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">plc-driver</text>
+
+    <rect x="118" y="0" width="114" height="26" rx="6" fill="#F0FDF4" stroke="#059669" stroke-width="0.5"/>
+    <text x="175" y="17" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">batch-engine</text>
+
+    <rect x="242" y="0" width="110" height="26" rx="6" fill="#F0FDF4" stroke="#059669" stroke-width="0.5"/>
+    <text x="297" y="17" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">ai-analytics</text>
+
+    <rect x="362" y="0" width="108" height="26" rx="6" fill="#F0FDF4" stroke="#059669" stroke-width="0.5"/>
+    <text x="416" y="17" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">data-logger</text>
+
+    <rect x="480" y="0" width="108" height="26" rx="6" fill="#F0FDF4" stroke="#059669" stroke-width="0.5"/>
+    <text x="534" y="17" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">doe-engine</text>
+
+    <rect x="0" y="34" width="104" height="26" rx="6" fill="#F0FDF4" stroke="#059669" stroke-width="0.5"/>
+    <text x="52" y="51" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">safety-mgr</text>
+
+    <rect x="114" y="34" width="100" height="26" rx="6" fill="#F0FDF4" stroke="#059669" stroke-width="0.5"/>
+    <text x="164" y="51" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">auth-rbac</text>
+
+    <rect x="224" y="34" width="110" height="26" rx="6" fill="#F0FDF4" stroke="#059669" stroke-width="0.5"/>
+    <text x="279" y="51" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">recipe-mgr</text>
+
+    <rect x="344" y="34" width="108" height="26" rx="6" fill="#F0FDF4" stroke="#059669" stroke-width="0.5"/>
+    <text x="398" y="51" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">alarm-mgr</text>
+  </g>
+
+  <!-- Arrow: Server -> PLC -->
+  <line x1="620" y1="414" x2="620" y2="442" stroke="#94A3B8" stroke-width="1.5"/>
+  <polygon points="620,446 614,438 626,438" fill="#94A3B8"/>
+  <rect x="624" y="421" width="230" height="22" rx="11" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="0.5"/>
+  <text x="739" y="436" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#64748B">S7 Protocol (TCP:102) + Modbus</text>
+
+  <!-- === LAYER 3: PLC === -->
+  <rect x="300" y="450" width="640" height="108" rx="8" fill="#FFFFFF" stroke="#D97706" stroke-width="1.5" filter="url(#s2-card-shadow)"/>
+  <!-- Layer label pill -->
+  <rect x="316" y="460" width="60" height="22" rx="11" fill="#D97706"/>
+  <text x="346" y="475" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#FFFFFF">PLC 层</text>
+  <!-- Content -->
+  <text x="388" y="475" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">Hardware</text>
+  <text x="316" y="500" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="14" font-weight="600" fill="#1E293B">S7-200 SMART G2 + 8 PID 回路</text>
+  <text x="316" y="522" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">8AI | 4AO | 14DI | 10DQ | RS485 Modbus | 双向心跳</text>
+  <!-- PLC icon -->
+  <rect x="860" y="470" width="52" height="44" rx="4" fill="none" stroke="#D97706" stroke-width="1" opacity="0.4"/>
+  <rect x="866" y="476" width="6" height="6" rx="1" fill="#D97706" opacity="0.3"/>
+  <rect x="876" y="476" width="6" height="6" rx="1" fill="#D97706" opacity="0.3"/>
+  <rect x="886" y="476" width="6" height="6" rx="1" fill="#D97706" opacity="0.3"/>
+  <rect x="896" y="476" width="6" height="6" rx="1" fill="#D97706" opacity="0.3"/>
+  <rect x="866" y="498" width="38" height="3" rx="1" fill="#D97706" opacity="0.3"/>
+  <rect x="866" y="504" width="28" height="3" rx="1" fill="#D97706" opacity="0.3"/>
+
+  <!-- Left sidebar: Tech Stack -->
+  <g transform="translate(80, 120)">
+    <text x="0" y="0" font-family="Source Serif Pro, Georgia, serif" font-size="13" font-weight="600" fill="#1E293B">核心技术栈</text>
+    <rect x="0" y="10" width="180" height="1" fill="#E2E8F0"/>
+
+    <circle cx="8" cy="32" r="4" fill="#1E40AF"/>
+    <text x="20" y="36" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#475569">Next.js 14</text>
+
+    <circle cx="8" cy="58" r="4" fill="#1E40AF"/>
+    <text x="20" y="62" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#475569">Express</text>
+
+    <circle cx="8" cy="84" r="4" fill="#059669"/>
+    <text x="20" y="88" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#475569">node-snap7</text>
+
+    <circle cx="8" cy="110" r="4" fill="#059669"/>
+    <text x="20" y="114" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#475569">Ollama + Qwen2.5</text>
+
+    <circle cx="8" cy="136" r="4" fill="#D97706"/>
+    <text x="20" y="140" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#475569">InfluxDB</text>
+
+    <circle cx="8" cy="162" r="4" fill="#D97706"/>
+    <text x="20" y="166" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#475569">SQLite</text>
+  </g>
+
+  <!-- Left sidebar: Key Metrics -->
+  <g transform="translate(80, 380)">
+    <text x="0" y="0" font-family="Source Serif Pro, Georgia, serif" font-size="13" font-weight="600" fill="#1E293B">关键数字</text>
+    <rect x="0" y="10" width="180" height="1" fill="#E2E8F0"/>
+
+    <text x="0" y="42" font-family="JetBrains Mono, monospace" font-size="24" font-weight="700" fill="#1E40AF">97+</text>
+    <text x="60" y="42" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#475569">REST API 端点</text>
+
+    <text x="0" y="78" font-family="JetBrains Mono, monospace" font-size="24" font-weight="700" fill="#059669">9</text>
+    <text x="30" y="78" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#475569">后端包</text>
+
+    <text x="0" y="114" font-family="JetBrains Mono, monospace" font-size="24" font-weight="700" fill="#D97706">3</text>
+    <text x="30" y="114" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#475569">层解耦架构</text>
+  </g>
+
+  <!-- Design advantage callout -->
+  <rect x="300" y="578" width="640" height="52" rx="8" fill="#EFF6FF" stroke="#1E40AF" stroke-width="0.5" filter="url(#s2-card-shadow)"/>
+  <text x="320" y="600" font-family="Source Serif Pro, Georgia, serif" font-size="13" font-weight="600" fill="#1E40AF">架构优势</text>
+  <text x="320" y="618" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#475569">三层解耦：独立升级 | 故障隔离 | 灵活部署 — 每层可独立迭代而不影响其他层</text>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="678" width="1280" height="42" fill="#FFFFFF"/>
+  <rect x="0" y="678" width="1280" height="1" fill="#E2E8F0"/>
+  <text x="80" y="704" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="704" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">技术架构总览</text>
+  <text x="1200" y="704" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#94A3B8">02 / 18</text>
+</svg>

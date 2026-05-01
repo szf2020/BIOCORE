@@ -1,0 +1,151 @@
+{
+  "title": "BIOCore 实验室发酵罐智能控制平台",
+  "total_slides": 18,
+  "style": "scientific",
+  "language": "zh-CN",
+  "viewBox": "0 0 1280 720",
+  "generated_at": "2026-04-12",
+  "slides": [
+    {
+      "index": 1,
+      "title": "BIOCore 实验室发酵罐智能控制平台",
+      "type": "cover",
+      "layout_type": "full_bleed",
+      "file": "drafts/slide-01.svg"
+    },
+    {
+      "index": 2,
+      "title": "技术架构总览",
+      "type": "overview",
+      "layout_type": "single_focus",
+      "file": "drafts/slide-02.svg"
+    },
+    {
+      "index": 3,
+      "title": "工业级硬件底座",
+      "type": "content",
+      "layout_type": "two_column_asymmetric",
+      "file": "drafts/slide-03.svg",
+      "part": "第一部分：工业级硬件底座与安全体系"
+    },
+    {
+      "index": 4,
+      "title": "双向心跳安全协议",
+      "type": "content",
+      "layout_type": "horizontal_split",
+      "file": "drafts/slide-04.svg",
+      "part": "第一部分：工业级硬件底座与安全体系"
+    },
+    {
+      "index": 5,
+      "title": "ISA-88 批次控制引擎",
+      "type": "content",
+      "layout_type": "hero_grid",
+      "file": "drafts/slide-05.svg",
+      "part": "第一部分：工业级硬件底座与安全体系"
+    },
+    {
+      "index": 6,
+      "title": "5 层安全防护体系",
+      "type": "content",
+      "layout_type": "single_focus",
+      "file": "drafts/slide-06.svg",
+      "part": "第一部分：工业级硬件底座与安全体系"
+    },
+    {
+      "index": 7,
+      "title": "本地 AI 技术栈",
+      "type": "content",
+      "layout_type": "two_column_symmetric",
+      "file": "drafts/slide-07.svg",
+      "part": "第二部分：本地 AI 智能模块"
+    },
+    {
+      "index": 8,
+      "title": "AI 安全哲学 — 建议缓冲区",
+      "type": "content",
+      "layout_type": "single_focus",
+      "file": "drafts/slide-08.svg",
+      "part": "第二部分：本地 AI 智能模块"
+    },
+    {
+      "index": 9,
+      "title": "CUSUM 异常检测与根因分析",
+      "type": "content",
+      "layout_type": "two_column_asymmetric",
+      "file": "drafts/slide-09.svg",
+      "part": "第二部分：本地 AI 智能模块"
+    },
+    {
+      "index": 10,
+      "title": "软测量与补料优化",
+      "type": "content",
+      "layout_type": "two_column_symmetric",
+      "file": "drafts/slide-10.svg",
+      "part": "第二部分：本地 AI 智能模块"
+    },
+    {
+      "index": 11,
+      "title": "双数据库与实时数据流",
+      "type": "content",
+      "layout_type": "two_column_asymmetric",
+      "file": "drafts/slide-11.svg",
+      "part": "第三部分：数据架构与开放生态"
+    },
+    {
+      "index": 12,
+      "title": "现代化 Web 前端",
+      "type": "content",
+      "layout_type": "mixed_grid",
+      "file": "drafts/slide-12.svg",
+      "part": "第三部分：数据架构与开放生态"
+    },
+    {
+      "index": 13,
+      "title": "开放 API 与系统集成",
+      "type": "content",
+      "layout_type": "dashboard",
+      "file": "drafts/slide-13.svg",
+      "part": "第三部分：数据架构与开放生态"
+    },
+    {
+      "index": 14,
+      "title": "实验设计与贝叶斯优化",
+      "type": "content",
+      "layout_type": "two_column_symmetric",
+      "file": "drafts/slide-14.svg",
+      "part": "第四部分：实验设计、竞争优势与商业价值"
+    },
+    {
+      "index": 15,
+      "title": "典型应用案例",
+      "type": "content",
+      "layout_type": "three_column",
+      "file": "drafts/slide-15.svg",
+      "part": "第四部分：实验设计、竞争优势与商业价值"
+    },
+    {
+      "index": 16,
+      "title": "竞品对比矩阵",
+      "type": "content",
+      "layout_type": "single_focus",
+      "file": "drafts/slide-16.svg",
+      "part": "第四部分：实验设计、竞争优势与商业价值"
+    },
+    {
+      "index": 17,
+      "title": "成本与商业价值",
+      "type": "content",
+      "layout_type": "dashboard",
+      "file": "drafts/slide-17.svg",
+      "part": "第四部分：实验设计、竞争优势与商业价值"
+    },
+    {
+      "index": 18,
+      "title": "开始使用 BIOCore",
+      "type": "end",
+      "layout_type": "full_bleed",
+      "file": "drafts/slide-18.svg"
+    }
+  ]
+}

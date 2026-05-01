@@ -1,0 +1,241 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <filter id="s15-shadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#1E293B" flood-opacity="0.08"/>
+    </filter>
+    <filter id="s15-shadow-sm" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#1E293B" flood-opacity="0.06"/>
+    </filter>
+    <linearGradient id="s15-hero-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#059669" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#1E40AF" stop-opacity="0.03"/>
+    </linearGradient>
+    <linearGradient id="s15-accent-bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="50%" stop-color="#1E40AF"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="#F1F5F9"/>
+  <rect width="1280" height="720" fill="url(#s15-hero-grad)" data-decorative="true"/>
+
+  <!-- Top accent bar -->
+  <g data-decorative="true">
+    <rect x="0" y="0" width="1280" height="4" fill="url(#s15-accent-bar)"/>
+  </g>
+
+  <!-- Part indicator -->
+  <rect x="80" y="28" width="6" height="24" rx="3" fill="#7C3AED"/>
+  <text x="98" y="46" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">第四部分 | 实验设计、竞争优势与商业价值</text>
+
+  <!-- Page title -->
+  <text x="80" y="88" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="28" font-weight="700" fill="#1E293B">典型应用案例</text>
+  <text x="80" y="114" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="15" fill="#64748B">E.coli Fed-batch / 酵母抗 Crabtree / CHO 细胞培养</text>
+  <rect x="80" y="126" width="60" height="3" rx="1.5" fill="#059669"/>
+
+  <!-- THREE COLUMN LAYOUT -->
+
+  <!-- Column 1: E.coli Fed-batch -->
+  <g transform="translate(80, 148)">
+    <rect x="0" y="0" width="360" height="500" rx="12" fill="#F8FAFC" filter="url(#s15-shadow)" stroke="#E2E8F0" stroke-width="1"/>
+
+    <!-- Header -->
+    <rect x="0" y="0" width="360" height="52" rx="12" fill="#ECFDF5"/>
+    <rect x="0" y="40" width="360" height="12" fill="#F8FAFC"/>
+    <text x="180" y="32" text-anchor="middle" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="17" font-weight="700" fill="#059669">E.coli Fed-batch</text>
+
+    <!-- Process flow -->
+    <g transform="translate(20, 66)">
+      <text x="0" y="0" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="700" fill="#1E293B">工艺流程</text>
+
+      <rect x="0" y="14" width="320" height="28" rx="6" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="0.5"/>
+      <text x="12" y="33" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">准备 &#8594; SIP (F0&#8805;20) &#8594; 升温 37&#176;C</text>
+
+      <rect x="0" y="48" width="320" height="28" rx="6" fill="#FAFBFC" stroke="#E2E8F0" stroke-width="0.5"/>
+      <text x="12" y="67" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">Batch 培养 6h &#8594; DO Spike 触发补料</text>
+
+      <rect x="0" y="82" width="320" height="28" rx="6" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="0.5"/>
+      <text x="12" y="101" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">指数补料 12h &#8594; 降温诱导 25&#176;C</text>
+
+      <rect x="0" y="116" width="320" height="28" rx="6" fill="#FAFBFC" stroke="#E2E8F0" stroke-width="0.5"/>
+      <text x="12" y="135" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">诱导表达 8h &#8594; 排液收获</text>
+    </g>
+
+    <!-- Key params -->
+    <g transform="translate(20, 224)">
+      <text x="0" y="0" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="700" fill="#1E293B">关键参数</text>
+      <text x="0" y="22" font-family="JetBrains Mono, monospace" font-size="13" fill="#059669">T: 37&#176;C &#8594; 25&#176;C</text>
+      <text x="170" y="22" font-family="JetBrains Mono, monospace" font-size="13" fill="#059669">pH: 7.0</text>
+      <text x="0" y="44" font-family="JetBrains Mono, monospace" font-size="13" fill="#059669">DO: 30%</text>
+      <text x="170" y="44" font-family="JetBrains Mono, monospace" font-size="13" fill="#059669">F0 &#8805; 20</text>
+    </g>
+
+    <!-- Divider -->
+    <line x1="20" y1="286" x2="340" y2="286" stroke="#E2E8F0" stroke-width="1"/>
+
+    <!-- AI value -->
+    <g transform="translate(20, 300)">
+      <text x="0" y="0" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="700" fill="#059669">AI 辅助价值</text>
+
+      <circle cx="8" cy="22" r="4" fill="#059669"/>
+      <text x="20" y="26" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">CUSUM 检测 DO Spike</text>
+      <text x="20" y="42" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#94A3B8">提前 5-15 min 预警</text>
+
+      <circle cx="8" cy="62" r="4" fill="#059669"/>
+      <text x="20" y="66" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">软测量 OD600</text>
+      <text x="20" y="82" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#94A3B8">减少 60% 取样</text>
+
+      <circle cx="8" cy="102" r="4" fill="#059669"/>
+      <text x="20" y="106" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">凌晨无需值守自动运行</text>
+    </g>
+
+    <!-- Stack tags -->
+    <g transform="translate(20, 432)">
+      <rect x="0" y="0" width="96" height="26" rx="6" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="0.8"/>
+      <text x="48" y="17" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#059669">PLC 控制</text>
+      <rect x="108" y="0" width="96" height="26" rx="6" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="0.8"/>
+      <text x="156" y="17" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#059669">AI 辅助</text>
+      <rect x="216" y="0" width="96" height="26" rx="6" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="0.8"/>
+      <text x="264" y="17" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#059669">数据分析</text>
+    </g>
+  </g>
+
+  <!-- Column 2: Yeast anti-Crabtree -->
+  <g transform="translate(460, 148)">
+    <rect x="0" y="0" width="360" height="500" rx="12" fill="#F8FAFC" filter="url(#s15-shadow)" stroke="#E2E8F0" stroke-width="1"/>
+
+    <!-- Header -->
+    <rect x="0" y="0" width="360" height="52" rx="12" fill="#FFFBEB"/>
+    <rect x="0" y="40" width="360" height="12" fill="#F8FAFC"/>
+    <text x="180" y="32" text-anchor="middle" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="17" font-weight="700" fill="#D97706">酵母抗 Crabtree</text>
+
+    <!-- Process focus -->
+    <g transform="translate(20, 66)">
+      <text x="0" y="0" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="700" fill="#1E293B">工艺要点</text>
+
+      <rect x="0" y="14" width="320" height="28" rx="6" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="0.5"/>
+      <text x="12" y="33" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">DO-stat 补料策略控制碳源</text>
+
+      <rect x="0" y="48" width="320" height="28" rx="6" fill="#FAFBFC" stroke="#E2E8F0" stroke-width="0.5"/>
+      <text x="12" y="67" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">严格控制葡萄糖浓度避免 Crabtree</text>
+
+      <rect x="0" y="82" width="320" height="28" rx="6" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="0.5"/>
+      <text x="12" y="101" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">RQ 监测: RQ &gt; 1.1 提示溢流代谢</text>
+
+      <rect x="0" y="116" width="320" height="28" rx="6" fill="#FAFBFC" stroke="#E2E8F0" stroke-width="0.5"/>
+      <text x="12" y="135" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">碱消耗振荡检测代谢状态切换</text>
+    </g>
+
+    <!-- Key params -->
+    <g transform="translate(20, 224)">
+      <text x="0" y="0" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="700" fill="#1E293B">关键参数</text>
+      <text x="0" y="22" font-family="JetBrains Mono, monospace" font-size="13" fill="#D97706">T: 30&#176;C</text>
+      <text x="170" y="22" font-family="JetBrains Mono, monospace" font-size="13" fill="#D97706">pH: 5.0-5.5</text>
+      <text x="0" y="44" font-family="JetBrains Mono, monospace" font-size="13" fill="#D97706">RQ &lt; 1.1</text>
+      <text x="170" y="44" font-family="JetBrains Mono, monospace" font-size="13" fill="#D97706">DO-stat</text>
+    </g>
+
+    <!-- Divider -->
+    <line x1="20" y1="286" x2="340" y2="286" stroke="#E2E8F0" stroke-width="1"/>
+
+    <!-- AI value -->
+    <g transform="translate(20, 300)">
+      <text x="0" y="0" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="700" fill="#D97706">AI 辅助价值</text>
+
+      <circle cx="8" cy="22" r="4" fill="#D97706"/>
+      <text x="20" y="26" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">AI 监测 RQ &gt; 1.1</text>
+      <text x="20" y="42" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#94A3B8">建议降低补料速率</text>
+
+      <circle cx="8" cy="62" r="4" fill="#D97706"/>
+      <text x="20" y="66" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">碱消耗振荡检测</text>
+      <text x="20" y="82" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#94A3B8">识别溢流代谢</text>
+
+      <circle cx="8" cy="102" r="4" fill="#D97706"/>
+      <text x="20" y="106" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">自动 DO-stat 补料切换</text>
+    </g>
+
+    <!-- Stack tags -->
+    <g transform="translate(20, 432)">
+      <rect x="0" y="0" width="96" height="26" rx="6" fill="#FFFBEB" stroke="#FDE68A" stroke-width="0.8"/>
+      <text x="48" y="17" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#D97706">PLC 控制</text>
+      <rect x="108" y="0" width="96" height="26" rx="6" fill="#FFFBEB" stroke="#FDE68A" stroke-width="0.8"/>
+      <text x="156" y="17" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#D97706">AI 辅助</text>
+      <rect x="216" y="0" width="96" height="26" rx="6" fill="#FFFBEB" stroke="#FDE68A" stroke-width="0.8"/>
+      <text x="264" y="17" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#D97706">数据分析</text>
+    </g>
+  </g>
+
+  <!-- Column 3: CHO Cell Culture -->
+  <g transform="translate(840, 148)">
+    <rect x="0" y="0" width="360" height="500" rx="12" fill="#F8FAFC" filter="url(#s15-shadow)" stroke="#E2E8F0" stroke-width="1"/>
+
+    <!-- Header -->
+    <rect x="0" y="0" width="360" height="52" rx="12" fill="#EFF6FF"/>
+    <rect x="0" y="40" width="360" height="12" fill="#F8FAFC"/>
+    <text x="180" y="32" text-anchor="middle" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="17" font-weight="700" fill="#1E40AF">CHO 细胞培养</text>
+
+    <!-- Process focus -->
+    <g transform="translate(20, 66)">
+      <text x="0" y="0" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="700" fill="#1E293B">工艺要点</text>
+
+      <rect x="0" y="14" width="320" height="28" rx="6" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="0.5"/>
+      <text x="12" y="33" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">低剪切搅拌 80-120 rpm 保护细胞</text>
+
+      <rect x="0" y="48" width="320" height="28" rx="6" fill="#FAFBFC" stroke="#E2E8F0" stroke-width="0.5"/>
+      <text x="12" y="67" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">严格温度控制 37.0 &#177;0.3&#176;C</text>
+
+      <rect x="0" y="82" width="320" height="28" rx="6" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="0.5"/>
+      <text x="12" y="101" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">精确 pH 控制 7.0 &#177;0.05</text>
+
+      <rect x="0" y="116" width="320" height="28" rx="6" fill="#FAFBFC" stroke="#E2E8F0" stroke-width="0.5"/>
+      <text x="12" y="135" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">长周期培养 7-14 天连续监控</text>
+    </g>
+
+    <!-- Key params -->
+    <g transform="translate(20, 224)">
+      <text x="0" y="0" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="700" fill="#1E293B">关键参数</text>
+      <text x="0" y="22" font-family="JetBrains Mono, monospace" font-size="13" fill="#1E40AF">T: 37.0 &#177;0.3&#176;C</text>
+      <text x="0" y="44" font-family="JetBrains Mono, monospace" font-size="13" fill="#1E40AF">pH: 7.0 &#177;0.05</text>
+      <text x="170" y="22" font-family="JetBrains Mono, monospace" font-size="13" fill="#1E40AF">RPM: 80-120</text>
+      <text x="170" y="44" font-family="JetBrains Mono, monospace" font-size="13" fill="#1E40AF">7-14 天</text>
+    </g>
+
+    <!-- Divider -->
+    <line x1="20" y1="286" x2="340" y2="286" stroke="#E2E8F0" stroke-width="1"/>
+
+    <!-- AI value -->
+    <g transform="translate(20, 300)">
+      <text x="0" y="0" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="700" fill="#1E40AF">AI 辅助价值</text>
+
+      <circle cx="8" cy="22" r="4" fill="#1E40AF"/>
+      <text x="20" y="26" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">软测量 VCD 推断</text>
+      <text x="20" y="42" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#94A3B8">活细胞密度在线估算</text>
+
+      <circle cx="8" cy="62" r="4" fill="#1E40AF"/>
+      <text x="20" y="66" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">长周期 CUSUM 漂移检测</text>
+      <text x="20" y="82" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#94A3B8">7-14 天持续监控</text>
+
+      <circle cx="8" cy="102" r="4" fill="#1E40AF"/>
+      <text x="20" y="106" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">无人值守持续运行</text>
+    </g>
+
+    <!-- Stack tags -->
+    <g transform="translate(20, 432)">
+      <rect x="0" y="0" width="96" height="26" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.8"/>
+      <text x="48" y="17" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#1E40AF">PLC 控制</text>
+      <rect x="108" y="0" width="96" height="26" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.8"/>
+      <text x="156" y="17" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#1E40AF">AI 辅助</text>
+      <rect x="216" y="0" width="96" height="26" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.8"/>
+      <text x="264" y="17" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#1E40AF">数据分析</text>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <rect x="0" y="680" width="1280" height="40" fill="#F8FAFC"/>
+  <line x1="0" y1="680" x2="1280" y2="680" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="80" y="705" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="705" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">典型应用案例</text>
+  <text x="1200" y="705" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#94A3B8">15 / 18</text>
+</svg>

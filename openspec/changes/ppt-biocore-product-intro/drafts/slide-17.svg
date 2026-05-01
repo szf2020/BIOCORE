@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg17" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#122040"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bg17)"/>
+  <rect x="0" y="0" width="1280" height="4" fill="#8b5cf6"/>
+
+  <!-- Part indicator -->
+  <rect x="80" y="24" width="8" height="30" rx="2" fill="#8b5cf6"/>
+  <text x="100" y="45" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">第四部分 | 实验设计、竞争优势与商业价值</text>
+
+  <!-- Page title -->
+  <text x="80" y="85" font-family="Microsoft YaHei, sans-serif" font-size="26" font-weight="bold" fill="#ffffff">成本与商业价值</text>
+  <text x="80" y="112" font-family="Microsoft YaHei, sans-serif" font-size="14" fill="#7a8faa">3,500 起步 — 硬件 BOM 透明，软件社区版免费</text>
+  <rect x="80" y="122" width="80" height="2" fill="#8b5cf6" rx="1"/>
+
+  <!-- Top metrics row -->
+  <g transform="translate(80, 140)">
+    <rect x="0" y="0" width="200" height="70" rx="10" fill="#1a2744" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="100" y="30" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">起步成本</text>
+    <text x="100" y="55" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="24" font-weight="bold" fill="#22c55e">Y3,500</text>
+
+    <rect x="220" y="0" width="200" height="70" rx="10" fill="#1a2744" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="320" y="30" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">8 罐成本倍差</text>
+    <text x="320" y="55" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="24" font-weight="bold" fill="#f59e0b">36-51x</text>
+
+    <rect x="440" y="0" width="200" height="70" rx="10" fill="#1a2744" stroke="#1677ff" stroke-width="1.5"/>
+    <text x="540" y="30" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">市场 CAGR</text>
+    <text x="540" y="55" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="24" font-weight="bold" fill="#1677ff">29.5%</text>
+
+    <rect x="660" y="0" width="200" height="70" rx="10" fill="#1a2744" stroke="#8b5cf6" stroke-width="1.5"/>
+    <text x="760" y="30" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">2034 市场规模</text>
+    <text x="760" y="55" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="24" font-weight="bold" fill="#8b5cf6">$7.6B</text>
+  </g>
+
+  <!-- Left: Cost comparison bar chart -->
+  <g transform="translate(80, 235)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#b0c4e8">成本对比（千元）</text>
+
+    <g transform="translate(0, 25)">
+      <!-- BIOCore -->
+      <text x="0" y="18" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#22c55e">BIOCore</text>
+      <rect x="130" y="5" width="28" height="22" rx="3" fill="#22c55e"/>
+      <text x="168" y="20" font-family="JetBrains Mono, monospace" font-size="12" font-weight="bold" fill="#22c55e">Y3.5-7K</text>
+
+      <!-- Eppendorf -->
+      <text x="0" y="52" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">Eppendorf</text>
+      <rect x="130" y="39" width="180" height="22" rx="3" fill="#ef4444" opacity="0.4"/>
+      <text x="320" y="54" font-family="JetBrains Mono, monospace" font-size="12" fill="#ef4444">Y32-45K</text>
+
+      <!-- LUCULLUS -->
+      <text x="0" y="86" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">LUCULLUS</text>
+      <rect x="130" y="73" width="240" height="22" rx="3" fill="#f59e0b" opacity="0.4"/>
+      <text x="380" y="88" font-family="JetBrains Mono, monospace" font-size="12" fill="#f59e0b">Y40-60K</text>
+
+      <!-- Sartorius -->
+      <text x="0" y="120" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">Sartorius</text>
+      <rect x="130" y="107" width="340" height="22" rx="3" fill="#ef4444" opacity="0.4"/>
+      <text x="480" y="122" font-family="JetBrains Mono, monospace" font-size="12" fill="#ef4444">Y50-85K+</text>
+
+      <!-- 8-tank scenario -->
+      <rect x="0" y="148" width="520" height="1" fill="#1e2d45"/>
+      <text x="0" y="170" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">8 罐并行场景</text>
+      <text x="0" y="192" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#22c55e">BIOCore: Y3,500-7,000（1 套即可管 8 罐）</text>
+      <text x="0" y="212" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#ef4444">Eppendorf: Y256,000-360,000（需 8 台控制器）</text>
+      <text x="0" y="232" font-family="JetBrains Mono, monospace" font-size="13" font-weight="bold" fill="#f59e0b">= 36-51 倍差距</text>
+    </g>
+  </g>
+
+  <!-- Right: Version tiers -->
+  <g transform="translate(640, 235)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#b0c4e8">软件版本阶梯</text>
+
+    <!-- Community -->
+    <rect x="0" y="20" width="520" height="55" rx="8" fill="#1a2744" stroke="#22c55e" stroke-width="1.5"/>
+    <rect x="0" y="20" width="6" height="55" rx="3" fill="#22c55e"/>
+    <text x="20" y="45" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="bold" fill="#22c55e">社区版 (MIT 开源)</text>
+    <text x="200" y="45" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold" fill="#22c55e">FREE</text>
+    <text x="20" y="65" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">基础控制 + Dashboard + 配方管理 + 数据记录</text>
+
+    <!-- Professional -->
+    <rect x="0" y="85" width="520" height="55" rx="8" fill="#1a2744" stroke="#1677ff" stroke-width="1"/>
+    <rect x="0" y="85" width="6" height="55" rx="3" fill="#1677ff"/>
+    <text x="20" y="110" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="bold" fill="#1677ff">专业版</text>
+    <text x="20" y="130" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">+ 多罐并行 + SPC + KPI + DoE + 配方审批</text>
+
+    <!-- AI Edition -->
+    <rect x="0" y="150" width="520" height="55" rx="8" fill="#1a2744" stroke="#f59e0b" stroke-width="1"/>
+    <rect x="0" y="150" width="6" height="55" rx="3" fill="#f59e0b"/>
+    <text x="20" y="175" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="bold" fill="#f59e0b">AI Edition</text>
+    <text x="20" y="195" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">+ CUSUM + 软测量 + DTW 批次匹配 + LLM 对话</text>
+
+    <!-- AI Pro -->
+    <rect x="0" y="215" width="520" height="55" rx="8" fill="#1a2744" stroke="#8b5cf6" stroke-width="1.5"/>
+    <rect x="0" y="215" width="6" height="55" rx="3" fill="#8b5cf6"/>
+    <text x="20" y="240" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="bold" fill="#8b5cf6">AI Pro</text>
+    <text x="20" y="260" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">+ 贝叶斯优化 + 根因分析 + 补料优化 + 实验自动化</text>
+  </g>
+
+  <!-- Hardware BOM breakdown -->
+  <g transform="translate(640, 520)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="13" font-weight="bold" fill="#b0c4e8">硬件 BOM 透明清单</text>
+
+    <rect x="0" y="15" width="520" height="90" rx="8" fill="#111a2a" stroke="#1e2d45" stroke-width="1"/>
+    <g transform="translate(15, 35)">
+      <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">PLC 主机 ST30</text>
+      <text x="200" y="0" font-family="JetBrains Mono, monospace" font-size="12" fill="#ffffff">Y1,200</text>
+
+      <text x="260" y="0" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">信号板 CM01/02</text>
+      <text x="460" y="0" font-family="JetBrains Mono, monospace" font-size="12" fill="#ffffff">Y400</text>
+
+      <text x="0" y="25" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">AI 模拟量模块</text>
+      <text x="200" y="25" font-family="JetBrains Mono, monospace" font-size="12" fill="#ffffff">Y800</text>
+
+      <text x="260" y="25" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">AO 模拟量输出</text>
+      <text x="460" y="25" font-family="JetBrains Mono, monospace" font-size="12" fill="#ffffff">Y700</text>
+
+      <rect x="0" y="40" width="490" height="1" fill="#1e2d45"/>
+      <text x="0" y="58" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#b0c4e8">合计</text>
+      <text x="200" y="58" font-family="JetBrains Mono, monospace" font-size="14" font-weight="bold" fill="#22c55e">Y3,100</text>
+      <text x="300" y="58" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#5a7090">不含传感器和执行机构（发酵罐自带）</text>
+    </g>
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="680" width="1280" height="40" fill="#0d1a2e"/>
+  <text x="80" y="706" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="706" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#3a5070">成本与商业价值</text>
+  <text x="1200" y="706" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#4a6080">17 / 18</text>
+</svg>

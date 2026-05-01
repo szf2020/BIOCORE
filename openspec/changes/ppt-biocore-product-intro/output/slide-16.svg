@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="s16-bg" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#F0F4F8"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <filter id="s16-shadow" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#1E293B" flood-opacity="0.08"/>
+    </filter>
+    <filter id="s16-shadow-sm" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#1E293B" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#s16-bg)"/>
+
+  <!-- Decorative elements -->
+  <g data-decorative="true">
+    <rect x="0" y="0" width="1280" height="4" fill="#1E40AF"/>
+    <rect x="0" y="4" width="1280" height="2" fill="#059669" opacity="0.4"/>
+    <circle cx="1200" cy="80" r="180" fill="#1E40AF" opacity="0.03"/>
+    <circle cx="100" cy="650" r="120" fill="#059669" opacity="0.03"/>
+  </g>
+
+  <!-- Part indicator -->
+  <rect x="60" y="28" width="4" height="24" rx="2" fill="#1E40AF"/>
+  <text x="76" y="45" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" letter-spacing="0.5">第四部分 | 实验设计、竞争优势与商业价值</text>
+
+  <!-- Page title -->
+  <text x="60" y="82" font-family="'Source Serif Pro', Georgia, 'Microsoft YaHei', serif" font-size="28" font-weight="700" fill="#1E293B">竞品对比矩阵</text>
+  <text x="60" y="106" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="14" fill="#64748B">BIOCore vs Eppendorf vs Sartorius vs LUCULLUS — 9 维度全面对比</text>
+
+  <!-- Main table card -->
+  <rect x="60" y="124" width="1160" height="520" rx="12" fill="#F8FAFC" filter="url(#s16-shadow)"/>
+
+  <!-- Table header row -->
+  <rect x="60" y="124" width="1160" height="44" rx="12" fill="#1E40AF"/>
+  <!-- Fix bottom corners of header to be square where it meets table body -->
+  <rect x="60" y="148" width="1160" height="20" fill="#1E40AF"/>
+
+  <!-- Header text -->
+  <text x="88" y="152" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">维度</text>
+  <text x="270" y="152" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle">Eppendorf BioFlo</text>
+  <text x="460" y="152" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle">Sartorius BioPAT</text>
+  <text x="650" y="152" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle">LUCULLUS</text>
+
+  <!-- BIOCore column highlight background -->
+  <rect x="760" y="124" width="460" height="44" rx="0" fill="#059669" opacity="0.15"/>
+  <!-- Top-right corner rounded -->
+  <rect x="1180" y="124" width="40" height="44" rx="12" fill="#059669" opacity="0.15"/>
+  <text x="960" y="152" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">BIOCore</text>
+  <text x="1140" y="152" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" font-weight="600" fill="#FFFFFF" text-anchor="middle">优势</text>
+
+  <!-- BIOCore column subtle highlight for body -->
+  <rect x="760" y="168" width="400" height="476" fill="#059669" opacity="0.04"/>
+
+  <!-- Row backgrounds (alternating) -->
+  <rect x="60" y="168" width="1160" height="50" fill="#F8FAFC"/>
+  <rect x="60" y="218" width="1160" height="50" fill="#F1F5F9"/>
+  <rect x="60" y="268" width="1160" height="50" fill="#F8FAFC"/>
+  <rect x="60" y="318" width="1160" height="50" fill="#F1F5F9"/>
+  <rect x="60" y="368" width="1160" height="50" fill="#F8FAFC"/>
+  <rect x="60" y="418" width="1160" height="50" fill="#F1F5F9"/>
+  <rect x="60" y="468" width="1160" height="50" fill="#F8FAFC"/>
+  <rect x="60" y="518" width="1160" height="50" fill="#F1F5F9"/>
+  <rect x="60" y="568" width="1160" height="50" fill="#F8FAFC"/>
+
+  <!-- Row dividers -->
+  <line x1="60" y1="218" x2="1220" y2="218" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="60" y1="268" x2="1220" y2="268" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="60" y1="318" x2="1220" y2="318" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="60" y1="368" x2="1220" y2="368" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="60" y1="418" x2="1220" y2="418" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="60" y1="468" x2="1220" y2="468" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="60" y1="518" x2="1220" y2="518" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="60" y1="568" x2="1220" y2="568" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- Column dividers -->
+  <line x1="180" y1="168" x2="180" y2="618" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="370" y1="168" x2="370" y2="618" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="555" y1="168" x2="555" y2="618" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="760" y1="168" x2="760" y2="618" stroke="#059669" stroke-width="1.5" opacity="0.3"/>
+  <line x1="1100" y1="168" x2="1100" y2="618" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- Row 1: Cost -->
+  <text x="88" y="199" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" font-weight="600" fill="#1E293B">成本</text>
+  <text x="270" y="199" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">¥32K-45K</text>
+  <text x="460" y="199" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">¥50K-85K+</text>
+  <text x="650" y="199" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">¥40K-60K</text>
+  <text x="920" y="199" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#059669" text-anchor="middle">¥3.5K-7K</text>
+  <!-- Win badge -->
+  <rect x="1120" y="183" width="36" height="22" rx="11" fill="#059669" opacity="0.12"/>
+  <text x="1138" y="198" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#059669" text-anchor="middle">W</text>
+
+  <!-- Row 2: Parallel tanks -->
+  <text x="88" y="249" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" font-weight="600" fill="#1E293B">并行罐数</text>
+  <text x="270" y="249" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">1 罐/控制器</text>
+  <text x="460" y="249" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">4-24 罐</text>
+  <text x="650" y="249" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">依赖第三方</text>
+  <text x="920" y="249" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#059669" text-anchor="middle">8 罐/单PC</text>
+  <rect x="1120" y="233" width="36" height="22" rx="11" fill="#059669" opacity="0.12"/>
+  <text x="1138" y="248" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#059669" text-anchor="middle">W</text>
+
+  <!-- Row 3: AI -->
+  <text x="88" y="299" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" font-weight="600" fill="#1E293B">AI 功能</text>
+  <text x="270" y="299" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#DC2626" text-anchor="middle">无</text>
+  <text x="460" y="299" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">云端</text>
+  <text x="650" y="299" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#DC2626" text-anchor="middle">无</text>
+  <text x="920" y="299" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#059669" text-anchor="middle">本地离线</text>
+  <rect x="1120" y="283" width="36" height="22" rx="11" fill="#059669" opacity="0.12"/>
+  <text x="1138" y="298" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#059669" text-anchor="middle">W</text>
+
+  <!-- Row 4: Data format -->
+  <text x="88" y="349" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" font-weight="600" fill="#1E293B">数据格式</text>
+  <text x="270" y="349" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#DC2626" text-anchor="middle">专有</text>
+  <text x="460" y="349" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#DC2626" text-anchor="middle">专有</text>
+  <text x="650" y="349" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#DC2626" text-anchor="middle">专有</text>
+  <text x="920" y="345" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#059669" text-anchor="middle">REST API</text>
+  <text x="920" y="360" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#059669" text-anchor="middle">+InfluxDB</text>
+  <rect x="1120" y="333" width="36" height="22" rx="11" fill="#059669" opacity="0.12"/>
+  <text x="1138" y="348" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#059669" text-anchor="middle">W</text>
+
+  <!-- Row 5: Recipe -->
+  <text x="88" y="399" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" font-weight="600" fill="#1E293B">配方</text>
+  <text x="270" y="399" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">固定模板</text>
+  <text x="460" y="399" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">固定模板</text>
+  <text x="650" y="399" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#059669" text-anchor="middle">可编程</text>
+  <text x="920" y="399" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#059669" text-anchor="middle">DAG 条件分支</text>
+  <rect x="1120" y="383" width="36" height="22" rx="11" fill="#059669" opacity="0.12"/>
+  <text x="1138" y="398" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#059669" text-anchor="middle">W</text>
+
+  <!-- Row 6: DoE -->
+  <text x="88" y="449" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" font-weight="600" fill="#1E293B">DoE</text>
+  <text x="270" y="449" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#DC2626" text-anchor="middle">无</text>
+  <text x="460" y="449" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">部分</text>
+  <text x="650" y="449" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#DC2626" text-anchor="middle">无</text>
+  <text x="920" y="449" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#059669" text-anchor="middle">7 种+贝叶斯</text>
+  <rect x="1120" y="433" width="36" height="22" rx="11" fill="#059669" opacity="0.12"/>
+  <text x="1138" y="448" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#059669" text-anchor="middle">W</text>
+
+  <!-- Row 7: Audit trail -->
+  <text x="88" y="499" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" font-weight="600" fill="#1E293B">审计追踪</text>
+  <text x="270" y="499" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">基础</text>
+  <text x="460" y="499" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#059669" text-anchor="middle">GMP 级</text>
+  <text x="650" y="499" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#059669" text-anchor="middle">GMP 级</text>
+  <text x="920" y="499" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#059669" text-anchor="middle">不可篡改</text>
+  <rect x="1120" y="483" width="36" height="22" rx="11" fill="#1E40AF" opacity="0.1"/>
+  <text x="1138" y="498" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#1E40AF" text-anchor="middle">=</text>
+
+  <!-- Row 8: Deployment -->
+  <text x="88" y="549" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" font-weight="600" fill="#1E293B">部署方式</text>
+  <text x="270" y="549" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">专用硬件</text>
+  <text x="460" y="549" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">专用硬件</text>
+  <text x="650" y="549" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">PC 软件</text>
+  <text x="920" y="545" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#059669" text-anchor="middle">PC+Docker</text>
+  <text x="920" y="560" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#059669" text-anchor="middle">+PLC</text>
+  <rect x="1120" y="533" width="36" height="22" rx="11" fill="#059669" opacity="0.12"/>
+  <text x="1138" y="548" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#059669" text-anchor="middle">W</text>
+
+  <!-- Row 9: Extensibility -->
+  <text x="88" y="599" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="13" font-weight="600" fill="#1E293B">扩展性</text>
+  <text x="270" y="599" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#DC2626" text-anchor="middle">封闭</text>
+  <text x="460" y="599" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#DC2626" text-anchor="middle">封闭</text>
+  <text x="650" y="599" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">SDK</text>
+  <text x="920" y="599" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#059669" text-anchor="middle">开源+97+ API</text>
+  <rect x="1120" y="583" width="36" height="22" rx="11" fill="#059669" opacity="0.12"/>
+  <text x="1138" y="598" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#059669" text-anchor="middle">W</text>
+
+  <!-- Summary bar -->
+  <rect x="60" y="630" width="1160" height="36" rx="8" fill="#059669" opacity="0.08" filter="url(#s16-shadow-sm)"/>
+  <rect x="60" y="630" width="4" height="36" rx="2" fill="#059669"/>
+  <text x="640" y="654" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="14" font-weight="600" fill="#059669">BIOCore 在 9 个维度中 7 个维度领先（W），2 个持平（=）</text>
+
+  <!-- Footer bar -->
+  <rect x="60" y="678" width="1160" height="1" fill="#E2E8F0"/>
+  <text x="80" y="700" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#94A3B8">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="700" text-anchor="middle" font-family="Inter, 'Microsoft YaHei', system-ui, sans-serif" font-size="12" fill="#94A3B8">竞品对比矩阵</text>
+  <text x="1200" y="700" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="12" fill="#94A3B8">16 / 18</text>
+</svg>

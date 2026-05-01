@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <filter id="s13-shadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#1E293B" flood-opacity="0.08"/>
+    </filter>
+    <filter id="s13-shadow-sm" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#1E293B" flood-opacity="0.06"/>
+    </filter>
+    <linearGradient id="s13-hero-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1E40AF" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#059669" stop-opacity="0.04"/>
+    </linearGradient>
+    <linearGradient id="s13-accent-bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1E40AF"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="#F1F5F9"/>
+  <rect width="1280" height="720" fill="url(#s13-hero-grad)" data-decorative="true"/>
+
+  <!-- Top accent bar -->
+  <g data-decorative="true">
+    <rect x="0" y="0" width="1280" height="4" fill="url(#s13-accent-bar)"/>
+  </g>
+
+  <!-- Part indicator -->
+  <rect x="80" y="28" width="6" height="24" rx="3" fill="#1E40AF"/>
+  <text x="98" y="46" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">第三部分 | 数据架构与开放生态</text>
+
+  <!-- Page title -->
+  <text x="80" y="88" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="28" font-weight="700" fill="#1E293B">开放 API 与系统集成</text>
+  <text x="80" y="114" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="15" fill="#64748B">97+ REST API 端点 + 10 WebSocket 频道 — 完全开放生态</text>
+  <rect x="80" y="126" width="60" height="3" rx="1.5" fill="#059669"/>
+
+  <!-- Top metrics row: 3 KPI cards -->
+  <g transform="translate(80, 148)">
+    <!-- Card 1: REST API -->
+    <rect x="0" y="0" width="220" height="72" rx="12" fill="#F8FAFC" filter="url(#s13-shadow-sm)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="110" y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="28" font-weight="700" fill="#1E40AF">97+</text>
+    <text x="110" y="52" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">REST API 端点</text>
+
+    <!-- Card 2: WebSocket -->
+    <rect x="240" y="0" width="220" height="72" rx="12" fill="#F8FAFC" filter="url(#s13-shadow-sm)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="350" y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="28" font-weight="700" fill="#059669">10</text>
+    <text x="350" y="52" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">WebSocket 频道</text>
+
+    <!-- Card 3: JWT -->
+    <rect x="480" y="0" width="220" height="72" rx="12" fill="#F8FAFC" filter="url(#s13-shadow-sm)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="590" y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="28" font-weight="700" fill="#1E40AF">24h</text>
+    <text x="590" y="52" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">JWT 过期周期</text>
+  </g>
+
+  <!-- Auth mechanism card (right side of metrics row) -->
+  <g transform="translate(790, 148)">
+    <rect x="0" y="0" width="410" height="72" rx="12" fill="#F8FAFC" filter="url(#s13-shadow-sm)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="20" y="20" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="14" font-weight="700" fill="#1E293B">双鉴权机制</text>
+    <!-- JWT -->
+    <rect x="20" y="32" width="170" height="28" rx="6" fill="#EFF6FF" stroke="#1E40AF" stroke-width="0.8"/>
+    <text x="30" y="51" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" font-weight="600" fill="#1E40AF">JWT Token</text>
+    <text x="105" y="51" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">前端 24h</text>
+    <!-- API Key -->
+    <rect x="210" y="32" width="180" height="28" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="0.8"/>
+    <text x="220" y="51" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" font-weight="600" fill="#059669">API Key</text>
+    <text x="285" y="51" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">MES 长期</text>
+  </g>
+
+  <!-- API coverage matrix card -->
+  <g transform="translate(80, 240)">
+    <rect x="0" y="0" width="620" height="195" rx="12" fill="#F8FAFC" filter="url(#s13-shadow)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="24" y="28" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="15" font-weight="700" fill="#1E293B">API 覆盖范围</text>
+
+    <!-- Category grid: 6 items in 3x2 -->
+    <g transform="translate(24, 44)">
+      <!-- Row 1 -->
+      <rect x="0" y="0" width="180" height="56" rx="8" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.8"/>
+      <text x="15" y="22" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#1E40AF">PLC 控制</text>
+      <text x="15" y="42" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">读写 / PID / 状态 / 心跳</text>
+
+      <rect x="196" y="0" width="180" height="56" rx="8" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="0.8"/>
+      <text x="211" y="22" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#7C3AED">配方管理</text>
+      <text x="211" y="42" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">CRUD / DAG / 版本 / 审批</text>
+
+      <rect x="392" y="0" width="180" height="56" rx="8" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="0.8"/>
+      <text x="407" y="22" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#059669">批次管理</text>
+      <text x="407" y="42" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">启停 / 状态 / 历史 / KPI</text>
+
+      <!-- Row 2 -->
+      <rect x="0" y="68" width="180" height="56" rx="8" fill="#FFFBEB" stroke="#FDE68A" stroke-width="0.8"/>
+      <text x="15" y="90" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#D97706">报警系统</text>
+      <text x="15" y="110" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">触发 / 确认 / 历史 / 统计</text>
+
+      <rect x="196" y="68" width="180" height="56" rx="8" fill="#FEF2F2" stroke="#FECACA" stroke-width="0.8"/>
+      <text x="211" y="90" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#DC2626">安全审计</text>
+      <text x="211" y="110" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">日志 / 权限 / 密钥 / RBAC</text>
+
+      <rect x="392" y="68" width="180" height="56" rx="8" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="0.8"/>
+      <text x="407" y="90" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#059669">DoE 实验</text>
+      <text x="407" y="110" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">设计 / 运行 / 分析 / 优化</text>
+    </g>
+  </g>
+
+  <!-- Unified response format card -->
+  <g transform="translate(80, 450)">
+    <rect x="0" y="0" width="620" height="78" rx="12" fill="#F8FAFC" filter="url(#s13-shadow-sm)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="24" y="24" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="14" font-weight="700" fill="#1E293B">统一响应格式</text>
+    <rect x="24" y="36" width="420" height="28" rx="6" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="0.5"/>
+    <text x="36" y="55" font-family="JetBrains Mono, monospace" font-size="13" fill="#1E40AF">{"code": 200, "msg": "ok", "data": {...}, "trace_id": "abc-123"}</text>
+    <text x="460" y="55" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">Swagger / OpenAPI 自动生成</text>
+  </g>
+
+  <!-- Competitor API comparison card (right column) -->
+  <g transform="translate(720, 240)">
+    <rect x="0" y="0" width="480" height="288" rx="12" fill="#F8FAFC" filter="url(#s13-shadow)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="24" y="28" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="15" font-weight="700" fill="#1E293B">竞品 API 开放度对比</text>
+
+    <!-- Horizontal bar chart -->
+    <g transform="translate(24, 48)">
+      <!-- Eppendorf -->
+      <text x="0" y="18" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">Eppendorf</text>
+      <rect x="120" y="5" width="4" height="20" rx="2" fill="#DC2626"/>
+      <text x="134" y="20" font-family="JetBrains Mono, monospace" font-size="13" fill="#DC2626">0</text>
+      <text x="160" y="20" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">封闭系统</text>
+
+      <!-- Sartorius -->
+      <text x="0" y="56" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">Sartorius</text>
+      <rect x="120" y="43" width="34" height="20" rx="4" fill="#D97706" opacity="0.8"/>
+      <text x="164" y="58" font-family="JetBrains Mono, monospace" font-size="13" fill="#D97706">~10</text>
+
+      <!-- LUCULLUS -->
+      <text x="0" y="94" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">LUCULLUS</text>
+      <rect x="120" y="81" width="68" height="20" rx="4" fill="#D97706" opacity="0.8"/>
+      <text x="198" y="96" font-family="JetBrains Mono, monospace" font-size="13" fill="#D97706">~20 SDK</text>
+
+      <!-- BIOCore -->
+      <text x="0" y="132" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="14" font-weight="700" fill="#059669">BIOCore</text>
+      <rect x="120" y="119" width="320" height="22" rx="4" fill="#059669" opacity="0.15"/>
+      <rect x="120" y="119" width="320" height="22" rx="4" fill="none" stroke="#059669" stroke-width="1.5"/>
+      <text x="326" y="135" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#059669">97+ REST API</text>
+
+      <!-- Scale -->
+      <line x1="120" y1="150" x2="120" y2="155" stroke="#CBD5E1" stroke-width="0.8"/>
+      <text x="120" y="167" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#94A3B8">0</text>
+      <line x1="288" y1="150" x2="288" y2="155" stroke="#CBD5E1" stroke-width="0.8"/>
+      <text x="288" y="167" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#94A3B8">50</text>
+      <line x1="440" y1="150" x2="440" y2="155" stroke="#CBD5E1" stroke-width="0.8"/>
+      <text x="440" y="167" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#94A3B8">100</text>
+    </g>
+
+    <!-- System integration section -->
+    <g transform="translate(24, 228)">
+      <text x="0" y="0" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="13" font-weight="700" fill="#1E293B">系统集成</text>
+      <rect x="0" y="10" width="140" height="28" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.8"/>
+      <text x="70" y="29" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" font-weight="600" fill="#1E40AF">MES 集成</text>
+      <rect x="152" y="10" width="140" height="28" rx="6" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="0.8"/>
+      <text x="222" y="29" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" font-weight="600" fill="#059669">LIMS 集成</text>
+      <rect x="304" y="10" width="140" height="28" rx="6" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="0.8"/>
+      <text x="374" y="29" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" font-weight="600" fill="#7C3AED">安全机制</text>
+    </g>
+  </g>
+
+  <!-- Security detail cards at bottom -->
+  <g transform="translate(80, 544)">
+    <rect x="0" y="0" width="360" height="88" rx="12" fill="#F8FAFC" filter="url(#s13-shadow-sm)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="20" y="24" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#1E40AF">MES 集成</text>
+    <text x="20" y="44" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">批次数据 + KPI REST API 供 MES 拉取</text>
+    <text x="20" y="68" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#059669">LIMS 集成</text>
+    <text x="20" y="82" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">取样记录 REST API + CSV 导入/导出</text>
+  </g>
+
+  <g transform="translate(460, 544)">
+    <rect x="0" y="0" width="740" height="88" rx="12" fill="#F8FAFC" filter="url(#s13-shadow-sm)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="20" y="24" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#7C3AED">安全防护</text>
+    <text x="20" y="46" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">时序安全比较防时序攻击</text>
+    <text x="20" y="68" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">文件上传校验: MIME + 魔术字节 + 20MB 限制</text>
+    <text x="20" y="82" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">API Key 哈希存储 + JWT 自动刷新</text>
+  </g>
+
+  <!-- Footer -->
+  <rect x="0" y="680" width="1280" height="40" fill="#F8FAFC"/>
+  <line x1="0" y1="680" x2="1280" y2="680" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="80" y="705" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="705" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">开放 API 与系统集成</text>
+  <text x="1200" y="705" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#94A3B8">13 / 18</text>
+</svg>

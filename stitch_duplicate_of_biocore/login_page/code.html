@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>登录 | BioCore MES</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary": "#3755c3",
+                    "tertiary-container": "#945d00",
+                    "inverse-surface": "#283044",
+                    "primary-fixed-dim": "#80d5cb",
+                    "on-surface": "#131b2e",
+                    "on-primary": "#ffffff",
+                    "on-secondary-container": "#00217a",
+                    "on-tertiary": "#ffffff",
+                    "primary-container": "#0f766e",
+                    "secondary-fixed": "#dde1ff",
+                    "outline": "#6e7977",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-container": "#ffe6cc",
+                    "secondary-fixed-dim": "#b8c4ff",
+                    "inverse-on-surface": "#eef0ff",
+                    "surface-container-highest": "#dae2fd",
+                    "on-primary-container": "#a3faef",
+                    "on-surface-variant": "#3e4947",
+                    "on-tertiary-fixed": "#2a1700",
+                    "surface-container": "#eaedff",
+                    "surface-variant": "#dae2fd",
+                    "inverse-primary": "#80d5cb",
+                    "surface-tint": "#006a63",
+                    "primary-fixed": "#9cf2e8",
+                    "surface": "#faf8ff",
+                    "tertiary-fixed": "#ffddb8",
+                    "surface-container-high": "#e2e7ff",
+                    "tertiary": "#734700",
+                    "on-primary-fixed-variant": "#00504a",
+                    "on-tertiary-fixed-variant": "#653e00",
+                    "error": "#ba1a1a",
+                    "error-container": "#ffdad6",
+                    "outline-variant": "#bdc9c6",
+                    "surface-dim": "#d2d9f4",
+                    "background": "#faf8ff",
+                    "primary": "#005c55",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed": "#00201d",
+                    "secondary-container": "#708cfd",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-background": "#131b2e",
+                    "surface-container-low": "#f2f3ff",
+                    "tertiary-fixed-dim": "#ffb95f",
+                    "surface-bright": "#faf8ff",
+                    "on-secondary-fixed": "#001453",
+                    "on-secondary-fixed-variant": "#173bab"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"],
+                    "mono": ["JetBrains Mono"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .clinical-shadow {
+            box-shadow: 0 20px 40px rgba(19, 27, 46, 0.06);
+        }
+        .glass-overlay {
+            background: rgba(15, 118, 110, 0.85);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="h-full font-body bg-surface text-on-surface">
+<!-- Suppression of Nav Shell: Transactional Login Page -->
+<main class="flex h-screen w-full overflow-hidden">
+<!-- LEFT SIDE: Visual Brand Anchor -->
+<section class="hidden md:flex w-1/2 relative flex-col justify-between p-12 bg-primary-container overflow-hidden">
+<!-- Background Pattern Layer -->
+<div class="absolute inset-0 z-0 opacity-10 pointer-events-none select-none">
+<div class="absolute top-0 right-0 w-full h-full" data-alt="Abstract scientific visualization showing microscopic biological structures and flowing liquid textures in deep teal and blue tones." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDLbxek9f5YfzXw8ZKC6tgPaAUQamnx2Km6mHnKXSyydd3OkYwoN1jY3_qbK958Lw5JzG_u4W-BuP7rPhdMnn9go6C48BmnOIugOelzM13Y7jLZuK2GJAiiS3X2WWxYa83_d6UMRdOGuZ6vrHICkjMzJ89E_sWeKnWi3VUa2a-_g5PwepGb169Q6aw-AAgbKKIA44fp-d0SD2Wt0FrJ3ou12h1563PXb5JnuRpJ4iWOOQMcUsWRndOu7qVI_IGUip-z1_xA03hITJQt'); background-size: cover; background-position: center;"></div>
+<div class="absolute inset-0 bg-gradient-to-br from-primary-container via-primary-container to-transparent"></div>
+</div>
+<!-- Branding -->
+<div class="relative z-10">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-4xl text-on-primary-container" style="font-variation-settings: 'FILL' 1;">biotech</span>
+<h1 class="text-3xl font-black tracking-tight text-white font-headline">BioCore MES</h1>
+</div>
+<p class="mt-4 text-xl text-on-primary-container max-w-md font-light leading-relaxed">
+                    From strain to scale — your fermentation R&amp;D, unified.
+                </p>
+</div>
+<!-- Visual Feature / Quote (The Clinical Architect Aesthetic) -->
+<div class="relative z-10">
+<div class="p-8 glass-overlay rounded-xl border border-white/10 clinical-shadow">
+<div class="flex gap-1 mb-4">
+<span class="w-2 h-2 rounded-full bg-primary-fixed"></span>
+<span class="w-2 h-2 rounded-full bg-primary-fixed/50"></span>
+<span class="w-2 h-2 rounded-full bg-primary-fixed/20"></span>
+</div>
+<div class="font-mono text-sm text-primary-fixed-dim leading-relaxed">
+                        SYSTEM_STATUS: STABLE<br/>
+                        ACTIVE_BATCHES: 12<br/>
+                        SENSORS_SYNCED: 100%<br/>
+                        PROTOCOL: R&amp;D_STANDARD_V4
+                    </div>
+</div>
+</div>
+<!-- Footer Small Text -->
+<div class="relative z-10">
+<p class="text-on-primary-container/60 text-xs font-mono uppercase tracking-widest">
+                    © 2026 BioCore Technologies
+                </p>
+</div>
+</section>
+<!-- RIGHT SIDE: Login Form -->
+<section class="w-full md:w-1/2 flex items-center justify-center bg-surface p-6 sm:p-12 relative overflow-y-auto">
+<div class="w-full max-w-md">
+<!-- Mobile Branding (Hidden on desktop) -->
+<div class="md:hidden flex items-center gap-2 mb-8">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">biotech</span>
+<h1 class="text-xl font-black text-on-surface font-headline">BioCore MES</h1>
+</div>
+<div class="mb-10">
+<h2 class="text-2xl font-bold text-on-surface tracking-tight mb-2">欢迎回来 / Welcome Back</h2>
+<p class="text-on-surface-variant">登录你的实验室工作台</p>
+</div>
+<form class="space-y-6">
+<!-- Username/Email Field -->
+<div class="space-y-2">
+<label class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant font-headline" for="identity">
+                            用户名或邮箱 / Username or Email
+                        </label>
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-outline">
+<span class="material-symbols-outlined text-xl">person</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-3 bg-surface-container-lowest border-0 ring-1 ring-outline-variant focus:ring-2 focus:ring-primary rounded-lg text-on-surface sm:text-sm transition-all duration-200" id="identity" name="identity" placeholder="name@lab.biocore.com" type="text"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant font-headline" for="password">
+                                密码 / Password
+                            </label>
+</div>
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-outline">
+<span class="material-symbols-outlined text-xl">lock</span>
+</div>
+<input class="block w-full pl-10 pr-10 py-3 bg-surface-container-lowest border-0 ring-1 ring-outline-variant focus:ring-2 focus:ring-primary rounded-lg text-on-surface sm:text-sm transition-all duration-200" id="password" name="password" placeholder="••••••••" type="password"/>
+<button class="absolute inset-y-0 right-0 pr-3 flex items-center text-outline hover:text-on-surface-variant" type="button">
+<span class="material-symbols-outlined text-xl">visibility</span>
+</button>
+</div>
+</div>
+<!-- Utils Row -->
+<div class="flex items-center justify-between">
+<div class="flex items-center">
+<input class="h-4 w-4 text-primary focus:ring-primary border-outline-variant rounded" id="remember-me" name="remember-me" type="checkbox"/>
+<label class="ml-2 block text-sm text-on-surface-variant" for="remember-me">
+                                记住我
+                            </label>
+</div>
+<div class="text-sm">
+<a class="font-medium text-primary hover:text-surface-tint" href="#">
+                                忘记密码?
+                            </a>
+</div>
+</div>
+<!-- Primary Action -->
+<div>
+<button class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-container focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all active:scale-[0.98]" type="submit">
+                            登录
+                        </button>
+</div>
+<!-- Divider -->
+<div class="relative py-4">
+<div aria-hidden="true" class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-outline-variant/30"></div>
+</div>
+<div class="relative flex justify-center text-sm">
+<span class="px-2 bg-surface text-on-surface-variant font-medium">或</span>
+</div>
+</div>
+<!-- SSO Action -->
+<div>
+<button class="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-lg text-sm font-semibold text-on-surface bg-surface ring-1 ring-outline-variant hover:bg-surface-container-low transition-all" type="button">
+<span class="material-symbols-outlined text-xl text-secondary">shield_person</span>
+                            使用企业账号登录 (SSO)
+                        </button>
+</div>
+</form>
+<!-- Footer Support -->
+<div class="mt-12 text-center">
+<p class="text-xs text-on-surface-variant">
+                        需要帮助? <a class="text-primary hover:underline font-medium" href="#">联系系统管理员</a>
+</p>
+</div>
+</div>
+<!-- Subtle Decorative Element -->
+<div class="absolute bottom-4 right-6 opacity-20 hidden lg:block">
+<div class="flex items-center gap-2 font-mono text-[10px] tracking-widest text-on-surface-variant uppercase">
+<span>Protocol Secured</span>
+<span class="w-1 h-1 rounded-full bg-primary animate-pulse"></span>
+<span>v2.4.0-Stable</span>
+</div>
+</div>
+</section>
+</main>
+</body></html>

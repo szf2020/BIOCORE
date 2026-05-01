@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="s10-bg" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#F0F4FA"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <filter id="s10-shadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#1E293B" flood-opacity="0.08"/>
+    </filter>
+    <filter id="s10-shadow-sm" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#1E293B" flood-opacity="0.06"/>
+    </filter>
+    <linearGradient id="s10-accent-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1E40AF"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#s10-bg)"/>
+
+  <!-- Top accent bar -->
+  <g data-decorative="true">
+    <rect x="0" y="0" width="1280" height="4" fill="url(#s10-accent-grad)"/>
+  </g>
+
+  <!-- Part indicator -->
+  <rect x="80" y="28" width="6" height="24" rx="3" fill="#059669"/>
+  <text x="98" y="46" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">第二部分 | 本地 AI 智能模块</text>
+
+  <!-- Page title -->
+  <text x="80" y="88" font-family="Source Serif Pro, Georgia, serif" font-size="28" font-weight="bold" fill="#1E293B">软测量与补料优化</text>
+  <text x="80" y="114" font-family="Inter, system-ui, sans-serif" font-size="15" fill="#64748B">在线推断 OD600 / 残糖 / 产物 — 减少 80% 取样频率</text>
+  <rect x="80" y="126" width="72" height="3" rx="1.5" fill="#059669"/>
+
+  <!-- ===== LEFT COLUMN: Soft Sensor Inference Matrix ===== -->
+  <rect x="60" y="150" width="570" height="510" rx="12" fill="#F8FAFC" filter="url(#s10-shadow)"/>
+
+  <text x="88" y="182" font-family="Source Serif Pro, Georgia, serif" font-size="17" font-weight="bold" fill="#1E293B">软测量推断矩阵</text>
+
+  <!-- Table -->
+  <rect x="88" y="198" width="514" height="34" rx="6" fill="#1E40AF"/>
+  <text x="108" y="221" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">推断目标</text>
+  <text x="228" y="221" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">v1 算法</text>
+  <text x="340" y="221" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">v2 规划</text>
+  <text x="468" y="221" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">所需输入</text>
+
+  <!-- Row 1 -->
+  <rect x="88" y="234" width="514" height="36" rx="0" fill="#F8FAFC"/>
+  <text x="108" y="258" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">OD600 生物量</text>
+  <text x="228" y="258" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">OLS 回归</text>
+  <text x="340" y="258" font-family="JetBrains Mono, monospace" font-size="12" fill="#7C3AED">ONNX 神经网络</text>
+  <text x="468" y="258" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">DO/碱消耗/OUR</text>
+
+  <!-- Row 2 -->
+  <rect x="88" y="270" width="514" height="36" rx="0" fill="#F1F5F9"/>
+  <text x="108" y="294" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">残糖浓度</text>
+  <text x="228" y="294" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">OLS 回归</text>
+  <text x="340" y="294" font-family="JetBrains Mono, monospace" font-size="12" fill="#7C3AED">ONNX 神经网络</text>
+  <text x="468" y="294" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">RQ/OUR/补料累积</text>
+
+  <!-- Row 3 -->
+  <rect x="88" y="306" width="514" height="36" rx="0" fill="#F8FAFC"/>
+  <text x="108" y="330" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">产物浓度</text>
+  <text x="228" y="330" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">OLS 回归</text>
+  <text x="340" y="330" font-family="JetBrains Mono, monospace" font-size="12" fill="#7C3AED">ONNX 神经网络</text>
+  <text x="468" y="330" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">OUR 积分/时间</text>
+
+  <!-- Row 4 -->
+  <rect x="88" y="342" width="514" height="36" rx="0" fill="#F1F5F9"/>
+  <text x="108" y="366" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">生长阶段</text>
+  <text x="228" y="366" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">碱消耗分析</text>
+  <text x="340" y="366" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">--</text>
+  <text x="468" y="366" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">碱消耗/DO/RQ</text>
+
+  <!-- Table bottom border -->
+  <line x1="88" y1="378" x2="602" y2="378" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- Metric Cards Row -->
+  <rect x="88" y="400" width="156" height="72" rx="10" fill="#FFFFFF" filter="url(#s10-shadow-sm)" stroke="#059669" stroke-width="1.5"/>
+  <text x="166" y="432" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="24" font-weight="bold" fill="#059669">1 次/min</text>
+  <text x="166" y="456" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">更新频率</text>
+
+  <rect x="264" y="400" width="156" height="72" rx="10" fill="#FFFFFF" filter="url(#s10-shadow-sm)" stroke="#1E40AF" stroke-width="1.5"/>
+  <text x="342" y="432" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="24" font-weight="bold" fill="#1E40AF">80%</text>
+  <text x="342" y="456" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">取样减少</text>
+
+  <rect x="440" y="400" width="162" height="72" rx="10" fill="#FFFFFF" filter="url(#s10-shadow-sm)" stroke="#D97706" stroke-width="1.5"/>
+  <text x="521" y="432" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="600" fill="#D97706">vs 传统 2-4h</text>
+  <text x="521" y="456" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">手动取样间隔</text>
+
+  <!-- Computed Parameters -->
+  <text x="88" y="510" font-family="Source Serif Pro, Georgia, serif" font-size="15" font-weight="bold" fill="#1E293B">实时计算参数</text>
+
+  <rect x="88" y="524" width="92" height="32" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="134" y="546" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" fill="#1E40AF">OUR</text>
+
+  <rect x="192" y="524" width="92" height="32" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="238" y="546" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" fill="#1E40AF">kLa</text>
+
+  <rect x="296" y="524" width="92" height="32" rx="6" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="342" y="546" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" fill="#059669">mu</text>
+
+  <rect x="400" y="524" width="92" height="32" rx="6" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="446" y="546" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" fill="#059669">RQ</text>
+
+  <rect x="504" y="524" width="92" height="32" rx="6" fill="#FFF7ED" stroke="#FDE68A" stroke-width="1"/>
+  <text x="550" y="546" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" fill="#D97706">F0</text>
+
+  <!-- Parameter descriptions -->
+  <text x="88" y="580" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">OUR: 氧消耗速率 | kLa: 体积传质系数 | mu: 比生长速率 | RQ: 呼吸熵 | F0: 灭菌积分</text>
+
+  <!-- ===== RIGHT COLUMN: Monod Feeding Optimization ===== -->
+  <rect x="650" y="150" width="570" height="510" rx="12" fill="#F8FAFC" filter="url(#s10-shadow)"/>
+
+  <text x="678" y="182" font-family="Source Serif Pro, Georgia, serif" font-size="17" font-weight="bold" fill="#1E293B">Monod 补料优化</text>
+
+  <!-- Formula box -->
+  <rect x="678" y="198" width="514" height="72" rx="10" fill="#FFFBEB" stroke="#D97706" stroke-width="1.5"/>
+  <text x="935" y="230" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="17" font-weight="bold" fill="#D97706">F(t) = (mu_set * X * V) / (Y_xs * C_f)</text>
+  <text x="935" y="256" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#92400E">实时动态调整补料速率 — Monod 动力学模型</text>
+
+  <!-- Exponential feeding curve chart -->
+  <rect x="678" y="290" width="514" height="220" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- Chart background grid -->
+  <g data-decorative="true">
+    <line x1="728" y1="310" x2="728" y2="480" stroke="#F1F5F9" stroke-width="1"/>
+    <line x1="728" y1="480" x2="1162" y2="480" stroke="#CBD5E1" stroke-width="1"/>
+    <line x1="728" y1="440" x2="1162" y2="440" stroke="#F1F5F9" stroke-width="0.5" stroke-dasharray="4,4"/>
+    <line x1="728" y1="400" x2="1162" y2="400" stroke="#F1F5F9" stroke-width="0.5" stroke-dasharray="4,4"/>
+    <line x1="728" y1="360" x2="1162" y2="360" stroke="#F1F5F9" stroke-width="0.5" stroke-dasharray="4,4"/>
+    <line x1="728" y1="320" x2="1162" y2="320" stroke="#F1F5F9" stroke-width="0.5" stroke-dasharray="4,4"/>
+  </g>
+
+  <!-- Y-axis label -->
+  <text x="700" y="400" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8" text-anchor="middle" transform="rotate(-90, 700, 400)">补料速率</text>
+  <!-- X-axis label -->
+  <text x="945" y="498" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">时间 (h)</text>
+
+  <!-- Exponential curve -->
+  <path d="M 740,472 Q 830,468 900,455 Q 970,430 1020,390 Q 1070,340 1110,318 Q 1130,310 1150,305" fill="none" stroke="#D97706" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- DO Spike vertical marker -->
+  <line x1="900" y1="310" x2="900" y2="475" stroke="#059669" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <rect x="858" y="305" width="84" height="22" rx="4" fill="#ECFDF5" stroke="#059669" stroke-width="1"/>
+  <text x="900" y="320" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#059669">DO Spike</text>
+
+  <!-- Phase labels -->
+  <rect x="780" y="330" width="72" height="24" rx="4" fill="#EEF2FF"/>
+  <text x="816" y="347" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E40AF">Batch</text>
+
+  <rect x="990" y="345" width="100" height="24" rx="4" fill="#FFF7ED"/>
+  <text x="1040" y="362" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#D97706">指数补料</text>
+
+  <!-- Fed-batch switch annotation -->
+  <text x="900" y="495" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">Fed-batch 切换点</text>
+
+  <!-- Strategy cards row -->
+  <rect x="678" y="530" width="248" height="58" rx="10" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="698" y="555" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#059669">DO-stat 监测</text>
+  <text x="698" y="575" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">底物消耗 DO Spike 自动触发</text>
+
+  <rect x="944" y="530" width="248" height="58" rx="10" fill="#FFF7ED" stroke="#D97706" stroke-width="1.5"/>
+  <text x="964" y="555" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#D97706">指数补料策略</text>
+  <text x="964" y="575" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">Monod 动力学实时计算</text>
+
+  <!-- Arrow between strategy cards -->
+  <g data-decorative="true">
+    <line x1="926" y1="559" x2="940" y2="559" stroke="#CBD5E1" stroke-width="1.5"/>
+    <polygon points="940,559 935,554 935,564" fill="#CBD5E1"/>
+  </g>
+
+  <!-- ===== FOOTER ===== -->
+  <rect x="0" y="680" width="1280" height="40" rx="0" fill="#1E293B"/>
+  <text x="80" y="705" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#94A3B8">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="705" text-anchor="middle" font-family="Source Serif Pro, Georgia, serif" font-size="13" fill="#CBD5E1">软测量与补料优化</text>
+  <text x="1200" y="705" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="13" fill="#94A3B8">10 / 18</text>
+</svg>

@@ -1,0 +1,256 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <filter id="s14-shadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#1E293B" flood-opacity="0.08"/>
+    </filter>
+    <filter id="s14-shadow-sm" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#1E293B" flood-opacity="0.06"/>
+    </filter>
+    <linearGradient id="s14-hero-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1E40AF" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#7C3AED" stop-opacity="0.04"/>
+    </linearGradient>
+    <linearGradient id="s14-accent-bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1E40AF"/>
+      <stop offset="50%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="#F1F5F9"/>
+  <rect width="1280" height="720" fill="url(#s14-hero-grad)" data-decorative="true"/>
+
+  <!-- Top accent bar -->
+  <g data-decorative="true">
+    <rect x="0" y="0" width="1280" height="4" fill="url(#s14-accent-bar)"/>
+  </g>
+
+  <!-- Part indicator -->
+  <rect x="80" y="28" width="6" height="24" rx="3" fill="#7C3AED"/>
+  <text x="98" y="46" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">第四部分 | 实验设计、竞争优势与商业价值</text>
+
+  <!-- Page title -->
+  <text x="80" y="88" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="28" font-weight="700" fill="#1E293B">实验设计与贝叶斯优化</text>
+  <text x="80" y="114" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="15" fill="#64748B">7 种 DoE 方法 + 高斯过程优化 — 实验次数减半</text>
+  <rect x="80" y="126" width="60" height="3" rx="1.5" fill="#7C3AED"/>
+
+  <!-- Top metrics -->
+  <g transform="translate(800, 32)">
+    <rect x="0" y="0" width="130" height="56" rx="10" fill="#F8FAFC" filter="url(#s14-shadow-sm)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="65" y="26" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700" fill="#7C3AED">7</text>
+    <text x="65" y="46" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">DoE 方法</text>
+
+    <rect x="150" y="0" width="130" height="56" rx="10" fill="#F8FAFC" filter="url(#s14-shadow-sm)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="215" y="26" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700" fill="#059669">~50%</text>
+    <text x="215" y="46" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">实验减少</text>
+
+    <rect x="300" y="0" width="130" height="56" rx="10" fill="#F8FAFC" filter="url(#s14-shadow-sm)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="365" y="26" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700" fill="#1E40AF">~10</text>
+    <text x="365" y="46" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#64748B">次收敛</text>
+  </g>
+
+  <!-- LEFT COLUMN: 7 DoE methods -->
+  <g transform="translate(80, 148)">
+    <rect x="0" y="0" width="540" height="260" rx="12" fill="#F8FAFC" filter="url(#s14-shadow)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="24" y="28" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="15" font-weight="700" fill="#1E293B">7 种实验设计方法</text>
+
+    <!-- 4x2 grid of method pills -->
+    <g transform="translate(24, 44)">
+      <!-- Row 1 -->
+      <rect x="0" y="0" width="235" height="38" rx="8" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="0.8"/>
+      <text x="15" y="24" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#7C3AED">全因子设计</text>
+      <text x="120" y="24" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">Full Factorial</text>
+
+      <rect x="252" y="0" width="235" height="38" rx="8" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="0.8"/>
+      <text x="267" y="24" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#7C3AED">中心复合设计</text>
+      <text x="382" y="24" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">CCD</text>
+
+      <!-- Row 2 -->
+      <rect x="0" y="48" width="235" height="38" rx="8" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="0.8"/>
+      <text x="15" y="72" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#7C3AED">拉丁超立方</text>
+      <text x="120" y="72" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">LHS</text>
+
+      <rect x="252" y="48" width="235" height="38" rx="8" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="0.8"/>
+      <text x="267" y="72" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#7C3AED">Plackett-Burman</text>
+      <text x="420" y="72" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">筛选</text>
+
+      <!-- Row 3 -->
+      <rect x="0" y="96" width="235" height="38" rx="8" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="0.8"/>
+      <text x="15" y="120" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#7C3AED">Box-Behnken</text>
+      <text x="145" y="120" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">响应曲面</text>
+
+      <rect x="252" y="96" width="235" height="38" rx="8" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="0.8"/>
+      <text x="267" y="120" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#7C3AED">确定性筛选</text>
+      <text x="382" y="120" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">DSD</text>
+
+      <!-- Row 4 (single) -->
+      <rect x="0" y="144" width="235" height="38" rx="8" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="0.8"/>
+      <text x="15" y="168" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#7C3AED">分数因子</text>
+      <text x="120" y="168" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">Fractional</text>
+    </g>
+
+    <!-- Analysis tools row -->
+    <g transform="translate(24, 218)">
+      <text x="0" y="0" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="13" font-weight="700" fill="#1E293B">分析工具</text>
+      <rect x="0" y="10" width="108" height="26" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="54" y="28" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#1E40AF">极差分析</text>
+      <rect x="118" y="10" width="108" height="26" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="172" y="28" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#1E40AF">ANOVA</text>
+      <rect x="236" y="10" width="108" height="26" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="290" y="28" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#1E40AF">响应曲面</text>
+      <rect x="354" y="10" width="108" height="26" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="408" y="28" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#1E40AF">田口信噪比</text>
+    </g>
+  </g>
+
+  <!-- RIGHT COLUMN: Bayesian optimization convergence chart -->
+  <g transform="translate(640, 148)">
+    <rect x="0" y="0" width="560" height="260" rx="12" fill="#F8FAFC" filter="url(#s14-shadow)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="24" y="28" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="15" font-weight="700" fill="#1E293B">贝叶斯优化收敛曲线</text>
+
+    <!-- Chart background -->
+    <rect x="60" y="44" width="470" height="190" rx="6" fill="#FAFBFC" stroke="#E2E8F0" stroke-width="0.5"/>
+
+    <!-- Grid lines -->
+    <line x1="60" y1="92" x2="530" y2="92" stroke="#E2E8F0" stroke-width="0.5" stroke-dasharray="4,4"/>
+    <line x1="60" y1="140" x2="530" y2="140" stroke="#E2E8F0" stroke-width="0.5" stroke-dasharray="4,4"/>
+    <line x1="60" y1="188" x2="530" y2="188" stroke="#E2E8F0" stroke-width="0.5" stroke-dasharray="4,4"/>
+
+    <!-- Y-axis label -->
+    <text x="26" y="145" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8" transform="rotate(-90, 26, 145)">目标函数值</text>
+
+    <!-- X-axis label -->
+    <text x="295" y="248" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">实验次数</text>
+
+    <!-- CCD line (slower, dashed red) -->
+    <polyline points="70,210 120,195 170,180 220,170 270,162 320,155 370,150 420,146 470,143 520,140" fill="none" stroke="#DC2626" stroke-width="2" stroke-dasharray="8,4" opacity="0.8"/>
+
+    <!-- Bayesian line (fast convergence, solid green) -->
+    <polyline points="70,205 120,175 170,140 220,105 270,80 320,68 370,62 420,59 470,58 520,58" fill="none" stroke="#059669" stroke-width="2.5"/>
+
+    <!-- Convergence marker: Bayesian -->
+    <circle cx="320" cy="68" r="5" fill="#FFFFFF" stroke="#059669" stroke-width="2"/>
+    <text x="336" y="62" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" font-weight="600" fill="#059669">~10 次收敛</text>
+
+    <!-- Convergence marker: CCD -->
+    <circle cx="520" cy="140" r="5" fill="#FFFFFF" stroke="#DC2626" stroke-width="2"/>
+    <text x="462" y="133" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#DC2626">~25 次</text>
+
+    <!-- Legend -->
+    <line x1="80" y1="52" x2="110" y2="52" stroke="#059669" stroke-width="2.5"/>
+    <text x="116" y="56" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#059669">贝叶斯 (GP + UCB)</text>
+    <line x1="300" y1="52" x2="330" y2="52" stroke="#DC2626" stroke-width="2" stroke-dasharray="8,4"/>
+    <text x="336" y="56" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#DC2626">CCD 传统</text>
+  </g>
+
+  <!-- Multi-fidelity workflow card (bottom left) -->
+  <g transform="translate(80, 426)">
+    <rect x="0" y="0" width="540" height="100" rx="12" fill="#F8FAFC" filter="url(#s14-shadow)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="24" y="24" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="14" font-weight="700" fill="#1E293B">多保真度四阶段工作流</text>
+
+    <g transform="translate(24, 40)">
+      <!-- Stage 1 -->
+      <rect x="0" y="0" width="108" height="44" rx="8" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1"/>
+      <text x="54" y="20" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#7C3AED">摇瓶筛选</text>
+      <text x="54" y="36" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">低成本</text>
+
+      <!-- Arrow 1 -->
+      <line x1="108" y1="22" x2="124" y2="22" stroke="#CBD5E1" stroke-width="1.5"/>
+      <polygon points="124,22 118,17 118,27" fill="#CBD5E1"/>
+
+      <!-- Stage 2 -->
+      <rect x="124" y="0" width="108" height="44" rx="8" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1"/>
+      <text x="178" y="20" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#7C3AED">小型罐验证</text>
+      <text x="178" y="36" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">中等成本</text>
+
+      <!-- Arrow 2 -->
+      <line x1="232" y1="22" x2="248" y2="22" stroke="#CBD5E1" stroke-width="1.5"/>
+      <polygon points="248,22 242,17 242,27" fill="#CBD5E1"/>
+
+      <!-- Stage 3 -->
+      <rect x="248" y="0" width="108" height="44" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+      <text x="302" y="20" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#059669">贝叶斯收敛</text>
+      <text x="302" y="36" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">智能迭代</text>
+
+      <!-- Arrow 3 -->
+      <line x1="356" y1="22" x2="372" y2="22" stroke="#CBD5E1" stroke-width="1.5"/>
+      <polygon points="372,22 366,17 366,27" fill="#CBD5E1"/>
+
+      <!-- Stage 4 -->
+      <rect x="372" y="0" width="108" height="44" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+      <text x="426" y="20" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" font-weight="600" fill="#D97706">确认实验</text>
+      <text x="426" y="36" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">最终验证</text>
+    </g>
+  </g>
+
+  <!-- Case comparison card (bottom center) -->
+  <g transform="translate(80, 542)">
+    <rect x="0" y="0" width="540" height="98" rx="12" fill="#F8FAFC" filter="url(#s14-shadow)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="24" y="24" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="14" font-weight="700" fill="#1E293B">典型案例: 4 因素优化</text>
+
+    <!-- Full factorial row -->
+    <g transform="translate(24, 36)">
+      <text x="0" y="14" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#DC2626" font-weight="600">全因子设计</text>
+      <text x="130" y="14" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#DC2626">81 次</text>
+      <text x="200" y="14" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#94A3B8">20+ 周</text>
+      <rect x="280" y="2" width="230" height="14" rx="3" fill="#DC2626" opacity="0.15"/>
+      <rect x="280" y="2" width="230" height="14" rx="3" fill="#DC2626" opacity="0.3"/>
+    </g>
+
+    <!-- BIOCore row -->
+    <g transform="translate(24, 62)">
+      <text x="0" y="14" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#059669" font-weight="600">BIOCore 优化</text>
+      <text x="130" y="14" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#059669">47 次</text>
+      <text x="200" y="14" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#94A3B8">14 周</text>
+      <rect x="280" y="2" width="230" height="14" rx="3" fill="#059669" opacity="0.1"/>
+      <rect x="280" y="2" width="134" height="14" rx="3" fill="#059669" opacity="0.35"/>
+    </g>
+  </g>
+
+  <!-- SPC control charts card (bottom right) -->
+  <g transform="translate(640, 426)">
+    <rect x="0" y="0" width="560" height="214" rx="12" fill="#F8FAFC" filter="url(#s14-shadow)" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="24" y="28" font-family="Source Serif Pro, Georgia, Microsoft YaHei, serif" font-size="15" font-weight="700" fill="#1E293B">SPC 控制图</text>
+
+    <!-- SPC method tags -->
+    <g transform="translate(24, 44)">
+      <rect x="0" y="0" width="244" height="36" rx="8" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.8"/>
+      <text x="122" y="23" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#1E40AF">X-bar / R 图</text>
+
+      <rect x="260" y="0" width="244" height="36" rx="8" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.8"/>
+      <text x="382" y="23" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E40AF">EWMA + Cp/Cpk</text>
+    </g>
+
+    <!-- Mini SPC chart visualization -->
+    <g transform="translate(24, 96)">
+      <rect x="0" y="0" width="504" height="86" rx="6" fill="#FAFBFC" stroke="#E2E8F0" stroke-width="0.5"/>
+
+      <!-- UCL / CL / LCL lines -->
+      <line x1="40" y1="12" x2="490" y2="12" stroke="#DC2626" stroke-width="0.8" stroke-dasharray="4,3" opacity="0.6"/>
+      <text x="494" y="16" font-family="JetBrains Mono, monospace" font-size="12" fill="#DC2626" opacity="0.6">UCL</text>
+      <line x1="40" y1="43" x2="490" y2="43" stroke="#1E40AF" stroke-width="1" stroke-dasharray="6,3"/>
+      <text x="494" y="47" font-family="JetBrains Mono, monospace" font-size="12" fill="#1E40AF">CL</text>
+      <line x1="40" y1="74" x2="490" y2="74" stroke="#DC2626" stroke-width="0.8" stroke-dasharray="4,3" opacity="0.6"/>
+      <text x="494" y="78" font-family="JetBrains Mono, monospace" font-size="12" fill="#DC2626" opacity="0.6">LCL</text>
+
+      <!-- Data points -->
+      <polyline points="50,40 80,38 110,45 140,42 170,36 200,48 230,44 260,41 290,38 320,46 350,50 380,43 410,39 440,37 470,44" fill="none" stroke="#059669" stroke-width="1.5"/>
+      <circle cx="50" cy="40" r="3" fill="#059669"/>
+      <circle cx="140" cy="42" r="3" fill="#059669"/>
+      <circle cx="230" cy="44" r="3" fill="#059669"/>
+      <circle cx="320" cy="46" r="3" fill="#059669"/>
+      <circle cx="410" cy="39" r="3" fill="#059669"/>
+      <circle cx="470" cy="44" r="3" fill="#059669"/>
+    </g>
+
+    <text x="24" y="200" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="13" fill="#64748B">Western Electric 规则自动检测过程异常</text>
+  </g>
+
+  <!-- Footer -->
+  <rect x="0" y="680" width="1280" height="40" fill="#F8FAFC"/>
+  <line x1="0" y1="680" x2="1280" y2="680" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="80" y="705" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="705" text-anchor="middle" font-family="Inter, Microsoft YaHei, system-ui, sans-serif" font-size="12" fill="#94A3B8">实验设计与贝叶斯优化</text>
+  <text x="1200" y="705" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#94A3B8">14 / 18</text>
+</svg>

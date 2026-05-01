@@ -1,0 +1,27 @@
+{
+  "name": "biocore",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BIOCore — 实验室R&D发酵控制平台",
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "dev:server": "pnpm --filter @biocore/server run dev",
+    "dev:ui": "pnpm --filter @biocore/web-ui run dev",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "lint": "pnpm -r run lint",
+    "db:init": "pnpm --filter @biocore/data-service run db:init",
+    "plc:test": "pnpm --filter @biocore/plc-driver run test:connection"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
+  "pnpm": {
+    "onlyBuiltDependencies": ["puppeteer", "better-sqlite3", "node-snap7"]
+  },
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}

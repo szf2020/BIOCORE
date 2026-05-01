@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg7" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#122040"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bg7)"/>
+  <rect x="0" y="0" width="1280" height="4" fill="#22c55e"/>
+
+  <!-- Part indicator -->
+  <rect x="80" y="24" width="8" height="30" rx="2" fill="#22c55e"/>
+  <text x="100" y="45" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">第二部分 | 本地 AI 智能模块</text>
+
+  <!-- Page title -->
+  <text x="80" y="85" font-family="Microsoft YaHei, sans-serif" font-size="26" font-weight="bold" fill="#ffffff">本地 AI 技术栈</text>
+  <text x="80" y="112" font-family="Microsoft YaHei, sans-serif" font-size="14" fill="#7a8faa">Ollama + Qwen2.5-7B — 100% 离线，零云依赖</text>
+  <rect x="80" y="122" width="80" height="2" fill="#22c55e" rx="1"/>
+
+  <!-- Left column: AI Architecture -->
+  <g transform="translate(80, 145)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#b0c4e8">AI 技术架构</text>
+
+    <!-- Ollama + Qwen block -->
+    <rect x="0" y="20" width="500" height="60" rx="8" fill="#1a2744" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="20" y="48" font-family="JetBrains Mono, monospace" font-size="16" font-weight="bold" fill="#22c55e">Ollama</text>
+    <text x="110" y="48" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#b0c4e8">本地模型管理引擎</text>
+    <text x="20" y="68" font-family="JetBrains Mono, monospace" font-size="12" fill="#7a8faa">Qwen2.5-7B  |  中文理解优化  |  标准 PC 部署</text>
+
+    <!-- Key advantages -->
+    <g transform="translate(0, 95)">
+      <rect x="0" y="0" width="155" height="50" rx="6" fill="#162030" stroke="#22c55e" stroke-width="0.5"/>
+      <text x="78" y="20" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#22c55e">数据主权</text>
+      <text x="78" y="38" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#5a7090">数据不出实验室</text>
+
+      <rect x="170" y="0" width="155" height="50" rx="6" fill="#162030" stroke="#22c55e" stroke-width="0.5"/>
+      <text x="248" y="20" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#22c55e">气隙部署</text>
+      <text x="248" y="38" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#5a7090">无需 GPU 服务器</text>
+
+      <rect x="340" y="0" width="160" height="50" rx="6" fill="#162030" stroke="#22c55e" stroke-width="0.5"/>
+      <text x="420" y="20" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#22c55e">零运行成本</text>
+      <text x="420" y="38" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#5a7090">vs 云端 API 按量计费</text>
+    </g>
+
+    <!-- Metrics -->
+    <g transform="translate(0, 165)">
+      <rect x="0" y="0" width="155" height="65" rx="8" fill="#1a2744" stroke="#22c55e" stroke-width="1"/>
+      <text x="78" y="28" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" font-weight="bold" fill="#22c55e">100%</text>
+      <text x="78" y="48" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">离线运行</text>
+
+      <rect x="170" y="0" width="155" height="65" rx="8" fill="#1a2744" stroke="#1677ff" stroke-width="1"/>
+      <text x="248" y="28" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" font-weight="bold" fill="#1677ff">&lt;100ms</text>
+      <text x="248" y="48" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">推理延迟</text>
+
+      <rect x="340" y="0" width="160" height="65" rx="8" fill="#1a2744" stroke="#f59e0b" stroke-width="1"/>
+      <text x="420" y="28" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" font-weight="bold" fill="#f59e0b">8</text>
+      <text x="420" y="48" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">AI 模块</text>
+    </g>
+  </g>
+
+  <!-- Right column: 8 AI Module Matrix -->
+  <g transform="translate(640, 145)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#b0c4e8">8 大 AI 模块</text>
+
+    <!-- Table header -->
+    <rect x="0" y="15" width="560" height="28" rx="4" fill="#1e2d45"/>
+    <text x="15" y="34" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#7a8faa">模块</text>
+    <text x="170" y="34" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#7a8faa">技术</text>
+    <text x="340" y="34" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#7a8faa">功能</text>
+
+    <!-- Row 1 -->
+    <rect x="0" y="46" width="560" height="28" fill="#141e30"/>
+    <text x="15" y="64" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">LLM 对话</text>
+    <text x="170" y="64" font-family="JetBrains Mono, monospace" font-size="10" fill="#22c55e">Qwen2.5-7B</text>
+    <text x="340" y="64" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">自然语言查询/批次摘要</text>
+
+    <!-- Row 2 -->
+    <rect x="0" y="76" width="560" height="28" fill="#111a2a"/>
+    <text x="15" y="94" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">异常检测</text>
+    <text x="170" y="94" font-family="JetBrains Mono, monospace" font-size="10" fill="#22c55e">CUSUM</text>
+    <text x="340" y="94" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">参数漂移提前预警</text>
+
+    <!-- Row 3 -->
+    <rect x="0" y="106" width="560" height="28" fill="#141e30"/>
+    <text x="15" y="124" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">批次匹配</text>
+    <text x="170" y="124" font-family="JetBrains Mono, monospace" font-size="10" fill="#22c55e">DTW</text>
+    <text x="340" y="124" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">历史相似批次检索</text>
+
+    <!-- Row 4 -->
+    <rect x="0" y="136" width="560" height="28" fill="#111a2a"/>
+    <text x="15" y="154" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">软测量</text>
+    <text x="170" y="154" font-family="JetBrains Mono, monospace" font-size="10" fill="#22c55e">OLS/ONNX</text>
+    <text x="340" y="154" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">OD600/残糖在线推断</text>
+
+    <!-- Row 5 -->
+    <rect x="0" y="166" width="560" height="28" fill="#141e30"/>
+    <text x="15" y="184" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">补料优化</text>
+    <text x="170" y="184" font-family="JetBrains Mono, monospace" font-size="10" fill="#22c55e">Monod 动力学</text>
+    <text x="340" y="184" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">最优补料速率计算</text>
+
+    <!-- Row 6 -->
+    <rect x="0" y="196" width="560" height="28" fill="#111a2a"/>
+    <text x="15" y="214" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">根因分析</text>
+    <text x="170" y="214" font-family="JetBrains Mono, monospace" font-size="10" fill="#22c55e">知识库匹配</text>
+    <text x="340" y="214" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">报警自动溯源</text>
+
+    <!-- Row 7 -->
+    <rect x="0" y="226" width="560" height="28" fill="#141e30"/>
+    <text x="15" y="244" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">事件检测</text>
+    <text x="170" y="244" font-family="JetBrains Mono, monospace" font-size="10" fill="#22c55e">统计特征</text>
+    <text x="340" y="244" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">DO Spike/代谢状态识别</text>
+
+    <!-- Row 8 -->
+    <rect x="0" y="256" width="560" height="28" fill="#111a2a"/>
+    <text x="15" y="274" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#b0c4e8">代谢推断</text>
+    <text x="170" y="274" font-family="JetBrains Mono, monospace" font-size="10" fill="#22c55e">碱消耗分析</text>
+    <text x="340" y="274" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#7a8faa">生长阶段判断</text>
+  </g>
+
+  <!-- EU AI Act note -->
+  <g transform="translate(80, 570)">
+    <rect x="0" y="0" width="1120" height="50" rx="8" fill="#1a2744" stroke="#22c55e" stroke-width="0.5"/>
+    <text x="20" y="22" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#22c55e">数据合规</text>
+    <text x="100" y="22" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">工艺配方和菌株数据完全在本地存储和处理，符合 EU AI Act 数据主权方向</text>
+    <text x="20" y="42" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">一次部署，长期运行 — 无云端 API 按量计费成本 | 支持完全气隙（Air-gapped）网络环境</text>
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="680" width="1280" height="40" fill="#0d1a2e"/>
+  <text x="80" y="706" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="706" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#3a5070">本地 AI 技术栈</text>
+  <text x="1200" y="706" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#4a6080">07 / 18</text>
+</svg>

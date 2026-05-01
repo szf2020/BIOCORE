@@ -1,0 +1,22 @@
+{
+  "slides": {
+    "01": { "status": "passed", "score": 8.0, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "02": { "status": "passed", "score": 8.0, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "03": { "status": "passed", "score": 7.8, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "04": { "status": "passed", "score": 8.0, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "05": { "status": "passed", "score": 8.0, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "06": { "status": "passed", "score": 8.0, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "07": { "status": "passed", "score": 8.0, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "08": { "status": "passed", "score": 8.0, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "09": { "status": "passed", "score": 8.0, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "10": { "status": "passed", "score": 8.0, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "11": { "status": "passed", "score": 8.0, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "12": { "status": "accepted_with_warning", "score": 7.5, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "13": { "status": "passed", "score": 7.8, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "14": { "status": "passed", "score": 8.3, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "15": { "status": "passed", "score": 8.5, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "16": { "status": "passed", "score": 8.7, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "17": { "status": "passed", "score": 7.8, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" },
+    "18": { "status": "passed", "score": 8.2, "fix_rounds": 0, "timestamp": "2026-04-12T22:20:00Z" }
+  }
+}

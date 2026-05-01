@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg7" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#EFF6FF"/>
+      <stop offset="100%" stop-color="#F8FAFC"/>
+    </linearGradient>
+    <filter id="shadow7" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#1E40AF" flood-opacity="0.08"/>
+    </filter>
+    <filter id="shadowSm7" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#1E40AF" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bg7)" data-decorative="true"/>
+
+  <!-- Top accent bar -->
+  <g data-decorative="true">
+    <rect x="0" y="0" width="1280" height="4" fill="#1E40AF"/>
+    <rect x="0" y="4" width="320" height="2" fill="#059669" opacity="0.6"/>
+  </g>
+
+  <!-- Part indicator -->
+  <rect x="80" y="28" width="4" height="24" rx="2" fill="#059669"/>
+  <text x="96" y="46" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B" letter-spacing="0.5">第二部分 · 本地 AI 智能模块</text>
+
+  <!-- Page title -->
+  <text x="80" y="90" font-family="Source Serif Pro, Georgia, serif" font-size="30" font-weight="700" fill="#1E293B">本地 AI 技术栈</text>
+  <text x="80" y="118" font-family="Inter, system-ui, sans-serif" font-size="15" fill="#64748B">Ollama + Qwen2.5-7B — 100% 离线，零云依赖</text>
+  <rect x="80" y="130" width="60" height="3" rx="1.5" fill="#059669"/>
+
+  <!-- === LEFT COLUMN: AI Architecture === -->
+
+  <!-- Ollama + Qwen card -->
+  <rect x="80" y="155" width="530" height="72" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" filter="url(#shadow7)"/>
+  <rect x="80" y="155" width="4" height="72" rx="2" fill="#059669"/>
+  <text x="104" y="184" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="#059669">Ollama</text>
+  <text x="200" y="184" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#1E293B">本地模型管理引擎</text>
+  <text x="104" y="210" font-family="JetBrains Mono, monospace" font-size="13" fill="#64748B">Qwen2.5-7B  ·  中文理解优化  ·  标准 PC 部署</text>
+
+  <!-- Three advantage cards -->
+  <rect x="80" y="247" width="166" height="62" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" filter="url(#shadowSm7)"/>
+  <text x="163" y="271" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#1E40AF">数据主权</text>
+  <text x="163" y="293" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">数据不出实验室</text>
+
+  <rect x="262" y="247" width="166" height="62" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" filter="url(#shadowSm7)"/>
+  <text x="345" y="271" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#1E40AF">气隙部署</text>
+  <text x="345" y="293" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">无需 GPU 服务器</text>
+
+  <rect x="444" y="247" width="166" height="62" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" filter="url(#shadowSm7)"/>
+  <text x="527" y="271" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#1E40AF">零运行成本</text>
+  <text x="527" y="293" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">vs 云端按量计费</text>
+
+  <!-- Three metric cards -->
+  <rect x="80" y="329" width="166" height="76" rx="10" fill="#F8FAFC" stroke="#059669" stroke-width="1.5" filter="url(#shadow7)"/>
+  <text x="163" y="362" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="26" font-weight="700" fill="#059669">100%</text>
+  <text x="163" y="386" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">离线运行</text>
+
+  <rect x="262" y="329" width="166" height="76" rx="10" fill="#F8FAFC" stroke="#1E40AF" stroke-width="1.5" filter="url(#shadow7)"/>
+  <text x="345" y="362" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="26" font-weight="700" fill="#1E40AF">&lt;100ms</text>
+  <text x="345" y="386" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">推理延迟</text>
+
+  <rect x="444" y="329" width="166" height="76" rx="10" fill="#F8FAFC" stroke="#D97706" stroke-width="1.5" filter="url(#shadow7)"/>
+  <text x="527" y="362" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="26" font-weight="700" fill="#D97706">8</text>
+  <text x="527" y="386" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">AI 模块</text>
+
+  <!-- === RIGHT COLUMN: 8 AI Module Matrix === -->
+
+  <text x="660" y="173" font-family="Source Serif Pro, Georgia, serif" font-size="17" font-weight="700" fill="#1E293B">8 大 AI 模块</text>
+
+  <!-- Table card -->
+  <rect x="660" y="186" width="540" height="300" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" filter="url(#shadow7)"/>
+
+  <!-- Table header -->
+  <rect x="660" y="186" width="540" height="34" rx="12" fill="#1E40AF"/>
+  <!-- Cover bottom corners of header -->
+  <rect x="660" y="206" width="540" height="14" fill="#1E40AF"/>
+  <text x="685" y="209" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">模块</text>
+  <text x="830" y="209" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">技术</text>
+  <text x="1000" y="209" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">功能</text>
+
+  <!-- Row 1 -->
+  <rect x="660" y="220" width="540" height="32" fill="#F8FAFC"/>
+  <text x="685" y="241" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">LLM 对话</text>
+  <text x="830" y="241" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">Qwen2.5-7B</text>
+  <text x="1000" y="241" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">自然语言查询/批次摘要</text>
+
+  <!-- Row 2 -->
+  <rect x="660" y="252" width="540" height="32" fill="#F1F5F9"/>
+  <text x="685" y="273" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">异常检测</text>
+  <text x="830" y="273" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">CUSUM</text>
+  <text x="1000" y="273" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">参数漂移提前预警</text>
+
+  <!-- Row 3 -->
+  <rect x="660" y="284" width="540" height="32" fill="#F8FAFC"/>
+  <text x="685" y="305" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">批次匹配</text>
+  <text x="830" y="305" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">DTW</text>
+  <text x="1000" y="305" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">历史相似批次检索</text>
+
+  <!-- Row 4 -->
+  <rect x="660" y="316" width="540" height="32" fill="#F1F5F9"/>
+  <text x="685" y="337" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">软测量</text>
+  <text x="830" y="337" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">OLS/ONNX</text>
+  <text x="1000" y="337" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">OD600/残糖在线推断</text>
+
+  <!-- Row 5 -->
+  <rect x="660" y="348" width="540" height="32" fill="#F8FAFC"/>
+  <text x="685" y="369" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">补料优化</text>
+  <text x="830" y="369" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">Monod 动力学</text>
+  <text x="1000" y="369" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">最优补料速率计算</text>
+
+  <!-- Row 6 -->
+  <rect x="660" y="380" width="540" height="32" fill="#F1F5F9"/>
+  <text x="685" y="401" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">根因分析</text>
+  <text x="830" y="401" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">知识库匹配</text>
+  <text x="1000" y="401" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">报警自动溯源</text>
+
+  <!-- Row 7 -->
+  <rect x="660" y="412" width="540" height="32" fill="#F8FAFC"/>
+  <text x="685" y="433" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">事件检测</text>
+  <text x="830" y="433" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">统计特征</text>
+  <text x="1000" y="433" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">DO Spike/代谢状态识别</text>
+
+  <!-- Row 8 -->
+  <rect x="660" y="444" width="540" height="42" rx="0" fill="#F1F5F9"/>
+  <!-- Round bottom corners -->
+  <rect x="660" y="474" width="540" height="12" rx="12" fill="#F1F5F9"/>
+  <rect x="660" y="444" width="540" height="12" fill="#F1F5F9"/>
+  <text x="685" y="468" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">代谢推断</text>
+  <text x="830" y="468" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">碱消耗分析</text>
+  <text x="1000" y="468" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">生长阶段判断</text>
+
+  <!-- Compliance note card -->
+  <rect x="80" y="430" width="530" height="56" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" filter="url(#shadowSm7)"/>
+  <rect x="80" y="430" width="4" height="56" rx="2" fill="#059669"/>
+  <text x="104" y="454" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#059669">数据合规</text>
+  <text x="104" y="474" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">工艺配方和菌株数据完全在本地，符合 EU AI Act 数据主权方向</text>
+
+  <!-- Bottom note card -->
+  <rect x="80" y="510" width="1120" height="50" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" filter="url(#shadowSm7)"/>
+  <rect x="80" y="510" width="4" height="50" rx="2" fill="#1E40AF"/>
+  <text x="104" y="534" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#1E40AF">部署优势</text>
+  <text x="220" y="534" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">一次部署，长期运行 — 无云端 API 按量计费成本  |  支持完全气隙（Air-gapped）网络环境</text>
+
+  <!-- Decorative background elements -->
+  <g data-decorative="true">
+    <circle cx="1220" cy="100" r="180" fill="#1E40AF" opacity="0.02"/>
+    <circle cx="1180" cy="140" r="120" fill="#059669" opacity="0.02"/>
+  </g>
+
+  <!-- Footer -->
+  <rect x="0" y="680" width="1280" height="40" fill="#F1F5F9"/>
+  <line x1="0" y1="680" x2="1280" y2="680" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="80" y="705" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="705" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">本地 AI 技术栈</text>
+  <text x="1200" y="705" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#94A3B8">07 / 18</text>
+</svg>

@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="s4-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F0F4F8"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <linearGradient id="s4-accent-bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1E40AF"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="s4-shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#1E293B" flood-opacity="0.08"/>
+    </filter>
+    <filter id="s4-shadow-sm">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#1E293B" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#s4-bg)"/>
+
+  <!-- Top accent bar -->
+  <rect x="0" y="0" width="1280" height="4" fill="url(#s4-accent-bar)" data-decorative="true"/>
+
+  <!-- Part indicator -->
+  <rect x="80" y="28" width="4" height="24" rx="2" fill="#1E40AF"/>
+  <text x="96" y="46" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B" letter-spacing="0.5">第一部分 | 工业级硬件底座与安全体系</text>
+
+  <!-- Page title -->
+  <text x="80" y="88" font-family="Source Serif Pro, Georgia, serif" font-size="28" font-weight="700" fill="#1E293B">双向心跳安全协议</text>
+  <text x="80" y="114" font-family="Inter, system-ui, sans-serif" font-size="15" fill="#64748B">PC &#x2194; PLC 双向监控，3 秒超时自动保护</text>
+  <rect x="80" y="126" width="60" height="3" rx="1.5" fill="#059669"/>
+
+  <!-- ==================== TOP HALF: Heartbeat Flow Card ==================== -->
+  <rect x="60" y="148" width="1160" height="230" rx="12" fill="#F8FAFC" filter="url(#s4-shadow)" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- Card header -->
+  <text x="88" y="178" font-family="Source Serif Pro, Georgia, serif" font-size="16" font-weight="600" fill="#1E293B">心跳通讯流程</text>
+
+  <!-- PC Box -->
+  <rect x="100" y="198" width="200" height="76" rx="10" fill="#F8FAFC" stroke="#1E40AF" stroke-width="2" filter="url(#s4-shadow-sm)"/>
+  <text x="200" y="230" text-anchor="middle" font-family="Source Serif Pro, Georgia, serif" font-size="17" font-weight="700" fill="#1E40AF">PC 端</text>
+  <text x="200" y="254" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#64748B">Node.js Server</text>
+
+  <!-- PLC Box -->
+  <rect x="780" y="198" width="200" height="76" rx="10" fill="#F8FAFC" stroke="#059669" stroke-width="2" filter="url(#s4-shadow-sm)"/>
+  <text x="880" y="230" text-anchor="middle" font-family="Source Serif Pro, Georgia, serif" font-size="17" font-weight="700" fill="#059669">PLC 端</text>
+  <text x="880" y="254" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#64748B">S7-200 SMART</text>
+
+  <!-- Forward arrow: PC -> PLC -->
+  <line x1="300" y1="222" x2="775" y2="222" stroke="#1E40AF" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <polygon points="775,222 765,217 765,227" fill="#1E40AF"/>
+  <rect x="440" y="208" width="200" height="28" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+  <text x="540" y="227" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#1E40AF">VB400 递增计数器 (1Hz)</text>
+
+  <!-- Return arrow: PLC -> PC -->
+  <line x1="780" y1="252" x2="305" y2="252" stroke="#059669" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <polygon points="305,252 315,247 315,257" fill="#059669"/>
+  <rect x="440" y="238" width="200" height="28" rx="6" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="540" y="257" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#059669">VB401 确认计数器 (1Hz)</text>
+
+  <!-- Timeout badge -->
+  <rect x="460" y="280" width="160" height="36" rx="8" fill="#FEF2F2" stroke="#FECACA" stroke-width="1"/>
+  <text x="540" y="304" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" fill="#DC2626">超时阈值: 3 秒</text>
+
+  <!-- Metrics cards on right -->
+  <rect x="1010" y="198" width="190" height="76" rx="10" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1" filter="url(#s4-shadow-sm)"/>
+  <text x="1105" y="230" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="28" font-weight="700" fill="#059669">&lt;0.01%</text>
+  <text x="1105" y="254" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">通讯丢包率</text>
+
+  <!-- Reconnect strategy badge -->
+  <rect x="100" y="330" width="880" height="36" rx="8" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+  <text x="120" y="354" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">断线重连策略：指数退避</text>
+  <text x="310" y="354" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#1E40AF">1s  &#x2192;  5s  &#x2192;  30s</text>
+  <text x="520" y="354" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#94A3B8">防止网络抖动引发频繁重连风暴</text>
+
+  <!-- ==================== BOTTOM HALF: Fault Response Matrix ==================== -->
+  <rect x="60" y="392" width="1160" height="278" rx="12" fill="#F8FAFC" filter="url(#s4-shadow)" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- Card header -->
+  <text x="88" y="424" font-family="Source Serif Pro, Georgia, serif" font-size="16" font-weight="600" fill="#1E293B">故障场景响应矩阵</text>
+
+  <!-- Table header row -->
+  <rect x="88" y="440" width="1104" height="36" rx="6" fill="#1E40AF"/>
+  <text x="112" y="464" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">故障场景</text>
+  <text x="370" y="464" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">触发条件</text>
+  <text x="700" y="464" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">PLC 响应</text>
+
+  <!-- Row 1: PC crash -->
+  <rect x="88" y="480" width="1104" height="44" rx="0" fill="#FFFFFF"/>
+  <rect x="88" y="480" width="5" height="44" fill="#DC2626"/>
+  <text x="112" y="507" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#1E293B">PC 软件崩溃</text>
+  <text x="370" y="507" font-family="JetBrains Mono, monospace" font-size="13" fill="#64748B">VB400 停止更新 &gt;3s</text>
+  <text x="700" y="507" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">自动 Hold + 独立维持搅拌/温控/pH</text>
+
+  <!-- Row 2: Network down -->
+  <rect x="88" y="526" width="1104" height="44" rx="0" fill="#F8FAFC"/>
+  <rect x="88" y="526" width="5" height="44" fill="#DC2626"/>
+  <text x="112" y="553" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#1E293B">网络中断</text>
+  <text x="370" y="553" font-family="JetBrains Mono, monospace" font-size="13" fill="#64748B">心跳链路断开</text>
+  <text x="700" y="553" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">PLC 独立安全运行模式</text>
+
+  <!-- Row 3: PLC no response -->
+  <rect x="88" y="572" width="1104" height="44" rx="0" fill="#FFFFFF"/>
+  <rect x="88" y="572" width="5" height="44" fill="#F59E0B"/>
+  <text x="112" y="599" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#1E293B">PLC 无响应</text>
+  <text x="370" y="599" font-family="JetBrains Mono, monospace" font-size="13" fill="#64748B">VB401 停止更新 &gt;3s</text>
+  <text x="700" y="599" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">PC 报警 + 橙色警告</text>
+
+  <!-- Row 4: Normal recovery -->
+  <rect x="88" y="618" width="1104" height="44" rx="0 0 6 6" fill="#F8FAFC"/>
+  <rect x="88" y="618" width="5" height="44" fill="#059669"/>
+  <text x="112" y="645" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#1E293B">正常恢复</text>
+  <text x="370" y="645" font-family="JetBrains Mono, monospace" font-size="13" fill="#64748B">心跳双向恢复</text>
+  <text x="700" y="645" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#059669">自动恢复批次执行</text>
+
+  <!-- ==================== Footer ==================== -->
+  <rect x="0" y="682" width="1280" height="38" fill="#1E293B"/>
+  <text x="80" y="706" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="706" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">双向心跳安全协议</text>
+  <text x="1200" y="706" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#94A3B8">04 / 18</text>
+</svg>

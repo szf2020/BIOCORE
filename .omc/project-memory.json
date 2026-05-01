@@ -1,0 +1,317 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1776693267796,
+  "projectRoot": "C:\\BIOCore",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": ">=20.0.0",
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "playwright",
+        "version": "1.59.1",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "pnpm",
+    "runtime": "Node.js 20.0.0"
+  },
+  "build": {
+    "buildCommand": "pnpm build",
+    "testCommand": "pnpm test",
+    "lintCommand": "pnpm lint",
+    "devCommand": "pnpm dev",
+    "scripts": {
+      "dev": "pnpm -r --parallel run dev",
+      "dev:server": "pnpm --filter @biocore/server run dev",
+      "dev:ui": "pnpm --filter @biocore/web-ui run dev",
+      "build": "pnpm -r run build",
+      "test": "pnpm -r run test",
+      "lint": "pnpm -r run lint",
+      "db:init": "pnpm --filter @biocore/data-service run db:init",
+      "plc:test": "pnpm --filter @biocore/plc-driver run test:connection"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": true,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "scripts"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "config": {
+      "path": "config",
+      "purpose": "Configuration files",
+      "fileCount": 1,
+      "lastAccessed": 1776693267712,
+      "keyFiles": [
+        "default-plc-variables.ts"
+      ]
+    },
+    "data": {
+      "path": "data",
+      "purpose": "Data files",
+      "fileCount": 3,
+      "lastAccessed": 1776693267713,
+      "keyFiles": [
+        "biocore.db",
+        "biocore.db-shm",
+        "biocore.db-wal"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 24,
+      "lastAccessed": 1776693267713,
+      "keyFiles": [
+        "00_BIOCore_产品规划主文档.md",
+        "01_PLC硬件规格.md",
+        "02_AI架构.md",
+        "03_工艺控制策略.md",
+        "04_配方JSON规范.md"
+      ]
+    },
+    "openspec": {
+      "path": "openspec",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776693267754,
+      "keyFiles": []
+    },
+    "packages": {
+      "path": "packages",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776693267754,
+      "keyFiles": []
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 1,
+      "lastAccessed": 1776693267755,
+      "keyFiles": [
+        "generate-mock-batch.ts"
+      ]
+    },
+    "stitch_duplicate_of_biocore": {
+      "path": "stitch_duplicate_of_biocore",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776693267755,
+      "keyFiles": []
+    },
+    "{docs,packages": {
+      "path": "{docs,packages",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776693267756,
+      "keyFiles": []
+    },
+    "packages\\types": {
+      "path": "packages\\types",
+      "purpose": "Type definitions",
+      "fileCount": 2,
+      "lastAccessed": 1776693267757,
+      "keyFiles": [
+        "package.json",
+        "tsconfig.json"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "packages\\server\\src\\index.ts",
+      "accessCount": 28,
+      "lastAccessed": 1776694030709,
+      "type": "directory"
+    },
+    {
+      "path": "packages\\data-service\\src\\sqlite-service.ts",
+      "accessCount": 5,
+      "lastAccessed": 1776693878144,
+      "type": "file"
+    },
+    {
+      "path": "docs\\SESSION_HANDOFF.md",
+      "accessCount": 5,
+      "lastAccessed": 1776694115672,
+      "type": "file"
+    },
+    {
+      "path": "docs\\开发进度_Sprint3_配方v2.md",
+      "accessCount": 5,
+      "lastAccessed": 1776694167169,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web-ui\\src\\app\\recipes",
+      "accessCount": 4,
+      "lastAccessed": 1776693375831,
+      "type": "directory"
+    },
+    {
+      "path": "",
+      "accessCount": 4,
+      "lastAccessed": 1776693389282,
+      "type": "directory"
+    },
+    {
+      "path": "packages\\types\\src\\index.ts",
+      "accessCount": 4,
+      "lastAccessed": 1776693829124,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web-ui\\src\\app\\analysis\\audit-logs\\page.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1776693853396,
+      "type": "file"
+    },
+    {
+      "path": "scripts\\sprint3-e2e.sh",
+      "accessCount": 4,
+      "lastAccessed": 1776695492944,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web-ui\\src\\app\\recipes\\[id]\\edit-v2\\page.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1776693595532,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web-ui\\src",
+      "accessCount": 2,
+      "lastAccessed": 1776693602777,
+      "type": "directory"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 1,
+      "lastAccessed": 1776693301147,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 1,
+      "lastAccessed": 1776693301235,
+      "type": "file"
+    },
+    {
+      "path": "docs\\开发进度_20260407.md",
+      "accessCount": 1,
+      "lastAccessed": 1776693308981,
+      "type": "file"
+    },
+    {
+      "path": "docs\\开发进度_Sprint1_API公开化.md",
+      "accessCount": 1,
+      "lastAccessed": 1776693315746,
+      "type": "file"
+    },
+    {
+      "path": "docs\\开发进度_Sprint2_价值增强.md",
+      "accessCount": 1,
+      "lastAccessed": 1776693316288,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web-ui\\src\\app\\recipes\\[id]\\edit\\page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1776693368279,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web-ui\\src\\app\\recipes\\review-queue\\page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1776693369379,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web-ui\\src\\app\\recipes\\page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1776693370141,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web-ui\\src\\app\\login\\page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1776693393603,
+      "type": "file"
+    },
+    {
+      "path": "docker-compose.yml",
+      "accessCount": 1,
+      "lastAccessed": 1776693393882,
+      "type": "file"
+    },
+    {
+      "path": ".env.example",
+      "accessCount": 1,
+      "lastAccessed": 1776693393994,
+      "type": "file"
+    },
+    {
+      "path": "packages\\batch-engine\\src\\batch-controller.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776693394158,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web-ui\\src\\lib\\auth.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776693398549,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web-ui\\src\\stores\\realtime-store.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776693398932,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web-ui\\src\\components\\dashboard\\ControlPanel.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1776693415963,
+      "type": "file"
+    },
+    {
+      "path": "packages\\batch-engine\\src\\dag-executor.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776693416151,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web-ui\\src\\hooks\\useAudit.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1776693505644,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web-ui\\src\\components\\ui\\audit-confirm.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1776693571057,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

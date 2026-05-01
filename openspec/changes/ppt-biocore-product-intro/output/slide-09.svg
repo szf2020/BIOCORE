@@ -1,0 +1,193 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg9" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#EFF6FF"/>
+      <stop offset="100%" stop-color="#F8FAFC"/>
+    </linearGradient>
+    <filter id="shadow9" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#1E40AF" flood-opacity="0.08"/>
+    </filter>
+    <filter id="shadowSm9" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#1E40AF" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bg9)" data-decorative="true"/>
+
+  <!-- Top accent bar -->
+  <g data-decorative="true">
+    <rect x="0" y="0" width="1280" height="4" fill="#1E40AF"/>
+    <rect x="0" y="4" width="320" height="2" fill="#059669" opacity="0.6"/>
+  </g>
+
+  <!-- Part indicator -->
+  <rect x="80" y="28" width="4" height="24" rx="2" fill="#059669"/>
+  <text x="96" y="46" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B" letter-spacing="0.5">第二部分 · 本地 AI 智能模块</text>
+
+  <!-- Page title -->
+  <text x="80" y="90" font-family="Source Serif Pro, Georgia, serif" font-size="30" font-weight="700" fill="#1E293B">CUSUM 异常检测与根因分析</text>
+  <text x="80" y="118" font-family="Inter, system-ui, sans-serif" font-size="15" fill="#64748B">比传统阈值报警提前 5-15 分钟预警</text>
+  <rect x="80" y="130" width="60" height="3" rx="1.5" fill="#059669"/>
+
+  <!-- === LEFT LARGER COLUMN: CUSUM Chart === -->
+
+  <text x="80" y="168" font-family="Source Serif Pro, Georgia, serif" font-size="17" font-weight="700" fill="#1E293B">CUSUM 检测 vs 传统阈值报警</text>
+
+  <!-- Chart card -->
+  <rect x="80" y="182" width="720" height="310" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" filter="url(#shadow9)"/>
+
+  <!-- Chart inner background -->
+  <rect x="100" y="195" width="680" height="280" rx="8" fill="#FAFBFD"/>
+
+  <!-- Y axis -->
+  <line x1="160" y1="215" x2="160" y2="440" stroke="#CBD5E1" stroke-width="1"/>
+  <text x="110" y="332" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8" transform="rotate(-90, 110, 332)">温度偏差</text>
+
+  <!-- Y grid lines -->
+  <line x1="160" y1="260" x2="750" y2="260" stroke="#E2E8F0" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <line x1="160" y1="330" x2="750" y2="330" stroke="#E2E8F0" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <line x1="160" y1="400" x2="750" y2="400" stroke="#E2E8F0" stroke-width="0.5" stroke-dasharray="4,4"/>
+
+  <!-- X axis -->
+  <line x1="160" y1="440" x2="750" y2="440" stroke="#CBD5E1" stroke-width="1"/>
+  <text x="455" y="465" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">时间 (分钟)</text>
+
+  <!-- X tick labels -->
+  <text x="160" y="456" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#CBD5E1">0</text>
+  <text x="280" y="456" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#CBD5E1">10</text>
+  <text x="400" y="456" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#CBD5E1">20</text>
+  <text x="520" y="456" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#CBD5E1">30</text>
+  <text x="640" y="456" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#CBD5E1">40</text>
+  <text x="750" y="456" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#CBD5E1">50</text>
+
+  <!-- Traditional threshold lines (dashed red) -->
+  <line x1="160" y1="248" x2="750" y2="248" stroke="#DC2626" stroke-width="1" stroke-dasharray="6,4" opacity="0.4"/>
+  <text x="756" y="252" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#DC2626" opacity="0.6">上限</text>
+  <line x1="160" y1="408" x2="750" y2="408" stroke="#DC2626" stroke-width="1" stroke-dasharray="6,4" opacity="0.4"/>
+  <text x="756" y="412" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#DC2626" opacity="0.6">下限</text>
+
+  <!-- Raw data line (grey, noisy, gradually drifts up) -->
+  <polyline points="170,330 195,322 220,338 245,318 270,332 295,325 320,335 345,315 370,328 395,310 420,320 445,305 470,312 495,298 520,288 545,275 570,262 595,252 620,244 645,238" fill="none" stroke="#94A3B8" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- CUSUM cumulative line (green, smooth curve detecting earlier) -->
+  <polyline points="170,380 195,378 220,376 245,372 270,370 295,366 320,362 345,356 370,348 395,338 420,325 445,308 470,290 495,270 520,252 545,236 570,222 595,210 620,200 645,192" fill="none" stroke="#059669" stroke-width="2.5"/>
+
+  <!-- CUSUM detection point (earlier) -->
+  <circle cx="445" cy="308" r="7" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <line x1="445" y1="320" x2="445" y2="432" stroke="#059669" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="445" y="438" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#059669">CUSUM 检测</text>
+
+  <!-- Traditional detection point (later) -->
+  <circle cx="620" cy="244" r="7" fill="#FEF2F2" stroke="#DC2626" stroke-width="2"/>
+  <line x1="620" y1="256" x2="620" y2="432" stroke="#DC2626" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="620" y="438" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#DC2626">阈值报警</text>
+
+  <!-- Time difference annotation arrow -->
+  <line x1="455" y1="210" x2="610" y2="210" stroke="#D97706" stroke-width="2"/>
+  <polygon points="455,210 462,206 462,214" fill="#D97706"/>
+  <polygon points="610,210 603,206 603,214" fill="#D97706"/>
+  <rect x="498" y="196" width="90" height="26" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1"/>
+  <text x="543" y="214" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#D97706">5-15 min</text>
+
+  <!-- Legend -->
+  <line x1="180" y1="207" x2="210" y2="207" stroke="#059669" stroke-width="2.5"/>
+  <text x="218" y="211" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#059669">CUSUM 累积曲线</text>
+  <line x1="350" y1="207" x2="380" y2="207" stroke="#94A3B8" stroke-width="1.5" opacity="0.5"/>
+  <text x="388" y="211" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">原始数据</text>
+
+  <!-- === RIGHT COLUMN: Comparison + Root Cause === -->
+
+  <!-- Comparison table title -->
+  <text x="840" y="168" font-family="Source Serif Pro, Georgia, serif" font-size="17" font-weight="700" fill="#1E293B">对比分析</text>
+
+  <!-- Comparison table card -->
+  <rect x="840" y="182" width="360" height="206" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" filter="url(#shadow9)"/>
+
+  <!-- Table header -->
+  <rect x="840" y="182" width="360" height="34" rx="12" fill="#1E40AF"/>
+  <rect x="840" y="202" width="360" height="14" fill="#1E40AF"/>
+  <text x="865" y="205" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">维度</text>
+  <text x="975" y="205" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">传统阈值</text>
+  <text x="1110" y="205" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">CUSUM</text>
+
+  <!-- Row 1 -->
+  <rect x="840" y="216" width="360" height="38" fill="#F8FAFC"/>
+  <text x="865" y="240" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">检测机制</text>
+  <text x="975" y="240" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">单点超限</text>
+  <text x="1110" y="240" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#059669" font-weight="600">累积偏差趋势</text>
+
+  <!-- Row 2 -->
+  <rect x="840" y="254" width="360" height="38" fill="#F1F5F9"/>
+  <text x="865" y="278" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">响应时机</text>
+  <text x="975" y="278" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748B">问题已发生后</text>
+  <text x="1110" y="278" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#059669" font-weight="600">提前 5-15 min</text>
+
+  <!-- Row 3 -->
+  <rect x="840" y="292" width="360" height="38" fill="#F8FAFC"/>
+  <text x="865" y="316" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">误报率</text>
+  <text x="975" y="316" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#DC2626">高（敏感于噪声）</text>
+  <text x="1110" y="316" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#059669" font-weight="600">低（噪声抑制）</text>
+
+  <!-- Row 4 -->
+  <rect x="840" y="330" width="360" height="38" fill="#F1F5F9"/>
+  <rect x="840" y="356" width="360" height="20" rx="12" fill="#F1F5F9"/>
+  <text x="865" y="354" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#1E293B">早期漂移</text>
+  <text x="975" y="354" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#DC2626">不可见</text>
+  <text x="1110" y="354" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#059669" font-weight="600">可见</text>
+
+  <!-- Root Cause Analysis section -->
+  <text x="840" y="420" font-family="Source Serif Pro, Georgia, serif" font-size="17" font-weight="700" fill="#1E293B">根因分析联动</text>
+
+  <!-- Step 1: Alert trigger -->
+  <rect x="840" y="436" width="360" height="46" rx="10" fill="#F8FAFC" stroke="#D97706" stroke-width="1.5" filter="url(#shadowSm9)"/>
+  <rect x="840" y="436" width="4" height="46" rx="2" fill="#D97706"/>
+  <text x="866" y="458" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#D97706">报警触发</text>
+  <text x="970" y="458" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">自动回溯 30 min 参数趋势</text>
+  <text x="866" y="474" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">温度/pH/DO/搅拌/补料</text>
+
+  <!-- Arrow down -->
+  <line x1="1020" y1="482" x2="1020" y2="498" stroke="#CBD5E1" stroke-width="1.5"/>
+  <polygon points="1020,498 1015,492 1025,492" fill="#CBD5E1"/>
+
+  <!-- Step 2: Knowledge base -->
+  <rect x="840" y="502" width="360" height="46" rx="10" fill="#F8FAFC" stroke="#7C3AED" stroke-width="1.5" filter="url(#shadowSm9)"/>
+  <rect x="840" y="502" width="4" height="46" rx="2" fill="#7C3AED"/>
+  <text x="866" y="524" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#7C3AED">知识库匹配</text>
+  <text x="980" y="524" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">模式匹配候选根因</text>
+  <text x="866" y="540" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">历史工艺偏差模式库</text>
+
+  <!-- Arrow down -->
+  <line x1="1020" y1="548" x2="1020" y2="564" stroke="#CBD5E1" stroke-width="1.5"/>
+  <polygon points="1020,564 1015,558 1025,558" fill="#CBD5E1"/>
+
+  <!-- Step 3: LLM explanation -->
+  <rect x="840" y="568" width="360" height="46" rx="10" fill="#F8FAFC" stroke="#059669" stroke-width="1.5" filter="url(#shadowSm9)"/>
+  <rect x="840" y="568" width="4" height="46" rx="2" fill="#059669"/>
+  <text x="866" y="590" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#059669">LLM 解释</text>
+  <text x="960" y="590" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">自然语言根因报告</text>
+  <text x="866" y="606" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">Qwen2.5 生成可读报告</text>
+
+  <!-- Metric badge (left bottom) -->
+  <rect x="80" y="520" width="240" height="90" rx="14" fill="#F8FAFC" stroke="#059669" stroke-width="2" filter="url(#shadow9)"/>
+  <text x="200" y="558" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="32" font-weight="700" fill="#059669">5-15 min</text>
+  <text x="200" y="586" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#64748B">提前预警时间</text>
+
+  <!-- FDA compliance note -->
+  <rect x="350" y="530" width="440" height="44" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" filter="url(#shadowSm9)"/>
+  <rect x="350" y="530" width="4" height="44" rx="2" fill="#1E40AF"/>
+  <text x="374" y="557" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#64748B">科学依据：FDA CPV 4.0 框架推动 AI 驱动异常检测成为行业标准</text>
+
+  <!-- Decorative background elements -->
+  <g data-decorative="true">
+    <circle cx="1220" cy="100" r="160" fill="#1E40AF" opacity="0.015"/>
+    <circle cx="100" cy="680" r="100" fill="#059669" opacity="0.015"/>
+  </g>
+
+  <!-- Footer -->
+  <rect x="0" y="680" width="1280" height="40" fill="#F1F5F9"/>
+  <line x1="0" y1="680" x2="1280" y2="680" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="80" y="705" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="705" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94A3B8">CUSUM 异常检测与根因分析</text>
+  <text x="1200" y="705" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#94A3B8">09 / 18</text>
+</svg>

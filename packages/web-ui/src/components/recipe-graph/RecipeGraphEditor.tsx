@@ -1,0 +1,410 @@
+// RecipeGraphEditor — react-flow DAG 编辑器 (M3.7)
+'use client';
+
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import {
+  ReactFlow, ReactFlowProvider, Background, Controls, MiniMap,
+  Node, Edge, useNodesState, useEdgesState, addEdge, Connection,
+  BackgroundVariant, NodeTypes, MarkerType,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import { Button } from '@/components/ui/button';
+import { Beaker, GitBranch, Wand2, Trash2, Save as SaveIcon, Plus } from 'lucide-react';
+import { PhaseNode } from './nodes/PhaseNode';
+import { BranchNode } from './nodes/BranchNode';
+import { StartNode, EndNode } from './nodes/StartEndNode';
+import { NodeInspector, type APIPhaseTemplate } from './NodeInspector';
+import { applyDagreLayout } from './layout';
+import { phaseLabel } from '@/lib/utils';
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+// 与 server/src/recipe-dag.ts 的 RecipeDAG 对齐
+export interface DAGNode {
+  id: string;
+  type: 'start' | 'end' | 'phase' | 'branch';
+  position?: { x: number; y: number };
+  phase_id?: string;
+  phase_type?: string;
+  params?: Record<string, any>;
+  label?: string;                    // 节点显示名 (操作员视角)
+  expression?: string;
+}
+export interface DAGEdge {
+  id: string;
+  from: string;
+  to: string;
+  label?: 'true' | 'false';
+}
+export interface RecipeDAG {
+  schema_version: 2;
+  nodes: DAGNode[];
+  edges: DAGEdge[];
+}
+
+const nodeTypes: NodeTypes = {
+  phase: PhaseNode,
+  branch: BranchNode,
+  start: StartNode,
+  end: EndNode,
+};
+
+// DAG → react-flow 节点/边
+function dagToFlow(dag: RecipeDAG): { nodes: Node[]; edges: Edge[] } {
+  const nodes: Node[] = dag.nodes.map(n => ({
+    id: n.id,
+    type: n.type,
+    position: n.position || { x: 0, y: 0 },
+    data: {
+      phase_id: n.phase_id || '',
+      phase_type: n.phase_type || '',
+      label: (n as any).label || n.phase_id || n.id,
+      params: n.params || {},
+      expression: n.expression || '',
+    },
+  }));
+  const edges: Edge[] = dag.edges.map(e => ({
+    id: e.id,
+    source: e.from,
+    target: e.to,
+    sourceHandle: e.label || undefined, // branch 节点用 label (true/false) 作为 handle id
+    label: e.label,
+    labelStyle: e.label === 'true' ? { fill: '#4ade80', fontWeight: 600 } :
+                e.label === 'false' ? { fill: '#f87171', fontWeight: 600 } : undefined,
+    markerEnd: { type: MarkerType.ArrowClosed },
+    style: { strokeWidth: 1.5 },
+  }));
+  return { nodes, edges };
+}
+
+// react-flow → DAG
+function flowToDag(nodes: Node[], edges: Edge[]): RecipeDAG {
+  return {
+    schema_version: 2,
+    nodes: nodes.map(n => {
+      const d = n.data as any;
+      const base: DAGNode = {
+        id: n.id,
+        type: n.type as any,
+        position: n.position,
+      };
+      if (n.type === 'phase') {
+        base.phase_id = d.phase_id;
+        base.phase_type = d.phase_type;
+        base.label = d.label;        // 修复: 之前遗漏了 label, 重新加载后"显示名"会丢
+        base.params = d.params;
+      }
+      if (n.type === 'branch') {
+        base.expression = d.expression;
+      }
+      return base;
+    }),
+    edges: edges.map(e => ({
+      id: e.id,
+      from: e.source,
+      to: e.target,
+      label: (e.sourceHandle as 'true' | 'false' | undefined) || undefined,
+    })),
+  };
+}
+
+interface Props {
+  initialDag: RecipeDAG;
+  onSave: (dag: RecipeDAG) => void;
+  saving?: boolean;
+}
+
+function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
+  const { nodes: initNodes, edges: initEdges } = useMemo(() => {
+    // 如果节点没有 position, 自动布局
+    const flow = dagToFlow(initialDag);
+    const needsLayout = flow.nodes.every(n => n.position.x === 0 && n.position.y === 0);
+    return needsLayout ? applyDagreLayout(flow.nodes, flow.edges) : flow;
+  }, [initialDag]);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  // Phase 模板库 (从 /api/phase-templates 加载) — 用作"添加 Phase 时的快捷模板"
+  const [apiTemplates, setApiTemplates] = useState<APIPhaseTemplate[]>([]);
+  // DAG 校验错误
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch(`${API}/api/phase-templates`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => { if (Array.isArray(data)) setApiTemplates(data); })
+      .catch(() => { /* ignore */ });
+  }, []);
+
+  const findTemplate = useCallback(
+    (type: string) => apiTemplates.find(t => t.type === type),
+    [apiTemplates],
+  );
+
+  const selectedNode = nodes.find(n => n.id === selectedNodeId) || null;
+
+  const onConnect = useCallback((params: Connection) => {
+    setEdges(prev => addEdge({
+      ...params,
+      markerEnd: { type: MarkerType.ArrowClosed },
+      style: { strokeWidth: 1.5 },
+      label: params.sourceHandle as string | undefined,
+    }, prev));
+  }, [setEdges]);
+
+  // 从 Phase 模板添加节点 — 自动填充 phase_type / label / 默认 params
+  const addPhaseFromTemplate = useCallback((template: APIPhaseTemplate) => {
+    const id = `n_${Date.now()}`;
+    // 合并默认参数: default_params + param_schema 中的 default_value
+    const params: Record<string, any> = { ...(template.default_params || {}) };
+    (template.param_schema || []).forEach((f: any) => {
+      const key = f.key || f.plc_tag;
+      if (key && f.default_value !== undefined && !(key in params)) {
+        params[key] = f.default_value;
+      }
+    });
+    const sameTypeCount = nodes.filter(n => (n.data as any)?.phase_type === template.type).length;
+    const phaseId = `${template.type.toUpperCase()}_${String(sameTypeCount + 1).padStart(2, '0')}`;
+    const newNode: Node = {
+      id,
+      type: 'phase',
+      position: { x: 260, y: 120 + nodes.length * 40 },
+      data: {
+        phase_id: phaseId,
+        phase_type: template.type,
+        label: sameTypeCount > 0 ? `${template.label} ${sameTypeCount + 1}` : template.label,
+        params,
+      },
+    };
+    setNodes(prev => [...prev, newNode]);
+    setSelectedNodeId(id);
+  }, [nodes, setNodes]);
+
+  // 兜底: 无模板时添加空白 Phase
+  const addBlankPhaseNode = useCallback(() => {
+    const id = `n_${Date.now()}`;
+    const newNode: Node = {
+      id,
+      type: 'phase',
+      position: { x: 200, y: 150 + nodes.length * 30 },
+      data: { phase_id: `PHASE_${nodes.length + 1}`, phase_type: 'heating', label: '新 Phase', params: {} },
+    };
+    setNodes(prev => [...prev, newNode]);
+    setSelectedNodeId(id);
+  }, [nodes, setNodes]);
+
+  const addBranchNode = useCallback(() => {
+    const id = `n_${Date.now()}`;
+    const newNode: Node = {
+      id,
+      type: 'branch',
+      position: { x: 400, y: 150 + nodes.length * 30 },
+      data: { expression: 'OD600 > 5' },
+    };
+    setNodes(prev => [...prev, newNode]);
+    setSelectedNodeId(id);
+  }, [nodes, setNodes]);
+
+  // DAG 校验: 入口/出口 + 孤立节点 + 未连接 Phase (保存前检查)
+  const validateDag = useCallback((): string[] => {
+    const errs: string[] = [];
+    const starts = nodes.filter(n => n.type === 'start');
+    const ends = nodes.filter(n => n.type === 'end');
+    if (starts.length === 0) errs.push('缺少 Start 节点 (DAG 入口)');
+    if (starts.length > 1) errs.push(`Start 节点应只有 1 个, 当前 ${starts.length} 个`);
+    if (ends.length === 0) errs.push('缺少 End 节点 (DAG 出口)');
+    // 每个 Phase 必须至少有 1 条入边和 1 条出边 (start 只出, end 只入)
+    nodes.forEach(n => {
+      const inEdges = edges.filter(e => e.target === n.id);
+      const outEdges = edges.filter(e => e.source === n.id);
+      if (n.type !== 'start' && inEdges.length === 0) {
+        errs.push(`节点 ${(n.data as any)?.label || n.id} 无入边 (不可达)`);
+      }
+      if (n.type !== 'end' && outEdges.length === 0) {
+        errs.push(`节点 ${(n.data as any)?.label || n.id} 无出边 (死胡同)`);
+      }
+      if (n.type === 'branch') {
+        const hasTrue = outEdges.some(e => e.sourceHandle === 'true');
+        const hasFalse = outEdges.some(e => e.sourceHandle === 'false');
+        if (!hasTrue || !hasFalse) {
+          errs.push(`分支节点 ${n.id} 必须同时有 true/false 两条出边`);
+        }
+      }
+      if (n.type === 'phase') {
+        const d = n.data as any;
+        if (!d.phase_id?.trim()) errs.push(`Phase 节点 ${d.label || n.id} 缺少 phase_id`);
+        if (!d.phase_type?.trim()) errs.push(`Phase 节点 ${d.label || n.id} 缺少 phase_type`);
+      }
+    });
+    return errs;
+  }, [nodes, edges]);
+
+  const deleteSelected = useCallback(() => {
+    if (!selectedNodeId) return;
+    // 不允许删除 start 和 end
+    const node = nodes.find(n => n.id === selectedNodeId);
+    if (node?.type === 'start' || node?.type === 'end') return;
+    setNodes(prev => prev.filter(n => n.id !== selectedNodeId));
+    setEdges(prev => prev.filter(e => e.source !== selectedNodeId && e.target !== selectedNodeId));
+    setSelectedNodeId(null);
+  }, [selectedNodeId, nodes, setNodes, setEdges]);
+
+  const autoLayout = useCallback(() => {
+    const { nodes: layouted } = applyDagreLayout(nodes, edges);
+    setNodes(layouted);
+  }, [nodes, edges, setNodes]);
+
+  const handleSave = useCallback(() => {
+    const errs = validateDag();
+    setValidationErrors(errs);
+    if (errs.length > 0) return;  // 校验失败时不保存, 让用户看到错误
+    onSave(flowToDag(nodes, edges));
+  }, [nodes, edges, onSave, validateDag]);
+
+  const updateNodeData = useCallback((nodeId: string, patch: Record<string, any>) => {
+    setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, data: { ...n.data, ...patch } } : n));
+  }, [setNodes]);
+
+  // Phase 模板库按分类分组 (侧栏快捷添加)
+  const templateGroups = useMemo(() => {
+    const map = new Map<string, APIPhaseTemplate[]>();
+    for (const t of apiTemplates) {
+      const cat = t.category || '自定义';
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(t);
+    }
+    return [...map.entries()].map(([title, items]) => ({ title, items }));
+  }, [apiTemplates]);
+
+  return (
+    <div className="flex-1 flex overflow-hidden">
+      {/* 左侧: 模板库 + 操作 */}
+      <div className="w-56 border-r border-border flex flex-col">
+        <div className="p-2 border-b border-border space-y-1.5">
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase">添加节点</div>
+          <Button variant="outline" size="sm" className="w-full justify-start" onClick={addBranchNode}>
+            <GitBranch className="w-3.5 h-3.5 mr-1.5" />IF/ELSE 分支
+          </Button>
+          {apiTemplates.length === 0 && (
+            <Button variant="outline" size="sm" className="w-full justify-start" onClick={addBlankPhaseNode}>
+              <Beaker className="w-3.5 h-3.5 mr-1.5" />空白 Phase
+            </Button>
+          )}
+        </div>
+
+        {/* Phase 模板库 (点击添加节点, 自动填充默认参数) */}
+        <div className="flex-1 overflow-y-auto p-2">
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">
+            Phase 模板库 <span className="text-muted-foreground/60">({apiTemplates.length})</span>
+          </div>
+          {templateGroups.map(group => (
+            <div key={group.title} className="mb-3 space-y-1">
+              <div className="text-[9px] font-medium text-muted-foreground/70 uppercase tracking-wider px-1">
+                {group.title}
+              </div>
+              {group.items.map(tmpl => (
+                <button
+                  key={tmpl.type}
+                  type="button"
+                  onClick={() => addPhaseFromTemplate(tmpl)}
+                  className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded border border-transparent hover:border-border hover:bg-muted/50 text-left text-[11px] group"
+                  title={`添加 ${phaseLabel(tmpl.type, tmpl.label)} 节点 (含 ${tmpl.fixed_steps} 步默认参数)`}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'var(--primary, #1677ff)' }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{phaseLabel(tmpl.type, tmpl.label)}</div>
+                    <div className="text-[9px] text-muted-foreground truncate">{tmpl.fixed_steps} steps</div>
+                  </div>
+                  <Plus className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0" />
+                </button>
+              ))}
+            </div>
+          ))}
+          {apiTemplates.length === 0 && (
+            <div className="text-[10px] text-muted-foreground italic px-1">
+              模板库为空 — 到"系统设置 → Phase 模板配置"添加
+            </div>
+          )}
+        </div>
+
+        {/* 底部: 操作按钮 */}
+        <div className="p-2 border-t border-border space-y-1.5">
+          <Button variant="outline" size="sm" className="w-full justify-start" onClick={autoLayout}>
+            <Wand2 className="w-3.5 h-3.5 mr-1.5" />自动布局
+          </Button>
+          <Button variant="outline" size="sm" className="w-full justify-start"
+            onClick={deleteSelected}
+            disabled={!selectedNodeId || nodes.find(n => n.id === selectedNodeId)?.type === 'start' || nodes.find(n => n.id === selectedNodeId)?.type === 'end'}
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" />删除选中
+          </Button>
+          <Button size="sm" className="w-full justify-start" onClick={handleSave} disabled={saving}>
+            <SaveIcon className="w-3.5 h-3.5 mr-1.5" />{saving ? '保存中...' : '保存 DAG'}
+          </Button>
+          <div className="text-[10px] text-muted-foreground space-y-0.5 pt-1">
+            <div>节点: {nodes.length} · 边: {edges.length}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* react-flow 画布 */}
+      <div className="flex-1 relative">
+        {validationErrors.length > 0 && (
+          <div className="absolute top-2 left-2 right-2 z-10 bg-red-500/15 border border-red-500/40 rounded-md p-2 text-[11px] text-red-600 max-h-32 overflow-y-auto">
+            <div className="font-semibold mb-1 flex items-center justify-between">
+              <span>DAG 校验未通过 ({validationErrors.length})</span>
+              <button onClick={() => setValidationErrors([])} className="text-red-600/70 hover:text-red-600">✕</button>
+            </div>
+            <ul className="list-disc list-inside space-y-0.5">
+              {validationErrors.map((e, i) => <li key={i}>{e}</li>)}
+            </ul>
+          </div>
+        )}
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={(_, n) => setSelectedNodeId(n.id)}
+          onPaneClick={() => setSelectedNodeId(null)}
+          nodeTypes={nodeTypes}
+          fitView
+          style={{ background: 'hsl(var(--background))' }}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+          <Controls />
+          <MiniMap
+            nodeColor={n => {
+              if (n.type === 'start') return '#16a34a';
+              if (n.type === 'end') return '#dc2626';
+              if (n.type === 'branch') return '#f59e0b';
+              return '#3b82f6';
+            }}
+            maskColor="rgba(0, 0, 0, 0.6)"
+          />
+        </ReactFlow>
+      </div>
+
+      {/* 右侧节点检查器 — 传入模板库支持基于 schema 的参数表单 */}
+      {selectedNode && (
+        <NodeInspector
+          node={selectedNode}
+          template={findTemplate((selectedNode.data as any)?.phase_type || '')}
+          allTemplates={apiTemplates}
+          onChange={updateNodeData}
+          onClose={() => setSelectedNodeId(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+export function RecipeGraphEditor(props: Props) {
+  return (
+    <ReactFlowProvider>
+      <RecipeGraphEditorInner {...props} />
+    </ReactFlowProvider>
+  );
+}

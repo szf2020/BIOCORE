@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BioCore MES - 研发项目看板</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#3755c3",
+                        "tertiary-container": "#945d00",
+                        "inverse-surface": "#283044",
+                        "primary-fixed-dim": "#80d5cb",
+                        "on-surface": "#131b2e",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#00217a",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#0f766e",
+                        "secondary-fixed": "#dde1ff",
+                        "outline": "#6e7977",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#ffe6cc",
+                        "secondary-fixed-dim": "#b8c4ff",
+                        "inverse-on-surface": "#eef0ff",
+                        "surface-container-highest": "#dae2fd",
+                        "on-primary-container": "#a3faef",
+                        "on-surface-variant": "#3e4947",
+                        "on-tertiary-fixed": "#2a1700",
+                        "surface-container": "#eaedff",
+                        "surface-variant": "#dae2fd",
+                        "inverse-primary": "#80d5cb",
+                        "surface-tint": "#006a63",
+                        "primary-fixed": "#9cf2e8",
+                        "surface": "#faf8ff",
+                        "tertiary-fixed": "#ffddb8",
+                        "surface-container-high": "#e2e7ff",
+                        "tertiary": "#734700",
+                        "on-primary-fixed-variant": "#00504a",
+                        "on-tertiary-fixed-variant": "#653e00",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "outline-variant": "#bdc9c6",
+                        "surface-dim": "#d2d9f4",
+                        "background": "#faf8ff",
+                        "primary": "#005c55",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#00201d",
+                        "secondary-container": "#708cfd",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#131b2e",
+                        "surface-container-low": "#f2f3ff",
+                        "tertiary-fixed-dim": "#ffb95f",
+                        "surface-bright": "#faf8ff",
+                        "on-secondary-fixed": "#001453",
+                        "on-secondary-fixed-variant": "#173bab"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "mono": ["JetBrains Mono"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased overflow-hidden h-screen flex">
+<!-- SideNavBar (Execution from JSON) -->
+<aside class="h-screen w-60 fixed left-0 top-0 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex flex-col h-full py-4 z-50">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined">biotech</span>
+</div>
+<h1 class="font-sans font-black text-teal-900 dark:text-teal-100 text-xl tracking-tight">BioCore MES</h1>
+</div>
+<p class="font-mono text-[10px] uppercase tracking-wider text-slate-500 mt-1">R&amp;D Lab System</p>
+</div>
+<nav class="flex-1 px-3 space-y-1 overflow-y-auto no-scrollbar">
+<!-- Sidebar Navigation Links -->
+<div class="flex items-center px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl cursor-pointer group transition-all">
+<span class="material-symbols-outlined mr-3">dashboard</span>
+<span class="font-mono text-xs uppercase tracking-wider">工作台 Overview</span>
+</div>
+<!-- Active Section: Project Management -->
+<div class="mt-4">
+<div class="flex items-center px-3 py-2 bg-teal-50 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200 font-bold border-r-4 border-teal-600 rounded-l-xl cursor-pointer">
+<span class="material-symbols-outlined mr-3">folder</span>
+<span class="font-mono text-xs uppercase tracking-wider">项目管理 Batches</span>
+</div>
+<div class="ml-9 mt-1 space-y-1">
+<div class="px-3 py-1.5 text-xs font-semibold text-teal-700 bg-teal-100/50 rounded-lg">看板 Board</div>
+<div class="px-3 py-1.5 text-xs text-slate-500 hover:text-teal-700">调研 Search</div>
+<div class="px-3 py-1.5 text-xs text-slate-500 hover:text-teal-700">立项 Approval</div>
+<div class="px-3 py-1.5 text-xs text-slate-500 hover:text-teal-700">菌种 Strain</div>
+<div class="px-3 py-1.5 text-xs text-slate-500 hover:text-teal-700">发酵 Ferm</div>
+<div class="px-3 py-1.5 text-xs text-slate-500 hover:text-teal-700">纯化 Purify</div>
+</div>
+</div>
+<div class="mt-4 space-y-1">
+<div class="flex items-center px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl cursor-pointer">
+<span class="material-symbols-outlined mr-3">database</span>
+<span class="font-mono text-xs uppercase tracking-wider">数据库 Inventory</span>
+</div>
+<div class="flex items-center px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl cursor-pointer">
+<span class="material-symbols-outlined mr-3">book</span>
+<span class="font-mono text-xs uppercase tracking-wider">知识库 Reports</span>
+</div>
+<div class="flex items-center px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl cursor-pointer justify-between">
+<div class="flex items-center">
+<span class="material-symbols-outlined mr-3">verified_user</span>
+<span class="font-mono text-xs uppercase tracking-wider">审批中心</span>
+</div>
+<span class="bg-error text-on-error text-[10px] px-1.5 rounded-full">3</span>
+</div>
+</div>
+</nav>
+<div class="px-3 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-1">
+<div class="flex items-center px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl cursor-pointer">
+<span class="material-symbols-outlined mr-3">help</span>
+<span class="font-mono text-xs uppercase tracking-wider">Help</span>
+</div>
+<div class="flex items-center px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl cursor-pointer">
+<span class="material-symbols-outlined mr-3">logout</span>
+<span class="font-mono text-xs uppercase tracking-wider">Logout</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-60 flex flex-col h-screen overflow-hidden">
+<!-- TopNavBar (Execution from JSON) -->
+<header class="w-full h-14 sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex justify-between items-center px-8 border-b border-slate-200/50 dark:border-slate-800/50">
+<div class="flex items-center gap-4">
+<nav class="flex text-sm font-sans tracking-tight text-slate-400 gap-2 items-center">
+<span>工作台</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-on-surface font-semibold">项目看板</span>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="bg-slate-100 dark:bg-slate-800 border-none rounded-full pl-10 pr-4 py-1.5 text-xs w-64 focus:ring-2 focus:ring-primary-container" placeholder="Global search..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<div class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full cursor-pointer relative">
+<span class="material-symbols-outlined text-slate-600">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</div>
+<div class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full cursor-pointer">
+<span class="material-symbols-outlined text-slate-600">settings</span>
+</div>
+<div class="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+<div class="flex items-center gap-3 pl-2">
+<div class="text-right">
+<p class="text-xs font-bold text-on-surface">李博士</p>
+<p class="text-[10px] text-slate-500">实验室负责人</p>
+</div>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-primary-container/20" data-alt="Close-up portrait of a professional male scientist in a clean white lab coat with blurred laboratory background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnJcpKCHJD92TFtzYo4oUPr7ivo7fVHxkA6wnaa_9bvbNLt-d9XFSIC6RWy2X-A8UHmVHjO8T3boYRX0uMQbSFD58i6dEVcf_uKXSTtEEB7z7YEWUptRaByB9-slW3DWTOSArslCKfqT8EyNkpFQqHzGLBONsxIMzufxbqn4_JehC7n0py0gHd4qF36PPg2AnmuxkdeGYTVUmG7CNcSRP7Qn4mPzzGU9VFrbqdfkdYtOupkeuTvzioofnmaqS4fcGET9SaZ58G_Gn3"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Dashboard Body -->
+<div class="flex-1 overflow-y-auto p-8 space-y-8 bg-surface">
+<!-- Hero Title -->
+<div class="flex justify-between items-end">
+<div>
+<h2 class="text-3xl font-black text-on-surface tracking-tight leading-none">研发项目看板</h2>
+<p class="text-slate-500 mt-2 font-medium">All R&amp;D projects at a glance — Phase tracking &amp; analytics</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 text-sm font-semibold border border-outline-variant hover:bg-surface-container-low transition-colors rounded-xl flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">tune</span>
+                        筛选
+                    </button>
+<button class="px-6 py-2 bg-primary hover:bg-primary-container text-white text-sm font-bold rounded-xl transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-lg">add</span>
+                        新建项目
+                    </button>
+</div>
+</div>
+<!-- KPI Cards Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest p-6 rounded-full border border-transparent shadow-sm flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<span class="font-mono text-xs font-bold text-teal-700 tracking-wider">进行中项目 Active</span>
+<div class="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
+<span class="material-symbols-outlined text-teal-600 text-lg">rocket_launch</span>
+</div>
+</div>
+<div class="flex items-baseline gap-3">
+<span class="font-mono text-3xl font-black text-on-surface">12</span>
+<span class="text-teal-600 text-[10px] font-bold">+2 this month</span>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest p-6 rounded-full border border-transparent shadow-sm flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<span class="font-mono text-xs font-bold text-secondary tracking-wider">本月新增批次 Batches</span>
+<div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-lg">science</span>
+</div>
+</div>
+<div class="flex items-baseline gap-3">
+<span class="font-mono text-3xl font-black text-on-surface">47</span>
+<span class="text-secondary text-[10px] font-bold">+15% vs LY</span>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest p-6 rounded-full border border-transparent shadow-sm flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<span class="font-mono text-xs font-bold text-tertiary tracking-wider">待审批 Pending</span>
+<div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-lg">pending_actions</span>
+</div>
+</div>
+<div class="flex items-baseline gap-3">
+<span class="font-mono text-3xl font-black text-on-surface">5</span>
+<span class="text-error text-[10px] font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">warning</span> High Priority
+                        </span>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-lowest p-6 rounded-full border border-transparent shadow-sm flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<span class="font-mono text-xs font-bold text-emerald-700 tracking-wider">已结项 Completed</span>
+<div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+<span class="material-symbols-outlined text-emerald-600 text-lg">task_alt</span>
+</div>
+</div>
+<div class="flex items-baseline gap-3">
+<span class="font-mono text-3xl font-black text-on-surface">8</span>
+<span class="text-slate-400 text-[10px] font-bold">YTD Actuals</span>
+</div>
+</div>
+</div>
+<!-- Filter Row & Tabs -->
+<div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-surface-container-low p-2 rounded-xl">
+<div class="flex gap-1 overflow-x-auto no-scrollbar w-full md:w-auto">
+<button class="px-5 py-2 text-xs font-bold rounded-lg bg-primary text-on-primary transition-all">全部</button>
+<button class="px-5 py-2 text-xs font-semibold rounded-lg text-slate-500 hover:bg-slate-200 transition-all">调研</button>
+<button class="px-5 py-2 text-xs font-semibold rounded-lg text-slate-500 hover:bg-slate-200 transition-all">立项</button>
+<button class="px-5 py-2 text-xs font-semibold rounded-lg text-slate-500 hover:bg-slate-200 transition-all">菌种构建</button>
+<button class="px-5 py-2 text-xs font-semibold rounded-lg text-slate-500 hover:bg-slate-200 transition-all">发酵</button>
+<button class="px-5 py-2 text-xs font-semibold rounded-lg text-slate-500 hover:bg-slate-200 transition-all">纯化</button>
+<button class="px-5 py-2 text-xs font-semibold rounded-lg text-slate-500 hover:bg-slate-200 transition-all">产业化</button>
+</div>
+<div class="flex items-center gap-2 pr-2">
+<div class="flex bg-white rounded-lg p-1 border border-outline-variant/30 shadow-sm">
+<button class="p-1 text-primary"><span class="material-symbols-outlined">grid_view</span></button>
+<button class="p-1 text-slate-400"><span class="material-symbols-outlined">format_list_bulleted</span></button>
+</div>
+<button class="p-2 text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">sort</span>
+</button>
+</div>
+</div>
+<!-- Projects Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+<!-- Project Card 1 (Active Ferm) -->
+<div class="bg-surface-container-lowest p-6 rounded-full border border-transparent hover:border-primary-container/20 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<span class="font-mono text-xs font-bold text-slate-400 tracking-tight">P-2026-008</span>
+<span class="bg-error/10 text-error text-[10px] px-1.5 py-0.5 rounded-full font-bold">HIGH</span>
+</div>
+<span class="bg-teal-50 text-teal-700 text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1">
+<span class="w-1.5 h-1.5 bg-teal-500 rounded-full animate-pulse"></span> 发酵中
+                        </span>
+</div>
+<h3 class="text-lg font-bold text-on-surface leading-tight group-hover:text-primary transition-colors">重组人胰岛素菌株优化</h3>
+<p class="text-slate-500 text-xs mt-1 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">medication</span> 医药 · API
+                    </p>
+<div class="space-y-4">
+<div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+<span>Stage Flow</span>
+<span>65% Comp.</span>
+</div>
+<!-- Phase-Strip -->
+<div class="flex gap-1 h-1.5">
+<div class="flex-1 bg-primary rounded-full"></div>
+<div class="flex-1 bg-slate-100 relative rounded-full overflow-hidden">
+<div class="absolute inset-0 bg-primary w-2/3"></div>
+</div>
+<div class="flex-1 bg-slate-100 rounded-full"></div>
+</div>
+<div class="flex justify-between text-[10px] font-mono font-medium text-slate-500">
+<span class="text-teal-700">✓ 菌种</span>
+<span class="font-bold text-on-surface">发酵 (PH 6.8)</span>
+<span>纯化</span>
+</div>
+</div>
+<div class="mt-8 pt-4 border-t border-slate-100 flex justify-between items-center">
+<div class="flex items-center -space-x-2">
+<img class="w-7 h-7 rounded-full border-2 border-white" data-alt="professional scientist portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1ZnrXEZh3NJmNfAJxngFUQkqiAoJ6ErC6l_F5boB8AFpmpYynPH7hlk_kPEe6bejXj7dudHdK_Zsy9kNxwPFCM_A43RBcKySW7FLyHniWYcrPp5geTkPxuEp83jFlEGnCFfOoOzWyeHaLpujt0zDRm-1g8ceC2t7DvTyeTEj5dX4aHcT7U4K8UZ4A41WoU9Mq0ZDNRKrUQvFyfapYIn8oZpT0oEbyjgQuQhTXSzSkUBo4TgsXgn9ln3qy3twZd3mtNJwc6EwtFwIj"/>
+<div class="w-7 h-7 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-500">+4</div>
+</div>
+<span class="text-slate-400 text-[10px] font-mono">Updated 2h ago</span>
+</div>
+</div>
+<!-- Project Card 2 (Inoculation) -->
+<div class="bg-surface-container-lowest p-6 rounded-full border border-transparent hover:border-primary-container/20 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<span class="font-mono text-xs font-bold text-slate-400 tracking-tight">P-2026-012</span>
+<span class="bg-slate-100 text-slate-500 text-[10px] px-1.5 py-0.5 rounded-full font-bold">NORMAL</span>
+</div>
+<span class="bg-blue-50 text-blue-700 text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                            菌种构建
+                        </span>
+</div>
+<h3 class="text-lg font-bold text-on-surface leading-tight group-hover:text-primary transition-colors">益生菌冻干粉耐受性提升</h3>
+<p class="text-slate-500 text-xs mt-1 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">set_meal</span> 食品 · 益生菌
+                    </p>
+<div class="space-y-4">
+<div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+<span>Stage Flow</span>
+<span>15% Comp.</span>
+</div>
+<div class="flex gap-1 h-1.5">
+<div class="flex-1 bg-slate-100 relative rounded-full overflow-hidden">
+<div class="absolute inset-0 bg-secondary w-1/4"></div>
+</div>
+<div class="flex-1 bg-slate-100 rounded-full"></div>
+<div class="flex-1 bg-slate-100 rounded-full"></div>
+</div>
+<div class="flex justify-between text-[10px] font-mono font-medium text-slate-500">
+<span class="font-bold text-on-surface">构建中</span>
+<span>发酵</span>
+<span>纯化</span>
+</div>
+</div>
+<div class="mt-8 pt-4 border-t border-slate-100 flex justify-between items-center">
+<div class="flex items-center">
+<img class="w-7 h-7 rounded-full border-2 border-white" data-alt="professional female scientist profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzizwV16RldE7IuZkoHk69gVyjjbje3Au2Hr_bhDsWbqQSVaRREwemxtIH6kmgrQGUVACC_P3lmlFsGhg8fkK_PnwnZtKmUlW80C0yJXFwRvJaHvXbxDFpWFLs0bcRp7gbmFhHulHt1QOJY1WaVAnbIOUv9tPjNlDYgblsSAOKpUiemMo7uja4BWiWUxUAf9SY0Hv5Rmw9Nf9Tbhh5NeCmxoWMxfUG4ryF5fIR-v5U7_xvIpcz7xeuxrTkz5gBZ6AFlQp6wtbeKg1f"/>
+</div>
+<span class="text-slate-400 text-[10px] font-mono">Updated 1d ago</span>
+</div>
+</div>
+<!-- Project Card 3 (Completed) -->
+<div class="bg-surface-container-lowest p-6 rounded-full border border-transparent hover:border-primary-container/20 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<span class="font-mono text-xs font-bold text-slate-400 tracking-tight">P-2025-099</span>
+<span class="bg-slate-100 text-slate-500 text-[10px] px-1.5 py-0.5 rounded-full font-bold">NORMAL</span>
+</div>
+<span class="bg-emerald-50 text-emerald-700 text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">check_circle</span> 已结项
+                        </span>
+</div>
+<h3 class="text-lg font-bold text-on-surface leading-tight group-hover:text-primary transition-colors">酶制剂生产工艺中试</h3>
+<p class="text-slate-500 text-xs mt-1 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">precision_manufacturing</span> 工业 · 酶制剂
+                    </p>
+<div class="space-y-4">
+<div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+<span>Stage Flow</span>
+<span>100% Comp.</span>
+</div>
+<div class="flex gap-1 h-1.5">
+<div class="flex-1 bg-emerald-600 rounded-full"></div>
+<div class="flex-1 bg-emerald-600 rounded-full"></div>
+<div class="flex-1 bg-emerald-600 rounded-full"></div>
+</div>
+<div class="flex justify-between text-[10px] font-mono font-medium text-emerald-600">
+<span>✓ 菌种</span>
+<span>✓ 发酵</span>
+<span>✓ 结项</span>
+</div>
+</div>
+<div class="mt-8 pt-4 border-t border-slate-100 flex justify-between items-center">
+<div class="flex items-center -space-x-2">
+<img class="w-7 h-7 rounded-full border-2 border-white" data-alt="professional corporate headshot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyUHsu4jofsVIj6X-3_QpF4I9sX28mOpBhrJxUc8NUFTGJXszC5TEL4IQgBKdlZItm3jZPKLlobJNhCtrPJkjHoluFzRYBjFmfYeYGIMgojHChAssj9TZHOEWEUHJrBRunZvPLYXAhz9ris3K4k86uhDzA4BGS7engaAEogT9PEvkq8qhdDZnEvzCzv42vsVAu9MOGMcczHKVAM4dun-FsSQwMmW81ikHDsN64ECEewcEGtAGjGLMWfnl93-bR3u1hV_R0vAg81wG6"/>
+<img class="w-7 h-7 rounded-full border-2 border-white" data-alt="male researcher portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLej-Xr5OhNs_APIL22eGcnZ2E8hsL0nXUI3e9kvfAwaCyN-21HfKthEhlMl1Innc7eh0A_y_4BfQrCUreFGly4BZjLk0MdE-4RsFf_dLzlaKoXcFb3cxEvcI2LjNDOSeQGxYJIg_WsluKls81VU4xdhCZ5jLyUUSYbsDVpbSVjReQ-WY3dtaMhyeQNdGp500nnqB0FvfHigwfT_djdmduDDlNQ7iuAE-xW946dx5ixaQbvW-nimlGfFk-k8p_bCSXSC1eoOjLXv0x"/>
+</div>
+<span class="text-slate-400 text-[10px] font-mono">Archived Jan 24</span>
+</div>
+</div>
+<!-- Project Card 4 (At Risk) -->
+<div class="bg-surface-container-lowest p-6 rounded-full border border-transparent hover:border-primary-container/20 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<span class="font-mono text-xs font-bold text-slate-400 tracking-tight">P-2026-003</span>
+<span class="bg-error/10 text-error text-[10px] px-1.5 py-0.5 rounded-full font-bold">URGENT</span>
+</div>
+<span class="bg-error-container text-on-error-container text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                            异常挂起
+                        </span>
+</div>
+<h3 class="text-lg font-bold text-on-surface leading-tight group-hover:text-primary transition-colors">高产率透明质酸工艺开发</h3>
+<p class="text-slate-500 text-xs mt-1 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">face</span> 美妆 · 原料
+                    </p>
+<div class="space-y-4">
+<div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+<span>Stage Flow</span>
+<span>42% Comp.</span>
+</div>
+<div class="flex gap-1 h-1.5">
+<div class="flex-1 bg-primary rounded-full"></div>
+<div class="flex-1 bg-error rounded-full relative overflow-hidden">
+<div class="absolute inset-0 bg-black/10 animate-pulse"></div>
+</div>
+<div class="flex-1 bg-slate-100 rounded-full"></div>
+</div>
+<div class="flex justify-between text-[10px] font-mono font-medium text-error">
+<span class="text-primary">✓ 菌种</span>
+<span class="font-bold underline underline-offset-4">发酵异常</span>
+<span class="text-slate-400">纯化</span>
+</div>
+</div>
+<div class="mt-8 pt-4 border-t border-slate-100 flex justify-between items-center">
+<div class="flex items-center">
+<img class="w-7 h-7 rounded-full border-2 border-white" data-alt="male engineer headshot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGovzmUqq-1DXHPFtgYSn7DaWFcyLDdc0Y5OkG6hFhNEt4DvSiXkXWqaiu9J8q5ejAz1DnunXGCTL_DEaORVuu7r-spddZPYkmxn3hBMBp0sJGlPRxXesJk6Qy_l9oizNpSUHqzjXHXTbYN5_JB8HbqdJ3Ny44wbhnKt_MAiThT-o_GK7OiT0bjTQVsDf05hUCPjwh273Lz5VnyNWuWJkv0b4NBPVjGTNFLOUNkx6lM42d37xysQYY3-d5tAEYIfTWN-eJDyfSiW7d"/>
+</div>
+<span class="text-error text-[10px] font-bold font-mono">Alert 15m ago</span>
+</div>
+</div>
+<!-- Project Card 5 (Pending) -->
+<div class="bg-surface-container-lowest p-6 rounded-full border border-transparent hover:border-primary-container/20 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<span class="font-mono text-xs font-bold text-slate-400 tracking-tight">P-2026-021</span>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed text-[10px] px-1.5 py-0.5 rounded-full font-bold">WAITING</span>
+</div>
+<span class="bg-amber-50 text-amber-700 text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                            调研中
+                        </span>
+</div>
+<h3 class="text-lg font-bold text-on-surface leading-tight group-hover:text-primary transition-colors">新型抗肿瘤抗体融合蛋白</h3>
+<p class="text-slate-500 text-xs mt-1 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">biotech</span> 医药 · 生物药
+                    </p>
+<div class="space-y-4">
+<div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+<span>Stage Flow</span>
+<span>5% Comp.</span>
+</div>
+<div class="flex gap-1 h-1.5">
+<div class="flex-1 bg-amber-400 rounded-full w-1/10"></div>
+<div class="flex-1 bg-slate-100 rounded-full"></div>
+<div class="flex-1 bg-slate-100 rounded-full"></div>
+</div>
+<div class="flex justify-between text-[10px] font-mono font-medium text-slate-500">
+<span class="text-amber-700">调研</span>
+<span>立项</span>
+<span>菌种</span>
+</div>
+</div>
+<div class="mt-8 pt-4 border-t border-slate-100 flex justify-between items-center">
+<div class="flex items-center">
+<div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400">UN</div>
+</div>
+<span class="text-slate-400 text-[10px] font-mono">Created 4d ago</span>
+</div>
+</div>
+<!-- Project Card 6 (Scale up) -->
+<div class="bg-surface-container-lowest p-6 rounded-full border border-transparent hover:border-primary-container/20 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<span class="font-mono text-xs font-bold text-slate-400 tracking-tight">P-2025-112</span>
+<span class="bg-slate-100 text-slate-500 text-[10px] px-1.5 py-0.5 rounded-full font-bold">NORMAL</span>
+</div>
+<span class="bg-secondary-fixed text-on-secondary-fixed-variant text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                            产业化中
+                        </span>
+</div>
+<h3 class="text-lg font-bold text-on-surface leading-tight group-hover:text-primary transition-colors">赤藓糖醇高密度发酵中试</h3>
+<p class="text-slate-500 text-xs mt-1 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">bakery_dining</span> 食品 · 减糖
+                    </p>
+<div class="space-y-4">
+<div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+<span>Stage Flow</span>
+<span>88% Comp.</span>
+</div>
+<div class="flex gap-1 h-1.5">
+<div class="flex-1 bg-secondary rounded-full"></div>
+<div class="flex-1 bg-secondary rounded-full"></div>
+<div class="flex-1 bg-secondary rounded-full relative">
+<div class="absolute inset-0 bg-white/30 w-1/4 animate-pulse"></div>
+</div>
+</div>
+<div class="flex justify-between text-[10px] font-mono font-medium text-secondary">
+<span>✓ 发酵</span>
+<span>✓ 纯化</span>
+<span class="font-bold">中试放大</span>
+</div>
+</div>
+<div class="mt-8 pt-4 border-t border-slate-100 flex justify-between items-center">
+<div class="flex items-center -space-x-2">
+<img class="w-7 h-7 rounded-full border-2 border-white" data-alt="woman engineer working in plant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjoEShWfsM_f4WFWJJrOySvDh_AsdKiwVKatJhN2Zac8CB89_pBMjDI8UPmxW5vUc3h_Dzmo5cHZa0jGP5B5EdYefqGsZLBxi7VsPdtO9mjv69cXnLTM--lRXf0IrzfKJFj3252jcmYFxSYS4dYTMeTRj1GqgV0_a_dwp1DVPukOc7efS3hl8v3j-UlpkvuFmATb4WI6PrjQ1Q_7woUmtx_1J4ThOxnHbDV6sxwxWaUyw_njrn5vktEZypECU8A9HYOQcsbvt1x3Ls"/>
+<img class="w-7 h-7 rounded-full border-2 border-white" data-alt="professional male scientist" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEo8xCiLZUfOFvt1KZPyp42bLSnZL7TmnUt8zn8nPbsH0Z2h--fCTpxcfoHOc5cQoNdpFKNqxnkWmsA-DwL_yK0aglNddpz2ILcBY4ht4VV7_i7CFHzudHuw2JPYxPVt0hu61E6qC3KUkCaEHKKWqm3UEYAtwYlA-tGISkhk-miHHV40jdFq6XXw-LmrIGOojZgeYjjHfIBwaHF2HdEihgxYxQ_BM4elfECv8qXYg2ICww3fcKesYzM3ZqVZAXPIzu54Cr6kpw824G"/>
+</div>
+<span class="text-slate-400 text-[10px] font-mono">Updated 12h ago</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Action Component (Optional check from UX goal) -->
+<div class="fixed bottom-8 right-8 z-50">
+<button class="w-14 h-14 bg-primary-container text-on-primary-container rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group">
+<span class="material-symbols-outlined text-2xl group-hover:rotate-90 transition-transform">bolt</span>
+</button>
+</div>
+</main>
+</body></html>

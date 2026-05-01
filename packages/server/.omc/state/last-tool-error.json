@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"netstat -ano | findstr \\\":3000 \\\" | findstr LISTENING\",\"description\":\"Find frontend PID\"}",
+  "error": "Exit code 1\n[rerun: b134]",
+  "timestamp": "2026-04-13T13:47:24.026Z",
+  "retry_count": 1
+}

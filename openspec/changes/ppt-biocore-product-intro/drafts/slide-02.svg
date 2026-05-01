@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#122040"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bg2)"/>
+  <rect x="0" y="0" width="1280" height="4" fill="#1677ff"/>
+
+  <!-- Page title -->
+  <text x="80" y="60" font-family="Microsoft YaHei, sans-serif" font-size="28" font-weight="bold" fill="#ffffff">技术架构总览</text>
+  <text x="80" y="88" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#7a8faa">三层解耦架构 — 浏览器层 / 服务层 / PLC 层</text>
+
+  <!-- Divider -->
+  <rect x="80" y="100" width="80" height="2" fill="#1677ff" rx="1"/>
+
+  <!-- Three-layer architecture diagram -->
+  <!-- Layer 1: Browser -->
+  <rect x="340" y="130" width="600" height="110" rx="10" fill="#1a2744" stroke="#1677ff" stroke-width="1.5"/>
+  <text x="380" y="165" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="bold" fill="#1677ff">浏览器层</text>
+  <text x="380" y="190" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#b0c4e8">Next.js 14 + React 18 + ECharts</text>
+  <text x="380" y="212" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#5a7090">14 个功能页面 | shadcn/ui | Tailwind CSS | 深色 MES 主题</text>
+  <!-- Browser icon -->
+  <rect x="860" y="150" width="50" height="35" rx="4" fill="none" stroke="#1677ff" stroke-width="1" opacity="0.5"/>
+  <line x1="860" y1="173" x2="910" y2="173" stroke="#1677ff" stroke-width="1" opacity="0.5"/>
+
+  <!-- Arrow down -->
+  <polygon points="640,245 630,255 650,255" fill="#1677ff" opacity="0.6"/>
+  <line x1="640" y1="240" x2="640" y2="260" stroke="#1677ff" stroke-width="1.5" opacity="0.6"/>
+  <text x="660" y="258" font-family="JetBrains Mono, monospace" font-size="10" fill="#4a6080">WebSocket + REST API</text>
+
+  <!-- Layer 2: Server -->
+  <rect x="340" y="270" width="600" height="140" rx="10" fill="#1a2744" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="380" y="305" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="bold" fill="#22c55e">服务层</text>
+  <text x="380" y="330" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#b0c4e8">Node.js + Express + 9 个后端包</text>
+
+  <!-- 9 backend packages as small boxes -->
+  <g transform="translate(380, 345)">
+    <rect x="0" y="0" width="100" height="24" rx="4" fill="#162030" stroke="#22c55e" stroke-width="0.5"/>
+    <text x="50" y="16" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#7ae8a0">plc-driver</text>
+
+    <rect x="110" y="0" width="100" height="24" rx="4" fill="#162030" stroke="#22c55e" stroke-width="0.5"/>
+    <text x="160" y="16" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#7ae8a0">batch-engine</text>
+
+    <rect x="220" y="0" width="100" height="24" rx="4" fill="#162030" stroke="#22c55e" stroke-width="0.5"/>
+    <text x="270" y="16" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#7ae8a0">ai-analytics</text>
+
+    <rect x="330" y="0" width="100" height="24" rx="4" fill="#162030" stroke="#22c55e" stroke-width="0.5"/>
+    <text x="380" y="16" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#7ae8a0">data-logger</text>
+
+    <rect x="440" y="0" width="100" height="24" rx="4" fill="#162030" stroke="#22c55e" stroke-width="0.5"/>
+    <text x="490" y="16" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#7ae8a0">doe-engine</text>
+
+    <rect x="0" y="30" width="100" height="24" rx="4" fill="#162030" stroke="#22c55e" stroke-width="0.5"/>
+    <text x="50" y="46" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#7ae8a0">safety-mgr</text>
+
+    <rect x="110" y="30" width="100" height="24" rx="4" fill="#162030" stroke="#22c55e" stroke-width="0.5"/>
+    <text x="160" y="46" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#7ae8a0">auth-rbac</text>
+
+    <rect x="220" y="30" width="100" height="24" rx="4" fill="#162030" stroke="#22c55e" stroke-width="0.5"/>
+    <text x="270" y="46" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#7ae8a0">recipe-mgr</text>
+
+    <rect x="330" y="30" width="100" height="24" rx="4" fill="#162030" stroke="#22c55e" stroke-width="0.5"/>
+    <text x="380" y="46" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#7ae8a0">alarm-mgr</text>
+  </g>
+
+  <!-- Arrow down -->
+  <polygon points="640,415 630,425 650,425" fill="#22c55e" opacity="0.6"/>
+  <line x1="640" y1="410" x2="640" y2="430" stroke="#22c55e" stroke-width="1.5" opacity="0.6"/>
+  <text x="660" y="428" font-family="JetBrains Mono, monospace" font-size="10" fill="#4a6080">S7 Protocol (TCP:102) + Modbus RTU</text>
+
+  <!-- Layer 3: PLC -->
+  <rect x="340" y="440" width="600" height="110" rx="10" fill="#1a2744" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="380" y="475" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="bold" fill="#f59e0b">PLC 层</text>
+  <text x="380" y="500" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#b0c4e8">S7-200 SMART G2 + 8 PID 回路</text>
+  <text x="380" y="522" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#5a7090">8AI | 4AO | 14DI | 10DQ | RS485 Modbus | 双向心跳</text>
+
+  <!-- Side: Tech stack labels -->
+  <g transform="translate(80, 140)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">核心技术栈</text>
+    <rect x="0" y="15" width="200" height="1" fill="#1e2d45"/>
+
+    <circle cx="8" cy="40" r="4" fill="#1677ff"/>
+    <text x="20" y="44" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">Next.js 14</text>
+
+    <circle cx="8" cy="65" r="4" fill="#1677ff"/>
+    <text x="20" y="69" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">Express</text>
+
+    <circle cx="8" cy="90" r="4" fill="#22c55e"/>
+    <text x="20" y="94" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">node-snap7</text>
+
+    <circle cx="8" cy="115" r="4" fill="#22c55e"/>
+    <text x="20" y="119" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">Ollama + Qwen2.5</text>
+
+    <circle cx="8" cy="140" r="4" fill="#f59e0b"/>
+    <text x="20" y="144" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">InfluxDB</text>
+
+    <circle cx="8" cy="165" r="4" fill="#f59e0b"/>
+    <text x="20" y="169" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">SQLite</text>
+  </g>
+
+  <!-- Side: Key metrics -->
+  <g transform="translate(80, 400)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">关键数字</text>
+    <rect x="0" y="15" width="200" height="1" fill="#1e2d45"/>
+
+    <text x="0" y="45" font-family="JetBrains Mono, monospace" font-size="20" font-weight="bold" fill="#1677ff">97+</text>
+    <text x="60" y="45" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">REST API 端点</text>
+
+    <text x="0" y="75" font-family="JetBrains Mono, monospace" font-size="20" font-weight="bold" fill="#22c55e">9</text>
+    <text x="30" y="75" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">后端包</text>
+
+    <text x="0" y="105" font-family="JetBrains Mono, monospace" font-size="20" font-weight="bold" fill="#f59e0b">3</text>
+    <text x="30" y="105" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">层解耦架构</text>
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="680" width="1280" height="40" fill="#0d1a2e"/>
+  <text x="80" y="706" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="706" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#3a5070">技术架构总览</text>
+  <text x="1200" y="706" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#4a6080">02 / 18</text>
+</svg>

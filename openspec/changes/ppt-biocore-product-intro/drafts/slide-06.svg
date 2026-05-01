@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg6" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#122040"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bg6)"/>
+  <rect x="0" y="0" width="1280" height="4" fill="#1677ff"/>
+
+  <!-- Part indicator -->
+  <rect x="80" y="24" width="8" height="30" rx="2" fill="#1677ff"/>
+  <text x="100" y="45" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">第一部分 | 工业级硬件底座与安全体系</text>
+
+  <!-- Page title -->
+  <text x="80" y="85" font-family="Microsoft YaHei, sans-serif" font-size="26" font-weight="bold" fill="#ffffff">5 层安全防护体系</text>
+  <text x="80" y="112" font-family="Microsoft YaHei, sans-serif" font-size="14" fill="#7a8faa">从启动互锁到 AI 建议缓冲 — 层层递进的纵深防御</text>
+  <rect x="80" y="122" width="80" height="2" fill="#1677ff" rx="1"/>
+
+  <!-- Onion-layer pyramid (center visual) -->
+  <g transform="translate(640, 400)">
+    <!-- Layer 5 (outermost) - AI Buffer -->
+    <rect x="-480" y="-220" width="960" height="380" rx="16" fill="none" stroke="#8b5cf6" stroke-width="1.5" opacity="0.4"/>
+    <text x="-460" y="-198" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#8b5cf6">第 5 层</text>
+    <text x="-390" y="-198" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">AI 建议缓冲区 — Human-in-the-Loop</text>
+
+    <!-- Layer 4 -->
+    <rect x="-400" y="-180" width="800" height="310" rx="14" fill="none" stroke="#1677ff" stroke-width="1.5" opacity="0.5"/>
+    <text x="-380" y="-158" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#1677ff">第 4 层</text>
+    <text x="-310" y="-158" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">PLC 独立安全程序 — 最终防线</text>
+
+    <!-- Layer 3 -->
+    <rect x="-320" y="-140" width="640" height="240" rx="12" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.6"/>
+    <text x="-300" y="-118" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#22c55e">第 3 层</text>
+    <text x="-230" y="-118" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">双向心跳通讯安全 — 3 秒超时</text>
+
+    <!-- Layer 2 -->
+    <rect x="-240" y="-100" width="480" height="170" rx="10" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity="0.7"/>
+    <text x="-220" y="-78" font-family="Microsoft YaHei, sans-serif" font-size="12" font-weight="bold" fill="#f59e0b">第 2 层</text>
+    <text x="-150" y="-78" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#7a8faa">运行故障监测 (RF-01~RF-11)</text>
+
+    <!-- Layer 1 (innermost) -->
+    <rect x="-160" y="-60" width="320" height="100" rx="8" fill="#1a2744" stroke="#ef4444" stroke-width="2" opacity="0.9"/>
+    <text x="-140" y="-35" font-family="Microsoft YaHei, sans-serif" font-size="13" font-weight="bold" fill="#ef4444">第 1 层 核心</text>
+    <text x="-140" y="-12" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#b0c4e8">启动前互锁 (IL-01~IL-10)</text>
+    <text x="-140" y="8" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">传感器/VFD/急停/盖锁/蒸汽</text>
+    <text x="-140" y="25" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">心跳/校准/冷却/配方/报警</text>
+  </g>
+
+  <!-- Right side: layer detail cards -->
+  <g transform="translate(900, 145)">
+    <!-- Card 1 -->
+    <rect x="0" y="0" width="300" height="44" rx="6" fill="#1a2744" stroke="#ef4444" stroke-width="1"/>
+    <rect x="0" y="0" width="5" height="44" rx="2" fill="#ef4444"/>
+    <text x="18" y="18" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#ef4444">Layer 1: 启动前互锁</text>
+    <text x="18" y="35" font-family="JetBrains Mono, monospace" font-size="16" font-weight="bold" fill="#ffffff">10 项</text>
+    <text x="80" y="35" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">IL-01 ~ IL-10</text>
+
+    <!-- Card 2 -->
+    <rect x="0" y="54" width="300" height="44" rx="6" fill="#1a2744" stroke="#f59e0b" stroke-width="1"/>
+    <rect x="0" y="54" width="5" height="44" rx="2" fill="#f59e0b"/>
+    <text x="18" y="72" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#f59e0b">Layer 2: 运行故障监测</text>
+    <text x="18" y="89" font-family="JetBrains Mono, monospace" font-size="16" font-weight="bold" fill="#ffffff">11 项</text>
+    <text x="80" y="89" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">RF-01 ~ RF-11</text>
+
+    <!-- Card 3 -->
+    <rect x="0" y="108" width="300" height="44" rx="6" fill="#1a2744" stroke="#22c55e" stroke-width="1"/>
+    <rect x="0" y="108" width="5" height="44" rx="2" fill="#22c55e"/>
+    <text x="18" y="126" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#22c55e">Layer 3: 双向心跳</text>
+    <text x="18" y="143" font-family="JetBrains Mono, monospace" font-size="16" font-weight="bold" fill="#ffffff">3 秒</text>
+    <text x="68" y="143" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">超时自动保护</text>
+
+    <!-- Card 4 -->
+    <rect x="0" y="162" width="300" height="44" rx="6" fill="#1a2744" stroke="#1677ff" stroke-width="1"/>
+    <rect x="0" y="162" width="5" height="44" rx="2" fill="#1677ff"/>
+    <text x="18" y="180" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#1677ff">Layer 4: PLC 独立安全</text>
+    <text x="18" y="197" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">PC 完全失联仍保持关键控制</text>
+
+    <!-- Card 5 -->
+    <rect x="0" y="216" width="300" height="44" rx="6" fill="#1a2744" stroke="#8b5cf6" stroke-width="1"/>
+    <rect x="0" y="216" width="5" height="44" rx="2" fill="#8b5cf6"/>
+    <text x="18" y="234" font-family="Microsoft YaHei, sans-serif" font-size="11" font-weight="bold" fill="#8b5cf6">Layer 5: AI 建议缓冲区</text>
+    <text x="18" y="251" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#5a7090">AI 永不直接控制 PLC</text>
+  </g>
+
+  <!-- Comparison bar at bottom -->
+  <g transform="translate(80, 610)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">防护检查项总数</text>
+    <rect x="0" y="10" width="900" height="20" rx="4" fill="#162030"/>
+    <rect x="0" y="10" width="375" height="20" rx="4" fill="#ef4444" opacity="0.3"/>
+    <text x="10" y="25" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#ffffff">启动互锁 10</text>
+    <rect x="375" y="10" width="412" height="20" rx="0" fill="#f59e0b" opacity="0.3"/>
+    <text x="385" y="25" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#ffffff">运行监测 11</text>
+    <rect x="787" y="10" width="38" height="20" rx="0" fill="#22c55e" opacity="0.3"/>
+    <rect x="825" y="10" width="37" height="20" rx="0" fill="#1677ff" opacity="0.3"/>
+    <rect x="862" y="10" width="38" height="20" rx="4" fill="#8b5cf6" opacity="0.3"/>
+
+    <text x="920" y="25" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#7a8faa">= IEC 61511 SIL 1 同等保护深度</text>
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="680" width="1280" height="40" fill="#0d1a2e"/>
+  <text x="80" y="706" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#4a6080">BIOCore 实验室发酵罐智能控制平台</text>
+  <text x="640" y="706" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#3a5070">5 层安全防护体系</text>
+  <text x="1200" y="706" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#4a6080">06 / 18</text>
+</svg>

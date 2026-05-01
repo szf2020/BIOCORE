@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "biocore-server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:\\BIOCore\\packages\\server\\preview-start.js"],
+      "port": 3001,
+      "autoPort": false
+    },
+    {
+      "name": "biocore-web-ui",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d C:\\BIOCore\\packages\\web-ui && corepack pnpm exec next dev"],
+      "port": 3000
+    }
+  ]
+}

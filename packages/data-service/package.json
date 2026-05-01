@@ -1,0 +1,25 @@
+{
+  "name": "@biocore/data-service",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "test": "vitest run",
+    "db:init": "tsx src/init-db.ts"
+  },
+  "dependencies": {
+    "@biocore/types": "workspace:*",
+    "better-sqlite3": "^11.0.0",
+    "@influxdata/influxdb-client": "^1.33.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "vitest": "^1.2.0"
+  }
+}
