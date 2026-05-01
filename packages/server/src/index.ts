@@ -633,10 +633,20 @@ try {
 // ─── Express ───────────────────────────────────────────────
 
 const app: ReturnType<typeof express> = express();
-// CORS: 开发模式允许所有 origin, 生产通过 ALLOWED_ORIGINS 环境变量限制
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
-  : true; // true = 允许所有 (仅开发)
+// CORS (v1.7.3 H4 收紧):
+//   - 生产 (NODE_ENV=production): 必须设置 ALLOWED_ORIGINS, 否则启动失败
+//   - 开发: 默认 'http://localhost:3000' (绝不再用 origin: true + credentials: true)
+//   - origin: true 与 credentials: true 同时使用会反射任意 origin, 是 CSRF 风险
+let allowedOrigins: string | string[];
+if (process.env.ALLOWED_ORIGINS) {
+  allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
+} else if (process.env.NODE_ENV === 'production') {
+  console.error('[CORS] FATAL: ALLOWED_ORIGINS env var is required in production. Set ALLOWED_ORIGINS=https://your.domain (comma-separated for multiple).');
+  process.exit(1);
+} else {
+  allowedOrigins = 'http://localhost:3000';
+  console.warn('[CORS] dev fallback origin = http://localhost:3000 (set ALLOWED_ORIGINS to override)');
+}
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,
