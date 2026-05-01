@@ -426,5 +426,8 @@ export {
 
 // T12: B1.1 DAG runtime — current_node_id persistence helpers
 export { updateBatchCurrentNodeId, getBatchCurrentNodeId } from './sqlite-service';
+// v1.7.2: boot-time crash-recovery helpers
+export { getOrphanBatches, markBatchHeldForRecovery } from './sqlite-service';
+export type { OrphanBatchRow } from './sqlite-service';
 
 export { InfluxService as default };

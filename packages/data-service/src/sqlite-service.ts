@@ -937,3 +937,43 @@ export function getBatchCurrentNodeId(
     .get(batchId) as { current_node_id: string | null } | undefined;
   return row?.current_node_id ?? null;
 }
+
+// v1.7.2 — boot-time crash recovery helpers
+//
+// When the server (re)starts and SQLite has rows with current_state ∈
+// {running, held, paused}, those represent batches whose engines died with
+// the previous process. We do NOT auto-resume — that would silently restart
+// fermentations after an unattended outage, which is unsafe (PVs could have
+// drifted, alarms may have been missed). Instead, surface them to the
+// operator by marking each as 'held' with a recovery reason, so they appear
+// in the UI's hold queue for explicit resume/abort decisions.
+
+export interface OrphanBatchRow {
+  batch_id: string;
+  recipe_id: string;
+  recipe_version: string;
+  reactor_id: string;
+  current_state: string;
+  current_node_id: string | null;
+  current_phase_index: number | null;
+}
+
+export function getOrphanBatches(db: Database.Database): OrphanBatchRow[] {
+  return db.prepare(`
+    SELECT batch_id, recipe_id, recipe_version, reactor_id,
+           current_state, current_node_id, current_phase_index
+    FROM batches
+    WHERE current_state IN ('running','held','paused')
+    ORDER BY started_at DESC
+  `).all() as OrphanBatchRow[];
+}
+
+export function markBatchHeldForRecovery(
+  db: Database.Database,
+  batchId: string,
+  reason: string,
+): void {
+  db.prepare(
+    "UPDATE batches SET current_state = 'held', hold_reason = ? WHERE batch_id = ?",
+  ).run(reason, batchId);
+}
