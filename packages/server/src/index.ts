@@ -85,7 +85,7 @@ const RUNTIME_GUARD_OOM_THRESHOLD_MB =
     : undefined;  // undefined = MetricsCollector/MemoryWatchdog auto = RAM × 20%
 
 export const metricsCollector = new MetricsCollector({
-  serviceVersion: process.env.npm_package_version ?? '0.1.0',
+  serviceVersion: process.env.npm_package_version ?? '0.3.1',
   oomThresholdMb: RUNTIME_GUARD_OOM_THRESHOLD_MB,
 });
 metricsCollector.start();
@@ -825,8 +825,21 @@ function broadcast(channel: string, payload: any, batchId?: string | null, react
     reactor_id: reactorId ?? null,
     payload,
   });
+  // v1.7.1 hardening: ws.send() can throw synchronously when the underlying
+  // socket is half-closed or its send buffer is exhausted. The broadcast()
+  // helper is invoked from EventEmitter listeners (phase_started /
+  // phase_completed / branch_evaluated) — letting an exception escape would
+  // bubble through ctrl.emit() into readyNextPhase() and trip runtime-guard's
+  // uncaughtException handler, taking the whole server down for a single
+  // misbehaving WS client. Wrap each per-client send so one bad client cannot
+  // crash the engine.
   wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) client.send(msg);
+    if (client.readyState !== WebSocket.OPEN) return;
+    try {
+      client.send(msg);
+    } catch (e) {
+      console.warn(`[WS] broadcast send failed (channel=${channel}):`, (e as Error).message);
+    }
   });
 }
 
@@ -4544,7 +4557,7 @@ apiRouter.get('/trends', async (req: any, res) => {
 
 apiRouter.get('/status', (_req, res) => {
   res.json({
-    version: '0.1.0',
+    version: process.env.npm_package_version ?? '0.3.1',
     uptime: process.uptime(),
     ws_clients: wss.clients.size,
     heartbeats: [...heartbeats.entries()].map(([id, s]) => ({
@@ -4609,9 +4622,10 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 server.listen(PORT, () => {
+  const VER = process.env.npm_package_version ?? '0.3.1';
   console.log(`
   ╔══════════════════════════════════════════════╗
-  ║         BIOCore Server v0.1.0                ║
+  ║         BIOCore Server v${VER}                ║
   ║         http://localhost:${PORT}               ║
   ║         WebSocket: ws://localhost:${PORT}/ws    ║
   ╠══════════════════════════════════════════════╣

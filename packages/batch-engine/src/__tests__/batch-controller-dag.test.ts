@@ -253,3 +253,69 @@ describe('BatchController DAG runtime — branch_evaluated event (T13)', () => {
     ctrl.destroy();
   });
 });
+
+// ============================================================
+// v1.7.1 stability patch — lastSampledPV wiring regression
+//
+// Before v1.7.1, BatchController.lastSampledPV was a placeholder
+// commented as "(this as any).lastSampledPV ?? {}" and never
+// actually populated. Branches in production always saw an empty
+// PV map and fell through default_branch. v1.7.1 wires it from
+// tickInternal after every successful readProcessValues().
+// ============================================================
+describe('BatchController — v1.7.1 lastSampledPV wiring', () => {
+  it('readProcessValues populates user-facing aliases (temperature/pH/DO/weight) for branches', async () => {
+    // plcRead mock that returns TEMP_PV=38 plus all interlock-safe values
+    let hb = 0;
+    const plcRead = async (tag: string): Promise<number> => {
+      switch (tag) {
+        case 'STEAM_VALVE_CLOSED':
+        case 'COOL_VALVE_CLOSED':
+        case 'LID_LOCKED':
+        case 'STEAM_PRESSURE_SW':
+          return 1;
+        case 'HEARTBEAT': return ++hb;
+        case 'TEMP_PV': return 38;
+        case 'PH_PV': return 6.8;
+        case 'DO_PV': return 45;
+        case 'WEIGHT_PV': return 95;
+        default:
+          return 0;
+      }
+    };
+
+    const ctrl = new BatchController({
+      plcRead,
+      plcWrite: async () => { /* no-op */ },
+      pollIntervalMs: 1_000_000,
+    });
+
+    const recipe = {
+      recipe_id: 'TEST_PV_WIRING',
+      version: '1.0.0',
+      phases: [{ type: 'fermentation', phase_id: 'P0', params: {} }],
+    } as any;
+
+    ctrl.resumeBatch('B-PV-1', recipe, 'n_0');
+    // Pre-tick: lastSampledPV is the empty default
+    expect((ctrl as any).lastSampledPV).toEqual({});
+
+    // Simulate one tick's PV read step (tickInternal does this then writes the field)
+    const sampled = await (ctrl as any).readProcessValues();
+    (ctrl as any).lastSampledPV = sampled;
+
+    // Aliases are populated alongside the raw PLC tag names
+    expect((ctrl as any).lastSampledPV.temperature).toBe(38);
+    expect((ctrl as any).lastSampledPV.pH).toBe(6.8);
+    expect((ctrl as any).lastSampledPV.DO).toBe(45);
+    expect((ctrl as any).lastSampledPV.weight).toBe(95);
+
+    // Verify buildEvalContext now exposes those PVs to branch expressions
+    const ctx = (ctrl as any).buildEvalContext();
+    expect(ctx.evaluateExpression('temperature > 37')).toBe(true);
+    expect(ctx.evaluateExpression('pH < 7')).toBe(true);
+    expect(ctx.evaluateExpression('DO >= 40')).toBe(true);
+
+    ctrl.destroy();
+  });
+});
