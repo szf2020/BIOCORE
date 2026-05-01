@@ -15,7 +15,7 @@ import type {
   StepDefinition,
 } from '@biocore/types';
 import type { PhaseState, PhaseStatus } from './index';
-import { DAGExecutor, type RecipeDAG, type DAGEvalContext } from './dag-executor';
+import { DAGExecutor, type RecipeDAG, type DAGEvalContext, linearToDag } from './dag-executor';
 
 export interface BatchControllerConfig {
   // PLC读写函数 (由外部注入)
@@ -142,6 +142,12 @@ export class BatchController extends EventEmitter {
       };
     });
 
+    // T7: parallel DAG runtime initialization (does not affect old phaseIndex path yet)
+    this.dag = this.linearToDagIfNeeded(recipe);
+    this.dagExecutor = new DAGExecutor(this.dag);
+    this.dagExecutor.start();
+    this.currentNodeId = this.dagExecutor.getCurrentNode()?.id ?? null;
+
     // Transition state machine first
     this.actor.send({ type: 'cmd_start' });
 
@@ -220,6 +226,9 @@ export class BatchController extends EventEmitter {
       this.batchId = '';
       this.phaseIndex = 0;
       this.phaseStatuses = [];
+      this.dag = null;
+      this.dagExecutor = null;
+      this.currentNodeId = null;
       this.actor.send({ type: 'cmd_reset' });
       this.emit('batch_reset');
     }
@@ -334,6 +343,15 @@ export class BatchController extends EventEmitter {
   }
 
   // ── 内部方法 ──
+
+  private linearToDagIfNeeded(recipe: Recipe): RecipeDAG {
+    // Prefer v2 DAG if present
+    const maybeDag = (recipe as any).dag;
+    if (maybeDag && maybeDag.schema_version === 2) {
+      return maybeDag as RecipeDAG;
+    }
+    return linearToDag((recipe as any).phases ?? []);
+  }
 
   /**
    * 解析步骤定义: 优先从数据库模板读取, 回退到硬编码
