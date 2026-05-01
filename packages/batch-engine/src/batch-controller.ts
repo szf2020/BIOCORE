@@ -219,7 +219,7 @@ export class BatchController extends EventEmitter {
 
     // 顺序模式: 自动启动第一个Phase
     if (recipe.execution_mode === 'sequential') {
-      this.startPhaseByIndex(0);
+      this.startPhaseInternal(0);
       return { success: true, message: `批次${batchId}已启动 (顺序模式), Phase自动执行` };
     }
 
@@ -293,10 +293,45 @@ export class BatchController extends EventEmitter {
     }
   }
 
-  // ── Phase级控制命令 ──
+  // ── Phase级控制命令 (nodeId-based public API; T10 + T24) ──
 
-  /** 手动启动指定Phase */
-  startPhaseByIndex(phaseIndex: number): { success: boolean; message: string } {
+  /** 启动指定Phase (by DAG node id) */
+  startPhase(nodeId: string): { success: boolean; message: string } {
+    if (!this.dag) return { success: false, message: '无活跃配方' };
+    const node = this.dag.nodes.find(n => n.id === nodeId);
+    if (!node || node.type !== 'phase') {
+      return { success: false, message: `节点 ${nodeId} 不存在或非 phase 节点` };
+    }
+    const ps = this.phaseStatusesMap.get(nodeId);
+    if (!ps) return { success: false, message: `Phase状态不存在: ${nodeId}` };
+    return this.startPhaseInternal(ps.phase_index);
+  }
+
+  /** Hold指定Phase (by DAG node id) */
+  holdPhase(nodeId: string, reason?: string): void {
+    const ps = this.phaseStatusesMap.get(nodeId);
+    if (!ps) return;
+    this.holdPhaseInternal(ps.phase_index, reason);
+  }
+
+  /** 恢复held Phase (by DAG node id) */
+  restartPhase(nodeId: string): void {
+    const ps = this.phaseStatusesMap.get(nodeId);
+    if (!ps) return;
+    this.restartPhaseInternal(ps.phase_index);
+  }
+
+  /** 跳过指定Phase (by DAG node id) */
+  skipPhase(nodeId: string): void {
+    const ps = this.phaseStatusesMap.get(nodeId);
+    if (!ps) return;
+    this.skipPhaseInternal(ps.phase_index);
+  }
+
+  // ── Internal index-based primitives (private; not part of the public API) ──
+
+  /** Internal: start phase by index. Public callers use startPhase(nodeId). */
+  private startPhaseInternal(phaseIndex: number): { success: boolean; message: string } {
     if (!this.recipe || phaseIndex < 0 || phaseIndex >= this.recipe.phases.length) {
       return { success: false, message: '无效的Phase索引' };
     }
@@ -323,8 +358,8 @@ export class BatchController extends EventEmitter {
     return { success: true, message: `Phase ${phaseIndex} 已启动` };
   }
 
-  /** Hold指定Phase (by phase index — kept for backward compat; new code should use holdPhase(nodeId)) */
-  holdPhaseByIndex(phaseIndex: number, reason?: string): void {
+  /** Internal: hold phase by index. Public callers use holdPhase(nodeId). */
+  private holdPhaseInternal(phaseIndex: number, reason?: string): void {
     const ps = this.getPhaseStatusByIndex(phaseIndex);
     if (!ps || ps.state !== 'running') return;
     ps.state = 'held';
@@ -333,8 +368,8 @@ export class BatchController extends EventEmitter {
     this.broadcastStateUpdate();
   }
 
-  /** 恢复held Phase (by phase index — kept for backward compat) */
-  restartPhaseByIndex(phaseIndex: number): void {
+  /** Internal: restart held phase by index. Public callers use restartPhase(nodeId). */
+  private restartPhaseInternal(phaseIndex: number): void {
     const ps = this.getPhaseStatusByIndex(phaseIndex);
     if (!ps || ps.state !== 'held') return;
     ps.state = 'running';
@@ -343,8 +378,8 @@ export class BatchController extends EventEmitter {
     this.broadcastStateUpdate();
   }
 
-  /** 跳过指定Phase (by phase index — kept for backward compat) */
-  skipPhaseByIndex(phaseIndex: number): void {
+  /** Internal: skip phase by index. Public callers use skipPhase(nodeId). */
+  private skipPhaseInternal(phaseIndex: number): void {
     const ps = this.getPhaseStatusByIndex(phaseIndex);
     if (!ps || ps.state === 'completed' || ps.state === 'skipped') return;
     const wasRunning = ps.state === 'running';
@@ -358,41 +393,6 @@ export class BatchController extends EventEmitter {
     this.readyNextPhase(phaseIndex);
     this.checkAllPhasesComplete();
     this.broadcastStateUpdate();
-  }
-
-  // ── T10: nodeId-based public API ──
-
-  /** 启动指定Phase (by DAG node id) */
-  startPhase(nodeId: string): { success: boolean; message: string } {
-    if (!this.dag) return { success: false, message: '无活跃配方' };
-    const node = this.dag.nodes.find(n => n.id === nodeId);
-    if (!node || node.type !== 'phase') {
-      return { success: false, message: `节点 ${nodeId} 不存在或非 phase 节点` };
-    }
-    const ps = this.phaseStatusesMap.get(nodeId);
-    if (!ps) return { success: false, message: `Phase状态不存在: ${nodeId}` };
-    return this.startPhaseByIndex(ps.phase_index);
-  }
-
-  /** Hold指定Phase (by DAG node id) */
-  holdPhase(nodeId: string, reason?: string): void {
-    const ps = this.phaseStatusesMap.get(nodeId);
-    if (!ps) return;
-    this.holdPhaseByIndex(ps.phase_index, reason);
-  }
-
-  /** 恢复held Phase (by DAG node id) */
-  restartPhase(nodeId: string): void {
-    const ps = this.phaseStatusesMap.get(nodeId);
-    if (!ps) return;
-    this.restartPhaseByIndex(ps.phase_index);
-  }
-
-  /** 跳过指定Phase (by DAG node id) */
-  skipPhase(nodeId: string): void {
-    const ps = this.phaseStatusesMap.get(nodeId);
-    if (!ps) return;
-    this.skipPhaseByIndex(ps.phase_index);
   }
 
   /** 获取所有Phase状态 */
@@ -567,7 +567,7 @@ export class BatchController extends EventEmitter {
 
       if (this.recipe?.execution_mode === 'sequential') {
         // 顺序模式: 自动启动下一个Phase (preserves old behavior)
-        this.startPhaseByIndex(ps.phase_index);
+        this.startPhaseInternal(ps.phase_index);
       } else {
         // 自由模式: 仅标记为ready, 等操作员手动启动
         if (ps.state === 'pending') {
@@ -658,7 +658,7 @@ export class BatchController extends EventEmitter {
       this.emit('step_started', info);
     });
     this.stepEngine.on('step_timeout', (log) => {
-      this.holdPhaseByIndex(index, `Step超时: ${log.step_name}`);
+      this.holdPhaseInternal(index, `Step超时: ${log.step_name}`);
     });
 
     this.emit('phase_started', {
@@ -731,7 +731,7 @@ export class BatchController extends EventEmitter {
         break;
       }
       case 'timeout_hold':
-        this.holdPhaseByIndex(runningPS.phase_index, result.reason);
+        this.holdPhaseInternal(runningPS.phase_index, result.reason);
         break;
 
       case 'step_advanced':

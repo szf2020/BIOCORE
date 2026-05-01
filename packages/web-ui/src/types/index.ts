@@ -232,7 +232,6 @@ export interface RecipeDAG {
 /** Per-batch runtime state updated by step_progress WS events */
 export interface BatchRuntimeState {
   batch_id: string;
-  phase_index?: number;      // legacy v1 field; keep until T24
   phase_id: string;
   phase_type?: string;       // T18: from payload_version 2
   node_id?: string | null;   // T18: DAG node id (v2 only)

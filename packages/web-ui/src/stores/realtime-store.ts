@@ -256,7 +256,6 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
                   node_id: nodeId,
                   phase_id: payload.phase_id ?? '',
                   phase_type: payload.phase_type,
-                  phase_index: payload.phase_index,  // keep for legacy until T24
                   last_event: eventType,
                 },
               },

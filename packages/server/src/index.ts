@@ -3984,74 +3984,62 @@ apiRouter.get('/reactors/:reactorId/phases', (req, res) => {
   res.json(ctrl.getPhaseStatuses());
 });
 
+// T24: numeric phase index path translates to nodeId via phase_index lookup
+// (deprecated; emits Deprecation + Sunset headers — external consumers should migrate to nodeId).
+function resolvePhaseRef(ctrl: ReturnType<typeof reactorManager.getReactor>, ref: string, res: any): string | null {
+  if (!ctrl) return null;
+  if (/^\d+$/.test(ref)) {
+    res.set('Deprecation', 'true').set('Sunset', '2026-12-01');
+    const idx = parseInt(ref);
+    const ps = ctrl.getPhaseStatuses().find(s => s.phase_index === idx);
+    if (!ps?.node_id) {
+      res.status(404).json({ error: `Phase index ${idx} not found` });
+      return null;
+    }
+    return ps.node_id;
+  }
+  return ref;
+}
+
 // POST /api/reactors/:reactorId/phases/:phaseRef/start
-// phaseRef may be a numeric index (deprecated) or a nodeId string (preferred).
-// Numeric path emits Deprecation + Sunset headers; T24 will remove the numeric branch.
+// phaseRef is a DAG nodeId. Numeric index is deprecated but still accepted (translated to nodeId).
 apiRouter.post('/reactors/:reactorId/phases/:phaseRef/start', (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.reactorId);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  const ref = req.params.phaseRef;
-  if (/^\d+$/.test(ref)) {
-    // Deprecated: numeric index path
-    res.set('Deprecation', 'true').set('Sunset', '2026-12-01');
-    const result = ctrl.startPhaseByIndex(parseInt(ref));
-    if (!result.success) return res.status(400).json({ error: result.message });
-    return res.json({ success: true });
-  }
-  // New: nodeId path
-  const result = ctrl.startPhase(ref);
+  const nodeId = resolvePhaseRef(ctrl, req.params.phaseRef, res);
+  if (!nodeId) return; // resolvePhaseRef already sent 404
+  const result = ctrl.startPhase(nodeId);
   if (!result.success) return res.status(400).json({ error: result.message });
   res.json({ success: true });
 });
 
 // POST /api/reactors/:reactorId/phases/:phaseRef/hold
-// phaseRef may be a numeric index (deprecated) or a nodeId string (preferred).
 apiRouter.post('/reactors/:reactorId/phases/:phaseRef/hold', (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.reactorId);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  const ref = req.params.phaseRef;
-  if (/^\d+$/.test(ref)) {
-    // Deprecated: numeric index path
-    res.set('Deprecation', 'true').set('Sunset', '2026-12-01');
-    ctrl.holdPhaseByIndex(parseInt(ref), req.body.reason);
-    return res.json({ success: true });
-  }
-  // New: nodeId path
-  ctrl.holdPhase(ref, req.body.reason);
+  const nodeId = resolvePhaseRef(ctrl, req.params.phaseRef, res);
+  if (!nodeId) return;
+  ctrl.holdPhase(nodeId, req.body.reason);
   res.json({ success: true });
 });
 
 // POST /api/reactors/:reactorId/phases/:phaseRef/skip
-// phaseRef may be a numeric index (deprecated) or a nodeId string (preferred).
 apiRouter.post('/reactors/:reactorId/phases/:phaseRef/skip', (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.reactorId);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  const ref = req.params.phaseRef;
-  if (/^\d+$/.test(ref)) {
-    // Deprecated: numeric index path
-    res.set('Deprecation', 'true').set('Sunset', '2026-12-01');
-    ctrl.skipPhaseByIndex(parseInt(ref));
-    return res.json({ success: true });
-  }
-  // New: nodeId path
-  ctrl.skipPhase(ref);
+  const nodeId = resolvePhaseRef(ctrl, req.params.phaseRef, res);
+  if (!nodeId) return;
+  ctrl.skipPhase(nodeId);
   res.json({ success: true });
 });
 
 // POST /api/reactors/:reactorId/phases/:phaseRef/restart
-// phaseRef may be a numeric index (deprecated) or a nodeId string (preferred).
 apiRouter.post('/reactors/:reactorId/phases/:phaseRef/restart', (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.reactorId);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  const ref = req.params.phaseRef;
-  if (/^\d+$/.test(ref)) {
-    // Deprecated: numeric index path
-    res.set('Deprecation', 'true').set('Sunset', '2026-12-01');
-    ctrl.restartPhaseByIndex(parseInt(ref));
-    return res.json({ success: true });
-  }
-  // New: nodeId path
-  ctrl.restartPhase(ref);
+  const nodeId = resolvePhaseRef(ctrl, req.params.phaseRef, res);
+  if (!nodeId) return;
+  ctrl.restartPhase(nodeId);
   res.json({ success: true });
 });
 
@@ -4271,7 +4259,7 @@ function wireReactorEvents(reactorId: string): void {
     broadcast('state_update', { reactor_id: reactorId, ...data }, data?.batch_id, reactorId);
   });
 
-  // Phase启动/完成 — T16: payload_version=2 + node_id; phase_index retained for legacy v1 consumers (remove in T24)
+  // Phase启动/完成 — T16/T24: payload_version=2 + node_id (legacy phase_index removed in T24)
   ctrl.on('phase_started', (data: any) => {
     broadcast('step_progress', {
       reactor_id: reactorId,
@@ -4281,7 +4269,6 @@ function wireReactorEvents(reactorId: string): void {
       node_id: ctrl.currentNodeId,
       phase_id: data.phase_id,
       phase_type: data.phase_type,
-      phase_index: data.index ?? data.phase_index,   // legacy for v1 consumers; remove in T24
       total_steps: data.total_steps,
     }, null, reactorId);
   });
@@ -4294,7 +4281,6 @@ function wireReactorEvents(reactorId: string): void {
       node_id: ctrl.currentNodeId,
       phase_id: data.phase_id,
       phase_type: data.phase_type,
-      phase_index: data.index ?? data.phase_index,   // legacy for v1 consumers; remove in T24
     }, null, reactorId);
   });
 
