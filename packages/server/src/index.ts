@@ -148,6 +148,7 @@ import { registerAiReportRoutes, detectReportIntent } from './ai-report-routes';
 import { createAdminHealthRouter } from './routes/admin-health';
 import { createAdminMetricsRouter } from './routes/admin-metrics';
 import { createAdminCrashesRouter } from './routes/admin-crashes';
+import { EventStream, createEventsSseRouter } from './routes/events-sse';
 
 // JWT 认证
 import { createHash, randomBytes } from 'crypto';
@@ -691,6 +692,14 @@ apiRouter.use('/admin/metrics', createAdminMetricsRouter({
 // T38: runtime-guard diagnostic dump access. Admin only.
 // list+read crash dumps written by writeDiagnosticDump() under RUNTIME_GUARD_DUMP_DIR.
 apiRouter.use('/admin/crashes', createAdminCrashesRouter(RUNTIME_GUARD_DUMP_DIR));
+
+// T39: SSE events stream for external IT systems (MES/SOC/log pipelines).
+// Singleton — exposed for AlertRouter (T40) to call .publish() on notifier events.
+export const eventStream = new EventStream(Number(process.env.BIOCORE_EVENT_BUFFER_SIZE ?? 1000));
+apiRouter.use('/events', createEventsSseRouter(
+  eventStream,
+  Number(process.env.BIOCORE_SSE_MAX_CLIENTS ?? 100),
+));
 
 // 双挂载:
 //   /api/v1/* — 新路径, 走 v1ResponseWrapper → authMiddleware → apiRouter
