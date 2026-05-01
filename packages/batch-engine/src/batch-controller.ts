@@ -56,6 +56,10 @@ export class BatchController extends EventEmitter {
   private _currentNodeId: string | null = null;
   private dag: RecipeDAG | null = null;
   private dagExecutor: DAGExecutor | null = null;
+  // v1.7.1: latest PV snapshot, populated by tickInternal after successful
+  // readProcessValues(); buildEvalContext() reads this so DAG branch
+  // expressions can evaluate against live values instead of empty {}.
+  private lastSampledPV: Record<string, number> = {};
 
   /** Current DAG node id (T10 — public getter; backing field is `_currentNodeId`). */
   get currentNodeId(): string | null {
@@ -484,7 +488,7 @@ export class BatchController extends EventEmitter {
     _evaluations: Array<{ expression: string; result: boolean; pv: Record<string, any>; skipped: boolean }>;
   } {
     const evaluations: Array<{ expression: string; result: boolean; pv: Record<string, any>; skipped: boolean }> = [];
-    const lastPV: Record<string, number> = (this as any).lastSampledPV ?? {};
+    const lastPV: Record<string, number> = this.lastSampledPV ?? {};
     // Best-effort: derive phase_elapsed_min from the currently running PhaseStatus's started_at
     const runningPS = this.phaseStatuses.find(p => p.state === 'running');
     const startedIso = runningPS?.started_at;
@@ -709,6 +713,9 @@ export class BatchController extends EventEmitter {
       return; // PLC读取失败由心跳/CommWatchdog处理
     }
 
+    // v1.7.1: snapshot for DAG branch evaluation (consumed by buildEvalContext)
+    this.lastSampledPV = pv;
+
     // 运行故障检测
     this.faultMonitor.check(pv);
 
@@ -764,6 +771,16 @@ export class BatchController extends EventEmitter {
     pv['AI-4'] = pv['PRESSURE_PV'] ?? 0;
     pv['AI-5'] = pv['AIRFLOW_PV'] ?? 0;
     pv['AI-6'] = pv['WEIGHT_PV'] ?? 0;
+    // v1.7.1: condition-evaluator (DAG branch expressions) ALLOWED_FIELDS
+    // are user-facing names (temperature/pH/DO/weight). Without these aliases
+    // branches like `temperature > 37` always evaluate against undefined and
+    // fall through default_branch. Note: OD600 is not currently exposed by
+    // any PLC tag — branches gating on OD600 still require optical-density
+    // hardware integration and will keep using default_branch fallback.
+    pv['temperature'] = pv['TEMP_PV'] ?? 0;
+    pv['pH'] = pv['PH_PV'] ?? 0;
+    pv['DO'] = pv['DO_PV'] ?? 0;
+    pv['weight'] = pv['WEIGHT_PV'] ?? 0;
     return pv;
   }
 
