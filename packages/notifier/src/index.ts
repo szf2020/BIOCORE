@@ -5,3 +5,5 @@
 //   T33 AlertRouter
 export { eventTypes, validatePayload, type EventType, type EventPayload } from './event-types';
 export { Throttler, type ThrottlerOptions } from './throttler';
+export { sendWebhook } from './channels/webhook';
+export type { Channel, ChannelConfig, ChannelMessage, SendResult } from './channels/types';
