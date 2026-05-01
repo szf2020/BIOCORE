@@ -70,6 +70,10 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
   const reactorRecipeFromWS = useRealtimeStore(s => s.reactorRecipes[reactorId]);
   const setReactorRecipe = useRealtimeStore(s => s.setReactorRecipe);
   const setReactorStateInStore = useRealtimeStore(s => s.setReactorState);
+  // T19: DAG runtime phase_id — find the entry for the current batch (batch_id from reactorStateFromWS)
+  const batchRuntime = useRealtimeStore(s => s.batchRuntime);
+  const currentBatchId = (reactorStateFromWS as any)?.batch_id ?? '';
+  const dagRuntime = currentBatchId ? batchRuntime[currentBatchId] : undefined;
   // 审计追踪 hook
   const audit = useAudit();
   // Phase计时器
@@ -286,6 +290,21 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
         </div>
 
         <div className="p-3 space-y-3">
+          {/* T19: 当前 Phase (DAG runtime) — 仅批次运行时显示 */}
+          {dagRuntime && (
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-primary/8 border border-primary/20">
+              <span className="text-[10px] text-muted-foreground flex-shrink-0">当前</span>
+              <strong className="text-xs font-mono text-foreground truncate flex-1">
+                {dagRuntime.phase_id || '—'}
+              </strong>
+              {dagRuntime.phase_type && (
+                <span className="text-[10px] text-muted-foreground bg-muted/60 border border-border px-1.5 py-0.5 rounded flex-shrink-0">
+                  {dagRuntime.phase_type}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* 罐号 + 批次号输入 */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground flex-shrink-0">{reactorId}</span>
@@ -432,7 +451,14 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                     <div key={ps.phase_index} className="rounded bg-muted/20 border border-border/40 p-2 space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-mono text-muted-foreground w-3 text-right">{ps.phase_index + 1}</span>
-                        <span className="text-xs font-medium text-foreground flex-1 truncate">{phaseLabel(ps.phase_type, phaseTemplateMap[ps.phase_type])}</span>
+                        <span className="text-xs font-medium text-foreground flex-1 truncate">
+                          {ps.phase_id || phaseLabel(ps.phase_type, phaseTemplateMap[ps.phase_type])}
+                        </span>
+                        {ps.phase_type && (
+                          <span className="text-[9px] text-muted-foreground bg-muted/40 border border-border/60 px-1 py-0.5 rounded flex-shrink-0 hidden sm:inline">
+                            {ps.phase_type}
+                          </span>
+                        )}
                         {/* 运行中: 倒计时或计时 */}
                         {ps.state === 'running' && (
                           <span className="text-[10px] font-mono text-emerald-600 flex-shrink-0">

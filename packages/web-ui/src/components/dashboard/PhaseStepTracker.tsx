@@ -13,10 +13,15 @@ import type { StateUpdatePayload } from '@/types';
 
 interface PhaseStepTrackerProps {
   state: StateUpdatePayload | null;
+  /** Optional per-phase labels; falls back to phase_id from state, then P{i+1} */
   phaseNames?: string[];
+  /** T19: current phase_id from DAG runtime (BatchRuntimeState.phase_id) */
+  currentPhaseId?: string;
+  /** T19: current phase_type from DAG runtime (BatchRuntimeState.phase_type) */
+  currentPhaseType?: string;
 }
 
-export function PhaseStepTracker({ state, phaseNames }: PhaseStepTrackerProps) {
+export function PhaseStepTracker({ state, phaseNames, currentPhaseId, currentPhaseType }: PhaseStepTrackerProps) {
   const phaseIndex = state?.phase_index ?? 0;
   const totalPhases = state?.total_phases ?? 0;
   const stepNumber = state?.step_number ?? 0;
@@ -74,7 +79,7 @@ export function PhaseStepTracker({ state, phaseNames }: PhaseStepTrackerProps) {
                       'text-[10px] max-w-[48px] truncate',
                       isCurrent ? 'text-blue-600 font-medium' : 'text-muted-foreground',
                     )}>
-                      {name}
+                      {isCurrent && currentPhaseId ? currentPhaseId : name}
                     </span>
                   </div>
                   {i < totalPhases - 1 && (
@@ -83,6 +88,19 @@ export function PhaseStepTracker({ state, phaseNames }: PhaseStepTrackerProps) {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* T19: 当前 phase_id + phase_type (DAG runtime label) */}
+        {(currentPhaseId || currentPhaseType) && (
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground">当前:</span>
+            <strong className="text-xs font-mono text-foreground">{currentPhaseId ?? '—'}</strong>
+            {currentPhaseType && (
+              <span className="text-[10px] text-muted-foreground bg-muted/60 border border-border px-1.5 py-0.5 rounded">
+                {currentPhaseType}
+              </span>
+            )}
           </div>
         )}
 
