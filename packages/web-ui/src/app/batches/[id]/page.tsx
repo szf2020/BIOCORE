@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { FileText, Download, Upload, ChevronRight, ChevronDown, FlaskConical, Brain, Clock } from 'lucide-react';
 import { apiFetch } from '@/lib/auth';
+import type { RecipeDAG } from '@/types';
 import { useAudit } from '@/hooks/useAudit';
 import { SampleImportDialog } from '@/components/SampleImportDialog';
 
@@ -20,6 +21,11 @@ interface BatchDetail {
   id: string; batch_id: string; recipe_name?: string; operator?: string;
   state: string; started_at?: string; ended_at?: string; outcome?: string;
   summary_text?: string;
+  // Optional DAG fields (present when server persists recipe_dag, forward-compat)
+  recipe_dag?: RecipeDAG;
+  recipe?: { dag?: RecipeDAG; phases?: Array<{ phase_id?: string; type?: string }> };
+  // phase_statuses: array (realtime WS shape) or object keyed by node_id
+  phase_statuses?: Array<{ state?: string; phase_index?: number }> | Record<string, { state?: string; phase_index?: number }>;
 }
 interface Phase { id: string; phase_name: string; phase_index: number; started_at?: string; ended_at?: string; status?: string }
 interface Step { id: string; step_number: number; phase_id: string; step_type?: string; description?: string; status?: string; started_at?: string }
@@ -80,6 +86,55 @@ export default function BatchDetailPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+
+  // ── DAG-derived phase list ─────────────────────────────────────────────────
+
+  /** Resolve a phase status string from batch.phase_statuses, by node_id or index. */
+  const lookupStatus = useCallback((
+    b: BatchDetail | null,
+    nodeId: string | undefined,
+    idx: number,
+  ): string => {
+    if (!b?.phase_statuses) return 'pending';
+    const ps = b.phase_statuses;
+    // Array shape: [{ state, phase_index }, ...]
+    if (Array.isArray(ps)) return ps[idx]?.state ?? 'pending';
+    // Object shape: keyed by node_id or by phase_index string
+    if (nodeId && ps[nodeId]) return ps[nodeId].state ?? 'pending';
+    const byIndex = Object.values(ps).find((p) => p?.phase_index === idx);
+    return byIndex?.state ?? 'pending';
+  }, []);
+
+  /**
+   * Derive a flat list of phases from the DAG when available, otherwise fall
+   * back to the linear `phases` array fetched from /batches/:id/phases.
+   */
+  const allPhases = useMemo(() => {
+    const dag = (batch?.recipe_dag ?? batch?.recipe?.dag) as RecipeDAG | undefined;
+    if (dag?.nodes) {
+      return dag.nodes
+        .filter((n) => n.type === 'phase')
+        .map((n, idx) => {
+          const pn = n as import('@/types').DAGPhaseNode;
+          return {
+            node_id: pn.id,
+            phase_id: pn.phase_id,
+            phase_type: pn.phase_type as string,
+            status: lookupStatus(batch, pn.id, idx),
+          };
+        });
+    }
+    // Legacy fallback: linear phases from /batches/:id/phases endpoint
+    return phases
+      .slice()
+      .sort((a, b) => a.phase_index - b.phase_index)
+      .map((p, idx) => ({
+        node_id: `n_${p.phase_index}`,
+        phase_id: p.phase_name ?? `phase_${p.phase_index}`,
+        phase_type: '-',
+        status: lookupStatus(batch, undefined, idx),
+      }));
+  }, [batch, phases, lookupStatus]);
 
   const loadAll = useCallback(() => {
     setLoading(true);
@@ -209,21 +264,29 @@ export default function BatchDetailPage() {
         </Card>
       )}
 
-      {/* Phase/Step tree */}
+      {/* Phase/Step tree — derived from DAG nodes (or linear fallback) */}
       <Card>
         <CardHeader className="pb-2"><CardTitle className="text-sm">阶段/步骤执行日志</CardTitle></CardHeader>
         <CardContent>
-          {phases.length === 0 ? <p className="text-sm text-muted-foreground">暂无阶段数据</p> : (
-            <div className="space-y-1">
-              {phases.sort((a, b) => a.phase_index - b.phase_index).map(phase => {
-                const phaseSteps = steps.filter(s => s.phase_id === phase.id);
-                const expanded = expandedPhases.has(phase.id);
+          {allPhases.length === 0 ? <p className="text-sm text-muted-foreground">暂无阶段数据</p> : (
+            <ul className="space-y-1">
+              {allPhases.map((p, listIdx) => {
+                // Match phase log entry for step expansion (by phase_index position)
+                const phaseLog = phases[listIdx];
+                const phaseSteps = phaseLog ? steps.filter(s => s.phase_id === phaseLog.id) : [];
+                const expandKey = p.node_id;
+                const expanded = expandedPhases.has(expandKey);
                 return (
-                  <div key={phase.id}>
-                    <button onClick={() => togglePhase(phase.id)} className="flex items-center gap-2 w-full text-left py-1.5 px-2 rounded hover:bg-muted text-sm">
+                  <li key={p.node_id}>
+                    <button
+                      onClick={() => togglePhase(expandKey)}
+                      className="flex items-center gap-2 w-full text-left py-1.5 px-2 rounded hover:bg-muted text-sm"
+                    >
                       {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                      <span className="font-medium">Phase {phase.phase_index + 1}: {phase.phase_name}</span>
-                      <Badge variant="outline" className="ml-auto text-xs">{phase.status ?? '-'}</Badge>
+                      <code className="text-xs text-gray-500 font-mono">{p.node_id}</code>
+                      <span className="font-medium">{p.phase_id}</span>
+                      <span className="text-xs text-gray-500">{p.phase_type}</span>
+                      <Badge variant="outline" className="ml-auto text-xs">{p.status}</Badge>
                     </button>
                     {expanded && phaseSteps.length > 0 && (
                       <div className="ml-6 border-l pl-3 space-y-1 mb-2">
@@ -237,10 +300,10 @@ export default function BatchDetailPage() {
                       </div>
                     )}
                     {expanded && phaseSteps.length === 0 && <p className="ml-8 text-xs text-muted-foreground py-1">无步骤</p>}
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           )}
         </CardContent>
       </Card>
