@@ -138,6 +138,9 @@ importers:
 
   packages/server:
     dependencies:
+      '@biocore/runtime-guard':
+        specifier: workspace:*
+        version: link:../runtime-guard
       '@influxdata/influxdb-client':
         specifier: ^1.33.0
         version: 1.35.0

@@ -36,6 +36,12 @@ import { registerDoeRoutes } from './doe-routes';
 import { registerKpiRoutes, computeAndStore as computeKpi } from './kpi-routes';
 import { registerSpcRoutes } from './spc-routes';
 import { diff as deepDiff } from 'deep-diff';
+import {
+  installCrashHandlers,
+  MemoryWatchdog,
+  MetricsCollector,
+  writeDiagnosticDump,
+} from '@biocore/runtime-guard';
 
 // ─── Mini .env 加载 (无 dotenv 依赖) ────────────────────────
 // 从项目根 .env 读取 KEY=VALUE 行,注入 process.env (已存在的不覆盖)
@@ -62,6 +68,67 @@ import { diff as deepDiff } from 'deep-diff';
     } catch { /* try next candidate */ }
   }
 })();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Runtime Guard — BIOCore 加固 (Sprint 4 Track A, T22)
+// crash handler + memory watchdog + metrics collector. 必须在业务逻辑前装上,
+// 才能捕获后续 import (PLC native binding / SQLite / migrator) 的错误。
+// 见: docs/superpowers/specs/2026-05-01-nodejs-hardening-design.md
+// ─────────────────────────────────────────────────────────────────────────────
+const RUNTIME_GUARD_DUMP_DIR = process.env.BIOCORE_DIAGNOSTIC_DUMP_DIR ?? './crashes';
+const RUNTIME_GUARD_KEEP_LAST = Number(process.env.BIOCORE_DIAGNOSTIC_KEEP_LAST ?? 50);
+const RUNTIME_GUARD_OOM_GRACE = Number(process.env.BIOCORE_OOM_GRACE_SAMPLES ?? 3);
+const RUNTIME_GUARD_OOM_THRESHOLD_MB =
+  process.env.BIOCORE_OOM_THRESHOLD_MB && process.env.BIOCORE_OOM_THRESHOLD_MB !== 'auto'
+    ? Number(process.env.BIOCORE_OOM_THRESHOLD_MB)
+    : undefined;  // undefined = MetricsCollector/MemoryWatchdog auto = RAM × 20%
+
+export const metricsCollector = new MetricsCollector({
+  serviceVersion: process.env.npm_package_version ?? '0.1.0',
+  oomThresholdMb: RUNTIME_GUARD_OOM_THRESHOLD_MB,
+});
+metricsCollector.start();
+
+export const memWd = new MemoryWatchdog({
+  thresholdMb: RUNTIME_GUARD_OOM_THRESHOLD_MB,
+  graceSamples: RUNTIME_GUARD_OOM_GRACE,
+  onExceed: async (info) => {
+    console.error('[runtime-guard] memory threshold exceeded', info);
+    try {
+      await writeDiagnosticDump(new Error('OOM threshold'), 'oom_threshold', {
+        dir: RUNTIME_GUARD_DUMP_DIR,
+        keepLast: RUNTIME_GUARD_KEEP_LAST,
+        extra: info,
+      });
+    } catch (e) {
+      console.error('[runtime-guard] dump on OOM failed:', e);
+    }
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[runtime-guard] sending SIGTERM for supervisor restart');
+      process.kill(process.pid, 'SIGTERM');
+    } else {
+      console.error('[runtime-guard] dev mode: 不自动重启 (需 NODE_ENV=production 才触发 SIGTERM)');
+    }
+  },
+});
+memWd.start();
+
+installCrashHandlers({
+  onCrash: async (err, type) => {
+    console.error(`[runtime-guard] ${type}:`, err.message);
+    try {
+      await writeDiagnosticDump(err, type, {
+        dir: RUNTIME_GUARD_DUMP_DIR,
+        keepLast: RUNTIME_GUARD_KEEP_LAST,
+      });
+    } catch (e) {
+      console.error('[runtime-guard] dump failed:', e);
+    }
+  },
+});
+
+console.log(`[runtime-guard] installed (oom_threshold_mb=${metricsCollector.snapshot().memory.oom_threshold_mb})`);
+// ─────────────────────────────────────────────────────────────────────────────
 
 // plc-driver 工具函数 (直接导入，不依�� native 模块加载)
 import { parseAddr, byteLen, decode, scale, validateAddr } from '../../plc-driver/src/utils';
