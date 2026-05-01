@@ -4,12 +4,12 @@ dist/
 .next/
 .env
 .env.local
-data/biocore.db
-data/biocore.db-shm
-data/biocore.db-wal
+biocore.db
+biocore.db-shm
+biocore.db-wal
 crashes/
 soak-runs/
 logs/
 *.tmp
 .obsidian/
-.omc/state/
+**/.omc/state/

@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"choco install jq -y --no-progress 2>&1 | tail -10 && echo \\\"---after---\\\" && which jq 2>&1 && jq --version 2>&1\",\"timeout\":180000,\"description\":\"Install jq via chocolatey\"}",
-  "error": "Exit code 1\n   �� chocolatey.infrastructure.filesystem.DotNetFileSystem.CreateDirectory(String directoryPath, Boolean isSilent)\r\n   �� chocolatey.infrastructure.filesystem.DotNetFileSystem.EnsureDirectoryExists(String directoryPath, Boolean ignoreError, Boolean isSilent)\r\n\r\nChocolatey installed 0/0 packages. \r\n See the log for details (C:\\ProgramData\\chocolatey\\logs\\chocolatey.log).\r\n\r\nEnjoy using Chocolatey? Explore more amazing features to take your\r\nexperience to the next level at\r\n https://c...",
-  "timestamp": "2026-04-20T14:17:52.713Z",
-  "retry_count": 1
-}
