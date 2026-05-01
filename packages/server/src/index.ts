@@ -147,6 +147,7 @@ import { startSuggestionEngine } from './ai-suggestion-engine';
 import { registerAiReportRoutes, detectReportIntent } from './ai-report-routes';
 import { createAdminHealthRouter } from './routes/admin-health';
 import { createAdminMetricsRouter } from './routes/admin-metrics';
+import { createAdminCrashesRouter } from './routes/admin-crashes';
 
 // JWT 认证
 import { createHash, randomBytes } from 'crypto';
@@ -686,6 +687,10 @@ apiRouter.use('/admin/metrics', createAdminMetricsRouter({
   metricsCollector,
   requireAuth: process.env.BIOCORE_METRICS_REQUIRE_AUTH === 'true',
 }));
+
+// T38: runtime-guard diagnostic dump access. Admin only.
+// list+read crash dumps written by writeDiagnosticDump() under RUNTIME_GUARD_DUMP_DIR.
+apiRouter.use('/admin/crashes', createAdminCrashesRouter(RUNTIME_GUARD_DUMP_DIR));
 
 // 双挂载:
 //   /api/v1/* — 新路径, 走 v1ResponseWrapper → authMiddleware → apiRouter
