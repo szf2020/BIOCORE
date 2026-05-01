@@ -4279,6 +4279,32 @@ function wireReactorEvents(reactorId: string): void {
     broadcast('step_progress', { reactor_id: reactorId, event: 'phase_completed', ...data }, null, reactorId);
   });
 
+  // T15: branch_evaluated 审计桥 — DAG 分支求值结果落到 audit_logs
+  // (T13 controller 端已发出该事件; 这里是 server 端唯一的 audit/broadcast 落点)
+  ctrl.on('branch_evaluated', (data: any) => {
+    // 广播给前端，用于在 DAG 视图上回放分支决策
+    broadcast('branch_evaluated', { reactor_id: reactorId, ...data }, data?.batch_id, reactorId);
+    // 写入审计日志 (target_kind = 'node_id', graceful 兜底 'unknown')
+    try {
+      sqlite.writeAuditLog({
+        user_id: 'system',
+        action: 'branch_evaluated',
+        target_type: 'branch',
+        target_id: data?.node_id ?? 'unknown',
+        target_kind: 'node_id',
+        batch_id: ctrl.currentBatchId || undefined,
+        new_value: JSON.stringify({
+          expression: data?.expression,
+          result: data?.result,
+          skipped: data?.skipped,
+          pv_snapshot: data?.pv_snapshot,
+        }),
+      });
+    } catch (e) {
+      console.warn(`[AUDIT] branch_evaluated 写入失败:`, (e as Error).message);
+    }
+  });
+
   // Step完成
   ctrl.on('step_completed', (log: any) => {
     broadcast('step_progress', { reactor_id: reactorId, event: 'step_completed', ...log }, null, reactorId);

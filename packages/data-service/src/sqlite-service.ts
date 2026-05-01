@@ -89,13 +89,17 @@ export class SQLiteService {
     batch_id?: string; target_id?: string; old_value?: string;
     new_value?: string; reason?: string; ip_address?: string;
     trace_id?: string;
+    // T15: target_kind disambiguates the semantics of target_id
+    // (e.g. 'phase_index' vs 'node_id' vs 'recipe_id').
+    target_kind?: 'phase_index' | 'node_id' | 'recipe_id' | 'batch_id' | 'user_id' | 'channel_id';
   }): void {
     this.db.prepare(`
-      INSERT INTO audit_logs (batch_id, user_id, action, target_type, target_id, old_value, new_value, reason, ip_address, trace_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO audit_logs (batch_id, user_id, action, target_type, target_id, old_value, new_value, reason, ip_address, trace_id, target_kind)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(log.batch_id || null, log.user_id, log.action, log.target_type,
       log.target_id || null, log.old_value || null, log.new_value || null,
-      log.reason || null, log.ip_address || null, log.trace_id || null);
+      log.reason || null, log.ip_address || null, log.trace_id || null,
+      log.target_kind || null);
   }
 
   getAuditLogs(batchId?: string, limit = 100): any[] {
