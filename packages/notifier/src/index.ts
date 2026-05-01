@@ -7,4 +7,5 @@ export { eventTypes, validatePayload, type EventType, type EventPayload } from '
 export { Throttler, type ThrottlerOptions } from './throttler';
 export { sendWebhook } from './channels/webhook';
 export { sendFeishu } from './channels/feishu';
+export { sendDingtalk } from './channels/dingtalk';
 export type { Channel, ChannelConfig, ChannelMessage, SendResult } from './channels/types';
