@@ -146,6 +146,7 @@ import { registerBatchIntelligenceRoutes } from './batch-intelligence-routes';
 import { startSuggestionEngine } from './ai-suggestion-engine';
 import { registerAiReportRoutes, detectReportIntent } from './ai-report-routes';
 import { createAdminHealthRouter } from './routes/admin-health';
+import { createAdminMetricsRouter } from './routes/admin-metrics';
 
 // JWT 认证
 import { createHash, randomBytes } from 'crypto';
@@ -677,6 +678,13 @@ registerAiReportRoutes(apiRouter, sqlite, influxQueryApi);
 apiRouter.use('/admin/health', createAdminHealthRouter({
   metricsCollector,
   crashesDir: RUNTIME_GUARD_DUMP_DIR,
+}));
+
+// T37: Prometheus exposition. Default: public (Prometheus standard).
+// Gate behind admin via BIOCORE_METRICS_REQUIRE_AUTH=true.
+apiRouter.use('/admin/metrics', createAdminMetricsRouter({
+  metricsCollector,
+  requireAuth: process.env.BIOCORE_METRICS_REQUIRE_AUTH === 'true',
 }));
 
 // 双挂载:
