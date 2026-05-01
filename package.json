@@ -1,6 +1,6 @@
 {
   "name": "biocore",
-  "version": "0.1.0",
+  "version": "1.6.0",
   "private": true,
   "description": "BIOCore — 实验室R&D发酵控制平台",
   "scripts": {
@@ -11,7 +11,11 @@
     "test": "pnpm -r run test",
     "lint": "pnpm -r run lint",
     "db:init": "pnpm --filter @biocore/data-service run db:init",
-    "plc:test": "pnpm --filter @biocore/plc-driver run test:connection"
+    "plc:test": "pnpm --filter @biocore/plc-driver run test:connection",
+    "soak": "node scripts/soak-test.mjs",
+    "soak:short": "SOAK_DURATION_HOURS=1 node scripts/soak-test.mjs",
+    "soak:tiny": "SOAK_DURATION_HOURS=0.05 SOAK_BROWSER=false node scripts/soak-test.mjs",
+    "healthcheck": "node scripts/healthcheck.mjs"
   },
   "engines": {
     "node": ">=20.0.0",

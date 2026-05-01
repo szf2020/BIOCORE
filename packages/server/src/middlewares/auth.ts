@@ -14,7 +14,7 @@ import { createHash, timingSafeEqual } from 'crypto';
 import type Database from 'better-sqlite3';
 
 // router 内部路径 (不带 /api 前缀)
-export const PUBLIC_PATHS = ['/auth/login', '/status', '/docs', '/docs.json', '/ai/report'];
+export const PUBLIC_PATHS = ['/auth/login', '/status', '/docs', '/docs.json', '/ai/report', '/admin/health/liveness', '/admin/metrics'];
 
 const JWT_SECRET = process.env.JWT_SECRET || 'biocore-dev-secret-change-in-production';
 const AUTH_ENABLED = process.env.AUTH_ENABLED !== 'false';

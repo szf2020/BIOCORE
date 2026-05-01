@@ -1,0 +1,97 @@
+# BIOCore 24h Soak — Sprint 4 Track A (T45)
+#
+# Validates that BIOCore can run 7×24 by sampling /admin/health every minute
+# for 24 hours. Asserts:
+#   1. heap_used_mb 末值 ≤ baseline × 1.3
+#   2. active_handles 末值 - baseline ≤ 5
+#   3. uncaught_exceptions_total = 0
+#   4. influx_write_failures_total = 0
+#   5. browser JSHeapUsedSize 增量 ≤ 100MB
+#
+# Triggers:
+#   - workflow_dispatch  手动触发 (验收 / 调试)
+#   - schedule           每周日 04:00 UTC 例行跑
+#   - push:branches:main 合并到 main 后跑
+#
+# Runner: 需要 self-hosted runner (>= 8GB RAM, 24h 时间窗) 标签 'soak'。
+# 如果只有 GitHub-hosted runner，可改为 ubuntu-latest 但跑不满 24h
+# (GitHub-hosted job 上限 6h)。改 SOAK_DURATION_HOURS=4 也能验出多数泄漏。
+
+name: soak
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration_hours:
+        description: 'Soak duration (hours)'
+        default: '24'
+        required: true
+      browser:
+        description: 'Enable Puppeteer browser soak (true/false)'
+        default: 'true'
+        required: true
+  schedule:
+    - cron: '0 4 * * 0'  # 周日 04:00 UTC
+  push:
+    branches: [main]
+    paths:
+      - 'packages/runtime-guard/**'
+      - 'packages/notifier/**'
+      - 'packages/server/**'
+      - 'scripts/soak-test.mjs'
+
+jobs:
+  soak-24h:
+    runs-on: [self-hosted, soak]
+    timeout-minutes: 1500   # 25h 上限
+    env:
+      SOAK_DURATION_HOURS: ${{ github.event.inputs.duration_hours || '24' }}
+      SOAK_BROWSER: ${{ github.event.inputs.browser || 'true' }}
+      SOAK_PORT: 3088
+      ADMIN_TOKEN: ${{ secrets.SOAK_ADMIN_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm -r build
+
+      - name: Run unit tests (regression guard)
+        run: pnpm -r test
+        continue-on-error: false
+
+      - name: Run soak
+        run: pnpm soak
+
+      - name: Upload soak report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soak-report-${{ github.run_id }}
+          path: |
+            soak-runs/
+            crashes/
+          retention-days: 30
+
+      - name: Notify on failure (Slack/Webhook)
+        if: failure()
+        run: |
+          if [ -n "$SOAK_FAILURE_WEBHOOK" ]; then
+            curl -s -X POST -H 'Content-Type: application/json' \
+              -d "{\"text\":\"BIOCore soak FAILED: run ${{ github.run_id }}\"}" \
+              "$SOAK_FAILURE_WEBHOOK" || true
+          fi
+        env:
+          SOAK_FAILURE_WEBHOOK: ${{ secrets.SOAK_FAILURE_WEBHOOK }}

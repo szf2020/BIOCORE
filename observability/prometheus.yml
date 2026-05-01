@@ -1,0 +1,17 @@
+# Prometheus scrape config for BIOCore (T44 — Sprint 4 Track A)
+# 与 docker-compose.observability.yml 配套使用：
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml --profile observability up -d
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    deployment: biocore
+
+scrape_configs:
+  - job_name: biocore-server
+    metrics_path: /api/v1/admin/metrics
+    static_configs:
+      - targets: ['biocore-server:3001']
+        labels:
+          service: biocore-server

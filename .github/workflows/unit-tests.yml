@@ -1,0 +1,34 @@
+# BIOCore Unit Tests — runs on every PR (T45 follow-up)
+# Lighter-weight than soak; covers vitest unit suites for runtime-guard / notifier /
+# data-service / batch-engine / plc-driver / server.
+
+name: unit-tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm -r build
+
+      - name: Test
+        run: pnpm -r test

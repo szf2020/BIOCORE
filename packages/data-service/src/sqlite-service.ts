@@ -828,3 +828,85 @@ export class SQLiteService {
 
   close(): void { this.db.close(); }
 }
+
+// ─── Notification system (T35) ───────────────────────────────
+// Module-level CRUD helpers for notification_channels / notification_rules
+// (created by migration 022-notification-tables.sql).
+// Keep these as standalone functions so @biocore/notifier and admin routes
+// can import them without instantiating a full SQLiteService.
+
+export interface NotificationChannel {
+  id: string;
+  type: 'feishu' | 'dingtalk' | 'telegram' | 'webhook';
+  config: Record<string, unknown>;
+  enabled: boolean;
+  created_at: string;
+}
+
+export interface NotificationRule {
+  id: number;
+  event_type: string;
+  channel_id: string;
+  enabled: boolean;
+  min_severity: 'info' | 'warn' | 'critical';
+}
+
+export function listChannels(db: Database.Database): NotificationChannel[] {
+  return (db.prepare('SELECT * FROM notification_channels ORDER BY created_at DESC').all() as Array<{
+    id: string;
+    type: string;
+    config: string;
+    enabled: number;
+    created_at: string;
+  }>).map(r => ({
+    id: r.id,
+    type: r.type as NotificationChannel['type'],
+    config: JSON.parse(r.config),
+    enabled: r.enabled === 1,
+    created_at: r.created_at,
+  }));
+}
+
+export function upsertChannel(db: Database.Database, ch: Omit<NotificationChannel, 'created_at'>): void {
+  db.prepare(`
+    INSERT INTO notification_channels(id, type, config, enabled) VALUES(?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      type = excluded.type,
+      config = excluded.config,
+      enabled = excluded.enabled
+  `).run(ch.id, ch.type, JSON.stringify(ch.config), ch.enabled ? 1 : 0);
+}
+
+export function deleteChannel(db: Database.Database, id: string): void {
+  db.prepare('DELETE FROM notification_channels WHERE id = ?').run(id);
+}
+
+export function listRules(db: Database.Database): NotificationRule[] {
+  return (db.prepare('SELECT * FROM notification_rules ORDER BY id').all() as Array<{
+    id: number;
+    event_type: string;
+    channel_id: string;
+    enabled: number;
+    min_severity: string;
+  }>).map(r => ({
+    id: r.id,
+    event_type: r.event_type,
+    channel_id: r.channel_id,
+    enabled: r.enabled === 1,
+    min_severity: r.min_severity as NotificationRule['min_severity'],
+  }));
+}
+
+export function setRules(db: Database.Database, rules: Array<Omit<NotificationRule, 'id'>>): void {
+  const tx = db.transaction(() => {
+    db.prepare('DELETE FROM notification_rules').run();
+    const stmt = db.prepare(`
+      INSERT INTO notification_rules(event_type, channel_id, enabled, min_severity)
+      VALUES(?, ?, ?, ?)
+    `);
+    for (const r of rules) {
+      stmt.run(r.event_type, r.channel_id, r.enabled ? 1 : 0, r.min_severity);
+    }
+  });
+  tx();
+}

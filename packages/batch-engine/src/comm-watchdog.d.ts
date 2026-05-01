@@ -11,6 +11,10 @@ export declare class CommWatchdog extends EventEmitter {
     private safetyTimer;
     private commLost;
     constructor(plc: PLCConnectionManager, config?: Partial<CommWatchdogConfig>);
+    private onCommLoss;
+    private onCommRestored;
+    private onReconnecting;
+    private onReconnected;
     private bindEvents;
     isCommLost(): boolean;
     getHoldDuration(): number;

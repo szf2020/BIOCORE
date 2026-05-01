@@ -36,6 +36,13 @@ import { registerDoeRoutes } from './doe-routes';
 import { registerKpiRoutes, computeAndStore as computeKpi } from './kpi-routes';
 import { registerSpcRoutes } from './spc-routes';
 import { diff as deepDiff } from 'deep-diff';
+import {
+  installCrashHandlers,
+  MemoryWatchdog,
+  MetricsCollector,
+  writeDiagnosticDump,
+} from '@biocore/runtime-guard';
+import { AlertRouter, type ChannelDef, type Rule } from '@biocore/notifier';
 
 // ─── Mini .env 加载 (无 dotenv 依赖) ────────────────────────
 // 从项目根 .env 读取 KEY=VALUE 行,注入 process.env (已存在的不覆盖)
@@ -63,6 +70,98 @@ import { diff as deepDiff } from 'deep-diff';
   }
 })();
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Runtime Guard — BIOCore 加固 (Sprint 4 Track A, T22)
+// crash handler + memory watchdog + metrics collector. 必须在业务逻辑前装上,
+// 才能捕获后续 import (PLC native binding / SQLite / migrator) 的错误。
+// 见: docs/superpowers/specs/2026-05-01-nodejs-hardening-design.md
+// ─────────────────────────────────────────────────────────────────────────────
+const RUNTIME_GUARD_DUMP_DIR = process.env.BIOCORE_DIAGNOSTIC_DUMP_DIR ?? './crashes';
+const RUNTIME_GUARD_KEEP_LAST = Number(process.env.BIOCORE_DIAGNOSTIC_KEEP_LAST ?? 50);
+const RUNTIME_GUARD_OOM_GRACE = Number(process.env.BIOCORE_OOM_GRACE_SAMPLES ?? 3);
+const RUNTIME_GUARD_OOM_THRESHOLD_MB =
+  process.env.BIOCORE_OOM_THRESHOLD_MB && process.env.BIOCORE_OOM_THRESHOLD_MB !== 'auto'
+    ? Number(process.env.BIOCORE_OOM_THRESHOLD_MB)
+    : undefined;  // undefined = MetricsCollector/MemoryWatchdog auto = RAM × 20%
+
+export const metricsCollector = new MetricsCollector({
+  serviceVersion: process.env.npm_package_version ?? '0.1.0',
+  oomThresholdMb: RUNTIME_GUARD_OOM_THRESHOLD_MB,
+});
+metricsCollector.start();
+
+// T40: forward-declared AlertRouter ref so the crash/OOM closures below
+// (installed BEFORE sqlite is up) can fire notifier events once the router
+// is constructed later in boot. Closures capture this `let` so swapping the
+// reference at AlertRouter construction time becomes visible to them.
+let alertRouterRef: AlertRouter | undefined;
+
+export const memWd = new MemoryWatchdog({
+  thresholdMb: RUNTIME_GUARD_OOM_THRESHOLD_MB,
+  graceSamples: RUNTIME_GUARD_OOM_GRACE,
+  onExceed: async (info) => {
+    console.error('[runtime-guard] memory threshold exceeded', info);
+    try {
+      await writeDiagnosticDump(new Error('OOM threshold'), 'oom_threshold', {
+        dir: RUNTIME_GUARD_DUMP_DIR,
+        keepLast: RUNTIME_GUARD_KEEP_LAST,
+        extra: info,
+      });
+    } catch (e) {
+      console.error('[runtime-guard] dump on OOM failed:', e);
+    }
+    // T40: emit oom_threshold to AlertRouter (if up) so configured channels alert.
+    if (alertRouterRef) {
+      try {
+        await alertRouterRef.emit('oom_threshold', {
+          rss_mb: info.rss_mb,
+          threshold_mb: info.threshold_mb,
+          samples: info.samples,
+        });
+      } catch (e) {
+        console.error('[notifier] emit oom_threshold failed:', e);
+      }
+    }
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[runtime-guard] sending SIGTERM for supervisor restart');
+      process.kill(process.pid, 'SIGTERM');
+    } else {
+      console.error('[runtime-guard] dev mode: 不自动重启 (需 NODE_ENV=production 才触发 SIGTERM)');
+    }
+  },
+});
+memWd.start();
+
+installCrashHandlers({
+  onCrash: async (err, type) => {
+    console.error(`[runtime-guard] ${type}:`, err.message);
+    try {
+      await writeDiagnosticDump(err, type, {
+        dir: RUNTIME_GUARD_DUMP_DIR,
+        keepLast: RUNTIME_GUARD_KEEP_LAST,
+      });
+    } catch (e) {
+      console.error('[runtime-guard] dump failed:', e);
+    }
+    // T40: emit uncaught_exception to AlertRouter (if up). Best-effort —
+    // crash dump is the source of truth; notifier is a courtesy ping.
+    if (alertRouterRef) {
+      try {
+        await alertRouterRef.emit('uncaught_exception', {
+          message: err.message,
+          stack: err.stack,
+          code: (err as { code?: string }).code,
+        });
+      } catch {
+        /* swallow — already crashing */
+      }
+    }
+  },
+});
+
+console.log(`[runtime-guard] installed (oom_threshold_mb=${metricsCollector.snapshot().memory.oom_threshold_mb})`);
+// ─────────────────────────────────────────────────────────────────────────────
+
 // plc-driver 工具函数 (直接导入，不依�� native 模块加载)
 import { parseAddr, byteLen, decode, scale, validateAddr } from '../../plc-driver/src/utils';
 import { VariableMappingManager } from '../../plc-driver/src/variable-mapping';
@@ -78,6 +177,12 @@ import { registerCusumRoutes, initCusumBaselines, getDefaultBaselines } from './
 import { registerBatchIntelligenceRoutes } from './batch-intelligence-routes';
 import { startSuggestionEngine } from './ai-suggestion-engine';
 import { registerAiReportRoutes, detectReportIntent } from './ai-report-routes';
+import { createAdminHealthRouter } from './routes/admin-health';
+import { createAdminMetricsRouter } from './routes/admin-metrics';
+import { createAdminCrashesRouter } from './routes/admin-crashes';
+import { EventStream, createEventsSseRouter } from './routes/events-sse';
+import { createNotificationsRouter } from './routes/notifications';
+import { listChannels as listNotifChannels, listRules as listNotifRules } from '@biocore/data-service';
 
 // JWT 认证
 import { createHash, randomBytes } from 'crypto';
@@ -602,6 +707,91 @@ registerSpcRoutes(apiRouter, sqlite);
 registerCusumRoutes(apiRouter, cusumDetectors, sqlite);
 registerBatchIntelligenceRoutes(apiRouter, sqlite, influxQueryApi, rootCauseAnalyzer);
 registerAiReportRoutes(apiRouter, sqlite, influxQueryApi);
+
+// T36: runtime-guard exposure (admin health endpoints).
+// /liveness is in PUBLIC_PATHS (auth.ts) so docker healthcheck can probe it.
+// / and /timeseries are admin-gated inside the router.
+apiRouter.use('/admin/health', createAdminHealthRouter({
+  metricsCollector,
+  crashesDir: RUNTIME_GUARD_DUMP_DIR,
+}));
+
+// T37: Prometheus exposition. Default: public (Prometheus standard).
+// Gate behind admin via BIOCORE_METRICS_REQUIRE_AUTH=true.
+apiRouter.use('/admin/metrics', createAdminMetricsRouter({
+  metricsCollector,
+  requireAuth: process.env.BIOCORE_METRICS_REQUIRE_AUTH === 'true',
+}));
+
+// T38: runtime-guard diagnostic dump access. Admin only.
+// list+read crash dumps written by writeDiagnosticDump() under RUNTIME_GUARD_DUMP_DIR.
+apiRouter.use('/admin/crashes', createAdminCrashesRouter(RUNTIME_GUARD_DUMP_DIR));
+
+// T39: SSE events stream for external IT systems (MES/SOC/log pipelines).
+// Singleton — exposed for AlertRouter (T40) to call .publish() on notifier events.
+export const eventStream = new EventStream(Number(process.env.BIOCORE_EVENT_BUFFER_SIZE ?? 1000));
+apiRouter.use('/events', createEventsSseRouter(
+  eventStream,
+  Number(process.env.BIOCORE_SSE_MAX_CLIENTS ?? 100),
+));
+
+// T40: AlertRouter — global instance fed by runtime-guard hooks (crash + OOM)
+// and admin /api/v1/notifications routes; on successful send it republishes to
+// eventStream so SSE subscribers also see the event.
+//
+// Init timing: migrations IIFE above is fire-and-forget. listChannels/listRules
+// query the notification_* tables created by migration 022. We wrap in try/catch
+// inside helpers (or here) so a fresh DB pre-migration just yields empty maps.
+function buildAlertChannels(db: Database.Database): Record<string, ChannelDef> {
+  const out: Record<string, ChannelDef> = {};
+  try {
+    for (const c of listNotifChannels(db)) {
+      if (c.enabled) {
+        out[c.id] = { type: c.type, config: c.config as { webhook_url: string; secret?: string } };
+      }
+    }
+  } catch (e) {
+    // Pre-migration boot — tables may not exist yet. Empty map is correct.
+    console.warn('[notifier] listChannels failed (probably pre-migration):', (e as Error).message);
+  }
+  return out;
+}
+
+function buildAlertRules(db: Database.Database): Rule[] {
+  try {
+    return listNotifRules(db).map(r => ({
+      event_type: r.event_type as Rule['event_type'],
+      channel_id: r.channel_id,
+      enabled: r.enabled,
+      min_severity: r.min_severity,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+const NOTIFIER_THROTTLE_MS = Number(process.env.BIOCORE_NOTIFIER_THROTTLE_MIN ?? 5) * 60_000;
+export const alertRouter = new AlertRouter({
+  channels: buildAlertChannels(sqlite.getDatabase()),
+  rules: buildAlertRules(sqlite.getDatabase()),
+  throttleMs: NOTIFIER_THROTTLE_MS,
+});
+
+// onSent: forward successful (non-throttled) emits to SSE so external listeners
+// see the same notifier traffic as the configured chat channels.
+alertRouter.onSent = (type, payload) => {
+  eventStream.publish(type, payload);
+};
+
+// Wire ref so the runtime-guard closures (installed before sqlite was up) can fire.
+alertRouterRef = alertRouter;
+
+console.log(`[notifier] AlertRouter ready (channels=${Object.keys(buildAlertChannels(sqlite.getDatabase())).length})`);
+
+apiRouter.use('/notifications', createNotificationsRouter({
+  db: sqlite.getDatabase(),
+  alertRouter,
+}));
 
 // 双挂载:
 //   /api/v1/* — 新路径, 走 v1ResponseWrapper → authMiddleware → apiRouter
@@ -4323,6 +4513,9 @@ async function gracefulShutdown(signal: string): Promise<void> {
     }
     // 6. 关闭 SQLite (确保 WAL 同步)
     sqlite.close();
+    // 7. 停 runtime-guard timers (T23: metricsCollector + memWd)
+    try { metricsCollector.stop(); } catch { /* ignore */ }
+    try { memWd.stop(); } catch { /* ignore */ }
     clearTimeout(forceTimer);
     console.log(`[${new Date().toISOString()}] [INFO] [Server] 已优雅关闭`);
     process.exit(0);

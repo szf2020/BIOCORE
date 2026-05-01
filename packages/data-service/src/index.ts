@@ -413,4 +413,15 @@ export { SQLiteService as SQLiteServiceNew } from './sqlite-service';
 export { DataCollector } from './collector';
 export type { CollectorConfig, ProcessValues, CalculatedParams } from './collector';
 
+// T35: notification CRUD helpers (consumed by @biocore/server T40 AlertRouter wiring + admin route)
+export {
+  listChannels,
+  upsertChannel,
+  deleteChannel,
+  listRules,
+  setRules,
+  type NotificationChannel,
+  type NotificationRule,
+} from './sqlite-service';
+
 export { InfluxService as default };

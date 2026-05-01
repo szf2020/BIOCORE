@@ -149,8 +149,10 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
       switch (msg.channel) {
         case 'pv_realtime':
           // 追加到趋势缓冲 (single set() call)
+          // T13 风险 #5 缓解：环形缓冲上限 3600 = 60min × 1Hz, 防止 24h dashboard 视图无限增长。
+          // 若放宽 (e.g. 7200=2h@1Hz)，需同步更新 scripts/leak-audit/regression-guard-pv-cap.mjs
           const buf = get().trendBuffer;
-          const MAX_POINTS = 3600; // 60分钟 * 60秒
+          const MAX_POINTS = 3600; // 60分钟 * 60秒 (T13 risk#5 cap, regression-guarded)
           set({
             processValues: msg.payload as ProcessValues,
             trendBuffer: {
@@ -212,7 +214,7 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
             cumPos: number; cumNeg: number;
           }>;
           const now = Date.now();
-          const MAX_CUSUM_POINTS = 300; // 最近 300 个采样点 (~5 分钟 @1s)
+          const MAX_CUSUM_POINTS = 300; // 最近 300 个采样点 (~5 分钟 @1s) (T13 risk#5 cap, regression-guarded)
           const prevHistory = get().cusumHistory;
           const nextHistory = { ...prevHistory };
           for (const a of alerts) {
