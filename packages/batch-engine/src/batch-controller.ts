@@ -15,7 +15,7 @@ import type {
   StepDefinition,
 } from '@biocore/types';
 import type { PhaseState, PhaseStatus } from './index';
-import { DAGExecutor, type RecipeDAG, type DAGEvalContext, linearToDag } from './dag-executor';
+import { DAGExecutor, type RecipeDAG, type DAGEvalContext, type DAGPhaseNode, linearToDag } from './dag-executor';
 import { evaluateExpression as evaluateConditionExpression } from './condition-evaluator';
 
 export interface BatchControllerConfig {
@@ -46,9 +46,22 @@ export class BatchController extends EventEmitter {
   private phaseStatusesMap: Map<string, PhaseStatus> = new Map();
 
   // DAG runtime fields (T4 plumbing — wired up in T7+)
-  private currentNodeId: string | null = null;
+  // T10: backing field renamed to _currentNodeId; public getter exposes it.
+  private _currentNodeId: string | null = null;
   private dag: RecipeDAG | null = null;
   private dagExecutor: DAGExecutor | null = null;
+
+  /** Current DAG node id (T10 — public getter; backing field is `_currentNodeId`). */
+  get currentNodeId(): string | null {
+    return this._currentNodeId;
+  }
+
+  /** Current DAG phase node, or null if not running a phase node (T10). */
+  get currentPhaseNode(): DAGPhaseNode | null {
+    if (!this.dag || !this._currentNodeId) return null;
+    const node = this.dag.nodes.find(n => n.id === this._currentNodeId);
+    return node && node.type === 'phase' ? (node as DAGPhaseNode) : null;
+  }
 
   /** Array view of phaseStatuses sorted by phase_index (transitional shim until all consumers move to nodeId). */
   private get phaseStatuses(): PhaseStatus[] {
@@ -146,7 +159,7 @@ export class BatchController extends EventEmitter {
     this.dag = this.linearToDagIfNeeded(recipe);
     this.dagExecutor = new DAGExecutor(this.dag);
     this.dagExecutor.start();
-    this.currentNodeId = this.dagExecutor.getCurrentNode()?.id ?? null;
+    this._currentNodeId = this.dagExecutor.getCurrentNode()?.id ?? null;
 
     // T8: 初始化所有Phase状态 (Map keyed by node id), 顺序与 DAG 中 phase 节点顺序一致
     // 第一个phase为ready, 其余为pending; 优先从数据库模板读取步骤定义, 回退到硬编码
@@ -249,7 +262,7 @@ export class BatchController extends EventEmitter {
       this.phaseStatusesMap.clear();
       this.dag = null;
       this.dagExecutor = null;
-      this.currentNodeId = null;
+      this._currentNodeId = null;
       this.actor.send({ type: 'cmd_reset' });
       this.emit('batch_reset');
     }
@@ -285,8 +298,8 @@ export class BatchController extends EventEmitter {
     return { success: true, message: `Phase ${phaseIndex} 已启动` };
   }
 
-  /** Hold指定Phase */
-  holdPhase(phaseIndex: number, reason?: string): void {
+  /** Hold指定Phase (by phase index — kept for backward compat; new code should use holdPhase(nodeId)) */
+  holdPhaseByIndex(phaseIndex: number, reason?: string): void {
     const ps = this.getPhaseStatusByIndex(phaseIndex);
     if (!ps || ps.state !== 'running') return;
     ps.state = 'held';
@@ -295,8 +308,8 @@ export class BatchController extends EventEmitter {
     this.broadcastStateUpdate();
   }
 
-  /** 恢复held Phase */
-  restartPhase(phaseIndex: number): void {
+  /** 恢复held Phase (by phase index — kept for backward compat) */
+  restartPhaseByIndex(phaseIndex: number): void {
     const ps = this.getPhaseStatusByIndex(phaseIndex);
     if (!ps || ps.state !== 'held') return;
     ps.state = 'running';
@@ -305,8 +318,8 @@ export class BatchController extends EventEmitter {
     this.broadcastStateUpdate();
   }
 
-  /** 跳过指定Phase */
-  skipPhase(phaseIndex: number): void {
+  /** 跳过指定Phase (by phase index — kept for backward compat) */
+  skipPhaseByIndex(phaseIndex: number): void {
     const ps = this.getPhaseStatusByIndex(phaseIndex);
     if (!ps || ps.state === 'completed' || ps.state === 'skipped') return;
     const wasRunning = ps.state === 'running';
@@ -320,6 +333,41 @@ export class BatchController extends EventEmitter {
     this.readyNextPhase(phaseIndex);
     this.checkAllPhasesComplete();
     this.broadcastStateUpdate();
+  }
+
+  // ── T10: nodeId-based public API ──
+
+  /** 启动指定Phase (by DAG node id) */
+  startPhase(nodeId: string): { success: boolean; message: string } {
+    if (!this.dag) return { success: false, message: '无活跃配方' };
+    const node = this.dag.nodes.find(n => n.id === nodeId);
+    if (!node || node.type !== 'phase') {
+      return { success: false, message: `节点 ${nodeId} 不存在或非 phase 节点` };
+    }
+    const ps = this.phaseStatusesMap.get(nodeId);
+    if (!ps) return { success: false, message: `Phase状态不存在: ${nodeId}` };
+    return this.startPhaseByIndex(ps.phase_index);
+  }
+
+  /** Hold指定Phase (by DAG node id) */
+  holdPhase(nodeId: string, reason?: string): void {
+    const ps = this.phaseStatusesMap.get(nodeId);
+    if (!ps) return;
+    this.holdPhaseByIndex(ps.phase_index, reason);
+  }
+
+  /** 恢复held Phase (by DAG node id) */
+  restartPhase(nodeId: string): void {
+    const ps = this.phaseStatusesMap.get(nodeId);
+    if (!ps) return;
+    this.restartPhaseByIndex(ps.phase_index);
+  }
+
+  /** 跳过指定Phase (by DAG node id) */
+  skipPhase(nodeId: string): void {
+    const ps = this.phaseStatusesMap.get(nodeId);
+    if (!ps) return;
+    this.skipPhaseByIndex(ps.phase_index);
   }
 
   /** 获取所有Phase状态 */
@@ -383,7 +431,7 @@ export class BatchController extends EventEmitter {
     }
 
     if (nextNode.type === 'phase') {
-      this.currentNodeId = nextNode.id;
+      this._currentNodeId = nextNode.id;
       const ps = this.phaseStatusesMap.get(nextNode.id);
       if (!ps) return;
 
@@ -441,6 +489,17 @@ export class BatchController extends EventEmitter {
     return getStepDefinitions(phaseType as any);
   }
 
+  /**
+   * T10: thin wrapper that takes a DAG phase node directly.
+   * Delegates via phase_index (DAG node order matches recipe.phases for v1 recipes).
+   * T14+ may make this the authoritative path.
+   */
+  private launchPhaseEngineByNode(node: DAGPhaseNode): void {
+    const ps = this.phaseStatusesMap.get(node.id);
+    if (!ps) return;
+    this.launchPhaseEngine(ps.phase_index);
+  }
+
   private launchPhaseEngine(index: number): void {
     if (!this.recipe || index >= this.recipe.phases.length) return;
 
@@ -466,7 +525,7 @@ export class BatchController extends EventEmitter {
       this.emit('step_started', info);
     });
     this.stepEngine.on('step_timeout', (log) => {
-      this.holdPhase(index, `Step超时: ${log.step_name}`);
+      this.holdPhaseByIndex(index, `Step超时: ${log.step_name}`);
     });
 
     this.emit('phase_started', {
@@ -539,7 +598,7 @@ export class BatchController extends EventEmitter {
         break;
       }
       case 'timeout_hold':
-        this.holdPhase(runningPS.phase_index, result.reason);
+        this.holdPhaseByIndex(runningPS.phase_index, result.reason);
         break;
 
       case 'step_advanced':

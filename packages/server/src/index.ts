@@ -3996,7 +3996,7 @@ apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/start', (req, res) => {
 apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/hold', (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.reactorId);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  ctrl.holdPhase(parseInt(req.params.phaseIndex), req.body.reason);
+  ctrl.holdPhaseByIndex(parseInt(req.params.phaseIndex), req.body.reason);
   res.json({ success: true });
 });
 
@@ -4004,7 +4004,7 @@ apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/hold', (req, res) => {
 apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/skip', (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.reactorId);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  ctrl.skipPhase(parseInt(req.params.phaseIndex));
+  ctrl.skipPhaseByIndex(parseInt(req.params.phaseIndex));
   res.json({ success: true });
 });
 
@@ -4012,7 +4012,7 @@ apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/skip', (req, res) => {
 apiRouter.post('/reactors/:reactorId/phases/:phaseIndex/restart', (req, res) => {
   const ctrl = reactorManager.getReactor(req.params.reactorId);
   if (!ctrl) return res.status(404).json({ error: '反应器不存在' });
-  ctrl.restartPhase(parseInt(req.params.phaseIndex));
+  ctrl.restartPhaseByIndex(parseInt(req.params.phaseIndex));
   res.json({ success: true });
 });
 

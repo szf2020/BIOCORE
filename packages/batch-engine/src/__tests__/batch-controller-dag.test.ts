@@ -78,18 +78,53 @@ describe('BatchController DAG runtime — branch advance (T9)', () => {
     expect(res.success).toBe(true);
 
     // After start, DAGExecutor should be parked at the first phase node n_0
-    expect((ctrl as any).currentNodeId).toBe('n_0');
+    expect(ctrl.currentNodeId).toBe('n_0');
 
     // Simulate phase 0 completing — invoke the same hook the engine uses
     (ctrl as any).readyNextPhase(0);
 
     // currentNodeId must advance to n_1 (linear DAG: n_0 → n_1)
-    expect((ctrl as any).currentNodeId).toBe('n_1');
+    expect(ctrl.currentNodeId).toBe('n_1');
 
     // And the second PhaseStatus should now be marked 'ready'
     const ps1 = (ctrl as any).phaseStatusesMap.get('n_1');
     expect(ps1).toBeTruthy();
     expect(ps1.state).toBe('ready');
+
+    ctrl.destroy();
+  });
+});
+
+describe('BatchController DAG runtime — nodeId-based public API (T10)', () => {
+  it('startPhase(nodeId) starts the phase by node id', async () => {
+    const ctrl = makeCtrl();
+    const recipe = makeLinearRecipe();
+
+    const res = await ctrl.start(recipe, 'BATCH_T10');
+    expect(res.success).toBe(true);
+
+    // free-mode start: first phase is 'ready' but not yet running.
+    // startPhase('n_0') should transition n_0 -> running.
+    const r = ctrl.startPhase('n_0');
+    expect(r.success).toBe(true);
+    expect(ctrl.currentNodeId).toBe('n_0');
+
+    const ps0 = (ctrl as any).phaseStatusesMap.get('n_0');
+    expect(ps0.state).toBe('running');
+
+    ctrl.destroy();
+  });
+
+  it('currentPhaseNode getter returns the running phase node', async () => {
+    const ctrl = makeCtrl();
+    const recipe = makeLinearRecipe();
+
+    const res = await ctrl.start(recipe, 'BATCH_T10b');
+    expect(res.success).toBe(true);
+
+    ctrl.startPhase('n_0');
+    expect(ctrl.currentPhaseNode?.id).toBe('n_0');
+    expect(ctrl.currentPhaseNode?.type).toBe('phase');
 
     ctrl.destroy();
   });
