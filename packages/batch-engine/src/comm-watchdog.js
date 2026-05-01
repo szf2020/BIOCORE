@@ -35,65 +35,70 @@ class CommWatchdog extends events_1.EventEmitter {
         };
         this.bindEvents();
     }
+    // ── 监听器以稳定引用持有, 便于 destroy() 时精确解绑 (修复 risk #4) ──
+    onCommLoss = (detail) => {
+        if (this.commLost)
+            return; // 避免重复触发
+        this.commLost = true;
+        this.holdStartTime = Date.now();
+        // 发送自动Hold命令给batch-engine
+        this.emit('auto_hold', {
+            reason: `PLC通讯断开: ${detail.reason}`,
+            triggered_by: 'watchdog:comm_loss',
+            connection_id: detail.id,
+            timestamp: new Date().toISOString(),
+        });
+        // 启动安全超时计时器
+        this.safetyTimer = setTimeout(() => {
+            this.emit('safety_timeout', {
+                reason: `通讯断开超过${this.config.maxSafeHoldDuration_s}秒, 触发安全停机`,
+                triggered_by: 'watchdog:safety_timeout',
+                hold_duration_s: this.config.maxSafeHoldDuration_s,
+            });
+        }, this.config.maxSafeHoldDuration_s * 1000);
+    };
+    onCommRestored = (detail) => {
+        if (!this.commLost)
+            return;
+        this.commLost = false;
+        const holdDuration = this.holdStartTime
+            ? Math.round((Date.now() - this.holdStartTime) / 1000)
+            : 0;
+        this.holdStartTime = null;
+        // 清除安全超时计时器
+        if (this.safetyTimer) {
+            clearTimeout(this.safetyTimer);
+            this.safetyTimer = null;
+        }
+        this.emit('comm_restored', {
+            connection_id: detail.id,
+            downtime_s: detail.downtime_s,
+            hold_duration_s: holdDuration,
+            auto_restart: this.config.autoRestartOnRestore,
+            timestamp: new Date().toISOString(),
+        });
+        // 可选: 自动恢复 (生产环境建议关闭, 让操作员手动确认)
+        if (this.config.autoRestartOnRestore) {
+            this.emit('auto_restart', {
+                reason: '通讯恢复, 自动Restart',
+                triggered_by: 'watchdog:auto_restart',
+            });
+        }
+    };
+    onReconnecting = () => {
+        this.emit('status_change', { status: 'reconnecting' });
+    };
+    onReconnected = () => {
+        this.emit('status_change', { status: 'reconnected' });
+    };
     bindEvents() {
         // ── 通讯断开 → 触发状态机 Hold ──
-        this.plc.on('comm_loss', (detail) => {
-            if (this.commLost)
-                return; // 避免重复触发
-            this.commLost = true;
-            this.holdStartTime = Date.now();
-            // 发送自动Hold命令给batch-engine
-            this.emit('auto_hold', {
-                reason: `PLC通讯断开: ${detail.reason}`,
-                triggered_by: 'watchdog:comm_loss',
-                connection_id: detail.id,
-                timestamp: new Date().toISOString(),
-            });
-            // 启动安全超时计时器
-            this.safetyTimer = setTimeout(() => {
-                this.emit('safety_timeout', {
-                    reason: `通讯断开超过${this.config.maxSafeHoldDuration_s}秒, 触发安全停机`,
-                    triggered_by: 'watchdog:safety_timeout',
-                    hold_duration_s: this.config.maxSafeHoldDuration_s,
-                });
-            }, this.config.maxSafeHoldDuration_s * 1000);
-        });
+        this.plc.on('comm_loss', this.onCommLoss);
         // ── 通讯恢复 ──
-        this.plc.on('comm_restored', (detail) => {
-            if (!this.commLost)
-                return;
-            this.commLost = false;
-            const holdDuration = this.holdStartTime
-                ? Math.round((Date.now() - this.holdStartTime) / 1000)
-                : 0;
-            this.holdStartTime = null;
-            // 清除安全超时计时器
-            if (this.safetyTimer) {
-                clearTimeout(this.safetyTimer);
-                this.safetyTimer = null;
-            }
-            this.emit('comm_restored', {
-                connection_id: detail.id,
-                downtime_s: detail.downtime_s,
-                hold_duration_s: holdDuration,
-                auto_restart: this.config.autoRestartOnRestore,
-                timestamp: new Date().toISOString(),
-            });
-            // 可选: 自动恢复 (生产环境建议关闭, 让操作员手动确认)
-            if (this.config.autoRestartOnRestore) {
-                this.emit('auto_restart', {
-                    reason: '通讯恢复, 自动Restart',
-                    triggered_by: 'watchdog:auto_restart',
-                });
-            }
-        });
+        this.plc.on('comm_restored', this.onCommRestored);
         // ── 重连状态 ──
-        this.plc.on('reconnecting', () => {
-            this.emit('status_change', { status: 'reconnecting' });
-        });
-        this.plc.on('reconnected', () => {
-            this.emit('status_change', { status: 'reconnected' });
-        });
+        this.plc.on('reconnecting', this.onReconnecting);
+        this.plc.on('reconnected', this.onReconnected);
     }
     isCommLost() {
         return this.commLost;
@@ -104,8 +109,15 @@ class CommWatchdog extends events_1.EventEmitter {
         return Math.round((Date.now() - this.holdStartTime) / 1000);
     }
     destroy() {
-        if (this.safetyTimer)
+        // 解绑 plc 上的 4 个监听器, 避免跨实例累积 (risk #4 修复)
+        this.plc.off('comm_loss', this.onCommLoss);
+        this.plc.off('comm_restored', this.onCommRestored);
+        this.plc.off('reconnecting', this.onReconnecting);
+        this.plc.off('reconnected', this.onReconnected);
+        if (this.safetyTimer) {
             clearTimeout(this.safetyTimer);
+            this.safetyTimer = null;
+        }
         this.removeAllListeners();
     }
 }
