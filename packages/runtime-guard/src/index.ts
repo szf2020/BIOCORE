@@ -8,3 +8,4 @@ export { EventLoopMonitor, type EventLoopSnapshot } from './event-loop-monitor';
 export { writeDiagnosticDump, listDiagnosticDumps, readDiagnosticDump, type Dump, type DumpOptions } from './diagnostic-dump';
 export { installCrashHandlers, type CrashType, type OnCrash } from './crash-handler';
 export { MemoryWatchdog, type MemoryWatchdogOptions } from './memory-watchdog';
+export { MetricsCollector, type HealthSnapshot, type MetricsCollectorOptions } from './metrics-collector';
