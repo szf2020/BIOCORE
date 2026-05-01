@@ -624,11 +624,13 @@ try {
     if (existing) {
       db.prepare('UPDATE users SET password_hash = ?, display_name = ?, role = ?, is_active = 1 WHERE username = ?')
         .run(`${salt}:${hash}`, '系统管理员', 'admin', 'admin');
-      console.log(`[${new Date().toISOString()}] [INFO] 默认admin密码已重置为 admin123`);
+      // v1.7.3 C3-partial: 不再把默认密码字面值写进日志
+      console.log('[BOOT] Default admin account password reset. Password set in DB; reset via reset-admin script before production.');
     } else {
       db.prepare(`INSERT INTO users (user_id, username, display_name, password_hash, role)
         VALUES (?, ?, ?, ?, ?)`).run('admin-001', 'admin', '系统管理员', `${salt}:${hash}`, 'admin');
-      console.log(`[${new Date().toISOString()}] [INFO] 已创建默认admin用户 (admin/admin123)`);
+      // v1.7.3 C3-partial: 不再把默认密码字面值写进日志
+      console.log('[BOOT] Default admin account created. Password set in DB; reset via reset-admin script before production.');
     }
   }
 } catch (e) { console.error(`[${new Date().toISOString()}] [ERROR] 初始化admin失败:`, e); }
