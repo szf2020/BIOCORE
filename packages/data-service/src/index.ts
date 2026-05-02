@@ -430,4 +430,7 @@ export { updateBatchCurrentNodeId, getBatchCurrentNodeId } from './sqlite-servic
 export { getOrphanBatches, markBatchHeldForRecovery } from './sqlite-service';
 export type { OrphanBatchRow } from './sqlite-service';
 
+// v1.8.0 bucket 2: formula-evaluator public surface (consumed by @biocore/server formula route)
+export { validateExpression, evaluateExpression, AVAILABLE_VARS } from './formula-evaluator';
+
 export { InfluxService as default };
