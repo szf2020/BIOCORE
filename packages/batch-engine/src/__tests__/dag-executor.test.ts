@@ -5,6 +5,7 @@ import {
   type RecipeDAG,
   type DAGEvalContext,
   type LoopFrame,
+  type DAGLoopNode,
 } from '../dag-executor';
 
 describe('DAGExecutor default_branch fallback', () => {
@@ -539,5 +540,258 @@ describe('DAGExecutor v1.10.0 P3 — visitCount + LoopFrame stack', () => {
       expect(path).toEqual(['A', 'D']);
       expect(exec.isComplete()).toBe(true);
     });
+  });
+});
+
+// ============================================================================
+// B1.2 Loop nodes (v1.14.0)
+// ============================================================================
+
+describe('B1.2 Loop nodes (v1.14.0)', () => {
+  /** Build a minimal DAG with one loop node:
+   *    start → L → (body) B → back-edge → L
+   *               (exit) X → end
+   */
+  function buildLoopDag(loopProps: Partial<DAGLoopNode> = {}): RecipeDAG {
+    return {
+      schema_version: 2,
+      nodes: [
+        { id: 's', type: 'start' },
+        { id: 'L', type: 'loop', ...loopProps },
+        { id: 'B', type: 'phase', phase_id: 'BODY', phase_type: 'sample' },
+        { id: 'X', type: 'phase', phase_id: 'EXIT', phase_type: 'report' },
+        { id: 'e', type: 'end' },
+      ],
+      edges: [
+        { id: 'e0', from: 's', to: 'L' },
+        { id: 'e1', from: 'L', to: 'B', label: 'body' },
+        { id: 'e2', from: 'L', to: 'X', label: 'exit' },
+        { id: 'e3', from: 'B', to: 'L' }, // back-edge
+        { id: 'e4', from: 'X', to: 'e' },
+      ],
+    };
+  }
+
+  it('first entry pushes frame and takes body out-edge', () => {
+    const dag = buildLoopDag({ maxIterations: 3 });
+    const exec = new DAGExecutor(dag);
+    exec.start();
+    // After start(), advanceToPhaseOrEnd parks on the loop node (pause point).
+    expect(exec.getCurrentNode()?.id).toBe('L');
+    expect(exec.frameDepth).toBe(0);
+    // First advance: push frame, take body → B
+    const ok = exec.advance();
+    expect(ok).toBe(true);
+    expect(exec.getCurrentNode()?.id).toBe('B');
+    expect(exec.frameDepth).toBe(1);
+    expect(exec.peekFrame()?.loopNodeId).toBe('L');
+    expect(exec.peekFrame()?.iteration).toBe(0);
+    expect(exec.peekFrame()?.maxIterations).toBe(3);
+  });
+
+  it('re-entry from back-edge increments iteration', () => {
+    const dag = buildLoopDag({ maxIterations: 5 });
+    const exec = new DAGExecutor(dag);
+    exec.start();
+    // L → B (first entry, iter=0)
+    exec.advance();
+    expect(exec.peekFrame()?.iteration).toBe(0);
+    // B → L (back-edge, phase pass-through)
+    exec.advance();
+    expect(exec.getCurrentNode()?.id).toBe('L');
+    // L re-entry → increments iter, takes body again (1<5)
+    exec.advance();
+    expect(exec.getCurrentNode()?.id).toBe('B');
+    expect(exec.peekFrame()?.iteration).toBe(1);
+  });
+
+  it('fixed-N: pops frame and takes exit when maxIterations reached', () => {
+    const dag = buildLoopDag({ maxIterations: 2 });
+    const exec = new DAGExecutor(dag);
+    exec.start();
+    // First entry: L → B (iter=0)
+    exec.advance();
+    expect(exec.peekFrame()?.iteration).toBe(0);
+    // B → L
+    exec.advance();
+    // L re-entry: iter→1, 1<2, body again → B
+    exec.advance();
+    expect(exec.getCurrentNode()?.id).toBe('B');
+    expect(exec.peekFrame()?.iteration).toBe(1);
+    // B → L
+    exec.advance();
+    // L re-entry: iter→2, 2>=2 → pop frame, exit → X
+    exec.advance();
+    expect(exec.getCurrentNode()?.id).toBe('X');
+    expect(exec.frameDepth).toBe(0);
+  });
+
+  it('repeat-until: pops on first true exitExpression', () => {
+    const dag = buildLoopDag({ exitExpression: 'OD600 >= 5', maxIterations: 100 });
+    const exec = new DAGExecutor(dag);
+    // OD: false on iter 1 (after first body), true on iter 2.
+    let evalCount = 0;
+    const ctx: DAGEvalContext = {
+      evaluateExpression: () => {
+        evalCount++;
+        return evalCount >= 2;
+      },
+    };
+    exec.start(ctx);
+    // L → B (iter=0)
+    exec.advance(ctx);
+    expect(exec.getCurrentNode()?.id).toBe('B');
+    // B → L
+    exec.advance(ctx);
+    // L re-entry: iter→1, expr eval #1 → false, body again
+    exec.advance(ctx);
+    expect(exec.getCurrentNode()?.id).toBe('B');
+    expect(exec.peekFrame()?.iteration).toBe(1);
+    // B → L
+    exec.advance(ctx);
+    // L re-entry: iter→2, expr eval #2 → true, pop, exit
+    exec.advance(ctx);
+    expect(exec.getCurrentNode()?.id).toBe('X');
+    expect(exec.frameDepth).toBe(0);
+  });
+
+  it('repeat-until: PV-missing throws → loop continues (does NOT exit)', () => {
+    const dag = buildLoopDag({ exitExpression: 'OD600 >= 5', maxIterations: 3 });
+    const exec = new DAGExecutor(dag);
+    const ctx: DAGEvalContext = {
+      evaluateExpression: () => { throw new Error('PV OD600 not available'); },
+    };
+    exec.start(ctx);
+    // First entry: L → B
+    exec.advance(ctx);
+    expect(exec.getCurrentNode()?.id).toBe('B');
+    // B → L
+    exec.advance(ctx);
+    // L re-entry: iter→1, expr THROWS → continue body (locked decision i = α)
+    exec.advance(ctx);
+    expect(exec.getCurrentNode()?.id).toBe('B');
+    expect(exec.frameDepth).toBe(1);
+    expect(exec.peekFrame()?.iteration).toBe(1);
+  });
+
+  it('combined: maxIterations is hard ceiling even when exitExpression never fires', () => {
+    const dag = buildLoopDag({ exitExpression: 'never_true', maxIterations: 2 });
+    const exec = new DAGExecutor(dag);
+    const ctx: DAGEvalContext = { evaluateExpression: () => false };
+    exec.start(ctx);
+    // L → B (iter=0)
+    exec.advance(ctx);
+    // B → L
+    exec.advance(ctx);
+    // L re-entry: iter→1, max not yet hit, expr=false → body
+    exec.advance(ctx);
+    expect(exec.getCurrentNode()?.id).toBe('B');
+    // B → L
+    exec.advance(ctx);
+    // L re-entry: iter→2, 2>=2 → pop, exit (max wins; expr never evaluated this turn)
+    exec.advance(ctx);
+    expect(exec.getCurrentNode()?.id).toBe('X');
+    expect(exec.frameDepth).toBe(0);
+  });
+
+  it('combined: exitExpression true wins over maxIterations not yet hit', () => {
+    const dag = buildLoopDag({ exitExpression: 'cond', maxIterations: 100 });
+    const exec = new DAGExecutor(dag);
+    const ctx: DAGEvalContext = { evaluateExpression: () => true };
+    exec.start(ctx);
+    // L → B (iter=0)
+    exec.advance(ctx);
+    // B → L
+    exec.advance(ctx);
+    // L re-entry: iter→1, max not hit, expr=true → pop, exit
+    exec.advance(ctx);
+    expect(exec.getCurrentNode()?.id).toBe('X');
+    expect(exec.frameDepth).toBe(0);
+  });
+
+  it('auto-ceiling: maxRevisits raised to max(maxIterations, 1000) when loop present', () => {
+    const dag = buildLoopDag({ maxIterations: 50 });
+    const exec = new DAGExecutor(dag); // no explicit options
+    // 50 iter loop body revisits L 50 times — must not throw under default
+    // construction because auto-ceiling raises maxRevisits to >=1000.
+    exec.start();
+    let steps = 0;
+    while (exec.getCurrentNode()?.id !== 'X' && steps < 500) {
+      exec.advance();
+      steps++;
+    }
+    expect(exec.getCurrentNode()?.id).toBe('X');
+    expect(exec.frameDepth).toBe(0);
+  });
+
+  it('auto-ceiling: caller explicit override is respected when larger', () => {
+    // User sets explicit maxRevisits=5000, loop maxIterations=10. Auto floor is 1000.
+    // Final ceiling must be max(5000, 10, 1000) = 5000.
+    const dag = buildLoopDag({ maxIterations: 10 });
+    const exec = new DAGExecutor(dag, { maxRevisits: 5000 });
+    // We can't easily inspect maxRevisits directly (private), but we can verify
+    // that running through the loop doesn't throw under user's explicit large limit.
+    exec.start();
+    while (exec.getCurrentNode()?.id !== 'X') {
+      exec.advance();
+    }
+    expect(exec.getCurrentNode()?.id).toBe('X');
+    // Also verify via dag.options pathway
+    const dag2 = buildLoopDag({ maxIterations: 10 });
+    dag2.options = { maxRevisits: 5000 };
+    const exec2 = new DAGExecutor(dag2);
+    exec2.start();
+    while (exec2.getCurrentNode()?.id !== 'X') {
+      exec2.advance();
+    }
+    expect(exec2.getCurrentNode()?.id).toBe('X');
+  });
+
+  it('start() clears loop frames AND visitCount', () => {
+    const dag = buildLoopDag({ maxIterations: 2 });
+    const exec = new DAGExecutor(dag);
+    exec.start();
+    // Run partway through the loop (push a frame)
+    exec.advance(); // L → B (frame pushed)
+    expect(exec.frameDepth).toBe(1);
+    // start() must clear both
+    exec.start();
+    expect(exec.frameDepth).toBe(0);
+    expect(exec.peekFrame()).toBeUndefined();
+    // And revisits must be cleared too — running again must not throw
+    expect(() => {
+      let n = 0;
+      while (exec.getCurrentNode()?.id !== 'X' && n < 100) {
+        exec.advance();
+        n++;
+      }
+    }).not.toThrow();
+    expect(exec.getCurrentNode()?.id).toBe('X');
+  });
+
+  it('snapshotFrames() captures the in-flight frame mid-iteration', () => {
+    const dag = buildLoopDag({ maxIterations: 5, exitExpression: 'cond' });
+    const exec = new DAGExecutor(dag);
+    const ctx: DAGEvalContext = { evaluateExpression: () => false };
+    exec.start(ctx);
+    // L → B (first entry)
+    exec.advance(ctx);
+    // B → L
+    exec.advance(ctx);
+    // L re-entry: iter→1
+    exec.advance(ctx);
+    expect(exec.getCurrentNode()?.id).toBe('B');
+    expect(exec.peekFrame()?.iteration).toBe(1);
+    const snapshot = exec.snapshotFrames();
+    expect(snapshot).toHaveLength(1);
+    expect(snapshot[0]).toMatchObject({
+      loopNodeId: 'L',
+      iteration: 1,
+      maxIterations: 5,
+      exitExpression: 'cond',
+    });
+    // Snapshot must be a deep copy: mutating the snapshot doesn't affect executor.
+    snapshot[0].iteration = 999;
+    expect(exec.peekFrame()?.iteration).toBe(1);
   });
 });

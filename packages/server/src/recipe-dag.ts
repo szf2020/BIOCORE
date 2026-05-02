@@ -9,7 +9,7 @@
 // ============================================================
 
 // 与 web-ui/src/types 保持一致 (避免 server 包跨包 import)
-export type DAGNodeType = 'start' | 'end' | 'phase' | 'branch';
+export type DAGNodeType = 'start' | 'end' | 'phase' | 'branch' | 'goto' | 'loop';
 
 export interface DAGNodeBase {
   id: string;
@@ -28,14 +28,26 @@ export interface DAGPhaseNode extends DAGNodeBase {
 export interface DAGBranchNode extends DAGNodeBase {
   type: 'branch';
   expression: string;
+  default_branch?: 'true' | 'false';
 }
-export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode;
+/** Goto (B1.3) — pass-through to a target node. */
+export interface DAGGotoNode extends DAGNodeBase {
+  type: 'goto';
+  target: string;
+}
+/** Loop (B1.2) — repeat-until / fixed-N node. */
+export interface DAGLoopNode extends DAGNodeBase {
+  type: 'loop';
+  exitExpression?: string;
+  maxIterations?: number;
+}
+export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode | DAGGotoNode | DAGLoopNode;
 
 export interface DAGEdge {
   id: string;
   from: string;
   to: string;
-  label?: 'true' | 'false';
+  label?: 'true' | 'false' | 'body' | 'exit';
 }
 
 export interface RecipeDAG {
@@ -99,6 +111,14 @@ export function dagToLinear(dag: RecipeDAG): Array<{ phase_id: string; type: str
   const branches = dag.nodes.filter(n => n.type === 'branch');
   if (branches.length > 0) {
     throw new Error(`DAG 含 ${branches.length} 个 branch 节点, 不能转为线性配方 (请用 v2 编辑器)`);
+  }
+  const gotos = dag.nodes.filter(n => n.type === 'goto');
+  if (gotos.length > 0) {
+    throw new Error(`DAG 含 ${gotos.length} 个 goto 节点, 不能转为线性配方 (请用 v2 编辑器)`);
+  }
+  const loops = dag.nodes.filter(n => n.type === 'loop');
+  if (loops.length > 0) {
+    throw new Error(`DAG 含 ${loops.length} 个 loop 节点, 不能转为线性配方 (请用 v2 编辑器)`);
   }
 
   const starts = dag.nodes.filter(n => n.type === 'start');

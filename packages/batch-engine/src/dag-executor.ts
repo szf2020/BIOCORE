@@ -15,7 +15,7 @@
 // ============================================================
 
 // 与 server/src/recipe-dag.ts 保持一致 (避免 batch-engine 包反向依赖 server)
-export type DAGNodeType = 'start' | 'end' | 'phase' | 'branch' | 'goto';
+export type DAGNodeType = 'start' | 'end' | 'phase' | 'branch' | 'goto' | 'loop';
 
 export interface DAGNodeBase {
   id: string;
@@ -56,13 +56,38 @@ export interface DAGGotoNode extends DAGNodeBase {
   /** Target node id. Must equal the to-id of the (single) outgoing edge. */
   target: string;
 }
-export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode | DAGGotoNode;
+/**
+ * DAGLoopNode (B1.2) — repeat-until / fixed-N loop node.
+ *
+ * Has exactly 2 outgoing edges: one labeled `body` (continue iterating) and
+ * one labeled `exit` (leave loop). Body's terminal node draws a back-edge
+ * back to this loop node. visitCount + auto-ceiling enforce safety.
+ *
+ * At least one of {exitExpression, maxIterations} must be set
+ * (validator BV-22 enforces this in commit 2).
+ *
+ * End-of-iteration semantics:
+ *   - First entry: push frame, take `body` edge.
+ *   - Re-entry from back-edge: increment iteration, then check exits:
+ *       1. iteration >= maxIterations → pop frame, take `exit`.
+ *       2. evaluateExpression(exitExpression) === true → pop, take `exit`.
+ *       3. evaluateExpression throws → take `body` (continue; safe default).
+ *       4. Otherwise → take `body`.
+ */
+export interface DAGLoopNode extends DAGNodeBase {
+  type: 'loop';
+  /** Boolean expression evaluated at end of each iteration; true → exit. */
+  exitExpression?: string;
+  /** Hard ceiling on iterations. Validator requires > 0 when set. */
+  maxIterations?: number;
+}
+export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode | DAGGotoNode | DAGLoopNode;
 
 export interface DAGEdge {
   id: string;
   from: string;
   to: string;
-  label?: 'true' | 'false';
+  label?: 'true' | 'false' | 'body' | 'exit';
 }
 
 export interface RecipeDAG {
@@ -159,7 +184,15 @@ export class DAGExecutor {
 
   constructor(dag: RecipeDAG, options: DAGExecutorOptions = {}) {
     this.dag = dag;
-    this.maxRevisits = options.maxRevisits ?? 1;
+    const explicit = options.maxRevisits ?? dag.options?.maxRevisits ?? 1;
+    const loopMaxIterations = dag.nodes
+      .filter((n): n is DAGLoopNode => n.type === 'loop')
+      .map(n => n.maxIterations ?? 0);
+    const hasLoop = loopMaxIterations.length > 0;
+    // Auto-ceiling (B1.2): max(user-explicit, max-of-loop-maxIterations, 1000-floor-if-any-loop)
+    // Never lower than caller's explicit; 1000 floor only when DAG contains a loop.
+    const autoFloor = hasLoop ? 1000 : 0;
+    this.maxRevisits = Math.max(explicit, ...loopMaxIterations, autoFloor);
     this.options = { maxRevisits: this.maxRevisits };
   }
 
@@ -215,6 +248,57 @@ export class DAGExecutor {
       // safety — back-edges into already-visited nodes need maxRevisits>1
       // in DAGExecutor options or they will throw MaxRevisitsExceeded.
       nextId = outEdges[0].to;
+    } else if (node.type === 'loop') {
+      // Loop (B1.2): repeat-until / fixed-N. First entry pushes a frame and
+      // takes `body`. Re-entry from back-edge increments iteration and checks
+      // exit conditions — maxIterations hard ceiling first, then exitExpression.
+      // PV-missing on exitExpression throw → continue loop (locked decision i = α).
+      const loopNode = node as DAGLoopNode;
+      const top = this.peekFrame();
+      const isFirstEntry = !top || top.loopNodeId !== node.id;
+
+      let takeExit: boolean;
+      if (isFirstEntry) {
+        this.pushFrame({
+          loopNodeId: node.id,
+          iteration: 0,
+          exitExpression: loopNode.exitExpression,
+          maxIterations: loopNode.maxIterations,
+        });
+        takeExit = false;
+      } else {
+        const newIter = this.incrementFrameIteration();
+        // Check 1: maxIterations reached (hard ceiling)
+        if (loopNode.maxIterations != null && newIter >= loopNode.maxIterations) {
+          this.popFrame();
+          takeExit = true;
+        } else if (loopNode.exitExpression != null) {
+          // Check 2: exitExpression
+          let exitNow = false;
+          try {
+            exitNow = ctx?.evaluateExpression(loopNode.exitExpression) ?? false;
+          } catch {
+            // PV-missing / parse error → continue loop (locked decision i = α)
+            exitNow = false;
+          }
+          if (exitNow) {
+            this.popFrame();
+            takeExit = true;
+          } else {
+            takeExit = false;
+          }
+        } else {
+          // No exit conditions left to check (only maxIterations was set, not yet hit)
+          takeExit = false;
+        }
+      }
+
+      const targetLabel = takeExit ? 'exit' : 'body';
+      const targetEdge = outEdges.find(e => e.label === targetLabel);
+      if (!targetEdge) {
+        throw new Error(`Loop 节点 ${node.id} 找不到 ${targetLabel} 出边`);
+      }
+      nextId = targetEdge.to;
     } else {
       // start / phase 节点: 取第一条边
       nextId = outEdges[0].to;
@@ -243,7 +327,7 @@ export class DAGExecutor {
     while (this.currentNodeId) {
       const node = this.getNode(this.currentNodeId);
       if (!node) break;
-      if (node.type === 'phase' || node.type === 'end' || node.type === 'branch') break;
+      if (node.type === 'phase' || node.type === 'end' || node.type === 'branch' || node.type === 'loop') break;
       // start / goto 节点需要推进 (pass-through)
       const ok = this.advance(ctx);
       if (!ok) break;
