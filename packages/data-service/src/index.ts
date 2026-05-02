@@ -432,6 +432,9 @@ export {
 
 // T12: B1.1 DAG runtime — current_node_id persistence helpers
 export { updateBatchCurrentNodeId, getBatchCurrentNodeId } from './sqlite-service';
+// B1.2: Loop-frame persistence helpers (migration 024)
+export { updateBatchLoopFrames, getBatchLoopFrames } from './sqlite-service';
+export type { PersistedLoopFrame } from './sqlite-service';
 // v1.7.2: boot-time crash-recovery helpers
 export { getOrphanBatches, markBatchHeldForRecovery } from './sqlite-service';
 export type { OrphanBatchRow } from './sqlite-service';

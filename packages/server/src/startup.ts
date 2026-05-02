@@ -37,6 +37,7 @@ import {
   type RecoveryPolicy,
   type RecoveryDecisionInput,
   type BatchControllerConfig,
+  type LoopFrame,
   ReactorManager,
 } from '@biocore/batch-engine';
 
@@ -343,6 +344,28 @@ export function runOrphanRecoveryScan(opts: OrphanRecoveryOptions): void {
  * Returns { ok: true } on success or { ok: false, reason } on any precondition
  * failure. The caller is responsible for the hold-fallback path on failure.
  */
+/**
+ * B1.2: parse a JSON-encoded LoopFrame[] from `batches.current_loop_frames`.
+ * Returns undefined on null / not-an-array / shape-invalid / corrupt JSON, so
+ * callers can pass-through directly to resumeAndStart's optional savedFrames
+ * argument and degrade to "resume with empty stack" without losing the resume.
+ */
+function safeParseFrames(json: string | null): LoopFrame[] | undefined {
+  if (!json) return undefined;
+  try {
+    const parsed = JSON.parse(json);
+    if (!Array.isArray(parsed)) return undefined;
+    for (const f of parsed) {
+      if (!f || typeof f.loopNodeId !== 'string' || typeof f.iteration !== 'number') {
+        return undefined;
+      }
+    }
+    return parsed as LoopFrame[];
+  } catch {
+    return undefined;
+  }
+}
+
 function tryAutoResume(
   _db: Database.Database,
   orphan: {
@@ -353,6 +376,7 @@ function tryAutoResume(
     current_state: string;
     current_node_id: string | null;
     current_phase_index: number | null;
+    current_loop_frames: string | null;
   },
   sqlite: OrphanRecoveryOptions['sqlite'],
   reactorRuntime: OrphanRecoveryOptions['reactorRuntime'],
@@ -414,9 +438,17 @@ function tryAutoResume(
     return { ok: false, reason: 'reactor_controller_missing_after_add' };
   }
 
-  // 4. Drive resumeAndStart
+  // 4. Drive resumeAndStart — B1.2: thread savedFrames through. Corrupt /
+  //    NULL JSON degrades to undefined → resume with empty loop stack (warned
+  //    so the degraded path is visible in logs).
+  const savedFrames = safeParseFrames(orphan.current_loop_frames);
+  if (orphan.current_loop_frames && !savedFrames) {
+    console.warn(
+      `[BOOT] saved loop frames for batch ${orphan.batch_id} were corrupt or invalid; resuming with empty stack`,
+    );
+  }
   try {
-    const r = ctrl.resumeAndStart(orphan.batch_id, recipe, orphan.current_node_id);
+    const r = ctrl.resumeAndStart(orphan.batch_id, recipe, orphan.current_node_id, savedFrames);
     if (!r.success) {
       return { ok: false, reason: `resumeAndStart_failed:${r.message}` };
     }

@@ -232,7 +232,7 @@ const DATA_DIR = process.env.DATA_DIR || './data';
 
 // ─── SQLite 初始化 ─────────────────────────────────────────
 
-import { SQLiteService } from '@biocore/data-service';
+import { SQLiteService, updateBatchCurrentNodeId, updateBatchLoopFrames } from '@biocore/data-service';
 import { mkdirSync } from 'fs';
 // v1.9.0 P2 bucket 1.6: migration / admin-init / jwt-guard / orphan-recovery
 // boot helpers extracted to ./startup.
@@ -2754,6 +2754,13 @@ function buildReactorConfig(_reactorId: string): BatchControllerConfig {
     pollIntervalMs: 1000,
     getTemplateSteps: getTemplateStepsFromDB,
     getInterlockConfigs: getInterlockConfigsFromDB,
+    // B1.1 (currentNodeId) + B1.2 (loop frames) crash-recovery persistence.
+    // Both callbacks are fire-and-forget — failure to persist must not crash
+    // the controller; sqlite errors surface elsewhere.
+    persist: {
+      updateCurrentNodeId: (id, nodeId) => updateBatchCurrentNodeId(sqlite.getDatabase(), id, nodeId),
+      updateLoopFrames: (id, json) => updateBatchLoopFrames(sqlite.getDatabase(), id, json),
+    },
   };
 }
 

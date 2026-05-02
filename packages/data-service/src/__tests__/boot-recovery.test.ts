@@ -29,6 +29,7 @@ function makeDb(): Database.Database {
       notes TEXT,
       current_node_id TEXT,
       current_phase_index INTEGER,
+      current_loop_frames TEXT,
       started_at TEXT
     );
   `);

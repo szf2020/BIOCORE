@@ -4,7 +4,10 @@
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { SQLiteService } from '../sqlite-service';
+import Database from 'better-sqlite3';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+import { SQLiteService, updateBatchLoopFrames, getBatchLoopFrames } from '../sqlite-service';
 import { DataCollector } from '../collector';
 
 // ─── SQLite CRUD ──────────────────────────────────────────
@@ -260,5 +263,99 @@ describe('DataCollector', () => {
 
     expect(received).toBe(true);
     expect(collector.getBufferSize()).toBe(0); // stop() 调用了 record() 清空缓冲
+  });
+});
+
+// ─── B1.2 Loop frames persistence (migration 024) ──────────────
+describe('B1.2 — current_loop_frames migration + helpers', () => {
+  // 这套测试不依赖 SQLiteService 的 baseline schema —— 它直接构造一个最小
+  // batches 表 + 应用 migration 024 SQL, 验证列添加 + helper round-trip。
+  // 这与现有 16 个 pre-existing failures (no such table errors) 解耦, 不会
+  // 修复也不会触发那些失败。
+  function makeMiniDb() {
+    const db = new Database(':memory:');
+    db.exec(`CREATE TABLE batches (
+      batch_id TEXT PRIMARY KEY,
+      recipe_id TEXT,
+      recipe_version TEXT,
+      reactor_id TEXT,
+      current_state TEXT,
+      current_node_id TEXT,
+      current_phase_index INTEGER
+    )`);
+    return db;
+  }
+
+  function applyMigration024(db: Database.Database) {
+    // 解析 migration 文件路径 (相对 packages/data-service/src/__tests__):
+    //   ../../../server/migrations/024-batch-loop-frames.sql
+    const sqlPath = resolve(__dirname, '../../../server/migrations/024-batch-loop-frames.sql');
+    const sql = readFileSync(sqlPath, 'utf8');
+    db.exec(sql);
+  }
+
+  it('migration 024 adds current_loop_frames column to batches table', () => {
+    const db = makeMiniDb();
+    // pre-migration: column not present
+    const before = db.prepare("PRAGMA table_info('batches')").all() as Array<{ name: string }>;
+    expect(before.find(c => c.name === 'current_loop_frames')).toBeUndefined();
+
+    applyMigration024(db);
+
+    const after = db.prepare("PRAGMA table_info('batches')").all() as Array<{ name: string }>;
+    const col = after.find(c => c.name === 'current_loop_frames');
+    expect(col).toBeDefined();
+    db.close();
+  });
+
+  it('updateBatchLoopFrames + getBatchLoopFrames round-trip JSON correctly', () => {
+    const db = makeMiniDb();
+    applyMigration024(db);
+    db.prepare(
+      "INSERT INTO batches (batch_id, recipe_id, recipe_version, reactor_id, current_state) VALUES (?, ?, ?, ?, ?)",
+    ).run('B-LP-A', 'R1', '1.0.0', 'F01', 'running');
+
+    // null on read before any write
+    expect(getBatchLoopFrames(db, 'B-LP-A')).toBeNull();
+
+    const frames = [
+      { loopNodeId: 'l1', iteration: 2, maxIterations: 5 },
+      { loopNodeId: 'l2', iteration: 0, exitExpression: 'OD600 > 5' },
+    ];
+    updateBatchLoopFrames(db, 'B-LP-A', JSON.stringify(frames));
+
+    const got = getBatchLoopFrames(db, 'B-LP-A');
+    expect(got).not.toBeNull();
+    expect(got).toHaveLength(2);
+    expect(got![0].loopNodeId).toBe('l1');
+    expect(got![0].iteration).toBe(2);
+    expect(got![0].maxIterations).toBe(5);
+    expect(got![1].loopNodeId).toBe('l2');
+    expect(got![1].exitExpression).toBe('OD600 > 5');
+
+    // explicit null write clears
+    updateBatchLoopFrames(db, 'B-LP-A', null);
+    expect(getBatchLoopFrames(db, 'B-LP-A')).toBeNull();
+    db.close();
+  });
+
+  it('getBatchLoopFrames returns null on corrupt JSON (does not throw)', () => {
+    const db = makeMiniDb();
+    applyMigration024(db);
+    db.prepare(
+      "INSERT INTO batches (batch_id, recipe_id, recipe_version, reactor_id, current_state, current_loop_frames) VALUES (?, ?, ?, ?, ?, ?)",
+    ).run('B-LP-B', 'R1', '1.0.0', 'F01', 'running', 'not valid json');
+
+    expect(() => getBatchLoopFrames(db, 'B-LP-B')).not.toThrow();
+    expect(getBatchLoopFrames(db, 'B-LP-B')).toBeNull();
+
+    // also: valid JSON but wrong shape (object not array) → null
+    db.prepare("UPDATE batches SET current_loop_frames = ? WHERE batch_id = ?").run('{"foo":1}', 'B-LP-B');
+    expect(getBatchLoopFrames(db, 'B-LP-B')).toBeNull();
+
+    // also: array with frame missing required fields → null
+    db.prepare("UPDATE batches SET current_loop_frames = ? WHERE batch_id = ?").run('[{"iteration": 1}]', 'B-LP-B');
+    expect(getBatchLoopFrames(db, 'B-LP-B')).toBeNull();
+    db.close();
   });
 });

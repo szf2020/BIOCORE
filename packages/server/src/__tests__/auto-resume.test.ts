@@ -58,6 +58,7 @@ function makeTempSqlite(): { sqlite: SQLiteService; rawDb: Database.Database } {
       current_state       TEXT NOT NULL,
       current_phase_index INTEGER,
       current_node_id     TEXT,
+      current_loop_frames TEXT,
       hold_reason         TEXT,
       stop_trigger        TEXT,
       notes               TEXT,

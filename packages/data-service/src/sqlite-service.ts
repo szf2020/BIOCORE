@@ -938,6 +938,56 @@ export function getBatchCurrentNodeId(
   return row?.current_node_id ?? null;
 }
 
+// ─── B1.2 Loop frames persistence (migration 024) ─────────────
+// JSON.stringify(LoopFrame[]) on write; getBatchLoopFrames parses with
+// try/catch + shape validation and returns null on NULL/corrupt JSON
+// (callers degrade gracefully to "no active loop").
+
+export function updateBatchLoopFrames(
+  db: Database.Database,
+  batchId: string,
+  framesJson: string | null,
+): void {
+  db.prepare('UPDATE batches SET current_loop_frames = ? WHERE batch_id = ?').run(framesJson, batchId);
+}
+
+/**
+ * Persisted shape of a LoopFrame as written by `updateBatchLoopFrames`.
+ * Mirrors batch-engine's LoopFrame interface — kept here so data-service
+ * does not need to import @biocore/batch-engine (one-way dep direction).
+ */
+export interface PersistedLoopFrame {
+  loopNodeId: string;
+  iteration: number;
+  exitExpression?: string;
+  maxIterations?: number;
+  startedAt?: number;
+  maxDurationMs?: number;
+}
+
+export function getBatchLoopFrames(
+  db: Database.Database,
+  batchId: string,
+): PersistedLoopFrame[] | null {
+  const row = db
+    .prepare('SELECT current_loop_frames FROM batches WHERE batch_id = ?')
+    .get(batchId) as { current_loop_frames: string | null } | undefined;
+  if (!row?.current_loop_frames) return null;
+  try {
+    const parsed = JSON.parse(row.current_loop_frames);
+    if (!Array.isArray(parsed)) return null;
+    // 形状校验: 每帧至少需含 loopNodeId(string) + iteration(number)
+    for (const f of parsed) {
+      if (!f || typeof f.loopNodeId !== 'string' || typeof f.iteration !== 'number') {
+        return null;
+      }
+    }
+    return parsed as PersistedLoopFrame[];
+  } catch {
+    return null; // corrupt JSON: degraded but safe (resume with empty stack)
+  }
+}
+
 // v1.7.2 — boot-time crash recovery helpers
 //
 // When the server (re)starts and SQLite has rows with current_state ∈
@@ -956,12 +1006,14 @@ export interface OrphanBatchRow {
   current_state: string;
   current_node_id: string | null;
   current_phase_index: number | null;
+  /** B1.2: JSON-encoded LoopFrame[] or null when no active loop. */
+  current_loop_frames: string | null;
 }
 
 export function getOrphanBatches(db: Database.Database): OrphanBatchRow[] {
   return db.prepare(`
     SELECT batch_id, recipe_id, recipe_version, reactor_id,
-           current_state, current_node_id, current_phase_index
+           current_state, current_node_id, current_phase_index, current_loop_frames
     FROM batches
     WHERE current_state IN ('running','held','paused')
     ORDER BY started_at DESC

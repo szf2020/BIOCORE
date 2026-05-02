@@ -598,3 +598,165 @@ describe('v1.8.0 bucket 3 perf fix 2 — phaseStatuses getter memoization', () =
     ctrl.destroy();
   });
 });
+
+// ============================================================
+// B1.2 — Loop frame persistence (commit 3 of 4)
+//
+// Verifies that BatchController fires the persist.updateLoopFrames
+// callback at the canonical write points (start / readyNextPhase /
+// reset) and that resumeBatch + resumeAndStart restore the executor's
+// frame stack from a saved snapshot.
+// ============================================================
+describe('B1.2 Loop persistence', () => {
+  type LoopPersistCall = { batchId: string; framesJson: string | null };
+
+  function makeCtrlWithLoopPersist(): { ctrl: BatchController; calls: LoopPersistCall[] } {
+    const calls: LoopPersistCall[] = [];
+    const ctrl = new BatchController({
+      plcRead: makeInterlockSafePlcRead(),
+      plcWrite: async () => { /* no-op */ },
+      pollIntervalMs: 1_000_000,
+      persist: {
+        updateLoopFrames: (batchId, framesJson) => {
+          calls.push({ batchId, framesJson });
+        },
+      },
+    });
+    return { ctrl, calls };
+  }
+
+  // Build a recipe with an explicit DAG containing a Loop node:
+  //   start → P0 (phase) → L (loop, max=3) --body--> Pbody --back-edge--> L
+  //                                        --exit--> Pexit → end
+  function makeLoopRecipe() {
+    return {
+      recipe_id: 'TEST_B12_PERSIST',
+      version: '1.0.0',
+      execution_mode: 'free',
+      vessel: { id: 'V1', working_volume_L: 5, total_volume_L: 16, tare_weight_kg: 12 },
+      phases: [
+        { phase_id: 'P0', type: 'fermentation', params: {} },
+        { phase_id: 'PB', type: 'feeding', params: {} },
+        { phase_id: 'PE', type: 'feeding', params: {} },
+      ],
+      dag: {
+        schema_version: 2,
+        options: { maxRevisits: 10 }, // allow back-edge
+        nodes: [
+          { id: 's', type: 'start' },
+          { id: 'p0', type: 'phase', phase_id: 'P0', phase_type: 'fermentation', params: {} },
+          { id: 'l', type: 'loop', maxIterations: 3 },
+          { id: 'pb', type: 'phase', phase_id: 'PB', phase_type: 'feeding', params: {} },
+          { id: 'pe', type: 'phase', phase_id: 'PE', phase_type: 'feeding', params: {} },
+          { id: 'e', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', from: 's', to: 'p0' },
+          { id: 'e2', from: 'p0', to: 'l' },
+          { id: 'e3', from: 'l', to: 'pb', label: 'body' },
+          { id: 'e4', from: 'l', to: 'pe', label: 'exit' },
+          { id: 'e5', from: 'pb', to: 'l' },         // back-edge
+          { id: 'e6', from: 'pe', to: 'e' },
+        ],
+      },
+    } as any;
+  }
+
+  it('start() invokes updateLoopFrames with null (empty stack on fresh batch)', async () => {
+    const { ctrl, calls } = makeCtrlWithLoopPersist();
+    const recipe = makeLinearRecipe();
+    const r = await ctrl.start(recipe, 'B-LP-1');
+    expect(r.success).toBe(true);
+    // At least one call from start(); empty stack → null.
+    expect(calls.length).toBeGreaterThanOrEqual(1);
+    const last = calls[calls.length - 1];
+    expect(last.batchId).toBe('B-LP-1');
+    expect(last.framesJson).toBeNull();
+    ctrl.destroy();
+  });
+
+  it('readyNextPhase through a loop node invokes updateLoopFrames with serialized JSON', () => {
+    const { ctrl, calls } = makeCtrlWithLoopPersist();
+    const recipe = makeLoopRecipe();
+    // Park the controller at p0 (just before the loop) so the next advance pass
+    // walks p0 → l (push frame, take body) → pb.
+    ctrl.resumeBatch('B-LP-2', recipe, 'p0');
+    calls.length = 0; // discard resume's persist write so we focus on advance
+
+    (ctrl as any).readyNextPhase(0);
+
+    // We expect a call with non-null JSON — the loop frame was pushed.
+    const writes = calls.filter(c => c.framesJson !== null);
+    expect(writes.length).toBeGreaterThanOrEqual(1);
+    const parsed = JSON.parse(writes[writes.length - 1].framesJson!);
+    expect(Array.isArray(parsed)).toBe(true);
+    expect(parsed.length).toBe(1);
+    expect(parsed[0].loopNodeId).toBe('l');
+    expect(parsed[0].iteration).toBe(0);
+    expect(parsed[0].maxIterations).toBe(3);
+    ctrl.destroy();
+  });
+
+  it('reset() clears persisted loop frames (writes null)', async () => {
+    const { ctrl, calls } = makeCtrlWithLoopPersist();
+    const recipe = makeLinearRecipe();
+    await ctrl.start(recipe, 'B-LP-3');
+    // Force into a stoppable terminal state. simplest path: stop via state machine.
+    // Linear recipe with a single phase running → directly hit reset is invalid;
+    // simulate completion by emitting engine_complete via the actor.
+    (ctrl as any).actor.send({ type: 'cmd_pause' });
+    (ctrl as any).actor.send({ type: 'cmd_stop' });
+    expect(ctrl.currentState).toBe('stopped');
+
+    calls.length = 0;
+    ctrl.reset();
+    expect(calls.length).toBeGreaterThanOrEqual(1);
+    expect(calls[calls.length - 1].framesJson).toBeNull();
+    ctrl.destroy();
+  });
+
+  it('resumeBatch with savedFrames restores executor frame stack', () => {
+    const { ctrl } = makeCtrlWithLoopPersist();
+    const recipe = makeLoopRecipe();
+    const savedFrames = [
+      { loopNodeId: 'l', iteration: 1, maxIterations: 3 },
+    ];
+    ctrl.resumeBatch('B-LP-4', recipe, 'pb', savedFrames as any);
+    const exec = (ctrl as any).dagExecutor;
+    expect(exec).toBeTruthy();
+    const restored = exec.snapshotFrames();
+    expect(restored).toHaveLength(1);
+    expect(restored[0].loopNodeId).toBe('l');
+    expect(restored[0].iteration).toBe(1);
+    expect(restored[0].maxIterations).toBe(3);
+    ctrl.destroy();
+  });
+
+  it('resumeBatch without savedFrames starts with empty stack (back-compat)', () => {
+    const { ctrl } = makeCtrlWithLoopPersist();
+    const recipe = makeLoopRecipe();
+    // Old call shape — no savedFrames argument.
+    ctrl.resumeBatch('B-LP-5', recipe, 'p0');
+    const exec = (ctrl as any).dagExecutor;
+    expect(exec.snapshotFrames()).toEqual([]);
+    ctrl.destroy();
+  });
+
+  it('resumeAndStart forwards savedFrames to resumeBatch and persists them', () => {
+    const { ctrl, calls } = makeCtrlWithLoopPersist();
+    const recipe = makeLoopRecipe();
+    const savedFrames = [
+      { loopNodeId: 'l', iteration: 2, maxIterations: 3 },
+    ];
+    const r = ctrl.resumeAndStart('B-LP-6', recipe, 'pb', savedFrames as any);
+    expect(r.success).toBe(true);
+    // The persisted JSON should reflect the restored stack.
+    const writes = calls.filter(c => c.framesJson !== null);
+    expect(writes.length).toBeGreaterThanOrEqual(1);
+    const last = writes[writes.length - 1];
+    const parsed = JSON.parse(last.framesJson!);
+    expect(parsed[0].loopNodeId).toBe('l');
+    expect(parsed[0].iteration).toBe(2);
+    ctrl.destroy();
+  });
+});

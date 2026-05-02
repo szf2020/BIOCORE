@@ -15,7 +15,7 @@ import type {
   StepDefinition,
 } from '@biocore/types';
 import type { PhaseState, PhaseStatus } from './index';
-import { DAGExecutor, type RecipeDAG, type DAGEvalContext, type DAGPhaseNode, linearToDag } from './dag-executor';
+import { DAGExecutor, type RecipeDAG, type DAGEvalContext, type DAGPhaseNode, type LoopFrame, linearToDag } from './dag-executor';
 import { evaluateExpression as evaluateConditionExpression } from './condition-evaluator';
 import type { RecoveryPolicy } from './recovery-policy';
 
@@ -35,6 +35,13 @@ export interface BatchControllerConfig {
   persist?: {
     /** Called whenever currentNodeId changes; persist to batches table for crash recovery. */
     updateCurrentNodeId?: (batchId: string, nodeId: string | null) => void;
+    /**
+     * B1.2: Called when the active loop frame stack changes (start/reset and
+     * after each readyNextPhase advance). framesJson is JSON.stringify of the
+     * snapshotFrames() output, or null when the stack is empty (also wipes the
+     * column on fresh starts to keep the DB invariant).
+     */
+    updateLoopFrames?: (batchId: string, framesJson: string | null) => void;
   };
   // v1.9.0 P2 bucket 2: forward-compat slot. The orphan-batch recovery policy
   // currently fires at boot in startup.ts (server-side scan), not inside the
@@ -96,6 +103,25 @@ export class BatchController extends EventEmitter {
       this.config.persist.updateCurrentNodeId(this.batchId, this._currentNodeId);
     } catch {
       // Persistence failure must not crash the runtime; collector/admin can re-sync from runtime state
+    }
+  }
+
+  /**
+   * B1.2: Push the current loop frame stack to SQLite via injected callback.
+   * Sibling of persistCurrentNodeId(). Empty stack → null persists (matches the
+   * fresh-start invariant). Persistence failures are silent — they cannot
+   * crash the runtime; the next advance will re-attempt.
+   */
+  private persistLoopFrames(): void {
+    if (!this.config.persist?.updateLoopFrames) return;
+    if (!this.batchId) return;
+    try {
+      const exec = this.dagExecutor;
+      const frames = exec ? exec.snapshotFrames() : [];
+      const json = frames.length === 0 ? null : JSON.stringify(frames);
+      this.config.persist.updateLoopFrames(this.batchId, json);
+    } catch {
+      // matches persistCurrentNodeId's silent-skip pattern
     }
   }
 
@@ -213,6 +239,9 @@ export class BatchController extends EventEmitter {
     this._currentNodeId = this.dagExecutor.getCurrentNode()?.id ?? null;
     // T12: persist initial node id for crash recovery
     this.persistCurrentNodeId();
+    // B1.2: wipe persisted loop frames to null on fresh start (executor.start()
+    // also clears its in-memory stack, so snapshot is empty here).
+    this.persistLoopFrames();
 
     // T8: 初始化所有Phase状态 (Map keyed by node id), 顺序与 DAG 中 phase 节点顺序一致
     // 第一个phase为ready, 其余为pending; 优先从数据库模板读取步骤定义, 回退到硬编码
@@ -314,6 +343,13 @@ export class BatchController extends EventEmitter {
       // (persistCurrentNodeId is a no-op once batchId is cleared)
       this._currentNodeId = null;
       this.persistCurrentNodeId();
+      // B1.2: clear loop frames in DB before wiping batchId. dagExecutor still
+      // present here so snapshot is whatever's currently on the stack — but
+      // resetting means we want to wipe; we drop the executor below, so
+      // persistLoopFrames here writes the live (about-to-die) stack out.
+      // Force null out by clearing executor first so snapshot is empty.
+      this.dagExecutor = null;
+      this.persistLoopFrames();
       this.stepEngine = null;
       this.recipe = null;
       this.batchId = '';
@@ -321,7 +357,6 @@ export class BatchController extends EventEmitter {
       this.phaseStatusesMap.clear();
       this.invalidatePhaseStatusesCache(); // v1.8.0 bucket 3 (perf fix 2)
       this.dag = null;
-      this.dagExecutor = null;
       this.actor.send({ type: 'cmd_reset' });
       this.emit('batch_reset');
     }
@@ -446,7 +481,12 @@ export class BatchController extends EventEmitter {
    * Note: this method intentionally does NOT touch the XState actor or restart polling — that
    * remains the caller's responsibility. resumeBatch is a state-rebuild primitive only.
    */
-  resumeBatch(batchId: string, recipe: Recipe, savedNodeId: string | null): void {
+  resumeBatch(
+    batchId: string,
+    recipe: Recipe,
+    savedNodeId: string | null,
+    savedFrames?: LoopFrame[],
+  ): void {
     this.batchId = batchId;
     this.recipe = recipe;
     this.dag = this.linearToDagIfNeeded(recipe);
@@ -479,6 +519,13 @@ export class BatchController extends EventEmitter {
 
     this.dagExecutor.start();
 
+    // B1.2: restore loop frame stack AFTER start() (which clears it). When the
+    // saved batch had no active loop, savedFrames is undefined/empty and the
+    // stack stays empty — equivalent to a fresh start through the same nodes.
+    if (savedFrames && savedFrames.length > 0) {
+      this.dagExecutor.restoreFrames(savedFrames);
+    }
+
     if (savedNodeId) {
       // Walk Map in insertion (phase_index) order: phases before savedNodeId → completed,
       // savedNodeId itself → running, the rest stay pending.
@@ -501,6 +548,8 @@ export class BatchController extends EventEmitter {
 
     // Persist the resumed node id (idempotent — DB already has it, but keep the invariant)
     this.persistCurrentNodeId();
+    // B1.2: persist the (possibly restored) loop frame stack — null if empty.
+    this.persistLoopFrames();
 
     this.emit('batch_resumed', { batch_id: batchId, node_id: this._currentNodeId });
   }
@@ -528,9 +577,10 @@ export class BatchController extends EventEmitter {
     batchId: string,
     recipe: Recipe,
     savedNodeId: string | null,
+    savedFrames?: LoopFrame[],
   ): { success: boolean; message: string } {
     // 1. Rebuild runtime state
-    this.resumeBatch(batchId, recipe, savedNodeId);
+    this.resumeBatch(batchId, recipe, savedNodeId, savedFrames);
 
     // 2. Drive XState actor — only fire cmd_start if we're still idle.
     //    If the controller is already running (idempotent re-entry), skip.
@@ -660,6 +710,10 @@ export class BatchController extends EventEmitter {
       this._currentNodeId = nextNode.id;
       // T12: persist after DAG executor advances to a new phase node
       this.persistCurrentNodeId();
+      // B1.2: also persist the loop frame stack — push/iterate/pop happened
+      // inside the while loop above, so this is the canonical write point
+      // (one write per advance, not per advance() step).
+      this.persistLoopFrames();
       const ps = this.phaseStatusesMap.get(nextNode.id);
       if (!ps) return;
 
