@@ -3,6 +3,17 @@
 // 串联: plc-driver + batch-engine + data-service
 // 对外: REST API + WebSocket 实时推送
 // ============================================================
+//
+// IMPORT CONVENTION (v1.8.0 bucket 2):
+//   Always import from package barrels: `@biocore/<pkg>`.
+//   Do NOT use deep imports of the form `../../<pkg>/src/<file>`.
+//   Each cross-package symbol must travel through the package's
+//   `src/index.ts` so the package boundary stays explicit and the
+//   public surface is auditable. If a needed symbol is not on the
+//   barrel, add it there — do not reach in. ESLint enforcement of
+//   `no-restricted-imports` for this rule is tracked as a follow-up
+//   (no ESLint config exists in this repo yet).
+// ============================================================
 
 import express, { Router } from 'express';
 import cors from 'cors';
@@ -162,9 +173,24 @@ installCrashHandlers({
 console.log(`[runtime-guard] installed (oom_threshold_mb=${metricsCollector.snapshot().memory.oom_threshold_mb})`);
 // ─────────────────────────────────────────────────────────────────────────────
 
-// plc-driver 工具函数 (直接导入，不依�� native 模块加载)
-import { parseAddr, byteLen, decode, scale, validateAddr, VariableMappingManager } from '@biocore/plc-driver';
-import type { PLCConnectionConfig, PLCVariableMapping } from '@biocore/plc-driver';
+// plc-driver utility functions
+//
+// EXCEPTION (v1.8.0 bucket 2): These deep imports are intentional and remain
+// after the cross-package import cleanup. The @biocore/plc-driver barrel
+// (src/index.ts) eagerly imports node-snap7 (a native binding) and
+// modbus-serial at module load. The server only needs the pure-JS utility
+// helpers and types — it has its own dynamic loader for S7Client. Importing
+// from the barrel would force-load node-snap7 native bindings on Node hosts
+// without the compiled .node file (e.g. tsx dev, MOCK_PLC environments).
+//
+// TODO (post-v1.8.0): split @biocore/plc-driver into a pure-JS sub-entry
+// (e.g. @biocore/plc-driver/utils via the package.json `exports` map) so
+// these consumers can use a documented public sub-path. For now the deep
+// import is the lesser evil — see release notes for ESLint rule plan that
+// will need to whitelist this exception or move it behind a sub-entry.
+import { parseAddr, byteLen, decode, scale, validateAddr } from '../../plc-driver/src/utils';
+import { VariableMappingManager } from '../../plc-driver/src/variable-mapping';
+import type { PLCConnectionConfig, PLCVariableMapping } from '../../plc-driver/src/types';
 
 // soft-sensor + experiment-optimizer (实际算法包)
 import { SoftSensorEngine, FeedAdvisor, RootCauseAnalyzer } from '@biocore/soft-sensor';
