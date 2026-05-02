@@ -514,4 +514,8 @@ export type { ExprNode, ComparisonNode, LogicalNode, AllowedField, ComparisonOp 
 // Sprint 3 M3.9: DAG 校验
 export { validateDag } from './recipe-validator';
 
+// v1.9.0 P2 bucket 2: RecoveryPolicy strategy layer for boot-time orphan handling
+export { defaultRecoveryPolicy, conservativeShortOutagePolicy } from './recovery-policy';
+export type { RecoveryPolicy, RecoveryDecision, RecoveryDecisionInput } from './recovery-policy';
+
 export { batchMachine as default };

@@ -30,7 +30,12 @@
 import type Database from 'better-sqlite3';
 
 import { runMigrations } from './migrator';
-import { getOrphanBatches, markBatchHeldForRecovery } from '@biocore/data-service';
+import { getOrphanBatches, markBatchHeldForRecovery, markBatchAborted } from '@biocore/data-service';
+import {
+  defaultRecoveryPolicy,
+  type RecoveryPolicy,
+  type RecoveryDecisionInput,
+} from '@biocore/batch-engine';
 
 const DEFAULT_JWT_SECRET = 'biocore-dev-secret-change-in-production';
 
@@ -100,28 +105,118 @@ export function assertJwtSecretSafe(): void {
 
 export interface OrphanRecoveryOptions {
   db: Database.Database;
-  sqlite: { writeAuditLog: (e: any) => void };
+  sqlite: {
+    writeAuditLog: (e: any) => void;
+    /** Optional: used to look up phaseType for the orphan's current phase index. */
+    getRecipe?: (recipeId: string, version?: string) => any;
+  };
+  /**
+   * v1.9.0 P2 bucket 2: pluggable decision strategy.
+   * Default = `defaultRecoveryPolicy` (always-hold, preserves v1.7.2 behavior).
+   * Caller in index.ts may pass a custom policy once F2-AUTO is implemented.
+   */
+  policy?: RecoveryPolicy;
 }
 
 /**
- * v1.7.2: boot-time crash-recovery scan.
+ * v1.7.2 + v1.9.0 P2 bucket 2: boot-time crash-recovery scan.
+ *
  * Any batch left in current_state ∈ {running, held, paused} when this server
  * process starts is by definition orphaned — its previous engine died with
- * the previous process. We do NOT auto-resume the engine; PVs may have
- * drifted, alarms may have been missed, and a 24h fermentation should not
- * silently restart unattended. Instead, mark each as 'held' with an
- * explicit recovery reason so they appear in the operator's hold queue
- * for explicit resume/abort decisions, and write an audit row each.
+ * the previous process. v1.7.2 behavior was unconditional "mark as held".
+ *
+ * v1.9.0 P2 bucket 2 introduces a `RecoveryPolicy` strategy layer. For each
+ * orphan we build a `RecoveryDecisionInput` (prev state, phase type from
+ * recipe, age since last audit, comm health) and ask the policy to decide:
+ *   - 'hold'        → existing v1.7.2 path (mark held + audit)
+ *   - 'auto_resume' → NOT YET IMPLEMENTED (F2-AUTO). Falls back to hold for
+ *                     safety + writes a distinct audit action so we can see
+ *                     when the policy *would* have auto-resumed.
+ *   - 'abort'       → mark batch stopped (cmd_stop) + audit. Used only by
+ *                     opt-in aggressive policies; default policy never returns
+ *                     this verdict.
+ *
+ * Known limitation: `commHealthy` is hard-coded to `true` here because at the
+ * time this scan runs, reactor controllers / PLC bridge have not been wired
+ * yet (see index.ts boot order). A future bucket can thread reactor health
+ * in once the order is reshuffled.
  */
 export function runOrphanRecoveryScan(opts: OrphanRecoveryOptions): void {
-  const { db, sqlite } = opts;
+  const { db, sqlite, policy = defaultRecoveryPolicy } = opts;
   try {
     const recoveryReason = `server_restart_recovery@${new Date().toISOString()}`;
     const orphans = getOrphanBatches(db);
-    if (orphans.length > 0) {
-      console.warn(`[BOOT] 检测到 ${orphans.length} 个遗留批次 (上次进程崩溃前未结束), 标记为 held 等待操作员处理`);
-      for (const o of orphans) {
-        try {
+    if (orphans.length === 0) {
+      console.log('[BOOT] 无遗留批次需恢复');
+      return;
+    }
+
+    console.warn(`[BOOT] 检测到 ${orphans.length} 个遗留批次 (上次进程崩溃前未结束), 通过 RecoveryPolicy 决策处理`);
+
+    let heldCount = 0;
+    let autoResumeDeferredCount = 0;
+    let abortedCount = 0;
+
+    for (const o of orphans) {
+      try {
+        // Build the decision input
+        const input = buildRecoveryDecisionInput(db, o, sqlite);
+        const decision = policy.decide(input);
+
+        if (decision === 'auto_resume') {
+          // F2-AUTO not yet implemented — fall back to hold for safety, but
+          // record the deferred decision so future telemetry can spot it.
+          console.warn(
+            `[BOOT] policy returned 'auto_resume' for batch ${o.batch_id} but auto-resume execution is not yet implemented (F2-AUTO); falling back to hold`,
+          );
+          markBatchHeldForRecovery(db, o.batch_id, recoveryReason);
+          sqlite.writeAuditLog({
+            user_id: 'system',
+            action: 'batch_held_recovery_auto_resume_deferred',
+            target_type: 'batch',
+            target_id: o.batch_id,
+            target_kind: 'batch_id',
+            batch_id: o.batch_id,
+            reason: recoveryReason,
+            new_value: JSON.stringify({
+              prev_state: o.current_state,
+              recipe_id: o.recipe_id,
+              recipe_version: o.recipe_version,
+              reactor_id: o.reactor_id,
+              current_node_id: o.current_node_id,
+              current_phase_index: o.current_phase_index,
+              policy_decision: 'auto_resume',
+              fallback: 'hold',
+              decision_input: input,
+            }),
+          });
+          autoResumeDeferredCount++;
+          console.warn(`[BOOT]   - ${o.batch_id} (reactor=${o.reactor_id}, prev_state=${o.current_state}, decision=auto_resume→hold)`);
+        } else if (decision === 'abort') {
+          markBatchAborted(db, o.batch_id, recoveryReason);
+          sqlite.writeAuditLog({
+            user_id: 'system',
+            action: 'batch_aborted_for_recovery',
+            target_type: 'batch',
+            target_id: o.batch_id,
+            target_kind: 'batch_id',
+            batch_id: o.batch_id,
+            reason: recoveryReason,
+            new_value: JSON.stringify({
+              prev_state: o.current_state,
+              recipe_id: o.recipe_id,
+              recipe_version: o.recipe_version,
+              reactor_id: o.reactor_id,
+              current_node_id: o.current_node_id,
+              current_phase_index: o.current_phase_index,
+              policy_decision: 'abort',
+              decision_input: input,
+            }),
+          });
+          abortedCount++;
+          console.warn(`[BOOT]   - ${o.batch_id} (reactor=${o.reactor_id}, prev_state=${o.current_state}, decision=abort)`);
+        } else {
+          // 'hold' — preserves v1.7.2 path
           markBatchHeldForRecovery(db, o.batch_id, recoveryReason);
           sqlite.writeAuditLog({
             user_id: 'system',
@@ -140,15 +235,80 @@ export function runOrphanRecoveryScan(opts: OrphanRecoveryOptions): void {
               current_phase_index: o.current_phase_index,
             }),
           });
-          console.warn(`[BOOT]   - ${o.batch_id} (reactor=${o.reactor_id}, prev_state=${o.current_state}, node=${o.current_node_id ?? 'NULL'})`);
-        } catch (e) {
-          console.error(`[BOOT] 标记批次 ${o.batch_id} 为 held 失败:`, (e as Error).message);
+          heldCount++;
+          console.warn(`[BOOT]   - ${o.batch_id} (reactor=${o.reactor_id}, prev_state=${o.current_state}, node=${o.current_node_id ?? 'NULL'}, decision=hold)`);
         }
+      } catch (e) {
+        console.error(`[BOOT] 处理遗留批次 ${o.batch_id} 失败:`, (e as Error).message);
       }
-    } else {
-      console.log('[BOOT] 无遗留批次需恢复');
     }
+
+    console.log(`[BOOT] orphan recovery: ${heldCount} held, ${autoResumeDeferredCount} auto_resume_deferred, ${abortedCount} aborted`);
   } catch (e) {
     console.error('[BOOT] 崩溃恢复扫描失败 (server 仍正常启动):', (e as Error).message);
   }
+}
+
+/**
+ * v1.9.0 P2 bucket 2 — assemble the input passed to RecoveryPolicy.decide().
+ * Pure helper; exposed for testing convenience but not part of the public API.
+ */
+function buildRecoveryDecisionInput(
+  db: Database.Database,
+  orphan: {
+    batch_id: string;
+    recipe_id: string;
+    recipe_version: string;
+    current_state: string;
+    current_phase_index: number | null;
+  },
+  sqlite: { getRecipe?: (recipeId: string, version?: string) => any },
+): RecoveryDecisionInput {
+  // prevState narrowing — getOrphanBatches only returns running/held/paused
+  const prevState = orphan.current_state as 'running' | 'held' | 'paused';
+
+  // phaseType — best-effort recipe lookup
+  let phaseType: string | undefined = undefined;
+  try {
+    if (sqlite.getRecipe) {
+      const recipe = sqlite.getRecipe(orphan.recipe_id, orphan.recipe_version);
+      if (recipe) {
+        // recipes.phases is JSON-encoded in SQLite; parse if it looks like a string
+        let phases: any = recipe.phases;
+        if (typeof phases === 'string') {
+          try { phases = JSON.parse(phases); } catch { phases = null; }
+        }
+        const idx = orphan.current_phase_index ?? 0;
+        if (Array.isArray(phases) && phases[idx]) {
+          phaseType = phases[idx].type;
+        }
+      }
+    }
+  } catch {
+    // recipe lookup is best-effort only; leave phaseType undefined on any failure
+  }
+
+  // ageSinceLastAuditMs — query audit_logs for the most recent timestamp
+  let ageSinceLastAuditMs: number | undefined = undefined;
+  try {
+    const row = db
+      .prepare('SELECT MAX(timestamp) AS max_ts FROM audit_logs WHERE batch_id = ?')
+      .get(orphan.batch_id) as { max_ts: string | null } | undefined;
+    const maxTs = row?.max_ts;
+    if (maxTs) {
+      const t = new Date(maxTs).getTime();
+      if (!Number.isNaN(t)) {
+        ageSinceLastAuditMs = Date.now() - t;
+      }
+    }
+  } catch {
+    // audit_logs may not exist in test harnesses — leave undefined
+  }
+
+  // commHealthy — known limitation: at this boot stage the reactor/PLC layer
+  // is not yet wired, so we conservatively report `true` (matches the "best
+  // available signal" + the policy's other gates still protect us).
+  const commHealthy = true;
+
+  return { prevState, phaseType, ageSinceLastAuditMs, commHealthy };
 }

@@ -13,7 +13,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { getOrphanBatches, markBatchHeldForRecovery } from '../sqlite-service';
+import { getOrphanBatches, markBatchHeldForRecovery, markBatchAborted } from '../sqlite-service';
 
 function makeDb(): Database.Database {
   const db = new Database(':memory:');
@@ -25,6 +25,8 @@ function makeDb(): Database.Database {
       reactor_id TEXT NOT NULL,
       current_state TEXT NOT NULL,
       hold_reason TEXT,
+      stop_trigger TEXT,
+      notes TEXT,
       current_node_id TEXT,
       current_phase_index INTEGER,
       started_at TEXT
@@ -83,6 +85,38 @@ describe('v1.7.2 boot-recovery helpers', () => {
 
   it('markBatchHeldForRecovery is a no-op for non-existent batch_id (no exception)', () => {
     expect(() => markBatchHeldForRecovery(db, 'B-DOESNT-EXIST', 'reason')).not.toThrow();
+  });
+
+  it('markBatchAborted (v1.9.0 P2 bucket 2) sets stopped/cmd_stop and appends notes', () => {
+    db.prepare(`
+      INSERT INTO batches (batch_id, recipe_id, recipe_version, reactor_id,
+                           current_state, current_node_id, started_at, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run('B-A1', 'R1', '1.0.0', 'F01', 'running', 'n_0', '2026-05-01T10:00:00Z', 'pre-existing note');
+
+    markBatchAborted(db, 'B-A1', 'policy=abort/long_outage');
+
+    const after = db.prepare('SELECT * FROM batches WHERE batch_id = ?').get('B-A1') as any;
+    expect(after.current_state).toBe('stopped');
+    expect(after.stop_trigger).toBe('cmd_stop');
+    // notes is APPENDED, not overwritten — pre-existing note must survive
+    expect(after.notes).toContain('pre-existing note');
+    expect(after.notes).toContain('recovery_abort: policy=abort/long_outage');
+  });
+
+  it('markBatchAborted handles batches with NULL notes (COALESCE path)', () => {
+    db.prepare(`
+      INSERT INTO batches (batch_id, recipe_id, recipe_version, reactor_id,
+                           current_state, started_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run('B-A2', 'R1', '1.0.0', 'F01', 'running', '2026-05-01T10:00:00Z');
+
+    markBatchAborted(db, 'B-A2', 'no_prior_notes');
+
+    const after = db.prepare('SELECT * FROM batches WHERE batch_id = ?').get('B-A2') as any;
+    expect(after.current_state).toBe('stopped');
+    expect(after.stop_trigger).toBe('cmd_stop');
+    expect(after.notes).toContain('recovery_abort: no_prior_notes');
   });
 
   it('full recovery scan + mark loop preserves current_node_id and other metadata', () => {

@@ -4204,8 +4204,16 @@ async function start(): Promise<void> {
   ╚══════════════════════════════════════════════╝
   `);
 
-  // v1.7.2: boot-time crash-recovery scan (extracted to ./startup).
-  runOrphanRecoveryScan({ db: sqlite.getDatabase(), sqlite });
+  // v1.7.2 + v1.9.0 P2 bucket 2: boot-time crash-recovery scan (extracted to ./startup).
+  // Passes the default policy (always-hold, preserves v1.7.2 safety semantics).
+  // Operators wanting an opt-in conservative-short-outage policy can swap this here.
+  runOrphanRecoveryScan({
+    db: sqlite.getDatabase(),
+    sqlite: {
+      writeAuditLog: (e) => sqlite.writeAuditLog(e),
+      getRecipe: (id, version) => sqlite.getRecipe(id, version),
+    },
+  });
 
   // 启动后台调度器 (AI 建议生成引擎等)
   startSchedulers({
