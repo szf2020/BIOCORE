@@ -504,6 +504,8 @@ export { DAGExecutor } from './dag-executor';
 export type {
   DAGNode, DAGNodeType, DAGEdge, RecipeDAG, DAGEvalContext,
   DAGPhaseNode, DAGBranchNode, DAGStartNode, DAGEndNode,
+  // v1.10.0 P3: frame-stack infrastructure
+  DAGExecutorOptions, LoopFrame,
 } from './dag-executor';
 // Sprint 3 M3.8: 条件表达式求值器
 export {

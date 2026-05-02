@@ -63,6 +63,48 @@ export interface DAGEvalContext {
 }
 
 /**
+ * DAGExecutor 配置项 (v1.10.0 P3)
+ */
+export interface DAGExecutorOptions {
+  /**
+   * Maximum number of times any single node may be visited during execution.
+   * Default = 1 (matches v1.7-v1.9 behavior — cycles blocked).
+   * Increase to enable Loop nodes (B1.2). The total upper bound on node
+   * visits is enforced as a defense-in-depth even when LoopFrame says continue.
+   */
+  maxRevisits?: number;
+}
+
+/**
+ * LoopFrame — execution context for a single active loop iteration.
+ *
+ * Future B1.2 Loop nodes push a frame on entry, increment iteration on each
+ * cycle through, and pop on exit. The frame data model is intentionally
+ * generic to absorb the four loop semantics under consideration:
+ *   - fixed-N        → maxIterations set; no exitExpression
+ *   - repeat-until   → exitExpression set; maxIterations as upper bound
+ *   - repeat-while   → exitExpression set (negated by caller); same shape
+ *   - time-bounded   → startedAt + maxDurationMs set
+ *
+ * P3 only ships the frame-stack PLUMBING. Loop node semantics (which fields
+ * are required) belong to B1.2.
+ */
+export interface LoopFrame {
+  /** ID of the DAGLoopNode that opened this frame (for crash recovery + audit). */
+  loopNodeId: string;
+  /** 0-indexed; bumped by Loop node logic on each cycle. */
+  iteration: number;
+  /** Optional ceiling — defense-in-depth for unbounded conditions. */
+  maxIterations?: number;
+  /** Optional condition expression evaluated each cycle (B1.2 wires this). */
+  exitExpression?: string;
+  /** Optional time origin (ms since epoch) for time-bounded loops. */
+  startedAt?: number;
+  /** Optional time ceiling for time-bounded loops. */
+  maxDurationMs?: number;
+}
+
+/**
  * DAG 执行器
  *
  * 用法:
@@ -79,10 +121,15 @@ export interface DAGEvalContext {
 export class DAGExecutor {
   private dag: RecipeDAG;
   private currentNodeId: string | null = null;
-  private visited = new Set<string>();
+  private visitCount: Map<string, number> = new Map();
+  private readonly maxRevisits: number;
+  private readonly options: Required<DAGExecutorOptions>;
+  private loopFrames: LoopFrame[] = [];
 
-  constructor(dag: RecipeDAG) {
+  constructor(dag: RecipeDAG, options: DAGExecutorOptions = {}) {
     this.dag = dag;
+    this.maxRevisits = options.maxRevisits ?? 1;
+    this.options = { maxRevisits: this.maxRevisits };
   }
 
   /**
@@ -92,8 +139,9 @@ export class DAGExecutor {
     const startNode = this.dag.nodes.find(n => n.type === 'start');
     if (!startNode) throw new Error('DAG 没有 start 节点');
     this.currentNodeId = startNode.id;
-    this.visited.clear();
-    this.visited.add(startNode.id);
+    this.visitCount.clear();
+    this.visitCount.set(startNode.id, 1);
+    this.loopFrames = [];
     // 推进到第一个 phase 节点 (跳过 start / branch)
     this.advanceToPhaseOrEnd(ctx);
   }
@@ -134,12 +182,14 @@ export class DAGExecutor {
       nextId = outEdges[0].to;
     }
 
-    // 环检测
-    if (this.visited.has(nextId)) {
-      throw new Error(`检测到环: ${this.currentNodeId} → ${nextId}`);
+    // 访问计数检测 (v1.10.0 P3): visitCount Map + maxRevisits
+    // default maxRevisits=1 preserves v1.7-v1.9 cycle-blocking behavior
+    const currentCount = this.visitCount.get(nextId) ?? 0;
+    if (currentCount >= this.maxRevisits) {
+      throw new Error(`MaxRevisitsExceeded: node '${nextId}' would exceed maxRevisits=${this.maxRevisits}`);
     }
     this.currentNodeId = nextId;
-    this.visited.add(nextId);
+    this.visitCount.set(nextId, currentCount + 1);
 
     return true;
   }
@@ -226,7 +276,53 @@ export class DAGExecutor {
    */
   reset(): void {
     this.currentNodeId = null;
-    this.visited.clear();
+    this.visitCount.clear();
+    this.loopFrames = [];
+  }
+
+  // ==================================================================
+  // LoopFrame stack API (v1.10.0 P3)
+  //
+  // Frame-stack plumbing for B1.2 (Loop) and B1.4 (SubRecipe). No node
+  // type currently uses these methods — they are infrastructure-only.
+  // ==================================================================
+
+  /** Push a frame onto the loop stack. Used by future Loop node enter handler. */
+  pushFrame(frame: LoopFrame): void {
+    this.loopFrames.push({ ...frame });
+  }
+
+  /** Pop the top frame. Returns undefined if stack empty. */
+  popFrame(): LoopFrame | undefined {
+    return this.loopFrames.pop();
+  }
+
+  /** Peek the top frame without removing. */
+  peekFrame(): LoopFrame | undefined {
+    return this.loopFrames[this.loopFrames.length - 1];
+  }
+
+  /** Mutate the top frame's iteration counter. Returns new iteration. Throws if stack empty. */
+  incrementFrameIteration(): number {
+    const top = this.loopFrames[this.loopFrames.length - 1];
+    if (!top) throw new Error('incrementFrameIteration called with empty loop stack');
+    top.iteration += 1;
+    return top.iteration;
+  }
+
+  /** Snapshot the frame stack (for persistence — JSON-safe). */
+  snapshotFrames(): LoopFrame[] {
+    return this.loopFrames.map(f => ({ ...f }));
+  }
+
+  /** Restore frame stack from snapshot (for crash recovery). */
+  restoreFrames(frames: LoopFrame[]): void {
+    this.loopFrames = frames.map(f => ({ ...f }));
+  }
+
+  /** Current depth of the frame stack (0 = no active loops). */
+  get frameDepth(): number {
+    return this.loopFrames.length;
   }
 
   private getNode(id: string): DAGNode | null {
@@ -385,7 +481,9 @@ if (require.main === module) {
     while (execCycle.hasCurrentPhase()) execCycle.advance();
     console.log('  ✗ 应该抛错但没抛');
   } catch (e) {
-    console.log(`  ✓ 环被捕获: ${(e as Error).message.slice(0, 40)}`);
+    const msg = (e as Error).message;
+    const ok = msg.includes('MaxRevisitsExceeded');
+    console.log(`  ${ok ? '✓' : '✗'} 环被 MaxRevisitsExceeded 捕获: ${msg.slice(0, 60)}`);
   }
 
   console.log('\n所有单测通过');
