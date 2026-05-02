@@ -147,21 +147,59 @@ export function validateRecipe(recipe: Recipe): ValidationResult {
 // M3.9: DAG 结构校验
 // BV-13: 至少 1 个 start 节点
 // BV-14: 至少 1 个 end 节点
-// BV-15: 无环 (DFS 标记) — 但 goto 节点的出边被视为软回边, 不参与环检测
+// BV-15: 无环 (DFS 标记) — 但 goto 出边 + loop back-edges 被视为软回边,
+//        不参与环检测 (运行时安全由 DAGExecutor.maxRevisits 兜底)
 // BV-16: 所有节点从 start 可达 (BFS)
 // BV-17: branch 节点必须恰好 2 条出边 (true + false)
 // BV-18: goto 节点必须恰好 1 条出边
 // BV-19: goto.target 必须等于其唯一出边的 to (字段与图结构一致)
 // BV-20: goto.target 不能是 start 节点 (避免重新初始化)
 // BV-21: goto.target 必须是 DAG 内已知的节点 id
-// BV-22: 当 DAG 含 goto 形成环时, recipe.options.maxRevisits 必须 > 1
-//        (warning — 校验器不强制, 因为 maxRevisits 是 RecipeDAG.options
-//         的字段, validateDag 单独被调用时拿不到, 由 DAGExecutor 兜底抛
-//         MaxRevisitsExceeded)
+// BV-22: loop 节点必须至少设置 exitExpression 或 maxIterations(>0) 之一
+// BV-23: loop 节点必须恰好 2 条出边, 标签必须为 {body, exit}
+// BV-24: loop 的 body 子图内不可含另一个 loop 节点 (depth=1 only)
+// BV-25: loop 必须有至少一条 back-edge (从 body-reachable 节点指回此 loop 节点)
+//        否则不构成循环
 // ============================================================
-interface DagNode { id: string; type: string; target?: string; }
+interface DagNode {
+  id: string;
+  type: string;
+  target?: string;
+  exitExpression?: string;
+  maxIterations?: number;
+}
 interface DagEdge { id: string; from: string; to: string; label?: string; }
 interface DagShape { nodes: DagNode[]; edges: DagEdge[]; }
+
+/**
+ * 计算从 loopNodeId 的 body 出边出发, 前向可达的节点集合。
+ * 停止条件:
+ *   - 到达 end 节点
+ *   - 到达 loop 节点本身 (back-edge 已被外层处理)
+ *   - 到达 exit 出边
+ * 用于 BV-24 (嵌套检测)、BV-25 (back-edge 检测)、BV-15 (back-edge 抑制)。
+ */
+function getLoopBodyReachable(loopNodeId: string, dag: DagShape): Set<string> {
+  const reachable = new Set<string>();
+  const bodyEdge = dag.edges.find(e => e.from === loopNodeId && e.label === 'body');
+  if (!bodyEdge) return reachable;
+  const queue = [bodyEdge.to];
+  reachable.add(bodyEdge.to);
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    if (cur === loopNodeId) continue; // back-edge target — don't traverse beyond
+    const outs = dag.edges.filter(e => e.from === cur);
+    for (const e of outs) {
+      // 不进入 loop 节点的 exit 子图 (避免误判 exit 后的节点也是 body)
+      if (e.from === loopNodeId && e.label === 'exit') continue;
+      if (!reachable.has(e.to)) {
+        reachable.add(e.to);
+        queue.push(e.to);
+      }
+    }
+  }
+  return reachable;
+}
 
 export function validateDag(dag: DagShape): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -234,17 +272,70 @@ export function validateDag(dag: DagShape): ValidationIssue[] {
     }
   }
 
+  // B1.2: BV-22..BV-25 — loop 节点结构校验
+  const loopNodes = dag.nodes.filter(n => n.type === 'loop');
+  const loopBackEdgeIds = new Set<string>(); // 用于后续 BV-15 抑制
+  for (const loop of loopNodes) {
+    // BV-22: 至少 exitExpression 或 maxIterations(>0) 之一
+    const hasExpr = typeof loop.exitExpression === 'string' && loop.exitExpression.trim().length > 0;
+    const hasMax = typeof loop.maxIterations === 'number' && loop.maxIterations > 0;
+    if (!hasExpr && !hasMax) {
+      issues.push({
+        code: 'BV-22', severity: 'error',
+        message: `Loop 节点 ${loop.id} 必须至少设置 exitExpression 或 maxIterations(>0) 之一`,
+      });
+    }
+
+    // BV-23: 恰好 2 条出边, 标签必须为 {body, exit}
+    const outEdges = dag.edges.filter(e => e.from === loop.id);
+    const labels = new Set(outEdges.map(e => e.label));
+    if (outEdges.length !== 2 || !labels.has('body') || !labels.has('exit')) {
+      issues.push({
+        code: 'BV-23', severity: 'error',
+        message: `Loop 节点 ${loop.id} 必须恰好 2 条出边, 标签 {body, exit}, 实际 ${outEdges.length} 条 [${outEdges.map(e => e.label || '(无)').join(',')}]`,
+      });
+    }
+
+    // 计算 body-reachable 集合 (BV-24, BV-25, BV-15 共用)
+    const bodyReachable = getLoopBodyReachable(loop.id, dag);
+
+    // BV-24: body 内不可含另一个 loop (depth=1 only)
+    for (const reachId of bodyReachable) {
+      if (reachId === loop.id) continue;
+      const reachNode = dag.nodes.find(n => n.id === reachId);
+      if (reachNode?.type === 'loop') {
+        issues.push({
+          code: 'BV-24', severity: 'error',
+          message: `Loop 节点 ${loop.id} 的 body 内含嵌套 loop 节点 ${reachId} — B1.2 不支持嵌套 (depth=1)`,
+        });
+      }
+    }
+
+    // BV-25: 必须有至少一条 back-edge (body-reachable 节点指回 loop.id)
+    const backEdges = dag.edges.filter(e => bodyReachable.has(e.from) && e.to === loop.id);
+    if (backEdges.length === 0) {
+      issues.push({
+        code: 'BV-25', severity: 'error',
+        message: `Loop 节点 ${loop.id} 缺少 back-edge — body 中需有节点出边指回 ${loop.id} 才构成循环`,
+      });
+    }
+    // 收集 back-edge IDs 以便 BV-15 抑制
+    backEdges.forEach(e => loopBackEdgeIds.add(e.id));
+  }
+
   // BV-15: 无环检测 (DFS + 三色标记)
   // WHITE=未访问, GRAY=正在访问(栈中), BLACK=已访问完
-  // B1.3: goto 的出边视为软回边, 不参与环检测 (Goto 的合法用例就是回边).
+  // goto 出边 + loop back-edges 视为软回边, 不参与环检测.
   // 真正的运行时安全由 DAGExecutor.maxRevisits 兜底.
   const color: Record<string, 'W' | 'G' | 'B'> = {};
   dag.nodes.forEach(n => { color[n.id] = 'W'; });
   const gotoNodeIds = new Set(dag.nodes.filter(n => n.type === 'goto').map(n => n.id));
   const adj = new Map<string, string[]>();
   dag.edges.forEach(e => {
-    // 跳过 goto 的出边 — 不参与 BV-15 环检测
+    // 抑制 1: goto 节点的所有出边
     if (gotoNodeIds.has(e.from)) return;
+    // 抑制 2: loop back-edges (上面 BV-25 计算)
+    if (loopBackEdgeIds.has(e.id)) return;
     if (!adj.has(e.from)) adj.set(e.from, []);
     adj.get(e.from)!.push(e.to);
   });

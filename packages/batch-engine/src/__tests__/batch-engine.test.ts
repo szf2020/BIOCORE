@@ -491,3 +491,170 @@ describe('validateDag — B1.3 Goto rules', () => {
     expect(issues.some(i => i.code === 'BV-16')).toBe(false);
   });
 });
+
+// ─── B1.2 Loop validateDag rules (BV-22..BV-25) ──────────────
+
+describe('validateDag — B1.2 Loop rules', () => {
+  /**
+   * Helper: build a minimal DAG containing a single loop with a configurable
+   * body subgraph. The default produces a valid loop:
+   *   start → loop --body--> body → loop (back-edge)
+   *   loop --exit--> end
+   */
+  function makeLoopDag(opts: {
+    exitExpression?: string;
+    maxIterations?: number;
+    omitExitExpression?: boolean;
+    omitMaxIterations?: boolean;
+    outEdges?: Array<{ id?: string; to?: string; label?: string }>;
+    omitBackEdge?: boolean;
+    nestedLoopInBody?: boolean;
+  } = {}) {
+    const loopNode: any = { id: 'lp', type: 'loop' };
+    if (!opts.omitExitExpression && opts.exitExpression !== undefined) {
+      loopNode.exitExpression = opts.exitExpression;
+    }
+    if (!opts.omitMaxIterations && opts.maxIterations !== undefined) {
+      loopNode.maxIterations = opts.maxIterations;
+    }
+
+    const nodes: any[] = [
+      { id: 's', type: 'start' },
+      loopNode,
+      { id: 'body', type: 'phase' },
+      { id: 'e', type: 'end' },
+    ];
+    if (opts.nestedLoopInBody) {
+      nodes.push({ id: 'lp2', type: 'loop', maxIterations: 3 });
+      nodes.push({ id: 'inner', type: 'phase' });
+    }
+
+    const edges: any[] = [
+      { id: 'e1', from: 's', to: 'lp' },
+    ];
+
+    // Default loop out-edges (body + exit) unless caller overrides.
+    if (opts.outEdges) {
+      opts.outEdges.forEach((eo, idx) => {
+        edges.push({
+          id: eo.id ?? `lp_out_${idx}`,
+          from: 'lp',
+          to: eo.to ?? 'body',
+          label: eo.label,
+        });
+      });
+    } else {
+      edges.push({ id: 'e_body', from: 'lp', to: 'body', label: 'body' });
+      edges.push({ id: 'e_exit', from: 'lp', to: 'e', label: 'exit' });
+    }
+
+    if (opts.nestedLoopInBody) {
+      // body → lp2(loop) --body--> inner --back--> lp2 ; lp2 --exit--> lp (back to outer)
+      edges.push({ id: 'e_b_lp2', from: 'body', to: 'lp2' });
+      edges.push({ id: 'e_lp2_body', from: 'lp2', to: 'inner', label: 'body' });
+      edges.push({ id: 'e_inner_back', from: 'inner', to: 'lp2' });
+      edges.push({ id: 'e_lp2_exit', from: 'lp2', to: 'lp', label: 'exit' });
+    } else if (!opts.omitBackEdge) {
+      edges.push({ id: 'e_back', from: 'body', to: 'lp' });
+    } else {
+      // No back-edge: terminate body at end so reachability passes.
+      edges.push({ id: 'e_body_end', from: 'body', to: 'e' });
+    }
+
+    return { nodes, edges };
+  }
+
+  it('BV-22: loop with neither exitExpression nor maxIterations → error', () => {
+    const dag = makeLoopDag({ omitExitExpression: true, omitMaxIterations: true });
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-22')).toBe(true);
+  });
+
+  it('BV-22: loop with only maxIterations(>0) → ok', () => {
+    const dag = makeLoopDag({ maxIterations: 5 });
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-22')).toBe(false);
+  });
+
+  it('BV-22: loop with only exitExpression → ok', () => {
+    const dag = makeLoopDag({ exitExpression: 'OD600 >= 5' });
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-22')).toBe(false);
+  });
+
+  it('BV-22: loop with maxIterations=0 → error (must be > 0)', () => {
+    const dag = makeLoopDag({ maxIterations: 0 });
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-22')).toBe(true);
+  });
+
+  it('BV-23: loop with 1 out-edge → error', () => {
+    const dag = makeLoopDag({
+      maxIterations: 5,
+      outEdges: [{ id: 'lp_only', to: 'body', label: 'body' }],
+    });
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-23')).toBe(true);
+  });
+
+  it('BV-23: loop with 3 out-edges → error', () => {
+    const dag = makeLoopDag({
+      maxIterations: 5,
+      outEdges: [
+        { id: 'lp_a', to: 'body', label: 'body' },
+        { id: 'lp_b', to: 'e', label: 'exit' },
+        { id: 'lp_c', to: 'e', label: 'extra' },
+      ],
+    });
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-23')).toBe(true);
+  });
+
+  it('BV-23: loop with 2 out-edges but both labeled body → error', () => {
+    const dag = makeLoopDag({
+      maxIterations: 5,
+      outEdges: [
+        { id: 'lp_a', to: 'body', label: 'body' },
+        { id: 'lp_b', to: 'e', label: 'body' },
+      ],
+    });
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-23')).toBe(true);
+  });
+
+  it('BV-23: loop with 2 out-edges missing exit label → error', () => {
+    const dag = makeLoopDag({
+      maxIterations: 5,
+      outEdges: [
+        { id: 'lp_a', to: 'body', label: 'body' },
+        { id: 'lp_b', to: 'e', label: 'true' }, // wrong label
+      ],
+    });
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-23')).toBe(true);
+  });
+
+  it('BV-24: nested loop in body subgraph → error', () => {
+    const dag = makeLoopDag({ maxIterations: 5, nestedLoopInBody: true });
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-24')).toBe(true);
+  });
+
+  it('BV-25: loop without back-edge → error', () => {
+    const dag = makeLoopDag({ maxIterations: 5, omitBackEdge: true });
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-25')).toBe(true);
+  });
+
+  it('valid: loop with body+back-edge+exit and BV-15 does not flag the cycle', () => {
+    const dag = makeLoopDag({ maxIterations: 5, exitExpression: 'OD600 >= 5' });
+    const issues = validateDag(dag);
+    // No loop-rule errors
+    expect(issues.some(i => ['BV-22', 'BV-23', 'BV-24', 'BV-25'].includes(i.code))).toBe(false);
+    // No spurious BV-15 cycle (loop's back-edge is intentionally excluded)
+    expect(issues.some(i => i.code === 'BV-15')).toBe(false);
+    // No reachability or branch errors either
+    expect(issues.some(i => i.code === 'BV-16')).toBe(false);
+    expect(issues.some(i => i.code === 'BV-17')).toBe(false);
+  });
+});
