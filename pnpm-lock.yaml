@@ -154,15 +154,33 @@ importers:
 
   packages/server:
     dependencies:
+      '@biocore/ai-analytics':
+        specifier: workspace:*
+        version: link:../ai-analytics
+      '@biocore/ai-gateway':
+        specifier: workspace:*
+        version: link:../ai-gateway
+      '@biocore/batch-engine':
+        specifier: workspace:*
+        version: link:../batch-engine
       '@biocore/data-service':
         specifier: workspace:*
         version: link:../data-service
+      '@biocore/experiment-optimizer':
+        specifier: workspace:*
+        version: link:../experiment-optimizer
       '@biocore/notifier':
         specifier: workspace:*
         version: link:../notifier
+      '@biocore/plc-driver':
+        specifier: workspace:*
+        version: link:../plc-driver
       '@biocore/runtime-guard':
         specifier: workspace:*
         version: link:../runtime-guard
+      '@biocore/soft-sensor':
+        specifier: workspace:*
+        version: link:../soft-sensor
       '@influxdata/influxdb-client':
         specifier: ^1.33.0
         version: 1.35.0

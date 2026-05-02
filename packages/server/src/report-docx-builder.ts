@@ -3,7 +3,7 @@
 // 使用 docx 库生成结构化 Word 文档
 // ============================================================
 
-import type { Report } from '../../ai-gateway/src/report-types';
+import type { Report } from '@biocore/ai-gateway';
 
 // docx 可能未安装, 运行时动态加载
 let docxLib: any = null;

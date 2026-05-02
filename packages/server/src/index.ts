@@ -163,16 +163,16 @@ console.log(`[runtime-guard] installed (oom_threshold_mb=${metricsCollector.snap
 // ─────────────────────────────────────────────────────────────────────────────
 
 // plc-driver 工具函数 (直接导入，不依�� native 模块加载)
-import { parseAddr, byteLen, decode, scale, validateAddr } from '../../plc-driver/src/utils';
-import { VariableMappingManager } from '../../plc-driver/src/variable-mapping';
-import type { PLCConnectionConfig, PLCVariableMapping } from '../../plc-driver/src/types';
+import { parseAddr, byteLen, decode, scale, validateAddr, VariableMappingManager } from '@biocore/plc-driver';
+import type { PLCConnectionConfig, PLCVariableMapping } from '@biocore/plc-driver';
 
 // soft-sensor + experiment-optimizer (实际算法包)
-import { SoftSensorEngine } from '../../soft-sensor/src/index';
-import { FeedAdvisor } from '../../soft-sensor/src/feed-advisor';
-import { RootCauseAnalyzer } from '../../soft-sensor/src/root-cause';
-import { BayesianOptimizer } from '../../experiment-optimizer/src/bayesian-optimizer';
-import { CUSUMDetector } from '../../ai-analytics/src/cusum';
+import { SoftSensorEngine, FeedAdvisor, RootCauseAnalyzer } from '@biocore/soft-sensor';
+import { BayesianOptimizer } from '@biocore/experiment-optimizer';
+// CUSUMDetector: ai-analytics barrel exposes the new module under alias CUSUMDetectorV2;
+// the in-barrel CUSUMDetector class is the legacy in-file definition. We use the V2 alias here
+// because the previous deep import was './cusum' (the new module).
+import { CUSUMDetectorV2 as CUSUMDetector } from '@biocore/ai-analytics';
 import { registerCusumRoutes, initCusumBaselines, getDefaultBaselines } from './cusum-routes';
 import { registerBatchIntelligenceRoutes } from './batch-intelligence-routes';
 import { startSuggestionEngine } from './ai-suggestion-engine';
@@ -193,7 +193,7 @@ const DATA_DIR = process.env.DATA_DIR || './data';
 
 // ─── SQLite 初始化 ─────────────────────────────────────────
 
-import { SQLiteService, getOrphanBatches, markBatchHeldForRecovery } from '../../data-service/src/sqlite-service';
+import { SQLiteService, getOrphanBatches, markBatchHeldForRecovery } from '@biocore/data-service';
 import { mkdirSync } from 'fs';
 import { runMigrations } from './migrator';
 
@@ -1420,7 +1420,7 @@ apiRouter.post('/phase-templates/init-defaults', (req, res) => {
 
 // ── 计算参数公式配置 API ──
 
-import { validateExpression, AVAILABLE_VARS } from '../../data-service/src/formula-evaluator';
+import { validateExpression, AVAILABLE_VARS } from '@biocore/data-service';
 
 /** GET /formula-configs — 列出所有公式 */
 apiRouter.get('/formula-configs', (_req, res) => {
@@ -2222,25 +2222,26 @@ apiRouter.delete('/recipes/:id', (req, res) => {
 
 import {
   generateDesignMatrix,
-  type DoEFactor,
-  type DesignType,
-} from '../../experiment-optimizer/src/doe-designs';
-import {
   fitResponseModel,
   findOptimum,
   paretoChart,
-  type ModelType,
-  type ObservationPoint,
-} from '../../experiment-optimizer/src/doe-analysis';
-// 正交/均匀设计 + 分析模块
-import { generateOrthogonalDesign } from '../../experiment-optimizer/src/doe-orthogonal';
-import { generateUniformDesign } from '../../experiment-optimizer/src/doe-uniform';
-import { rangeAnalysis, type ExperimentResult } from '../../experiment-optimizer/src/doe-range-analysis';
-import { orthogonalAnova } from '../../experiment-optimizer/src/doe-anova';
-import { multipleRegression, quadraticSurfaceRegression } from '../../experiment-optimizer/src/doe-regression';
-import type { RegressionPoint } from '../../experiment-optimizer/src/doe-regression';
-import type { DOEFactor as OrthDOEFactor } from '../../experiment-optimizer/src/doe-types';
-import { evaluateDesign } from '../../experiment-optimizer/src/doe-diagnostics';
+  generateOrthogonalDesign,
+  generateUniformDesign,
+  rangeAnalysis,
+  orthogonalAnova,
+  multipleRegression,
+  quadraticSurfaceRegression,
+  evaluateDesign,
+} from '@biocore/experiment-optimizer';
+import type {
+  DoEFactor,
+  DesignType,
+  ModelType,
+  ObservationPoint,
+  ExperimentResult,
+  RegressionPoint,
+  DOEFactor as OrthDOEFactor,
+} from '@biocore/experiment-optimizer';
 
 // 工具: 按 path (如 "HEAT_01.target_temp_C") 注入到配方 phase.params
 function injectFactorIntoPhases(phases: any[], path: string | undefined, value: number): any[] {
@@ -3712,9 +3713,8 @@ apiRouter.post('/reactor-configs/init-defaults', (_req, res) => {
 
 // ── 多反应器管理 API ──
 
-import { ReactorManager } from '../../batch-engine/src/reactor-manager';
-import type { BatchControllerConfig } from '../../batch-engine/src/batch-controller';
-import { checkInterlocks } from '../../batch-engine/src/index';
+import { ReactorManager, checkInterlocks } from '@biocore/batch-engine';
+import type { BatchControllerConfig } from '@biocore/batch-engine';
 
 const reactorManager = new ReactorManager();
 

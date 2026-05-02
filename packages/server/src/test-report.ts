@@ -1,8 +1,7 @@
 // 测试报告生成流程
 import Database from 'better-sqlite3';
 import { resolve } from 'path';
-import { LLMClient } from '../../ai-gateway/src/llm-client.js';
-import { ReportGenerator } from '../../ai-gateway/src/report-generator.js';
+import { LLMClient, ReportGenerator } from '@biocore/ai-gateway';
 
 const DB_PATH = resolve(__dirname, '../data/biocore.db');
 

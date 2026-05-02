@@ -3,7 +3,7 @@
 // 用于浏览器预览和 Puppeteer PDF 生成
 // ============================================================
 
-import type { Report } from '../../ai-gateway/src/report-types';
+import type { Report } from '@biocore/ai-gateway';
 
 // 简易 Markdown → HTML (支持标题/粗体/列表/段落)
 function mdToHtml(md: string): string {

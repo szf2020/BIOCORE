@@ -6,9 +6,8 @@
 // ============================================================
 
 import type { Router } from 'express';
-import type { SQLiteService } from '../../data-service/src/sqlite-service';
-import { dtwDistance, rankBySimilarity } from '../../ai-analytics/src/dtw';
-import { buildEnvelope, checkEnvelope } from '../../ai-analytics/src/envelope';
+import type { SQLiteService } from '@biocore/data-service';
+import { dtwDistanceV2 as dtwDistance, rankBySimilarity, buildEnvelope, checkEnvelope } from '@biocore/ai-analytics';
 import { lttb } from './lttb';
 
 const INFLUX_BUCKET = process.env.INFLUX_BUCKET || 'fermentation';
