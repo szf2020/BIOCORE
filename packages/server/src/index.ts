@@ -15,8 +15,6 @@
 //   (no ESLint config exists in this repo yet).
 // ============================================================
 
-import express, { Router } from 'express';
-import cors from 'cors';
 import http from 'http';
 // v1.9.0 P2 bucket 1: WebSocketServer + connection auth + broadcast()
 // extracted to ./ws-server. We keep the module-level `wss` and
@@ -36,10 +34,13 @@ import { readFileSync } from 'fs';
 import { resolve as pathResolve } from 'path';
 import { v0DeprecationMw, API_V0_SUNSET } from './middlewares/deprecation';
 import { authMiddleware, setAuthDb, hashApiKey, requireRole } from './middlewares/auth';
-import { traceMw } from './middlewares/trace';
+// traceMw moved into ./bootstrap (used in createApp's middleware stack).
 import { v1ResponseWrapper } from './middlewares/response-wrapper';
-import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
+// v1.9.0 P2 bucket 1.7: express app + middleware + apiRouter + swagger
+// extracted to ./bootstrap. Swagger scan path is passed in so the
+// JSDoc @openapi blocks in this file (and route-handler files) are
+// still picked up byte-for-byte.
+import { createApp } from './bootstrap';
 import { lttb } from './lttb';
 import { registerRawMaterialsRoutes } from './raw-materials-routes';
 import { registerBatchCompareRoutes } from './batch-compare-routes';
@@ -466,78 +467,14 @@ export { hashPasswordBcrypt, verifyPassword };
 // ensureAdminAccount 已迁至 ./startup (v1.9.0 P2 bucket 1.6)。
 
 // ─── Express ───────────────────────────────────────────────
-
-const app: ReturnType<typeof express> = express();
-// CORS (v1.7.3 H4 收紧):
-//   - 生产 (NODE_ENV=production): 必须设置 ALLOWED_ORIGINS, 否则启动失败
-//   - 开发: 默认 'http://localhost:3000' (绝不再用 origin: true + credentials: true)
-//   - origin: true 与 credentials: true 同时使用会反射任意 origin, 是 CSRF 风险
-let allowedOrigins: string | string[];
-if (process.env.ALLOWED_ORIGINS) {
-  allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
-} else if (process.env.NODE_ENV === 'production') {
-  console.error('[CORS] FATAL: ALLOWED_ORIGINS env var is required in production. Set ALLOWED_ORIGINS=https://your.domain (comma-separated for multiple).');
-  process.exit(1);
-} else {
-  allowedOrigins = 'http://localhost:3000';
-  console.warn('[CORS] dev fallback origin = http://localhost:3000 (set ALLOWED_ORIGINS to override)');
-}
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-  exposedHeaders: ['X-Trace-Id', 'Deprecation', 'Link'],
-}));
-app.use(express.json({ limit: '10mb' }));
-app.use(traceMw); // 所有路径注入 trace_id (含 v0/v1/非 /api 路径)
-
-// JWT 认证中间件: 已提取到 middlewares/auth.ts
-// PUBLIC_PATHS 也已迁移到 auth.ts (注意: 路径不再带 /api 前缀, 因为是 Router 内部路径)
-const AUTH_ENABLED = process.env.AUTH_ENABLED !== 'false';
-
-// ─── API 路由器 (双挂载支持 /api/v1 + /api 兼容期) ────────────
-const apiRouter = Router();
-console.log(`[${new Date().toISOString()}] [INFO] [API] V0 兼容期截止日期: ${API_V0_SUNSET}`);
-
-// ─── Swagger / OpenAPI 文档 ──────────────────────────────────
-const swaggerSpec = swaggerJsdoc({
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'BIOCore API',
-      version: '1.0.0',
-      description: `发酵罐控制平台 REST API.\n\n旧 \`/api/*\` 路径将于 ${API_V0_SUNSET} 停用,请使用 \`/api/v1/*\`.\n\n两种鉴权方式:\n- **JWT** (Authorization: Bearer xxx) — 给前端 UI 用\n- **API Key** (X-API-Key: ak_xxx.xxx) — 给 MES/外部系统用,优先级更高`,
-    },
-    servers: [
-      { url: 'http://localhost:3001/api/v1', description: 'V1 (推荐)' },
-      { url: 'http://localhost:3001/api', description: 'V0 (已废弃, 6 个月后停用)' },
-    ],
-    components: {
-      securitySchemes: {
-        ApiKey: { type: 'apiKey', in: 'header', name: 'X-API-Key' },
-        Bearer: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      },
-      schemas: {
-        UnifiedResponse: {
-          type: 'object',
-          properties: {
-            code: { type: 'integer', example: 0, description: '0 = 成功, 4xx/5xx = 错误' },
-            msg: { type: 'string', example: 'ok' },
-            data: { description: '业务数据 (各端点不同)' },
-            trace_id: { type: 'string', example: 'aa3029adbfdf68c5', description: '跨系统排错关联 ID' },
-          },
-        },
-      },
-    },
-    security: [{ Bearer: [] }, { ApiKey: [] }],
-  },
-  apis: [__filename],  // 扫描本文件中的 JSDoc @openapi 注解
+// v1.9.0 P2 bucket 1.7: express app + middleware + apiRouter + swagger
+// constructed in ./bootstrap. We pass __filename so swagger-jsdoc still
+// scans this file's @openapi blocks; ALLOWED_ORIGINS / dev fallback /
+// prod fail-fast all live in resolveAllowedOrigins() inside bootstrap.
+const { app, apiRouter, authEnabled: AUTH_ENABLED } = createApp({
+  swaggerScanPath: __filename,
+  apiV0Sunset: API_V0_SUNSET,
 });
-
-// /docs 公开 (无需鉴权), 已在 PUBLIC_PATHS 中
-apiRouter.get('/docs.json', (_req, res) => res.json(swaggerSpec));
-apiRouter.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: 'BIOCore API Docs',
-}));
 
 // M2.6: 原料库 M9 路由 (7 端点: CRUD + MSDS 上传/下载)
 registerRawMaterialsRoutes(apiRouter, sqlite, DATA_DIR);
