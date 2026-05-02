@@ -15,10 +15,12 @@
 //   (no ESLint config exists in this repo yet).
 // ============================================================
 
-import express, { Router } from 'express';
-import cors from 'cors';
 import http from 'http';
-import { WebSocketServer, WebSocket } from 'ws';
+// v1.9.0 P2 bucket 1: WebSocketServer + connection auth + broadcast()
+// extracted to ./ws-server. We keep the module-level `wss` and
+// `broadcast` references so existing call sites (route handlers,
+// wireReactorEvents, gracefulShutdown, /status) keep working unchanged.
+import { createWsServer } from './ws-server';
 // node-snap7 动态加载: Node v24 可能缺少编译后的 native binding
 let S7Client: any;
 try {
@@ -32,10 +34,13 @@ import { readFileSync } from 'fs';
 import { resolve as pathResolve } from 'path';
 import { v0DeprecationMw, API_V0_SUNSET } from './middlewares/deprecation';
 import { authMiddleware, setAuthDb, hashApiKey, requireRole } from './middlewares/auth';
-import { traceMw } from './middlewares/trace';
+// traceMw moved into ./bootstrap (used in createApp's middleware stack).
 import { v1ResponseWrapper } from './middlewares/response-wrapper';
-import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
+// v1.9.0 P2 bucket 1.7: express app + middleware + apiRouter + swagger
+// extracted to ./bootstrap. Swagger scan path is passed in so the
+// JSDoc @openapi blocks in this file (and route-handler files) are
+// still picked up byte-for-byte.
+import { createApp } from './bootstrap';
 import { lttb } from './lttb';
 import { registerRawMaterialsRoutes } from './raw-materials-routes';
 import { registerBatchCompareRoutes } from './batch-compare-routes';
@@ -96,7 +101,7 @@ const RUNTIME_GUARD_OOM_THRESHOLD_MB =
     : undefined;  // undefined = MetricsCollector/MemoryWatchdog auto = RAM × 20%
 
 export const metricsCollector = new MetricsCollector({
-  serviceVersion: process.env.npm_package_version ?? '0.3.5',
+  serviceVersion: process.env.npm_package_version ?? '0.4.0',
   oomThresholdMb: RUNTIME_GUARD_OOM_THRESHOLD_MB,
 });
 metricsCollector.start();
@@ -173,35 +178,38 @@ installCrashHandlers({
 console.log(`[runtime-guard] installed (oom_threshold_mb=${metricsCollector.snapshot().memory.oom_threshold_mb})`);
 // ─────────────────────────────────────────────────────────────────────────────
 
-// plc-driver utility functions
-//
-// EXCEPTION (v1.8.0 bucket 2): These deep imports are intentional and remain
-// after the cross-package import cleanup. The @biocore/plc-driver barrel
-// (src/index.ts) eagerly imports node-snap7 (a native binding) and
-// modbus-serial at module load. The server only needs the pure-JS utility
-// helpers and types — it has its own dynamic loader for S7Client. Importing
-// from the barrel would force-load node-snap7 native bindings on Node hosts
-// without the compiled .node file (e.g. tsx dev, MOCK_PLC environments).
-//
-// TODO (post-v1.8.0): split @biocore/plc-driver into a pure-JS sub-entry
-// (e.g. @biocore/plc-driver/utils via the package.json `exports` map) so
-// these consumers can use a documented public sub-path. For now the deep
-// import is the lesser evil — see release notes for ESLint rule plan that
-// will need to whitelist this exception or move it behind a sub-entry.
-import { parseAddr, byteLen, decode, scale, validateAddr } from '../../plc-driver/src/utils';
-import { VariableMappingManager } from '../../plc-driver/src/variable-mapping';
-import type { PLCConnectionConfig, PLCVariableMapping } from '../../plc-driver/src/types';
+// plc-driver utility functions + MOCK_PLC simulator + variable manager
+// (v1.9.0 P2 bucket 1: extracted to ./plc-bridge — see that file for the
+// documented plc-driver deep-import EXCEPTION). Importing this module also
+// triggers the MOCK_PLC warning banner side-effect when MOCK_PLC=true.
+import {
+  parseAddr,
+  byteLen,
+  decode,
+  scale,
+  validateAddr,
+  VariableMappingManager,
+  MOCK_PLC,
+  devPlcRead,
+} from './plc-bridge';
+import type { PLCConnectionConfig, PLCVariableMapping } from './plc-bridge';
 
 // soft-sensor + experiment-optimizer (实际算法包)
-import { SoftSensorEngine, FeedAdvisor, RootCauseAnalyzer } from '@biocore/soft-sensor';
+// v1.9.0 P2 bucket 1: SoftSensorEngine/FeedAdvisor/RootCauseAnalyzer
+// singletons + CUSUM per-batch registry are wired in ./ai-wiring.
 import { BayesianOptimizer } from '@biocore/experiment-optimizer';
-// CUSUMDetector: ai-analytics barrel exposes the new module under alias CUSUMDetectorV2;
-// the in-barrel CUSUMDetector class is the legacy in-file definition. We use the V2 alias here
-// because the previous deep import was './cusum' (the new module).
-import { CUSUMDetectorV2 as CUSUMDetector } from '@biocore/ai-analytics';
+import {
+  softSensorEngine,
+  feedAdvisor,
+  rootCauseAnalyzer,
+  cusumDetectors,
+  SoftSensorEngine, // class re-export for static trainLinearModel() helper
+} from './ai-wiring';
 import { registerCusumRoutes, initCusumBaselines, getDefaultBaselines } from './cusum-routes';
 import { registerBatchIntelligenceRoutes } from './batch-intelligence-routes';
-import { startSuggestionEngine } from './ai-suggestion-engine';
+// v1.9.0 P2 bucket 1: AI suggestion engine boot lifecycle moved into
+// ./scheduler (startSchedulers / stopSchedulers).
+import { startSchedulers, stopSchedulers } from './scheduler';
 import { registerAiReportRoutes, detectReportIntent } from './ai-report-routes';
 import { createAdminHealthRouter } from './routes/admin-health';
 import { createAdminMetricsRouter } from './routes/admin-metrics';
@@ -219,24 +227,23 @@ const DATA_DIR = process.env.DATA_DIR || './data';
 
 // ─── SQLite 初始化 ─────────────────────────────────────────
 
-import { SQLiteService, getOrphanBatches, markBatchHeldForRecovery } from '@biocore/data-service';
+import { SQLiteService } from '@biocore/data-service';
 import { mkdirSync } from 'fs';
-import { runMigrations } from './migrator';
+// v1.9.0 P2 bucket 1.6: migration / admin-init / jwt-guard / orphan-recovery
+// boot helpers extracted to ./startup.
+import {
+  setupMigrations,
+  ensureAdminAccount,
+  assertJwtSecretSafe,
+  runOrphanRecoveryScan,
+} from './startup';
 
 mkdirSync(DATA_DIR, { recursive: true });
 const sqlite = new SQLiteService(`${DATA_DIR}/biocore.db`);
 
 // v1.7.3 H7: server.listen 必须等到 migrations 完成后再触发。
-// 这是一个 Promise, 在文件底部的 start() 中被 await。
-// 失败 → 致命退出, 不再 fire-and-forget。
-const migrationsReady: Promise<void> = (async () => {
-  try {
-    await runMigrations(sqlite.getDatabase());
-  } catch (e) {
-    console.error('[Migrator] 致命错误, 服务无法启动:', (e as Error).message);
-    process.exit(1);
-  }
-})();
+// setupMigrations 返回的 Promise 在 start() 中被 await; 失败时致命退出。
+const migrationsReady: Promise<void> = setupMigrations(sqlite.getDatabase());
 
 // 注入 sqlite 引用到 auth middleware (用于 API Key 验证)
 // 注: 此处仅设引用, 不依赖 migrations; 真正的 API Key 校验发生在请求时,
@@ -276,76 +283,19 @@ if (influxClient) {
   console.warn(`[${new Date().toISOString()}] [WARN] [Influx] 未配置 INFLUX_TOKEN, 时序数据写入和查询均禁用`);
 }
 
-// AI 建议引擎句柄
-let suggestionEngineHandle: { stop: () => void } | null = null;
-
-// reactor 数据采集 timer (key: reactor_id)
-const reactorCollectorTimers = new Map<string, ReturnType<typeof setInterval>>();
-
-// MOCK_PLC: 默认 false (生产安全), 开发演示需在 .env 设置 MOCK_PLC=true
-// 开启后所有 plcRead 调用返回模拟值, 启动时打印多行警告框
-const MOCK_PLC = process.env.MOCK_PLC === 'true';
-if (MOCK_PLC) {
-  console.warn('');
-  console.warn('  ╔══════════════════════════════════════════════════════╗');
-  console.warn('  ║  ⚠ MOCK_PLC=true 模式启用 — 所有 PLC 读取返回模拟值  ║');
-  console.warn('  ║  生产部署前必须设置 MOCK_PLC=false 或移除该环境变量  ║');
-  console.warn('  ╚══════════════════════════════════════════════════════╝');
-  console.warn('');
-}
-
-// 开发模式 PLC 读取 (统一定义,server 全局共享)
-// 模拟量慢漂移 (DEMO 用, 让趋势图更逼真)
-// CUSUM 演示: 周期性注入异常, 让 CUSUM 检测并展示效果
-const _demoBase: Record<string, number> = {};
-const _demoDrift: Record<string, number> = {};
-const _demoStartTime = Date.now();
-function devPlcRead(tag: string): number {
-  // 缓慢随机游走 + 微小噪声
-  if (!_demoBase[tag]) {
-    const defaults: Record<string, number> = {
-      TEMP_PV: 37, JACKET_PV: 36.5, PH_PV: 7.0, DO_PV: 55,
-      PRESSURE_PV: 0.35, AIRFLOW_PV: 5.5, WEIGHT_PV: 7.2,
-      VFD_ACTUAL_FREQ: 15, VFD_CURRENT: 2.1,
-      STEAM_CV: 0, COOL_CV: 35, AIR_CV: 55,
-      P01_RATE: 2.5, P02_RATE: 8.0, P03_RATE: 0.8, P04_RATE: 0,
-      VFD_FAULT_CODE: 0, ESTOP: 0,
-      STEAM_VALVE_CLOSED: 1, COOL_VALVE_CLOSED: 1, LID_LOCKED: 1,
-      STEAM_PRESSURE_SW: 1, HEARTBEAT: 0,
-      TEMP_SV: 37, PH_SV: 7, DO_SV: 30,
-    };
-    _demoBase[tag] = defaults[tag] ?? 0;
-    _demoDrift[tag] = 0;
-  }
-  // 随机游走: 每次调用微小漂移
-  _demoDrift[tag] += (Math.random() - 0.5) * 0.06;
-  _demoDrift[tag] *= 0.95; // 衰减回零
-  const noise = (Math.random() - 0.5) * 0.3;
-  if (tag === 'HEARTBEAT') return Date.now() % 256;
-  if (tag === 'ESTOP' || tag === 'VFD_FAULT_CODE') return 0;
-  if (tag.endsWith('_CLOSED') || tag.endsWith('_LOCKED') || tag.endsWith('_SW')) return 1;
-
-  // ── CUSUM 演示异常注入 ──
-  // 周期性偏移, 让 CUSUM S⁺/S⁻ 累积并触发报警, 展示统计过程控制能力
-  const elapsedSec = (Date.now() - _demoStartTime) / 1000;
-  let anomalyBias = 0;
-
-  if (tag === 'TEMP_PV') {
-    // 每 5 分钟周期: 前 2 分钟温度上升 0.8°C (CUSUM S⁺ 累积)
-    const cycle = elapsedSec % 300; // 5min 周期
-    if (cycle >= 60 && cycle < 180) anomalyBias = 0.8;
-  } else if (tag === 'PH_PV') {
-    // 每 7 分钟周期: 中间 2 分钟 pH 下降 0.15 (CUSUM S⁻ 累积)
-    const cycle = elapsedSec % 420; // 7min 周期
-    if (cycle >= 120 && cycle < 240) anomalyBias = -0.15;
-  } else if (tag === 'DO_PV') {
-    // 每 4 分钟周期: 后 1.5 分钟 DO 下降 12% (明显偏移)
-    const cycle = elapsedSec % 240; // 4min 周期
-    if (cycle >= 150 && cycle < 240) anomalyBias = -12;
-  }
-
-  return _demoBase[tag] + _demoDrift[tag] + noise + anomalyBias;
-}
+// v1.9.0 P2 bucket 1: reactor runtime (manager, collector ticks,
+// wireReactorEvents, IL/RF metadata) extracted to ./reactor-wiring.
+// reactorManager + reactorCollectorTimers are exported singletons; the
+// collector / event-bridge functions are produced by createReactorWiring()
+// once influx + autoCollectDoeResponses are available below.
+import {
+  reactorManager,
+  reactorCollectorTimers,
+  INTERLOCK_META,
+  RUNNING_FAULT_META,
+  createReactorWiring,
+} from './reactor-wiring';
+import { initAuditQueue, getAuditQueue } from './audit-queue';
 
 // Phase模板步骤定义: 从数据库读取, 关联系统设置中的Phase模板配置
 // 数据库用 PascalCase (Prepare/AddWater), 引擎用 snake_case (prepare/water_fill)
@@ -435,200 +385,8 @@ function getInterlockConfigsFromDB(): any[] {
   }
 }
 
-// 启动单个反应器的时序采集 (60秒一次写入 InfluxDB)
-function startReactorCollector(reactorId: string): void {
-  if (!influxWriteApi || reactorCollectorTimers.has(reactorId)) return;
-  const tick = () => {
-    try {
-      const ctrl = reactorManager.getReactor(reactorId);
-      // M2.2 bug 修复: 仅在批次真正 running 时标 real batch_id,
-      // 否则一律 'idle' (避免把 downloaded recipe_id 误当 batch_id 污染时序数据)
-      const batchId = ctrl && ctrl.currentState === 'running' && ctrl.currentBatchId
-        ? ctrl.currentBatchId
-        : 'idle';
-      // v1.8.0 bucket 3 (perf fix 3): dedupe PLC reads. Old code called
-      // devPlcRead(tag) ~32 times per tick (~18 for the InfluxDB Point + ~14
-      // for the WS broadcast pvPayload), even though only 19 unique tags
-      // are actually consumed. Hoist into a single rawPV map and read each
-      // tag once, then build both the Point and the broadcast payload from
-      // it. devPlcRead is currently sync (random-walk simulator); when
-      // MOCK_PLC=false the read becomes async and the 32→19 reduction will
-      // yield real network savings — see concerns note for the async-PLC
-      // follow-up.
-      const TAGS = [
-        'TEMP_PV', 'JACKET_PV', 'PH_PV', 'DO_PV', 'PRESSURE_PV', 'AIRFLOW_PV', 'WEIGHT_PV',
-        'VFD_ACTUAL_FREQ', 'VFD_CURRENT',
-        'STEAM_CV', 'COOL_CV', 'AIR_CV',
-        'P01_RATE', 'P02_RATE', 'P03_RATE', 'P04_RATE',
-        'TEMP_SV', 'PH_SV', 'DO_SV',
-      ];
-      const rawPV: Record<string, number> = {};
-      for (const tag of TAGS) {
-        try { rawPV[tag] = devPlcRead(tag); } catch { rawPV[tag] = 0; }
-      }
-      const rpmRaw = rawPV['VFD_ACTUAL_FREQ'] * 24;
-
-      const point = new Point('process_data')
-        .tag('reactor_id', reactorId)
-        .tag('batch_id', String(batchId))
-        .floatField('temperature', rawPV['TEMP_PV'])
-        .floatField('jacket_temp', rawPV['JACKET_PV'])
-        .floatField('pH', rawPV['PH_PV'])
-        .floatField('DO', rawPV['DO_PV'])
-        .floatField('pressure', rawPV['PRESSURE_PV'])
-        .floatField('airflow', rawPV['AIRFLOW_PV'])
-        .floatField('weight', rawPV['WEIGHT_PV'])
-        .floatField('rpm', rpmRaw)
-        .floatField('vfd_current', rawPV['VFD_CURRENT'])
-        .timestamp(new Date());
-      influxWriteApi!.writePoint(point);
-      // 异步 flush, 不阻塞下一次采样
-      influxWriteApi!.flush().catch((e: any) =>
-        console.error(`[${new Date().toISOString()}] [ERROR] [Influx flush] ${e?.message || e}`)
-      );
-
-      // ─── 广播实时 PV 到前端 ──────────────────────────
-      const pvPayload = {
-        timestamp: new Date().toISOString(),
-        batch_id: batchId === 'idle' ? null : batchId,
-        'AI-0': rawPV['TEMP_PV'],      // 罐温
-        'AI-1': rawPV['JACKET_PV'],     // 夹套温度
-        'AI-2': rawPV['PH_PV'],         // pH
-        'AI-3': rawPV['DO_PV'],         // DO
-        'AI-4': rawPV['PRESSURE_PV'],   // 罐压
-        'AI-5': rawPV['AIRFLOW_PV'],    // 空气流量
-        'AI-6': rawPV['WEIGHT_PV'],     // 称重
-        rpm: Math.round(rpmRaw),
-        vfd_current: rawPV['VFD_CURRENT'],
-        'AO-0_cv': rawPV['STEAM_CV'],   // 蒸汽阀
-        'AO-1_cv': rawPV['COOL_CV'],    // 冷却阀
-        'AO-2_cv': rawPV['AIR_CV'],     // 空气阀
-        P01_rate: rawPV['P01_RATE'],     // 碱泵
-        P02_rate: rawPV['P02_RATE'],     // 补料泵
-        P03_rate: rawPV['P03_RATE'],     // 氮源泵
-        P04_rate: rawPV['P04_RATE'],     // 酸泵
-        temp_mode: 2,                     // 冷却模式
-        temp_sv: rawPV['TEMP_SV'],
-        pH_sv: rawPV['PH_SV'],
-        DO_sv: rawPV['DO_SV'],
-      };
-      broadcast('pv_realtime', pvPayload, batchId === 'idle' ? null : batchId, reactorId);
-
-      // ─── CUSUM 实时异常检测 ───────────────────────────
-      if (batchId !== 'idle') {
-        const detMap = getCusumKey(batchId);
-        const pvMap: Record<string, number> = {
-          temperature: rawPV['TEMP_PV'],
-          pH: rawPV['PH_PV'],
-          DO: rawPV['DO_PV'],
-          pressure: rawPV['PRESSURE_PV'],
-          rpm: rpmRaw,
-        };
-        const cusumResults: Array<{
-          channel: string; anomaly: boolean; deviation: number;
-          alarming: boolean; cumPos: number; cumNeg: number;
-        }> = [];
-
-        for (const [ch, detector] of detMap) {
-          const val = pvMap[ch];
-          if (val === undefined) continue;
-          const r = detector.detect(val);
-          cusumResults.push({
-            channel: ch,
-            anomaly: r.anomaly,
-            deviation: r.normalized,
-            alarming: r.anomaly,
-            cumPos: r.cumPos,
-            cumNeg: r.cumNeg,
-          });
-
-          // 异常时发送告警并写入数据库
-          if (r.anomaly) {
-            const direction = r.cumPos > r.cumNeg ? '偏高' : '偏低';
-            const alarmData = {
-              batch_id: batchId,
-              alarm_code: `CUSUM_${ch.toUpperCase()}`,
-              severity: 'warning',
-              source: 'ai:cusum',
-              message: `CUSUM检测: ${ch} 持续${direction}, 偏差 ${r.normalized.toFixed(1)}σ`,
-              channel: ch,
-              pv_at_trigger: val,
-            };
-            broadcast('alarm', { reactor_id: reactorId, ...alarmData }, batchId, reactorId);
-            try { sqlite.createAlarm(alarmData); } catch { /* ignore */ }
-          }
-        }
-
-        // 广播 CUSUM 状态到前端
-        if (cusumResults.length > 0) {
-          broadcast('cusum', cusumResults, batchId, reactorId);
-        }
-
-        // ─── 软测量实时推断 ─────────────────────────────
-        try {
-          const activeModels = softSensorEngine.listModels?.() || [];
-          if (activeModels.length > 0) {
-            const features: Record<string, number> = {
-              temperature: pvMap.temperature,
-              pH: pvMap.pH,
-              DO: pvMap.DO,
-              pressure: pvMap.pressure,
-              rpm: pvMap.rpm,
-            };
-            const predictions: Record<string, any> = {};
-            for (const model of activeModels) {
-              try {
-                const result = softSensorEngine.predict(model.id, features);
-                predictions[model.target || model.id] = result;
-              } catch { /* 单模型推断失败不影响其他 */ }
-            }
-            if (Object.keys(predictions).length > 0) {
-              broadcast('soft_sensor', predictions, batchId, reactorId);
-            }
-          }
-        } catch { /* 软测量模块错误不影响主采集 */ }
-      }
-    } catch (e: any) {
-      console.error(`[${new Date().toISOString()}] [ERROR] [Influx write] ${e?.message || e}`);
-    }
-  };
-  tick(); // 立即写一次,后续每 60 秒
-  const timer = setInterval(tick, 60000);
-  reactorCollectorTimers.set(reactorId, timer);
-  console.log(`[${new Date().toISOString()}] [INFO] [Influx] 反应器 ${reactorId} 时序采集已启动`);
-}
-
-function stopReactorCollector(reactorId: string): void {
-  const t = reactorCollectorTimers.get(reactorId);
-  if (t) {
-    clearInterval(t);
-    reactorCollectorTimers.delete(reactorId);
-  }
-}
-
-// ─── 软测量引擎 (全局单例) ─────────────────────────────────
-const softSensorEngine = new SoftSensorEngine();
-const feedAdvisor = new FeedAdvisor();
-const rootCauseAnalyzer = new RootCauseAnalyzer();
-
-// ─── CUSUM 实时检测器 (per-batch per-channel) ──────────────
-const cusumDetectors = new Map<string, Map<string, CUSUMDetector>>();
-
-function getCusumKey(batchId: string): Map<string, CUSUMDetector> {
-  if (!cusumDetectors.has(batchId)) {
-    const channels = new Map<string, CUSUMDetector>();
-    for (const ch of ['temperature', 'pH', 'DO', 'pressure', 'rpm']) {
-      channels.set(ch, new CUSUMDetector());
-    }
-    cusumDetectors.set(batchId, channels);
-  }
-  return cusumDetectors.get(batchId)!;
-}
-
-// P1 修复: 批次完成/停止后清理 CUSUM 检测器, 避免内存泄漏
-function clearCusumDetectors(batchId: string): void {
-  cusumDetectors.delete(batchId);
-}
+// startReactorCollector / stopReactorCollector are now built by
+// createReactorWiring() in ./reactor-wiring (v1.9.0 P2 bucket 1.5).
 
 // ─── JWT 简易实现 ──────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || 'biocore-dev-secret-change-in-production';
@@ -707,108 +465,17 @@ async function verifyPassword(
 
 export { hashPasswordBcrypt, verifyPassword };
 
-// 初始化默认admin用户 (如果不存在或 hash 是无效格式)
-// v1.7.3 H7: 此调用在 start() 中通过 ensureAdminAccount() 触发, 与 migrationsReady 串行。
-async function ensureAdminAccount(): Promise<void> {
-  try {
-    const db = sqlite.getDatabase();
-    const existing: any = db.prepare('SELECT user_id, password_hash FROM users WHERE username = ?').get('admin');
-    // 接受两种格式: 旧 sha256 (salt:hash) 或 新 bcrypt ($2[aby]$...)
-    const ph: string | undefined = existing?.password_hash;
-    const hashOk = !!ph && (
-      /^[a-f0-9]{32}:[a-f0-9]{64}$/.test(ph) ||
-      /^\$2[aby]\$/.test(ph)
-    );
-    if (!existing || !hashOk) {
-      const hash = await hashPasswordBcrypt('admin123');
-      if (existing) {
-        db.prepare('UPDATE users SET password_hash = ?, display_name = ?, role = ?, is_active = 1 WHERE username = ?')
-          .run(hash, '系统管理员', 'admin', 'admin');
-        console.log('[BOOT] Default admin account password reset. Password set in DB; reset via reset-admin script before production.');
-      } else {
-        db.prepare(`INSERT INTO users (user_id, username, display_name, password_hash, role)
-          VALUES (?, ?, ?, ?, ?)`).run('admin-001', 'admin', '系统管理员', hash, 'admin');
-        console.log('[BOOT] Default admin account created. Password set in DB; reset via reset-admin script before production.');
-      }
-    }
-  } catch (e) {
-    console.error(`[${new Date().toISOString()}] [ERROR] 初始化admin失败:`, e);
-  }
-}
+// ensureAdminAccount 已迁至 ./startup (v1.9.0 P2 bucket 1.6)。
 
 // ─── Express ───────────────────────────────────────────────
-
-const app: ReturnType<typeof express> = express();
-// CORS (v1.7.3 H4 收紧):
-//   - 生产 (NODE_ENV=production): 必须设置 ALLOWED_ORIGINS, 否则启动失败
-//   - 开发: 默认 'http://localhost:3000' (绝不再用 origin: true + credentials: true)
-//   - origin: true 与 credentials: true 同时使用会反射任意 origin, 是 CSRF 风险
-let allowedOrigins: string | string[];
-if (process.env.ALLOWED_ORIGINS) {
-  allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
-} else if (process.env.NODE_ENV === 'production') {
-  console.error('[CORS] FATAL: ALLOWED_ORIGINS env var is required in production. Set ALLOWED_ORIGINS=https://your.domain (comma-separated for multiple).');
-  process.exit(1);
-} else {
-  allowedOrigins = 'http://localhost:3000';
-  console.warn('[CORS] dev fallback origin = http://localhost:3000 (set ALLOWED_ORIGINS to override)');
-}
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-  exposedHeaders: ['X-Trace-Id', 'Deprecation', 'Link'],
-}));
-app.use(express.json({ limit: '10mb' }));
-app.use(traceMw); // 所有路径注入 trace_id (含 v0/v1/非 /api 路径)
-
-// JWT 认证中间件: 已提取到 middlewares/auth.ts
-// PUBLIC_PATHS 也已迁移到 auth.ts (注意: 路径不再带 /api 前缀, 因为是 Router 内部路径)
-const AUTH_ENABLED = process.env.AUTH_ENABLED !== 'false';
-
-// ─── API 路由器 (双挂载支持 /api/v1 + /api 兼容期) ────────────
-const apiRouter = Router();
-console.log(`[${new Date().toISOString()}] [INFO] [API] V0 兼容期截止日期: ${API_V0_SUNSET}`);
-
-// ─── Swagger / OpenAPI 文档 ──────────────────────────────────
-const swaggerSpec = swaggerJsdoc({
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'BIOCore API',
-      version: '1.0.0',
-      description: `发酵罐控制平台 REST API.\n\n旧 \`/api/*\` 路径将于 ${API_V0_SUNSET} 停用,请使用 \`/api/v1/*\`.\n\n两种鉴权方式:\n- **JWT** (Authorization: Bearer xxx) — 给前端 UI 用\n- **API Key** (X-API-Key: ak_xxx.xxx) — 给 MES/外部系统用,优先级更高`,
-    },
-    servers: [
-      { url: 'http://localhost:3001/api/v1', description: 'V1 (推荐)' },
-      { url: 'http://localhost:3001/api', description: 'V0 (已废弃, 6 个月后停用)' },
-    ],
-    components: {
-      securitySchemes: {
-        ApiKey: { type: 'apiKey', in: 'header', name: 'X-API-Key' },
-        Bearer: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      },
-      schemas: {
-        UnifiedResponse: {
-          type: 'object',
-          properties: {
-            code: { type: 'integer', example: 0, description: '0 = 成功, 4xx/5xx = 错误' },
-            msg: { type: 'string', example: 'ok' },
-            data: { description: '业务数据 (各端点不同)' },
-            trace_id: { type: 'string', example: 'aa3029adbfdf68c5', description: '跨系统排错关联 ID' },
-          },
-        },
-      },
-    },
-    security: [{ Bearer: [] }, { ApiKey: [] }],
-  },
-  apis: [__filename],  // 扫描本文件中的 JSDoc @openapi 注解
+// v1.9.0 P2 bucket 1.7: express app + middleware + apiRouter + swagger
+// constructed in ./bootstrap. We pass __filename so swagger-jsdoc still
+// scans this file's @openapi blocks; ALLOWED_ORIGINS / dev fallback /
+// prod fail-fast all live in resolveAllowedOrigins() inside bootstrap.
+const { app, apiRouter, authEnabled: AUTH_ENABLED } = createApp({
+  swaggerScanPath: __filename,
+  apiV0Sunset: API_V0_SUNSET,
 });
-
-// /docs 公开 (无需鉴权), 已在 PUBLIC_PATHS 中
-apiRouter.get('/docs.json', (_req, res) => res.json(swaggerSpec));
-apiRouter.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: 'BIOCore API Docs',
-}));
 
 // M2.6: 原料库 M9 路由 (7 端点: CRUD + MSDS 上传/下载)
 registerRawMaterialsRoutes(apiRouter, sqlite, DATA_DIR);
@@ -922,84 +589,15 @@ app.use('/api', v0DeprecationMw, authMiddleware, apiRouter);
 const server = http.createServer(app);
 
 // ─── WebSocket ─────────────────────────────────────────────
-
-const wss = new WebSocketServer({ server, path: '/ws' });
-
-function broadcast(channel: string, payload: any, batchId?: string | null, reactorId?: string | null): void {
-  const msg = JSON.stringify({
-    channel,
-    timestamp: new Date().toISOString(),
-    batch_id: batchId ?? null,
-    reactor_id: reactorId ?? null,
-    payload,
-  });
-  // v1.7.1 hardening: ws.send() can throw synchronously when the underlying
-  // socket is half-closed or its send buffer is exhausted. The broadcast()
-  // helper is invoked from EventEmitter listeners (phase_started /
-  // phase_completed / branch_evaluated) — letting an exception escape would
-  // bubble through ctrl.emit() into readyNextPhase() and trip runtime-guard's
-  // uncaughtException handler, taking the whole server down for a single
-  // misbehaving WS client. Wrap each per-client send so one bad client cannot
-  // crash the engine.
-  wss.clients.forEach(client => {
-    if (client.readyState !== WebSocket.OPEN) return;
-    try {
-      client.send(msg);
-    } catch (e) {
-      console.warn(`[WS] broadcast send failed (channel=${channel}):`, (e as Error).message);
-    }
-  });
-}
-
-// WS 鉴权:
-//   - 客户端连接 ws://localhost:3001/ws?token=<JWT>  (前端 UI)
-//   - 或 ws://localhost:3001/ws?api_key=<rawKey>     (MES/外部系统)
-//   - 或 X-API-Key header 方式 (但 WebSocket 标准不推荐 header)
-//   - 鉴权失败 close(1008, 'Unauthorized')
-//   - 开发回退: AUTH_ENABLED=false 时跳过验证 (与 HTTP middleware 一致)
-wss.on('connection', (ws, req) => {
-  const remoteIp = req.socket.remoteAddress;
-  let user: any = null;
-
-  if (AUTH_ENABLED) {
-    try {
-      const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
-      const token = url.searchParams.get('token');
-      const apiKey = url.searchParams.get('api_key') || (req.headers['x-api-key'] as string | undefined);
-
-      if (apiKey) {
-        // 验证 API Key
-        const dotIdx = apiKey.indexOf('.');
-        if (dotIdx > 0) {
-          const keyId = apiKey.slice(0, dotIdx);
-          const rawKey = apiKey.slice(dotIdx + 1);
-          const row: any = sqlite.getDatabase().prepare(
-            'SELECT key_hash, salt, scopes FROM api_keys WHERE key_id = ? AND revoked = 0'
-          ).get(keyId);
-          if (row && hashApiKey(rawKey, row.salt) === row.key_hash) {
-            user = { user_id: `apikey:${keyId}`, role: 'service' };
-            sqlite.getDatabase().prepare('UPDATE api_keys SET last_used_at = datetime("now") WHERE key_id = ?').run(keyId);
-          }
-        }
-      } else if (token) {
-        const payload = verifyJWT(token);
-        if (payload) user = payload;
-      }
-    } catch { /* parse error → user 仍为 null */ }
-
-    if (!user) {
-      console.warn(`[${new Date().toISOString()}] [WARN] [WS] 未授权连接拒绝: ${remoteIp}`);
-      ws.close(1008, 'Unauthorized');
-      return;
-    }
-  } else {
-    // 开发模式回退
-    user = { user_id: 'admin-001', role: 'admin' };
-  }
-
-  (ws as any).user = user;
-  console.log(`[${new Date().toISOString()}] [INFO] [WS] 客户端连接 user=${user.user_id} from=${remoteIp} (总数: ${wss.clients.size})`);
-  ws.on('close', () => console.log(`[${new Date().toISOString()}] [INFO] [WS] 客户端断开 user=${user.user_id} (剩余: ${wss.clients.size})`));
+// v1.9.0 P2 bucket 1: WSS + connection auth + broadcast() helper
+// live in ./ws-server. Keep the local `wss` / `broadcast` aliases so
+// downstream code (route handlers, wireReactorEvents, /status,
+// gracefulShutdown) keeps working unchanged.
+const { wss, broadcast } = createWsServer({
+  server,
+  sqlite,
+  verifyJWT,
+  authEnabled: AUTH_ENABLED,
 });
 
 // ─── 只读 S7 连接 (安全: 测试操作绝不写入PLC) ─────────────
@@ -3760,11 +3358,9 @@ apiRouter.post('/reactor-configs/init-defaults', (_req, res) => {
 });
 
 // ── 多反应器管理 API ──
-
-import { ReactorManager, checkInterlocks } from '@biocore/batch-engine';
+// ReactorManager 实例已迁至 ./reactor-wiring (v1.9.0 P2 bucket 1.5)。
+import { checkInterlocks } from '@biocore/batch-engine';
 import type { BatchControllerConfig } from '@biocore/batch-engine';
-
-const reactorManager = new ReactorManager();
 
 // GET /api/reactors — 列出所有反应器
 /**
@@ -3849,34 +3445,8 @@ apiRouter.get('/reactors/:id/status', (req, res) => {
 });
 
 // ── RF / IL 状态机连锁与运行故障 API (关联到状态机) ──
-
-// 所有 IL / RF 定义的元数据 (来自 06_ISA-88状态机规格 + running-fault-monitor.ts)
-const INTERLOCK_META: { id: string; name: string; description: string; severity: 'critical' | 'warning' }[] = [
-  { id: 'IL-01', name: '传感器信号',   description: 'AI-0~AI-5 全部 4-20mA 有效 (>3.8mA)',                  severity: 'critical' },
-  { id: 'IL-02', name: '变频器',       description: 'VFD 通讯正常且故障码=0',                                  severity: 'critical' },
-  { id: 'IL-03', name: '蒸汽阀关闭',   description: '启动前蒸汽阀必须关到位 (防止意外灭菌)',                  severity: 'critical' },
-  { id: 'IL-04', name: '冷却阀关闭',   description: '启动前冷却阀必须关到位',                                  severity: 'critical' },
-  { id: 'IL-05', name: '急停状态',     description: 'I0.0 硬件急停未按下',                                     severity: 'critical' },
-  { id: 'IL-06', name: '罐盖限位',     description: '罐盖限位开关确认已锁紧',                                   severity: 'critical' },
-  { id: 'IL-07', name: 'PLC心跳',      description: 'VB400/VB401 双向心跳正常 (证明 PLC 程序在跑)',            severity: 'critical' },
-  { id: 'IL-08', name: '配方状态',     description: '已下载配方且 status=approved',                             severity: 'critical' },
-  { id: 'IL-09', name: '数据库可写',   description: 'InfluxDB 和 SQLite 连接正常可写入',                         severity: 'critical' },
-  { id: 'IL-10', name: '蒸汽供气',     description: '蒸汽压力开关 > 0.5bar (警告级, 不阻止启动)',               severity: 'warning' },
-];
-
-const RUNNING_FAULT_META: { code: string; name: string; description: string; severity: 'critical' | 'warning'; holdAction?: string }[] = [
-  { code: 'RF-01', name: '变频器故障',          description: 'VFD_FAULT_CODE 非零',                                     severity: 'critical', holdAction: '搅拌急停' },
-  { code: 'RF-02', name: 'VFD通讯超时',         description: 'VFD 连续 >3s 无响应或同值',                               severity: 'critical', holdAction: '搅拌急停' },
-  { code: 'RF-03', name: '温度偏差过大',        description: '|PV-SP| > 2°C 持续 3min',                                 severity: 'critical', holdAction: '温度PID继续运行' },
-  { code: 'RF-04', name: 'pH偏差过大(泵满速)', description: '|PV-SP| > 0.5 且补料/校正泵满速 持续 5min',              severity: 'critical', holdAction: '补料泵停' },
-  { code: 'RF-05', name: 'DO过低',              description: 'DO < 5% 持续 5min',                                        severity: 'critical', holdAction: '补料泵停' },
-  { code: 'RF-06', name: '罐压过高',            description: 'PRESSURE > 2.5bar',                                        severity: 'critical', holdAction: '排气全开, 蒸汽关' },
-  { code: 'RF-07', name: '传感器断线',          description: '通道 raw < 100 (低于 3.6mA)',                              severity: 'warning' },
-  { code: 'RF-08', name: '传感器饱和',          description: '通道 raw > 28000 (高于 20.5mA)',                           severity: 'warning' },
-  { code: 'RF-09', name: '称重无变化(泵运行)', description: '补料泵 >0 但称重 30min 无变化 (疑似泵失效)',             severity: 'warning', holdAction: '补料泵停' },
-  { code: 'RF-10', name: '疑似泡沫事件',        description: '称重突增 >5% 且所有泵关停',                                severity: 'warning', holdAction: '消泡泵脉冲' },
-  { code: 'RF-11', name: 'PLC通讯断线',         description: '心跳丢失, 由 CommWatchdog 触发',                           severity: 'critical', holdAction: '全部进入 Hold' },
-];
+// IL/RF 元数据已迁至 ./reactor-wiring (INTERLOCK_META, RUNNING_FAULT_META)
+// 并在文件顶部导入。
 
 // GET /api/reactors/:id/interlocks — 当前反应器启动前连锁 (IL) 实时状态
 apiRouter.get('/reactors/:id/interlocks', async (req, res) => {
@@ -4365,163 +3935,25 @@ apiRouter.post('/settings/data-maintenance/cleanup', (req, res) => {
 });
 
 // ── WebSocket 广播集成 (状态变更/报警/步骤进度) ──
+// v1.9.0 P2 bucket 1.5: wireReactorEvents + startReactorCollector +
+// stopReactorCollector are produced by createReactorWiring() in
+// ./reactor-wiring. Construction happens here (after sqlite, influx
+// and the locally-defined autoCollectDoeResponses are all in scope).
 
-// 监听BatchController事件并广播到WebSocket
-function wireReactorEvents(reactorId: string): void {
-  const ctrl = reactorManager.getReactor(reactorId);
-  if (!ctrl) return;
+// v1.9.0 P2 bucket 3: init audit micro-queue before wiring reactor events
+// so that listener call sites can immediately use getAuditQueue().
+initAuditQueue(sqlite);
 
-  // 启动该反应器的 InfluxDB 时序采集
-  startReactorCollector(reactorId);
-
-  // 状态变更广播
-  ctrl.on('state_changed', (state: string) => {
-    broadcast('state_update', {
-      reactor_id: reactorId,
-      state,
-    }, null, reactorId);
-
-    // v1.7.2: 批次进入 running 时初始化 CUSUM 基线 — 任何异常都不能冒到 emit 链
-    // 上, 否则会经 actor.subscribe → uncaughtException → SIGTERM 整服务重启.
-    if (state === 'running' && ctrl.currentBatchId) {
-      try {
-        const detMap = getCusumKey(ctrl.currentBatchId);
-        initCusumBaselines(detMap);
-        console.log(`[${new Date().toISOString()}] [INFO] [CUSUM] 批次 ${ctrl.currentBatchId} 检测器已初始化`);
-      } catch (e) {
-        console.error(`[CUSUM] 批次 ${ctrl.currentBatchId} 基线初始化失败:`, (e as Error).message);
-      }
-    }
-  });
-
-  // 完整状态更新(含phase/step)
-  ctrl.on('state_update', (data: any) => {
-    broadcast('state_update', { reactor_id: reactorId, ...data }, data?.batch_id, reactorId);
-  });
-
-  // Phase启动/完成 — T16/T24: payload_version=2 + node_id (legacy phase_index removed in T24)
-  ctrl.on('phase_started', (data: any) => {
-    broadcast('step_progress', {
-      reactor_id: reactorId,
-      event: 'phase_started',
-      payload_version: 2,
-      batch_id: ctrl.currentBatchId,
-      node_id: ctrl.currentNodeId,
-      phase_id: data.phase_id,
-      phase_type: data.phase_type,
-      total_steps: data.total_steps,
-    }, null, reactorId);
-  });
-  ctrl.on('phase_completed', (data: any) => {
-    broadcast('step_progress', {
-      reactor_id: reactorId,
-      event: 'phase_completed',
-      payload_version: 2,
-      batch_id: ctrl.currentBatchId,
-      node_id: ctrl.currentNodeId,
-      phase_id: data.phase_id,
-      phase_type: data.phase_type,
-    }, null, reactorId);
-  });
-
-  // T15: branch_evaluated 审计桥 — DAG 分支求值结果落到 audit_logs
-  // (T13 controller 端已发出该事件; 这里是 server 端唯一的 audit/broadcast 落点)
-  ctrl.on('branch_evaluated', (data: any) => {
-    // 广播给前端，用于在 DAG 视图上回放分支决策 — T16: payload_version=2 + explicit node_id
-    broadcast('branch_evaluated', {
-      reactor_id: reactorId,
-      type: 'branch_evaluated',
-      payload_version: 2,
-      batch_id: data?.batch_id ?? ctrl.currentBatchId,
-      node_id: data?.node_id ?? null,
-      expression: data?.expression,
-      result: data?.result,
-      skipped: data?.skipped,
-      pv_snapshot: data?.pv_snapshot,
-    }, data?.batch_id, reactorId);
-    // 写入审计日志 (target_kind = 'node_id', graceful 兜底 'unknown')
-    try {
-      sqlite.writeAuditLog({
-        user_id: 'system',
-        action: 'branch_evaluated',
-        target_type: 'branch',
-        target_id: data?.node_id ?? 'unknown',
-        target_kind: 'node_id',
-        batch_id: ctrl.currentBatchId || undefined,
-        new_value: JSON.stringify({
-          expression: data?.expression,
-          result: data?.result,
-          skipped: data?.skipped,
-          pv_snapshot: data?.pv_snapshot,
-        }),
-      });
-    } catch (e) {
-      console.warn(`[AUDIT] branch_evaluated 写入失败:`, (e as Error).message);
-    }
-  });
-
-  // Step完成
-  ctrl.on('step_completed', (log: any) => {
-    broadcast('step_progress', { reactor_id: reactorId, event: 'step_completed', ...log }, null, reactorId);
-  });
-
-  // 报警广播
-  ctrl.on('alarm', (data: any) => {
-    broadcast('alarm', { reactor_id: reactorId, ...data }, data?.batch_id, reactorId);
-    // 同时写入数据库
-    try {
-      sqlite.createAlarm({
-        batch_id: data.batch_id,
-        alarm_code: data.alarm_code || data.code || 'UNKNOWN',
-        severity: data.severity || 'warning',
-        source: data.source || 'node:batch-engine',
-        message: data.message || '',
-      });
-    } catch { /* ignore */ }
-  });
-
-  // 批次完成/停止
-  ctrl.on('batch_completed', (data: any) => {
-    broadcast('state_update', { reactor_id: reactorId, event: 'batch_completed', ...data }, data?.batch_id, reactorId);
-    // v1.7.2: 包 try/catch — 见 state_changed 同源原因
-    if (data?.batch_id) {
-      try { clearCusumDetectors(data.batch_id); }
-      catch (e) { console.warn(`[CUSUM] 清理 ${data.batch_id} 检测器失败:`, (e as Error).message); }
-    }
-    // KPI + SPC 自动计算 (参考 DELMIA Apriso MPI)
-    if (data?.batch_id) {
-      try {
-        computeKpi(sqlite.getDatabase(), data.batch_id);
-        console.log(`[KPI] 批次 ${data.batch_id} KPI 已自动计算`);
-      } catch (e) { console.warn(`[KPI] 自动计算失败:`, (e as Error).message); }
-      // DOE 自动响应收集: 检查该批次是否关联了 DOE run
-      try {
-        const db = sqlite.getDatabase();
-        const doeRun: any = db.prepare('SELECT study_id, run_index FROM doe_runs WHERE batch_id = ? AND status = ?').get(data.batch_id, 'running');
-        if (doeRun) {
-          const responses = autoCollectDoeResponses(db, doeRun.study_id, doeRun.run_index);
-          if (responses && Object.keys(responses).length > 0) {
-            sqlite.setDoeRunResponse(doeRun.study_id, doeRun.run_index, responses);
-            console.log(`[DOE] 批次 ${data.batch_id} → 研究 ${doeRun.study_id} Run#${doeRun.run_index} 响应已自动收集:`, responses);
-            // 检查研究是否全部完成
-            const runs = sqlite.listDoeRuns(doeRun.study_id);
-            if (runs.length > 0 && runs.every(r => r.status === 'completed')) {
-              sqlite.updateDoeStudyStatus(doeRun.study_id, 'completed');
-            }
-          }
-        }
-      } catch (e) { console.warn(`[DOE] 自动响应收集失败:`, (e as Error).message); }
-    }
-  });
-  ctrl.on('batch_stopped', (data: any) => {
-    broadcast('state_update', { reactor_id: reactorId, event: 'batch_stopped', ...data }, null, reactorId);
-    // v1.7.2: 包 try/catch — 见 state_changed 同源原因
-    if (data?.batch_id) {
-      try { clearCusumDetectors(data.batch_id); }
-      catch (e) { console.warn(`[CUSUM] 清理 ${data.batch_id} 检测器失败:`, (e as Error).message); }
-    }
-  });
-}
+const {
+  startReactorCollector,
+  stopReactorCollector,
+  wireReactorEvents,
+} = createReactorWiring({
+  sqlite,
+  influxWriteApi,
+  broadcast,
+  autoCollectDoeResponses,
+});
 
 // ── 趋势历史数据 (InfluxDB) ──
 
@@ -4692,7 +4124,7 @@ apiRouter.get('/trends', async (req: any, res) => {
 
 apiRouter.get('/status', (_req, res) => {
   res.json({
-    version: process.env.npm_package_version ?? '0.3.5',
+    version: process.env.npm_package_version ?? '0.4.0',
     uptime: process.uptime(),
     ws_clients: wss.clients.size,
     heartbeats: [...heartbeats.entries()].map(([id, s]) => ({
@@ -4733,12 +4165,15 @@ async function gracefulShutdown(signal: string): Promise<void> {
         console.error(`[Shutdown] 反应器 ${r.id} 清理失败:`, (e as Error).message);
       }
     }
-    // 5. 停止 AI 建议引擎
-    if (suggestionEngineHandle) suggestionEngineHandle.stop();
+    // 5. 停止后台调度器 (AI 建议引擎等)
+    stopSchedulers();
     // 6. Flush + close InfluxDB
     if (influxWriteApi) {
       try { await influxWriteApi.close(); } catch { /* ignore */ }
     }
+    // v1.9.0 P2 bucket 3: drain any pending audit-queue rows before closing SQLite
+    const _auditDrained = getAuditQueue().flushSync();
+    if (_auditDrained) console.log('[AUDIT] flushed ' + _auditDrained + ' pending rows on shutdown');
     // 6. 关闭 SQLite (确保 WAL 同步)
     sqlite.close();
     // 7. 停 runtime-guard timers (T23: metricsCollector + memWd)
@@ -4760,23 +4195,13 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 // 处理请求却撞上未迁移的 schema (e.g. 缺列 / 缺表)。
 async function start(): Promise<void> {
   await migrationsReady;
-  // v1.8.0 bucket 1: admin init is now async (bcrypt). Run it after migrations
+  // v1.8.0 bucket 1: admin init is async (bcrypt). Run after migrations
   // but before listen so the default admin row is in place when requests arrive.
-  await ensureAdminAccount();
-  // v1.8.0 bucket 1: JWT_SECRET production guard — fail fast if dev default
-  // is being used in production; warn loudly otherwise.
-  const DEFAULT_JWT_SECRET = 'biocore-dev-secret-change-in-production';
-  const effectiveJwtSecret = process.env.JWT_SECRET ?? DEFAULT_JWT_SECRET;
-  if (effectiveJwtSecret === DEFAULT_JWT_SECRET) {
-    if (process.env.NODE_ENV === 'production') {
-      console.error('[FATAL] JWT_SECRET is set to the default value in production. Set a strong unique secret in env before starting.');
-      process.exit(1);
-    } else {
-      console.warn('[WARN] JWT_SECRET is the default dev value. Set a strong secret before deploying to production.');
-    }
-  }
+  await ensureAdminAccount({ db: sqlite.getDatabase(), hashPasswordBcrypt });
+  // v1.8.0 bucket 1: JWT_SECRET production guard.
+  assertJwtSecretSafe();
   server.listen(PORT, () => {
-  const VER = process.env.npm_package_version ?? '0.3.5';
+  const VER = process.env.npm_package_version ?? '0.4.0';
   console.log(`
   ╔══════════════════════════════════════════════╗
   ║         BIOCore Server v${VER}                ║
@@ -4788,53 +4213,19 @@ async function start(): Promise<void> {
   ╚══════════════════════════════════════════════╝
   `);
 
-  // v1.7.2: boot-time crash-recovery scan.
-  // Any batch left in current_state ∈ {running, held, paused} when this server
-  // process starts is by definition orphaned — its previous engine died with
-  // the previous process. We do NOT auto-resume the engine; PVs may have
-  // drifted, alarms may have been missed, and a 24h fermentation should not
-  // silently restart unattended. Instead, mark each as 'held' with an
-  // explicit recovery reason so they appear in the operator's hold queue
-  // for explicit resume/abort decisions, and write an audit row each.
-  try {
-    const recoveryReason = `server_restart_recovery@${new Date().toISOString()}`;
-    const orphans = getOrphanBatches(sqlite.getDatabase());
-    if (orphans.length > 0) {
-      console.warn(`[BOOT] 检测到 ${orphans.length} 个遗留批次 (上次进程崩溃前未结束), 标记为 held 等待操作员处理`);
-      for (const o of orphans) {
-        try {
-          markBatchHeldForRecovery(sqlite.getDatabase(), o.batch_id, recoveryReason);
-          sqlite.writeAuditLog({
-            user_id: 'system',
-            action: 'batch_held_for_recovery',
-            target_type: 'batch',
-            target_id: o.batch_id,
-            target_kind: 'batch_id',
-            batch_id: o.batch_id,
-            reason: recoveryReason,
-            new_value: JSON.stringify({
-              prev_state: o.current_state,
-              recipe_id: o.recipe_id,
-              recipe_version: o.recipe_version,
-              reactor_id: o.reactor_id,
-              current_node_id: o.current_node_id,
-              current_phase_index: o.current_phase_index,
-            }),
-          });
-          console.warn(`[BOOT]   - ${o.batch_id} (reactor=${o.reactor_id}, prev_state=${o.current_state}, node=${o.current_node_id ?? 'NULL'})`);
-        } catch (e) {
-          console.error(`[BOOT] 标记批次 ${o.batch_id} 为 held 失败:`, (e as Error).message);
-        }
-      }
-    } else {
-      console.log('[BOOT] 无遗留批次需恢复');
-    }
-  } catch (e) {
-    console.error('[BOOT] 崩溃恢复扫描失败 (server 仍正常启动):', (e as Error).message);
-  }
+  // v1.7.2 + v1.9.0 P2 bucket 2: boot-time crash-recovery scan (extracted to ./startup).
+  // Passes the default policy (always-hold, preserves v1.7.2 safety semantics).
+  // Operators wanting an opt-in conservative-short-outage policy can swap this here.
+  runOrphanRecoveryScan({
+    db: sqlite.getDatabase(),
+    sqlite: {
+      writeAuditLog: (e) => sqlite.writeAuditLog(e),
+      getRecipe: (id, version) => sqlite.getRecipe(id, version),
+    },
+  });
 
-  // 启动 AI 建议生成后台引擎
-  suggestionEngineHandle = startSuggestionEngine({
+  // 启动后台调度器 (AI 建议生成引擎等)
+  startSchedulers({
     sqlite,
     feedAdvisor,
     softSensorEngine,

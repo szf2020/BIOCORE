@@ -435,6 +435,8 @@ export { updateBatchCurrentNodeId, getBatchCurrentNodeId } from './sqlite-servic
 // v1.7.2: boot-time crash-recovery helpers
 export { getOrphanBatches, markBatchHeldForRecovery } from './sqlite-service';
 export type { OrphanBatchRow } from './sqlite-service';
+// v1.9.0 P2 bucket 2: boot-time RecoveryPolicy abort path
+export { markBatchAborted } from './sqlite-service';
 
 // v1.8.0 bucket 2: formula-evaluator public surface (consumed by @biocore/server formula route)
 export { validateExpression, evaluateExpression, AVAILABLE_VARS } from './formula-evaluator';

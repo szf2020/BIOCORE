@@ -17,6 +17,7 @@ import type {
 import type { PhaseState, PhaseStatus } from './index';
 import { DAGExecutor, type RecipeDAG, type DAGEvalContext, type DAGPhaseNode, linearToDag } from './dag-executor';
 import { evaluateExpression as evaluateConditionExpression } from './condition-evaluator';
+import type { RecoveryPolicy } from './recovery-policy';
 
 export interface BatchControllerConfig {
   // PLC读写函数 (由外部注入)
@@ -35,6 +36,12 @@ export interface BatchControllerConfig {
     /** Called whenever currentNodeId changes; persist to batches table for crash recovery. */
     updateCurrentNodeId?: (batchId: string, nodeId: string | null) => void;
   };
+  // v1.9.0 P2 bucket 2: forward-compat slot. The orphan-batch recovery policy
+  // currently fires at boot in startup.ts (server-side scan), not inside the
+  // controller. This field is reserved for the day a controller wants to
+  // consult policy on its own (e.g. self-recovery after comm loss). Default
+  // is `defaultRecoveryPolicy` (always-hold) — opt-in for any other policy.
+  recoveryPolicy?: RecoveryPolicy;
 }
 
 export class BatchController extends EventEmitter {

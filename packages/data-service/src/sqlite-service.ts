@@ -977,3 +977,20 @@ export function markBatchHeldForRecovery(
     "UPDATE batches SET current_state = 'held', hold_reason = ? WHERE batch_id = ?",
   ).run(reason, batchId);
 }
+
+// v1.9.0 P2 bucket 2 — boot-time RecoveryPolicy may choose to abort an orphan
+// batch outright rather than hold it for operator review. We map abort to
+// current_state='stopped' + stop_trigger='cmd_stop' because the schema's CHECK
+// constraint only allows {'cmd_stop','safety_estop'} for stop_trigger, and
+// 'cmd_stop' is the closest semantic fit (operator-initiated, not a safety event).
+// The actual recovery context is preserved in `notes` (appended, not overwritten)
+// so the row keeps its prior history.
+export function markBatchAborted(
+  db: Database.Database,
+  batchId: string,
+  reason: string,
+): void {
+  db.prepare(
+    "UPDATE batches SET current_state = 'stopped', stop_trigger = 'cmd_stop', notes = COALESCE(notes, '') || ? WHERE batch_id = ?",
+  ).run(`\nrecovery_abort: ${reason}`, batchId);
+}
