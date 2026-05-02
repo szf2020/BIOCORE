@@ -101,7 +101,7 @@ const RUNTIME_GUARD_OOM_THRESHOLD_MB =
     : undefined;  // undefined = MetricsCollector/MemoryWatchdog auto = RAM × 20%
 
 export const metricsCollector = new MetricsCollector({
-  serviceVersion: process.env.npm_package_version ?? '0.3.5',
+  serviceVersion: process.env.npm_package_version ?? '0.4.0',
   oomThresholdMb: RUNTIME_GUARD_OOM_THRESHOLD_MB,
 });
 metricsCollector.start();
@@ -295,6 +295,7 @@ import {
   RUNNING_FAULT_META,
   createReactorWiring,
 } from './reactor-wiring';
+import { initAuditQueue, getAuditQueue } from './audit-queue';
 
 // Phase模板步骤定义: 从数据库读取, 关联系统设置中的Phase模板配置
 // 数据库用 PascalCase (Prepare/AddWater), 引擎用 snake_case (prepare/water_fill)
@@ -3938,6 +3939,11 @@ apiRouter.post('/settings/data-maintenance/cleanup', (req, res) => {
 // stopReactorCollector are produced by createReactorWiring() in
 // ./reactor-wiring. Construction happens here (after sqlite, influx
 // and the locally-defined autoCollectDoeResponses are all in scope).
+
+// v1.9.0 P2 bucket 3: init audit micro-queue before wiring reactor events
+// so that listener call sites can immediately use getAuditQueue().
+initAuditQueue(sqlite);
+
 const {
   startReactorCollector,
   stopReactorCollector,
@@ -4118,7 +4124,7 @@ apiRouter.get('/trends', async (req: any, res) => {
 
 apiRouter.get('/status', (_req, res) => {
   res.json({
-    version: process.env.npm_package_version ?? '0.3.5',
+    version: process.env.npm_package_version ?? '0.4.0',
     uptime: process.uptime(),
     ws_clients: wss.clients.size,
     heartbeats: [...heartbeats.entries()].map(([id, s]) => ({
@@ -4165,6 +4171,9 @@ async function gracefulShutdown(signal: string): Promise<void> {
     if (influxWriteApi) {
       try { await influxWriteApi.close(); } catch { /* ignore */ }
     }
+    // v1.9.0 P2 bucket 3: drain any pending audit-queue rows before closing SQLite
+    const _auditDrained = getAuditQueue().flushSync();
+    if (_auditDrained) console.log('[AUDIT] flushed ' + _auditDrained + ' pending rows on shutdown');
     // 6. 关闭 SQLite (确保 WAL 同步)
     sqlite.close();
     // 7. 停 runtime-guard timers (T23: metricsCollector + memWd)
@@ -4192,7 +4201,7 @@ async function start(): Promise<void> {
   // v1.8.0 bucket 1: JWT_SECRET production guard.
   assertJwtSecretSafe();
   server.listen(PORT, () => {
-  const VER = process.env.npm_package_version ?? '0.3.5';
+  const VER = process.env.npm_package_version ?? '0.4.0';
   console.log(`
   ╔══════════════════════════════════════════════╗
   ║         BIOCore Server v${VER}                ║

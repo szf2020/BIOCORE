@@ -26,6 +26,7 @@
 import type Database from 'better-sqlite3';
 import { Point } from '@influxdata/influxdb-client';
 import type { WriteApi } from '@influxdata/influxdb-client';
+import { getAuditQueue } from './audit-queue';
 
 import { ReactorManager } from '@biocore/batch-engine';
 
@@ -331,25 +332,23 @@ export function createReactorWiring(deps: ReactorWiringDeps): ReactorWiringHandl
         skipped: data?.skipped,
         pv_snapshot: data?.pv_snapshot,
       }, data?.batch_id, reactorId);
-      // 写入审计日志 (target_kind = 'node_id', graceful 兜底 'unknown')
-      try {
-        sqlite.writeAuditLog({
-          user_id: 'system',
-          action: 'branch_evaluated',
-          target_type: 'branch',
-          target_id: data?.node_id ?? 'unknown',
-          target_kind: 'node_id',
-          batch_id: ctrl.currentBatchId || undefined,
-          new_value: JSON.stringify({
-            expression: data?.expression,
-            result: data?.result,
-            skipped: data?.skipped,
-            pv_snapshot: data?.pv_snapshot,
-          }),
-        });
-      } catch (e) {
-        console.warn(`[AUDIT] branch_evaluated 写入失败:`, (e as Error).message);
-      }
+      // v1.9.0 P2 bucket 3: enqueue audit write — decouples sync SQLite I/O
+      // from the emit chain. getAuditQueue() is always safe here because
+      // initAuditQueue(sqlite) is called in index.ts before wireReactorEvents.
+      getAuditQueue().enqueue({
+        user_id: 'system',
+        action: 'branch_evaluated',
+        target_type: 'branch',
+        target_id: data?.node_id ?? 'unknown',
+        target_kind: 'node_id',
+        batch_id: ctrl.currentBatchId || undefined,
+        new_value: JSON.stringify({
+          expression: data?.expression,
+          result: data?.result,
+          skipped: data?.skipped,
+          pv_snapshot: data?.pv_snapshot,
+        }),
+      });
     });
 
     // Step完成
