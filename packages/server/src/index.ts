@@ -41,6 +41,7 @@ import { v1ResponseWrapper } from './middlewares/response-wrapper';
 // JSDoc @openapi blocks in this file (and route-handler files) are
 // still picked up byte-for-byte.
 import { createApp } from './bootstrap';
+import { ROOT_VERSION } from './version';
 import { lttb } from './lttb';
 import { registerRawMaterialsRoutes } from './raw-materials-routes';
 import { registerBatchCompareRoutes } from './batch-compare-routes';
@@ -101,7 +102,7 @@ const RUNTIME_GUARD_OOM_THRESHOLD_MB =
     : undefined;  // undefined = MetricsCollector/MemoryWatchdog auto = RAM × 20%
 
 export const metricsCollector = new MetricsCollector({
-  serviceVersion: process.env.npm_package_version ?? '0.4.0',
+  serviceVersion: ROOT_VERSION,
   oomThresholdMb: RUNTIME_GUARD_OOM_THRESHOLD_MB,
 });
 metricsCollector.start();
@@ -4124,7 +4125,7 @@ apiRouter.get('/trends', async (req: any, res) => {
 
 apiRouter.get('/status', (_req, res) => {
   res.json({
-    version: process.env.npm_package_version ?? '0.4.0',
+    version: ROOT_VERSION,
     uptime: process.uptime(),
     ws_clients: wss.clients.size,
     heartbeats: [...heartbeats.entries()].map(([id, s]) => ({
@@ -4201,10 +4202,9 @@ async function start(): Promise<void> {
   // v1.8.0 bucket 1: JWT_SECRET production guard.
   assertJwtSecretSafe();
   server.listen(PORT, () => {
-  const VER = process.env.npm_package_version ?? '0.4.0';
   console.log(`
   ╔══════════════════════════════════════════════╗
-  ║         BIOCore Server v${VER}                ║
+  ║         BIOCore Server v${ROOT_VERSION}                ║
   ║         http://localhost:${PORT}               ║
   ║         WebSocket: ws://localhost:${PORT}/ws    ║
   ╠══════════════════════════════════════════════╣
