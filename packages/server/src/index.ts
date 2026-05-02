@@ -56,6 +56,7 @@ import { registerRecipeRoutes } from './recipe-routes';
 import { registerBatchRoutes } from './batch-routes';
 import { registerReactorRoutes } from './reactor-routes';
 import { registerAuthRoutes } from './auth-routes';
+import { registerAuditLogRoutes } from './audit-log-routes';
 import type { BatchControllerConfig } from '@biocore/batch-engine';
 import {
   installCrashHandlers,
@@ -505,6 +506,7 @@ registerRecipeRoutes(apiRouter, {
   writeRecipeAudit,
 });
 registerBatchRoutes(apiRouter, sqlite);
+registerAuditLogRoutes(apiRouter, sqlite);
 // route-handler-split: 认证 + 用户管理 抽离到 ./auth-routes
 // createJWT/verifyPassword/hashPasswordBcrypt 仍在本文件 (test/scheduler 路径
 // 复用), 通过 deps 注入。函数声明已提升, 引用安全。
