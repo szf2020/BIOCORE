@@ -209,7 +209,9 @@ import {
 } from './ai-wiring';
 import { registerCusumRoutes, initCusumBaselines, getDefaultBaselines } from './cusum-routes';
 import { registerBatchIntelligenceRoutes } from './batch-intelligence-routes';
-import { startSuggestionEngine } from './ai-suggestion-engine';
+// v1.9.0 P2 bucket 1: AI suggestion engine boot lifecycle moved into
+// ./scheduler (startSchedulers / stopSchedulers).
+import { startSchedulers, stopSchedulers } from './scheduler';
 import { registerAiReportRoutes, detectReportIntent } from './ai-report-routes';
 import { createAdminHealthRouter } from './routes/admin-health';
 import { createAdminMetricsRouter } from './routes/admin-metrics';
@@ -283,9 +285,6 @@ if (influxClient) {
 } else {
   console.warn(`[${new Date().toISOString()}] [WARN] [Influx] 未配置 INFLUX_TOKEN, 时序数据写入和查询均禁用`);
 }
-
-// AI 建议引擎句柄
-let suggestionEngineHandle: { stop: () => void } | null = null;
 
 // reactor 数据采集 timer (key: reactor_id)
 const reactorCollectorTimers = new Map<string, ReturnType<typeof setInterval>>();
@@ -4583,8 +4582,8 @@ async function gracefulShutdown(signal: string): Promise<void> {
         console.error(`[Shutdown] 反应器 ${r.id} 清理失败:`, (e as Error).message);
       }
     }
-    // 5. 停止 AI 建议引擎
-    if (suggestionEngineHandle) suggestionEngineHandle.stop();
+    // 5. 停止后台调度器 (AI 建议引擎等)
+    stopSchedulers();
     // 6. Flush + close InfluxDB
     if (influxWriteApi) {
       try { await influxWriteApi.close(); } catch { /* ignore */ }
@@ -4683,8 +4682,8 @@ async function start(): Promise<void> {
     console.error('[BOOT] 崩溃恢复扫描失败 (server 仍正常启动):', (e as Error).message);
   }
 
-  // 启动 AI 建议生成后台引擎
-  suggestionEngineHandle = startSuggestionEngine({
+  // 启动后台调度器 (AI 建议生成引擎等)
+  startSchedulers({
     sqlite,
     feedAdvisor,
     softSensorEngine,
