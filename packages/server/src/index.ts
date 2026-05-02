@@ -237,6 +237,7 @@ import {
   ensureAdminAccount,
   assertJwtSecretSafe,
   runOrphanRecoveryScan,
+  pickRecoveryPolicyFromEnv,
 } from './startup';
 
 mkdirSync(DATA_DIR, { recursive: true });
@@ -4213,14 +4214,37 @@ async function start(): Promise<void> {
   ╚══════════════════════════════════════════════╝
   `);
 
-  // v1.7.2 + v1.9.0 P2 bucket 2: boot-time crash-recovery scan (extracted to ./startup).
-  // Passes the default policy (always-hold, preserves v1.7.2 safety semantics).
-  // Operators wanting an opt-in conservative-short-outage policy can swap this here.
+  // v1.7.2 + v1.9.0 P2 bucket 2 + v1.12.0 F2-AUTO: boot-time crash-recovery scan.
+  // Default behavior = always-hold (preserves v1.7.2 safety). Operators can opt
+  // into conservativeShortOutagePolicy via env: BIOCORE_RECOVERY_POLICY=conservative.
+  // When the policy returns 'auto_resume' we now actually restart the engine
+  // instead of falling back to hold (F2-AUTO). The reactor runtime
+  // (manager + buildReactorConfig + wireReactorEvents) is injected so startup.ts
+  // stays free of plc-bridge / reactor-wiring imports.
   runOrphanRecoveryScan({
     db: sqlite.getDatabase(),
     sqlite: {
       writeAuditLog: (e) => sqlite.writeAuditLog(e),
       getRecipe: (id, version) => sqlite.getRecipe(id, version),
+      getReactorConfig: (id) => sqlite.getReactorConfig(id),
+      parseRecipeRow: (row) => parseRecipeRow(row),
+    },
+    policy: pickRecoveryPolicyFromEnv(process.env.BIOCORE_RECOVERY_POLICY),
+    reactorRuntime: {
+      reactorManager,
+      buildReactorConfig: (_reactorId: string) => ({
+        // Mirrors the /reactors POST handler — MOCK_PLC swap + DB-backed
+        // template-step + interlock-config providers.
+        plcRead: async (tag: string) => {
+          if (MOCK_PLC) return devPlcRead(tag);
+          throw new Error(`PLC 未连接, 无法读取 ${tag}. 请设置 MOCK_PLC=true 进行开发演示, 或配置真实 PLC 连接.`);
+        },
+        plcWrite: async (_tag: string, _value: number) => {},
+        pollIntervalMs: 1000,
+        getTemplateSteps: getTemplateStepsFromDB,
+        getInterlockConfigs: getInterlockConfigsFromDB,
+      }),
+      wireReactorEvents,
     },
   });
 

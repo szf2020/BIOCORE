@@ -33,8 +33,11 @@ import { runMigrations } from './migrator';
 import { getOrphanBatches, markBatchHeldForRecovery, markBatchAborted } from '@biocore/data-service';
 import {
   defaultRecoveryPolicy,
+  conservativeShortOutagePolicy,
   type RecoveryPolicy,
   type RecoveryDecisionInput,
+  type BatchControllerConfig,
+  ReactorManager,
 } from '@biocore/batch-engine';
 
 const DEFAULT_JWT_SECRET = 'biocore-dev-secret-change-in-production';
@@ -109,13 +112,57 @@ export interface OrphanRecoveryOptions {
     writeAuditLog: (e: any) => void;
     /** Optional: used to look up phaseType for the orphan's current phase index. */
     getRecipe?: (recipeId: string, version?: string) => any;
+    /**
+     * v1.12.0 F2-AUTO: required when policy can return 'auto_resume'.
+     * Returns the reactor_configs row (or undefined if missing). Lack of a
+     * reactor-config row → fall back to hold for safety.
+     */
+    getReactorConfig?: (reactorId: string) => any;
+    /**
+     * v1.12.0 F2-AUTO: optional. Caller-supplied parser that turns the raw
+     * `recipes` row into the Recipe shape that BatchController.resumeAndStart
+     * expects. The server already has a parseRecipeRow() helper — pass it in
+     * here to avoid duplicating recipe-row decoding logic in startup.ts.
+     */
+    parseRecipeRow?: (row: any) => any;
   };
   /**
    * v1.9.0 P2 bucket 2: pluggable decision strategy.
    * Default = `defaultRecoveryPolicy` (always-hold, preserves v1.7.2 behavior).
    * Caller in index.ts may pass a custom policy once F2-AUTO is implemented.
+   *
+   * v1.12.0 F2-AUTO: when omitted, `BIOCORE_RECOVERY_POLICY=conservative`
+   * env var swaps in `conservativeShortOutagePolicy`. Otherwise keeps the
+   * always-hold default — opt-in only.
    */
   policy?: RecoveryPolicy;
+  /**
+   * v1.12.0 F2-AUTO: reactor manager + factory for the auto_resume branch.
+   * When omitted, the orphan scan falls back to hold even when policy
+   * returns 'auto_resume' (back-compat with pre-v1.12.0 startup callers).
+   */
+  reactorRuntime?: {
+    reactorManager: ReactorManager;
+    /**
+     * Build a BatchControllerConfig for the given reactor (when the manager
+     * has no controller for that reactor yet). Mirrors the buildReactorConfig
+     * pattern used by the `/reactors` POST handler in index.ts.
+     */
+    buildReactorConfig: (reactorId: string) => BatchControllerConfig;
+    /** Hook the reactor's events into ws / influx / audit (same as the route handler does). */
+    wireReactorEvents: (reactorId: string) => void;
+  };
+}
+
+/**
+ * v1.12.0 F2-AUTO: pick the recovery policy based on env var.
+ * Default behavior MUST stay always-hold; conservative is opt-in via
+ * `BIOCORE_RECOVERY_POLICY=conservative`. Anything else (or missing) →
+ * defaultRecoveryPolicy.
+ */
+export function pickRecoveryPolicyFromEnv(envValue: string | undefined): RecoveryPolicy {
+  if (envValue === 'conservative') return conservativeShortOutagePolicy;
+  return defaultRecoveryPolicy;
 }
 
 /**
@@ -142,7 +189,7 @@ export interface OrphanRecoveryOptions {
  * in once the order is reshuffled.
  */
 export function runOrphanRecoveryScan(opts: OrphanRecoveryOptions): void {
-  const { db, sqlite, policy = defaultRecoveryPolicy } = opts;
+  const { db, sqlite, policy = defaultRecoveryPolicy, reactorRuntime } = opts;
   try {
     const recoveryReason = `server_restart_recovery@${new Date().toISOString()}`;
     const orphans = getOrphanBatches(db);
@@ -154,7 +201,8 @@ export function runOrphanRecoveryScan(opts: OrphanRecoveryOptions): void {
     console.warn(`[BOOT] 检测到 ${orphans.length} 个遗留批次 (上次进程崩溃前未结束), 通过 RecoveryPolicy 决策处理`);
 
     let heldCount = 0;
-    let autoResumeDeferredCount = 0;
+    let autoResumedCount = 0;
+    let autoResumeFallbackCount = 0;
     let abortedCount = 0;
 
     for (const o of orphans) {
@@ -164,34 +212,68 @@ export function runOrphanRecoveryScan(opts: OrphanRecoveryOptions): void {
         const decision = policy.decide(input);
 
         if (decision === 'auto_resume') {
-          // F2-AUTO not yet implemented — fall back to hold for safety, but
-          // record the deferred decision so future telemetry can spot it.
-          console.warn(
-            `[BOOT] policy returned 'auto_resume' for batch ${o.batch_id} but auto-resume execution is not yet implemented (F2-AUTO); falling back to hold`,
-          );
-          markBatchHeldForRecovery(db, o.batch_id, recoveryReason);
-          sqlite.writeAuditLog({
-            user_id: 'system',
-            action: 'batch_held_recovery_auto_resume_deferred',
-            target_type: 'batch',
-            target_id: o.batch_id,
-            target_kind: 'batch_id',
-            batch_id: o.batch_id,
-            reason: recoveryReason,
-            new_value: JSON.stringify({
-              prev_state: o.current_state,
-              recipe_id: o.recipe_id,
-              recipe_version: o.recipe_version,
-              reactor_id: o.reactor_id,
-              current_node_id: o.current_node_id,
-              current_phase_index: o.current_phase_index,
-              policy_decision: 'auto_resume',
-              fallback: 'hold',
-              decision_input: input,
-            }),
-          });
-          autoResumeDeferredCount++;
-          console.warn(`[BOOT]   - ${o.batch_id} (reactor=${o.reactor_id}, prev_state=${o.current_state}, decision=auto_resume→hold)`);
+          // v1.12.0 F2-AUTO: actually restart the engine. On any precondition
+          // failure (recipe missing, reactor-config missing, addReactor throws,
+          // controller refuses cmd_start) → fall back to hold and warn so
+          // operators see the degraded path.
+          const resumeResult = tryAutoResume(db, o, sqlite, reactorRuntime, recoveryReason);
+          if (resumeResult.ok) {
+            sqlite.writeAuditLog({
+              user_id: 'system',
+              action: 'batch_auto_resumed',
+              target_type: 'batch',
+              target_id: o.batch_id,
+              target_kind: 'batch_id',
+              batch_id: o.batch_id,
+              reason: recoveryReason,
+              new_value: JSON.stringify({
+                prev_state: o.current_state,
+                recipe_id: o.recipe_id,
+                recipe_version: o.recipe_version,
+                reactor_id: o.reactor_id,
+                current_node_id: o.current_node_id,
+                current_phase_index: o.current_phase_index,
+                phase_type: input.phaseType,
+                policy_decision: 'auto_resume',
+                decision_input: input,
+              }),
+            });
+            autoResumedCount++;
+            console.log(
+              `[BOOT] auto-resumed batch ${o.batch_id} on reactor ${o.reactor_id} (node=${o.current_node_id ?? 'NULL'})`,
+            );
+          } else {
+            // Fall back to hold, log warn so the degraded path is visible.
+            console.warn(
+              `[BOOT] auto_resume failed for batch ${o.batch_id} (${resumeResult.reason}); falling back to hold`,
+            );
+            markBatchHeldForRecovery(db, o.batch_id, recoveryReason);
+            sqlite.writeAuditLog({
+              user_id: 'system',
+              action: 'batch_held_recovery_auto_resume_failed',
+              target_type: 'batch',
+              target_id: o.batch_id,
+              target_kind: 'batch_id',
+              batch_id: o.batch_id,
+              reason: recoveryReason,
+              new_value: JSON.stringify({
+                prev_state: o.current_state,
+                recipe_id: o.recipe_id,
+                recipe_version: o.recipe_version,
+                reactor_id: o.reactor_id,
+                current_node_id: o.current_node_id,
+                current_phase_index: o.current_phase_index,
+                policy_decision: 'auto_resume',
+                fallback: 'hold',
+                fallback_reason: resumeResult.reason,
+                decision_input: input,
+              }),
+            });
+            autoResumeFallbackCount++;
+            console.warn(
+              `[BOOT]   - ${o.batch_id} (reactor=${o.reactor_id}, prev_state=${o.current_state}, decision=auto_resume→hold, why=${resumeResult.reason})`,
+            );
+          }
         } else if (decision === 'abort') {
           markBatchAborted(db, o.batch_id, recoveryReason);
           sqlite.writeAuditLog({
@@ -243,10 +325,106 @@ export function runOrphanRecoveryScan(opts: OrphanRecoveryOptions): void {
       }
     }
 
-    console.log(`[BOOT] orphan recovery: ${heldCount} held, ${autoResumeDeferredCount} auto_resume_deferred, ${abortedCount} aborted`);
+    console.log(
+      `[BOOT] orphan recovery: ${heldCount} held, ${autoResumedCount} auto_resumed, ${autoResumeFallbackCount} auto_resume_failed, ${abortedCount} aborted`,
+    );
   } catch (e) {
     console.error('[BOOT] 崩溃恢复扫描失败 (server 仍正常启动):', (e as Error).message);
   }
+}
+
+/**
+ * v1.12.0 F2-AUTO — try to auto-resume a single orphan batch by:
+ *   1. Looking up the recipe (sqlite.getRecipe + parseRecipeRow).
+ *   2. Looking up the reactor's config (sqlite.getReactorConfig).
+ *   3. Registering the reactor in reactorManager if not already present.
+ *   4. Calling ctrl.resumeAndStart(batchId, recipe, savedNodeId).
+ *
+ * Returns { ok: true } on success or { ok: false, reason } on any precondition
+ * failure. The caller is responsible for the hold-fallback path on failure.
+ */
+function tryAutoResume(
+  _db: Database.Database,
+  orphan: {
+    batch_id: string;
+    recipe_id: string;
+    recipe_version: string;
+    reactor_id: string;
+    current_state: string;
+    current_node_id: string | null;
+    current_phase_index: number | null;
+  },
+  sqlite: OrphanRecoveryOptions['sqlite'],
+  reactorRuntime: OrphanRecoveryOptions['reactorRuntime'],
+  _recoveryReason: string,
+): { ok: true } | { ok: false; reason: string } {
+  if (!reactorRuntime) {
+    return { ok: false, reason: 'reactor_runtime_unavailable' };
+  }
+  if (!sqlite.getRecipe) {
+    return { ok: false, reason: 'sqlite_getRecipe_unavailable' };
+  }
+  if (!sqlite.getReactorConfig) {
+    return { ok: false, reason: 'sqlite_getReactorConfig_unavailable' };
+  }
+
+  // 1. Recipe lookup
+  let recipeRow: any;
+  try {
+    recipeRow = sqlite.getRecipe(orphan.recipe_id, orphan.recipe_version);
+  } catch (e) {
+    return { ok: false, reason: `recipe_lookup_threw:${(e as Error).message}` };
+  }
+  if (!recipeRow) {
+    return { ok: false, reason: 'recipe_missing' };
+  }
+  const recipe = sqlite.parseRecipeRow ? sqlite.parseRecipeRow(recipeRow) : recipeRow;
+  if (!recipe || !Array.isArray(recipe.phases)) {
+    return { ok: false, reason: 'recipe_parse_failed' };
+  }
+
+  // 2. Reactor-config lookup — required so we know how to talk to the PLC.
+  //    A missing reactor_configs row means the operator hasn't registered
+  //    the reactor; we can't safely fabricate one at boot.
+  let reactorConfig: any;
+  try {
+    reactorConfig = sqlite.getReactorConfig(orphan.reactor_id);
+  } catch (e) {
+    return { ok: false, reason: `reactor_config_lookup_threw:${(e as Error).message}` };
+  }
+  if (!reactorConfig) {
+    return { ok: false, reason: 'reactor_config_missing' };
+  }
+
+  // 3. Register the reactor controller if it doesn't already exist.
+  //    addReactor throws on duplicate or capacity overflow — guard with has().
+  const { reactorManager, buildReactorConfig, wireReactorEvents } = reactorRuntime;
+  if (!reactorManager.has(orphan.reactor_id)) {
+    try {
+      const cfg = buildReactorConfig(orphan.reactor_id);
+      reactorManager.addReactor(orphan.reactor_id, cfg);
+      wireReactorEvents(orphan.reactor_id);
+    } catch (e) {
+      return { ok: false, reason: `addReactor_threw:${(e as Error).message}` };
+    }
+  }
+
+  const ctrl = reactorManager.getReactor(orphan.reactor_id);
+  if (!ctrl) {
+    return { ok: false, reason: 'reactor_controller_missing_after_add' };
+  }
+
+  // 4. Drive resumeAndStart
+  try {
+    const r = ctrl.resumeAndStart(orphan.batch_id, recipe, orphan.current_node_id);
+    if (!r.success) {
+      return { ok: false, reason: `resumeAndStart_failed:${r.message}` };
+    }
+  } catch (e) {
+    return { ok: false, reason: `resumeAndStart_threw:${(e as Error).message}` };
+  }
+
+  return { ok: true };
 }
 
 /**
@@ -288,7 +466,14 @@ function buildRecoveryDecisionInput(
     // recipe lookup is best-effort only; leave phaseType undefined on any failure
   }
 
-  // ageSinceLastAuditMs — query audit_logs for the most recent timestamp
+  // ageSinceLastAuditMs — query audit_logs for the most recent timestamp.
+  //
+  // SQLite's `datetime('now')` writes UTC in the format 'YYYY-MM-DD HH:MM:SS'
+  // (no 'T', no 'Z'). JavaScript's Date constructor treats that string as
+  // *local time* on most runtimes — which on a UTC+N host produces a moment
+  // N hours offset from the actual write moment, making age computations
+  // wrong (often by enough to fail the conservative policy's 30s gate).
+  // v1.12.0 F2-AUTO: normalize the SQLite timestamp to ISO-UTC before parsing.
   let ageSinceLastAuditMs: number | undefined = undefined;
   try {
     const row = db
@@ -296,7 +481,12 @@ function buildRecoveryDecisionInput(
       .get(orphan.batch_id) as { max_ts: string | null } | undefined;
     const maxTs = row?.max_ts;
     if (maxTs) {
-      const t = new Date(maxTs).getTime();
+      // SQLite TEXT timestamps from datetime('now') are UTC but lack the trailing 'Z'.
+      // If the string already includes a TZ designator (Z or ±HH:MM), use it as-is;
+      // otherwise treat it as UTC by appending 'Z' and converting space → 'T'.
+      const tzAware = /[zZ]|[+-]\d{2}:?\d{2}$/.test(maxTs);
+      const normalized = tzAware ? maxTs : `${maxTs.replace(' ', 'T')}Z`;
+      const t = new Date(normalized).getTime();
       if (!Number.isNaN(t)) {
         ageSinceLastAuditMs = Date.now() - t;
       }
