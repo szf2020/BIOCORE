@@ -190,12 +190,19 @@ import {
 import type { PLCConnectionConfig, PLCVariableMapping } from './plc-bridge';
 
 // soft-sensor + experiment-optimizer (实际算法包)
-import { SoftSensorEngine, FeedAdvisor, RootCauseAnalyzer } from '@biocore/soft-sensor';
+// v1.9.0 P2 bucket 1: SoftSensorEngine/FeedAdvisor/RootCauseAnalyzer
+// singletons + CUSUM per-batch registry are wired in ./ai-wiring.
 import { BayesianOptimizer } from '@biocore/experiment-optimizer';
-// CUSUMDetector: ai-analytics barrel exposes the new module under alias CUSUMDetectorV2;
-// the in-barrel CUSUMDetector class is the legacy in-file definition. We use the V2 alias here
-// because the previous deep import was './cusum' (the new module).
-import { CUSUMDetectorV2 as CUSUMDetector } from '@biocore/ai-analytics';
+import {
+  softSensorEngine,
+  feedAdvisor,
+  rootCauseAnalyzer,
+  cusumDetectors,
+  getCusumKey,
+  clearCusumDetectors,
+  CUSUMDetector,
+  SoftSensorEngine, // class re-export for static trainLinearModel() helper
+} from './ai-wiring';
 import { registerCusumRoutes, initCusumBaselines, getDefaultBaselines } from './cusum-routes';
 import { registerBatchIntelligenceRoutes } from './batch-intelligence-routes';
 import { startSuggestionEngine } from './ai-suggestion-engine';
@@ -536,30 +543,6 @@ function stopReactorCollector(reactorId: string): void {
     clearInterval(t);
     reactorCollectorTimers.delete(reactorId);
   }
-}
-
-// ─── 软测量引擎 (全局单例) ─────────────────────────────────
-const softSensorEngine = new SoftSensorEngine();
-const feedAdvisor = new FeedAdvisor();
-const rootCauseAnalyzer = new RootCauseAnalyzer();
-
-// ─── CUSUM 实时检测器 (per-batch per-channel) ──────────────
-const cusumDetectors = new Map<string, Map<string, CUSUMDetector>>();
-
-function getCusumKey(batchId: string): Map<string, CUSUMDetector> {
-  if (!cusumDetectors.has(batchId)) {
-    const channels = new Map<string, CUSUMDetector>();
-    for (const ch of ['temperature', 'pH', 'DO', 'pressure', 'rpm']) {
-      channels.set(ch, new CUSUMDetector());
-    }
-    cusumDetectors.set(batchId, channels);
-  }
-  return cusumDetectors.get(batchId)!;
-}
-
-// P1 修复: 批次完成/停止后清理 CUSUM 检测器, 避免内存泄漏
-function clearCusumDetectors(batchId: string): void {
-  cusumDetectors.delete(batchId);
 }
 
 // ─── JWT 简易实现 ──────────────────────────────────────────
