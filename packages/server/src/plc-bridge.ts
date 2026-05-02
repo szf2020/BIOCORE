@@ -1,0 +1,101 @@
+// ============================================================
+// plc-bridge — PLC driver re-exports + dev/MOCK simulator
+// ============================================================
+// Extracted from index.ts (v1.9.0 P2 bucket 1).
+//
+// Responsibilities:
+//   - Surface the pure-JS plc-driver helpers/types the server consumes
+//     (parseAddr, byteLen, decode, scale, validateAddr,
+//     VariableMappingManager, PLCConnectionConfig, PLCVariableMapping).
+//   - Provide the MOCK_PLC env flag + dev random-walk simulator
+//     (devPlcRead) used by collectors and AI getRunningBatches.
+//
+// Module-load side effect: prints the MOCK_PLC warning banner when
+// MOCK_PLC=true. Importing this module is what triggers the banner —
+// behavior preserved from the previous module-top placement in index.ts.
+// ============================================================
+
+// EXCEPTION (v1.8.0 bucket 2): These deep imports are intentional and remain
+// after the cross-package import cleanup. The @biocore/plc-driver barrel
+// (src/index.ts) eagerly imports node-snap7 (a native binding) and
+// modbus-serial at module load. The server only needs the pure-JS utility
+// helpers and types — it has its own dynamic loader for S7Client. Importing
+// from the barrel would force-load node-snap7 native bindings on Node hosts
+// without the compiled .node file (e.g. tsx dev, MOCK_PLC environments).
+//
+// TODO (post-v1.8.0): split @biocore/plc-driver into a pure-JS sub-entry
+// (e.g. @biocore/plc-driver/utils via the package.json `exports` map) so
+// these consumers can use a documented public sub-path. For now the deep
+// import is the lesser evil — see release notes for ESLint rule plan that
+// will need to whitelist this exception or move it behind a sub-entry.
+import { parseAddr, byteLen, decode, scale, validateAddr } from '../../plc-driver/src/utils';
+import { VariableMappingManager } from '../../plc-driver/src/variable-mapping';
+import type { PLCConnectionConfig, PLCVariableMapping } from '../../plc-driver/src/types';
+
+export { parseAddr, byteLen, decode, scale, validateAddr, VariableMappingManager };
+export type { PLCConnectionConfig, PLCVariableMapping };
+
+// MOCK_PLC: 默认 false (生产安全), 开发演示需在 .env 设置 MOCK_PLC=true
+// 开启后所有 plcRead 调用返回模拟值, 启动时打印多行警告框
+export const MOCK_PLC = process.env.MOCK_PLC === 'true';
+if (MOCK_PLC) {
+  console.warn('');
+  console.warn('  ╔══════════════════════════════════════════════════════╗');
+  console.warn('  ║  ⚠ MOCK_PLC=true 模式启用 — 所有 PLC 读取返回模拟值  ║');
+  console.warn('  ║  生产部署前必须设置 MOCK_PLC=false 或移除该环境变量  ║');
+  console.warn('  ╚══════════════════════════════════════════════════════╝');
+  console.warn('');
+}
+
+// 开发模式 PLC 读取 (统一定义,server 全局共享)
+// 模拟量慢漂移 (DEMO 用, 让趋势图更逼真)
+// CUSUM 演示: 周期性注入异常, 让 CUSUM 检测并展示效果
+const _demoBase: Record<string, number> = {};
+const _demoDrift: Record<string, number> = {};
+const _demoStartTime = Date.now();
+export function devPlcRead(tag: string): number {
+  // 缓慢随机游走 + 微小噪声
+  if (!_demoBase[tag]) {
+    const defaults: Record<string, number> = {
+      TEMP_PV: 37, JACKET_PV: 36.5, PH_PV: 7.0, DO_PV: 55,
+      PRESSURE_PV: 0.35, AIRFLOW_PV: 5.5, WEIGHT_PV: 7.2,
+      VFD_ACTUAL_FREQ: 15, VFD_CURRENT: 2.1,
+      STEAM_CV: 0, COOL_CV: 35, AIR_CV: 55,
+      P01_RATE: 2.5, P02_RATE: 8.0, P03_RATE: 0.8, P04_RATE: 0,
+      VFD_FAULT_CODE: 0, ESTOP: 0,
+      STEAM_VALVE_CLOSED: 1, COOL_VALVE_CLOSED: 1, LID_LOCKED: 1,
+      STEAM_PRESSURE_SW: 1, HEARTBEAT: 0,
+      TEMP_SV: 37, PH_SV: 7, DO_SV: 30,
+    };
+    _demoBase[tag] = defaults[tag] ?? 0;
+    _demoDrift[tag] = 0;
+  }
+  // 随机游走: 每次调用微小漂移
+  _demoDrift[tag] += (Math.random() - 0.5) * 0.06;
+  _demoDrift[tag] *= 0.95; // 衰减回零
+  const noise = (Math.random() - 0.5) * 0.3;
+  if (tag === 'HEARTBEAT') return Date.now() % 256;
+  if (tag === 'ESTOP' || tag === 'VFD_FAULT_CODE') return 0;
+  if (tag.endsWith('_CLOSED') || tag.endsWith('_LOCKED') || tag.endsWith('_SW')) return 1;
+
+  // ── CUSUM 演示异常注入 ──
+  // 周期性偏移, 让 CUSUM S⁺/S⁻ 累积并触发报警, 展示统计过程控制能力
+  const elapsedSec = (Date.now() - _demoStartTime) / 1000;
+  let anomalyBias = 0;
+
+  if (tag === 'TEMP_PV') {
+    // 每 5 分钟周期: 前 2 分钟温度上升 0.8°C (CUSUM S⁺ 累积)
+    const cycle = elapsedSec % 300; // 5min 周期
+    if (cycle >= 60 && cycle < 180) anomalyBias = 0.8;
+  } else if (tag === 'PH_PV') {
+    // 每 7 分钟周期: 中间 2 分钟 pH 下降 0.15 (CUSUM S⁻ 累积)
+    const cycle = elapsedSec % 420; // 7min 周期
+    if (cycle >= 120 && cycle < 240) anomalyBias = -0.15;
+  } else if (tag === 'DO_PV') {
+    // 每 4 分钟周期: 后 1.5 分钟 DO 下降 12% (明显偏移)
+    const cycle = elapsedSec % 240; // 4min 周期
+    if (cycle >= 150 && cycle < 240) anomalyBias = -12;
+  }
+
+  return _demoBase[tag] + _demoDrift[tag] + noise + anomalyBias;
+}
