@@ -506,6 +506,64 @@ export class BatchController extends EventEmitter {
   }
 
   /**
+   * v1.12.0 — F2-AUTO actor restart on auto_resume.
+   *
+   * Combines `resumeBatch()` (state-rebuild primitive) with the actor + polling
+   * lifecycle steps that the boot orphan scan needs in order to actually
+   * resume execution after a crash. Steps:
+   *   1. Call resumeBatch(batchId, recipe, savedNodeId) — rebuilds DAG +
+   *      DAGExecutor + phaseStatusesMap + currentNodeId.
+   *   2. If the XState actor is still in 'idle' (fresh controller), send
+   *      cmd_start so it transitions to 'running'.
+   *   3. Start the polling tick loop if not already running.
+   *
+   * Idempotent: if currentState is already 'running' AND polling is active,
+   * this is a no-op (returns success). Calling twice on the same controller
+   * is therefore safe.
+   *
+   * Returns success/message in the same shape as start(); on failure (e.g.
+   * actor refused the cmd_start transition) the caller can fall back to hold.
+   */
+  resumeAndStart(
+    batchId: string,
+    recipe: Recipe,
+    savedNodeId: string | null,
+  ): { success: boolean; message: string } {
+    // 1. Rebuild runtime state
+    this.resumeBatch(batchId, recipe, savedNodeId);
+
+    // 2. Drive XState actor — only fire cmd_start if we're still idle.
+    //    If the controller is already running (idempotent re-entry), skip.
+    if (this.currentState === 'idle') {
+      this.actor.send({ type: 'cmd_start' });
+      if ((this.currentState as string) !== 'running') {
+        return {
+          success: false,
+          message: `状态机未能转换到running状态, 当前: ${this.currentState}`,
+        };
+      }
+    } else if (this.currentState !== 'running') {
+      return {
+        success: false,
+        message: `controller 当前状态 ${this.currentState} 无法 resumeAndStart`,
+      };
+    }
+
+    // 3. Start polling if not already active
+    if (!this.pollTimer) {
+      this.startPolling();
+    }
+
+    this.batchStartTime = Date.now();
+    this.emit('batch_started', { batch_id: batchId, recipe_id: recipe.recipe_id, resumed: true });
+
+    return {
+      success: true,
+      message: `批次${batchId}已恢复并启动 (node=${this._currentNodeId ?? 'NULL'})`,
+    };
+  }
+
+  /**
    * Build the evaluation context for branch nodes.
    * Provides a `evaluateExpression` impl backed by condition-evaluator,
    * with the most recent PV snapshot + phase_elapsed_min as fields.

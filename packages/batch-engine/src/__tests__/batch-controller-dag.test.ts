@@ -476,6 +476,88 @@ describe('B1.3 — BatchController forwards recipe.dag.options.maxRevisits', () 
   });
 });
 
+// ============================================================
+// v1.12.0 — F2-AUTO actor restart on auto_resume
+// ============================================================
+describe('BatchController.resumeAndStart — F2-AUTO (v1.12.0)', () => {
+  function makeF2Recipe() {
+    return {
+      recipe_id: 'TEST_F2',
+      version: '1.0.0',
+      execution_mode: 'free',
+      vessel: { id: 'V1', working_volume_L: 5, total_volume_L: 16, tare_weight_kg: 12 },
+      phases: [
+        { phase_id: 'P0', type: 'fermentation', params: {} },
+        { phase_id: 'P1', type: 'feeding', params: {} },
+      ],
+    } as any;
+  }
+
+  it('transitions from idle → running and sets pollTimer', () => {
+    const ctrl = makeCtrl();
+    expect(ctrl.currentState).toBe('idle');
+
+    const res = ctrl.resumeAndStart('B-F2-1', makeF2Recipe(), 'n_1');
+    expect(res.success).toBe(true);
+    expect(ctrl.currentState).toBe('running');
+    // pollTimer must be set after resumeAndStart
+    expect((ctrl as any).pollTimer).not.toBeNull();
+    // currentNodeId honored from savedNodeId
+    expect(ctrl.currentNodeId).toBe('n_1');
+
+    ctrl.destroy();
+  });
+
+  it('preserves resumeBatch semantics (DAG + phaseStatusesMap rebuilt)', () => {
+    const ctrl = makeCtrl();
+    ctrl.resumeAndStart('B-F2-2', makeF2Recipe(), 'n_1');
+
+    // Phase statuses honor the savedNodeId boundary
+    const statuses = (ctrl as any).getPhaseStatuses();
+    expect(statuses[0].state).toBe('completed');
+    expect(statuses[1].state).toBe('running');
+    ctrl.destroy();
+  });
+
+  it('is idempotent: calling twice on the same controller is a no-op (still running, single timer)', () => {
+    const ctrl = makeCtrl();
+
+    const r1 = ctrl.resumeAndStart('B-F2-3', makeF2Recipe(), 'n_0');
+    expect(r1.success).toBe(true);
+    expect(ctrl.currentState).toBe('running');
+    const firstTimer = (ctrl as any).pollTimer;
+    expect(firstTimer).not.toBeNull();
+
+    const r2 = ctrl.resumeAndStart('B-F2-3', makeF2Recipe(), 'n_0');
+    expect(r2.success).toBe(true);
+    expect(ctrl.currentState).toBe('running');
+    // Polling timer must be the same instance — no double-scheduling.
+    expect((ctrl as any).pollTimer).toBe(firstTimer);
+
+    ctrl.destroy();
+  });
+
+  it('falls back to first node when savedNodeId is null (R1 fallback)', () => {
+    const ctrl = makeCtrl();
+    const r = ctrl.resumeAndStart('B-F2-4', makeF2Recipe(), null);
+    expect(r.success).toBe(true);
+    expect(ctrl.currentNodeId).toBe('n_0');
+    ctrl.destroy();
+  });
+
+  it('emits batch_started with resumed=true marker', () => {
+    const ctrl = makeCtrl();
+    const events: any[] = [];
+    ctrl.on('batch_started', (e) => events.push(e));
+
+    ctrl.resumeAndStart('B-F2-5', makeF2Recipe(), 'n_0');
+    expect(events.length).toBe(1);
+    expect(events[0].batch_id).toBe('B-F2-5');
+    expect(events[0].resumed).toBe(true);
+    ctrl.destroy();
+  });
+});
+
 describe('v1.8.0 bucket 3 perf fix 2 — phaseStatuses getter memoization', () => {
   it('caches the sorted array between reads and only rebuilds after Map mutation', async () => {
     const ctrl = makeCtrl();
