@@ -147,11 +147,19 @@ export function validateRecipe(recipe: Recipe): ValidationResult {
 // M3.9: DAG 结构校验
 // BV-13: 至少 1 个 start 节点
 // BV-14: 至少 1 个 end 节点
-// BV-15: 无环 (DFS 标记)
+// BV-15: 无环 (DFS 标记) — 但 goto 节点的出边被视为软回边, 不参与环检测
 // BV-16: 所有节点从 start 可达 (BFS)
 // BV-17: branch 节点必须恰好 2 条出边 (true + false)
+// BV-18: goto 节点必须恰好 1 条出边
+// BV-19: goto.target 必须等于其唯一出边的 to (字段与图结构一致)
+// BV-20: goto.target 不能是 start 节点 (避免重新初始化)
+// BV-21: goto.target 必须是 DAG 内已知的节点 id
+// BV-22: 当 DAG 含 goto 形成环时, recipe.options.maxRevisits 必须 > 1
+//        (warning — 校验器不强制, 因为 maxRevisits 是 RecipeDAG.options
+//         的字段, validateDag 单独被调用时拿不到, 由 DAGExecutor 兜底抛
+//         MaxRevisitsExceeded)
 // ============================================================
-interface DagNode { id: string; type: string; }
+interface DagNode { id: string; type: string; target?: string; }
 interface DagEdge { id: string; from: string; to: string; label?: string; }
 interface DagShape { nodes: DagNode[]; edges: DagEdge[]; }
 
@@ -188,12 +196,55 @@ export function validateDag(dag: DagShape): ValidationIssue[] {
     }
   }
 
+  // B1.3: BV-18..BV-21 — goto 节点结构校验
+  const nodeIdSet = new Set(dag.nodes.map(n => n.id));
+  for (const node of dag.nodes) {
+    if (node.type === 'goto') {
+      const outEdges = dag.edges.filter(e => e.from === node.id);
+      // BV-18: 恰好 1 条出边
+      if (outEdges.length !== 1) {
+        issues.push({
+          code: 'BV-18', severity: 'error',
+          message: `Goto 节点 ${node.id} 必须恰好 1 条出边, 实际 ${outEdges.length} 条`,
+        });
+      }
+      // BV-21: target 必须存在
+      if (!node.target || !nodeIdSet.has(node.target)) {
+        issues.push({
+          code: 'BV-21', severity: 'error',
+          message: `Goto 节点 ${node.id} 的 target "${node.target ?? '(未设置)'}" 不是 DAG 内已知节点`,
+        });
+      } else {
+        // BV-19: target 与出边 to 一致 (只有当 outEdges 数量正常时才有意义)
+        if (outEdges.length === 1 && outEdges[0].to !== node.target) {
+          issues.push({
+            code: 'BV-19', severity: 'error',
+            message: `Goto 节点 ${node.id} 的 target "${node.target}" 与出边 to "${outEdges[0].to}" 不一致`,
+          });
+        }
+        // BV-20: target 不能是 start 节点 (会重新初始化执行状态)
+        const targetNode = dag.nodes.find(n => n.id === node.target);
+        if (targetNode?.type === 'start') {
+          issues.push({
+            code: 'BV-20', severity: 'error',
+            message: `Goto 节点 ${node.id} 的 target 不能是 start 节点 (会重新初始化, 应跳到 phase 或 end)`,
+          });
+        }
+      }
+    }
+  }
+
   // BV-15: 无环检测 (DFS + 三色标记)
   // WHITE=未访问, GRAY=正在访问(栈中), BLACK=已访问完
+  // B1.3: goto 的出边视为软回边, 不参与环检测 (Goto 的合法用例就是回边).
+  // 真正的运行时安全由 DAGExecutor.maxRevisits 兜底.
   const color: Record<string, 'W' | 'G' | 'B'> = {};
   dag.nodes.forEach(n => { color[n.id] = 'W'; });
+  const gotoNodeIds = new Set(dag.nodes.filter(n => n.type === 'goto').map(n => n.id));
   const adj = new Map<string, string[]>();
   dag.edges.forEach(e => {
+    // 跳过 goto 的出边 — 不参与 BV-15 环检测
+    if (gotoNodeIds.has(e.from)) return;
     if (!adj.has(e.from)) adj.set(e.from, []);
     adj.get(e.from)!.push(e.to);
   });
@@ -221,13 +272,20 @@ export function validateDag(dag: DagShape): ValidationIssue[] {
   }
 
   // BV-16: 所有节点从 start 可达 (BFS)
+  // 使用包含 goto 出边的完整 adj 计算可达性 — 否则 goto 的 target 会被
+  // 误判为孤立 (上面的 adj 因 BV-15 故意省略了 goto 出边)。
   if (!hasCycle && startNodes.length > 0) {
+    const fullAdj = new Map<string, string[]>();
+    dag.edges.forEach(e => {
+      if (!fullAdj.has(e.from)) fullAdj.set(e.from, []);
+      fullAdj.get(e.from)!.push(e.to);
+    });
     const visited = new Set<string>();
     const queue = [startNodes[0].id];
     visited.add(startNodes[0].id);
     while (queue.length > 0) {
       const cur = queue.shift()!;
-      const neighbors = adj.get(cur) || [];
+      const neighbors = fullAdj.get(cur) || [];
       for (const next of neighbors) {
         if (!visited.has(next)) {
           visited.add(next);
