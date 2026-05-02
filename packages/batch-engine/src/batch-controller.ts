@@ -50,6 +50,11 @@ export class BatchController extends EventEmitter {
   private ticking = false;
   // T8: phaseStatuses now keyed by DAG node id; array view exposed via getter
   private phaseStatusesMap: Map<string, PhaseStatus> = new Map();
+  // v1.8.0 bucket 3 (perf fix 2): cached sorted-array view of phaseStatusesMap.
+  // Invalidated only on Map structural changes (.set / .delete / .clear) — in-place
+  // mutations of PhaseStatus values (e.g. ps.state = 'running') are visible through
+  // the cached array because the array shares the same value references.
+  private phaseStatusesArrayCache: PhaseStatus[] | null = null;
 
   // DAG runtime fields (T4 plumbing — wired up in T7+)
   // T10: backing field renamed to _currentNodeId; public getter exposes it.
@@ -89,7 +94,18 @@ export class BatchController extends EventEmitter {
 
   /** Array view of phaseStatuses sorted by phase_index (transitional shim until all consumers move to nodeId). */
   private get phaseStatuses(): PhaseStatus[] {
-    return Array.from(this.phaseStatusesMap.values()).sort((a, b) => a.phase_index - b.phase_index);
+    // v1.8.0 bucket 3 (perf fix 2): memoized sorted view. Cache is invalidated
+    // by invalidatePhaseStatusesCache() at every Map structural mutation site.
+    if (this.phaseStatusesArrayCache === null) {
+      this.phaseStatusesArrayCache = Array.from(this.phaseStatusesMap.values())
+        .sort((a, b) => a.phase_index - b.phase_index);
+    }
+    return this.phaseStatusesArrayCache;
+  }
+
+  /** v1.8.0 bucket 3 (perf fix 2): drop phaseStatuses array cache after Map mutation. */
+  private invalidatePhaseStatusesCache(): void {
+    this.phaseStatusesArrayCache = null;
   }
 
   /** Lookup PhaseStatus by phase_index (transitional helper for index-based code paths). */
@@ -190,6 +206,7 @@ export class BatchController extends EventEmitter {
     // T8: 初始化所有Phase状态 (Map keyed by node id), 顺序与 DAG 中 phase 节点顺序一致
     // 第一个phase为ready, 其余为pending; 优先从数据库模板读取步骤定义, 回退到硬编码
     this.phaseStatusesMap.clear();
+    this.invalidatePhaseStatusesCache(); // v1.8.0 bucket 3 (perf fix 2)
     const phaseNodes = (this.dag?.nodes ?? []).filter(n => n.type === 'phase');
     phaseNodes.forEach((node, idx) => {
       const phaseFromRecipe = recipe.phases?.[idx];
@@ -207,6 +224,7 @@ export class BatchController extends EventEmitter {
         step_name: steps.length > 0 ? steps[0].name : '',
       });
     });
+    this.invalidatePhaseStatusesCache(); // v1.8.0 bucket 3 (perf fix 2): drop cache after the .set() loop
 
     // Transition state machine first
     this.actor.send({ type: 'cmd_start' });
@@ -290,6 +308,7 @@ export class BatchController extends EventEmitter {
       this.batchId = '';
       this.phaseIndex = 0;
       this.phaseStatusesMap.clear();
+      this.invalidatePhaseStatusesCache(); // v1.8.0 bucket 3 (perf fix 2)
       this.dag = null;
       this.dagExecutor = null;
       this.actor.send({ type: 'cmd_reset' });
@@ -424,6 +443,7 @@ export class BatchController extends EventEmitter {
 
     // Rebuild phaseStatuses from DAG phase nodes (parallels start()'s init)
     this.phaseStatusesMap.clear();
+    this.invalidatePhaseStatusesCache(); // v1.8.0 bucket 3 (perf fix 2)
     const phaseNodes = (this.dag?.nodes ?? []).filter(n => n.type === 'phase');
     phaseNodes.forEach((node, idx) => {
       const phaseFromRecipe = recipe.phases?.[idx];
@@ -441,6 +461,7 @@ export class BatchController extends EventEmitter {
         step_name: steps.length > 0 ? steps[0].name : '',
       });
     });
+    this.invalidatePhaseStatusesCache(); // v1.8.0 bucket 3 (perf fix 2): drop cache after the .set() loop
 
     this.dagExecutor.start();
 
@@ -760,9 +781,23 @@ export class BatchController extends EventEmitter {
       'TEMP_SV', 'PH_SV', 'DO_SV',
       'VFD_FAULT_CODE', 'STEAM_CV', 'COOL_CV',
     ];
+    // v1.8.0 bucket 3 (perf fix 1): parallelize the 12 PLC reads. On real S7
+    // hardware (~3ms RTT), serial 12×3ms = ~36ms vs parallel ~3ms per tick.
+    // On MOCK_PLC the reads are sync so no measurable change. Per-tag try/catch
+    // preserves the original silent-skip semantics — one bad tag must not
+    // poison the whole snapshot.
+    const reads = await Promise.all(
+      tags.map(async (tag) => {
+        try {
+          return [tag, await this.config.plcRead(tag)] as const;
+        } catch {
+          return null; // skip silently, just like the old serial loop
+        }
+      })
+    );
     const pv: Record<string, number> = {};
-    for (const tag of tags) {
-      try { pv[tag] = await this.config.plcRead(tag); } catch { /* skip */ }
+    for (const r of reads) {
+      if (r) pv[r[0]] = r[1];
     }
     // 别名映射 (StepConditionEvaluator 用 AI-x 格式)
     pv['AI-0'] = pv['TEMP_PV'] ?? 0;
