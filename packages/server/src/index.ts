@@ -185,7 +185,8 @@ import { createNotificationsRouter } from './routes/notifications';
 import { listChannels as listNotifChannels, listRules as listNotifRules } from '@biocore/data-service';
 
 // JWT 认证
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'crypto';
+import bcrypt from 'bcrypt';
 
 const PORT = parseInt(process.env.PORT || '3001');
 const DATA_DIR = process.env.DATA_DIR || './data';
@@ -607,33 +608,85 @@ function verifyJWT(token: string): Record<string, any> | null {
   } catch { return null; }
 }
 
-function hashPassword(password: string, salt?: string): { hash: string; salt: string } {
-  const s = salt || randomBytes(16).toString('hex');
-  const hash = createHash('sha256').update(password + s).digest('hex');
-  return { hash, salt: s };
+// ─── Password hashing (v1.8.0 bucket 1) ────────────────────────
+// bcrypt cost=12 — current OWASP-aligned default for 2025+.
+// Old SHA-256 hashes (`salt:hash` format) are still accepted for verification
+// and migrated on first successful login.
+const BCRYPT_COST = 12;
+
+/**
+ * Hash a password with bcrypt cost=12.
+ * Returns the bcrypt-formatted string (e.g. `$2b$12$<22-char salt><31-char hash>`).
+ */
+async function hashPasswordBcrypt(password: string): Promise<string> {
+  return bcrypt.hash(password, BCRYPT_COST);
 }
 
-// 初始化默认admin用户 (如果不存在或 hash 是占位符)
-try {
-  const db = sqlite.getDatabase();
-  const existing: any = db.prepare('SELECT user_id, password_hash FROM users WHERE username = ?').get('admin');
-  // password_hash 必须是 salt:sha256hash 格式 (32+1+64 = 97 字符以上),否则视为无效需重置
-  const hashOk = existing?.password_hash && /^[a-f0-9]{32}:[a-f0-9]{64}$/.test(existing.password_hash);
-  if (!existing || !hashOk) {
-    const { hash, salt } = hashPassword('admin123');
-    if (existing) {
-      db.prepare('UPDATE users SET password_hash = ?, display_name = ?, role = ?, is_active = 1 WHERE username = ?')
-        .run(`${salt}:${hash}`, '系统管理员', 'admin', 'admin');
-      // v1.7.3 C3-partial: 不再把默认密码字面值写进日志
-      console.log('[BOOT] Default admin account password reset. Password set in DB; reset via reset-admin script before production.');
-    } else {
-      db.prepare(`INSERT INTO users (user_id, username, display_name, password_hash, role)
-        VALUES (?, ?, ?, ?, ?)`).run('admin-001', 'admin', '系统管理员', `${salt}:${hash}`, 'admin');
-      // v1.7.3 C3-partial: 不再把默认密码字面值写进日志
-      console.log('[BOOT] Default admin account created. Password set in DB; reset via reset-admin script before production.');
+/**
+ * Verify a password against a stored hash. Supports two formats:
+ *  - bcrypt: starts with `$2`. Native `bcrypt.compare`.
+ *  - legacy SHA-256: matches /^[a-f0-9]{32}:[a-f0-9]{64}$/. Recomputes & compares.
+ *
+ * If `legacy` is true on success, callers MUST migrate the user's
+ * `password_hash` to the bcrypt format.
+ */
+async function verifyPassword(
+  password: string,
+  storedHash: string,
+): Promise<{ ok: boolean; legacy: boolean }> {
+  if (typeof storedHash !== 'string' || storedHash.length === 0) {
+    return { ok: false, legacy: false };
+  }
+  if (storedHash.startsWith('$2')) {
+    try {
+      const ok = await bcrypt.compare(password, storedHash);
+      return { ok, legacy: false };
+    } catch {
+      return { ok: false, legacy: false };
     }
   }
-} catch (e) { console.error(`[${new Date().toISOString()}] [ERROR] 初始化admin失败:`, e); }
+  const m = /^([a-f0-9]{32}):([a-f0-9]{64})$/.exec(storedHash);
+  if (!m) return { ok: false, legacy: false };
+  const [, salt, expectedHex] = m;
+  const computedHex = createHash('sha256').update(password + salt).digest('hex');
+  if (computedHex.length !== expectedHex.length) return { ok: false, legacy: true };
+  const ok = timingSafeEqual(
+    Buffer.from(computedHex, 'hex'),
+    Buffer.from(expectedHex, 'hex'),
+  );
+  return { ok, legacy: true };
+}
+
+export { hashPasswordBcrypt, verifyPassword };
+
+// 初始化默认admin用户 (如果不存在或 hash 是无效格式)
+// v1.7.3 H7: 此调用在 start() 中通过 ensureAdminAccount() 触发, 与 migrationsReady 串行。
+async function ensureAdminAccount(): Promise<void> {
+  try {
+    const db = sqlite.getDatabase();
+    const existing: any = db.prepare('SELECT user_id, password_hash FROM users WHERE username = ?').get('admin');
+    // 接受两种格式: 旧 sha256 (salt:hash) 或 新 bcrypt ($2[aby]$...)
+    const ph: string | undefined = existing?.password_hash;
+    const hashOk = !!ph && (
+      /^[a-f0-9]{32}:[a-f0-9]{64}$/.test(ph) ||
+      /^\$2[aby]\$/.test(ph)
+    );
+    if (!existing || !hashOk) {
+      const hash = await hashPasswordBcrypt('admin123');
+      if (existing) {
+        db.prepare('UPDATE users SET password_hash = ?, display_name = ?, role = ?, is_active = 1 WHERE username = ?')
+          .run(hash, '系统管理员', 'admin', 'admin');
+        console.log('[BOOT] Default admin account password reset. Password set in DB; reset via reset-admin script before production.');
+      } else {
+        db.prepare(`INSERT INTO users (user_id, username, display_name, password_hash, role)
+          VALUES (?, ?, ?, ?, ?)`).run('admin-001', 'admin', '系统管理员', hash, 'admin');
+        console.log('[BOOT] Default admin account created. Password set in DB; reset via reset-admin script before production.');
+      }
+    }
+  } catch (e) {
+    console.error(`[${new Date().toISOString()}] [ERROR] 初始化admin失败:`, e);
+  }
+}
 
 // ─── Express ───────────────────────────────────────────────
 
@@ -1044,16 +1097,30 @@ function stopHeartbeat(id: string): void {
  *       401: { description: 用户名或密码错误 }
  *       400: { description: 缺少必填字段 }
  */
-apiRouter.post('/auth/login', (req, res) => {
+apiRouter.post('/auth/login', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: '缺少用户名或密码' });
   const user: any = sqlite.getDatabase().prepare('SELECT * FROM users WHERE username = ? AND is_active = 1').get(username);
   if (!user) return res.status(401).json({ error: '用户名或密码错误' });
-  const parts = (user.password_hash || '').split(':');
-  if (parts.length !== 2) return res.status(401).json({ error: '用户名或密码错误' });
-  const [salt, storedHash] = parts;
-  const { hash } = hashPassword(password, salt);
-  if (hash !== storedHash) return res.status(401).json({ error: '用户名或密码错误' });
+  const result = await verifyPassword(password, user.password_hash || '');
+  if (!result.ok) return res.status(401).json({ error: '用户名或密码错误' });
+  // v1.8.0 bucket 1: migrate-on-login from legacy sha256 → bcrypt
+  if (result.legacy) {
+    try {
+      const newHash = await hashPasswordBcrypt(password);
+      sqlite.getDatabase().prepare('UPDATE users SET password_hash = ? WHERE user_id = ?').run(newHash, user.user_id);
+      sqlite.writeAuditLog({
+        user_id: user.user_id,
+        action: 'password_hash_migrated',
+        target_type: 'user',
+        target_id: user.user_id,
+        target_kind: 'user_id',
+        reason: 'sha256_to_bcrypt_v1.8.0',
+      });
+    } catch (e) {
+      console.warn(`[AUTH] failed to migrate password hash for ${user.user_id}:`, (e as Error).message);
+    }
+  }
   // 更新最后登录时间
   sqlite.getDatabase().prepare('UPDATE users SET last_login_at = datetime(\'now\') WHERE user_id = ?').run(user.user_id);
   const token = createJWT({ user_id: user.user_id, username: user.username, role: user.role, display_name: user.display_name });
@@ -1071,21 +1138,21 @@ apiRouter.get('/users', (req: any, res) => {
   res.json(rows);
 });
 
-apiRouter.post('/users', requireRole('admin'), (req: any, res) => {
+apiRouter.post('/users', requireRole('admin'), async (req: any, res) => {
   const { username, display_name, password, role } = req.body;
   if (!username || !password || !display_name) return res.status(400).json({ error: '缺少必填字段' });
   if (!['admin', 'engineer', 'operator', 'viewer'].includes(role)) return res.status(400).json({ error: '无效角色' });
   const existing = sqlite.getDatabase().prepare('SELECT user_id FROM users WHERE username = ?').get(username);
   if (existing) return res.status(409).json({ error: '用户名已存在' });
   const userId = `user-${crypto.randomUUID().slice(0, 8)}`;
-  const { hash, salt } = hashPassword(password);
+  const hash = await hashPasswordBcrypt(password);
   sqlite.getDatabase().prepare(`INSERT INTO users (user_id, username, display_name, password_hash, role) VALUES (?, ?, ?, ?, ?)`)
-    .run(userId, username, display_name, `${salt}:${hash}`, role);
+    .run(userId, username, display_name, hash, role);
   sqlite.writeAuditLog({ user_id: req.user?.user_id || 'system', action: 'user_create', target_type: 'user', target_id: userId, new_value: JSON.stringify({ username, role }), ip_address: req.ip || req.socket?.remoteAddress || null, trace_id: req.trace_id });
   res.json({ user_id: userId, username, display_name, role });
 });
 
-apiRouter.put('/users/:id', requireRole('admin'), (req: any, res) => {
+apiRouter.put('/users/:id', requireRole('admin'), async (req: any, res) => {
   const { display_name, role, is_active, password } = req.body;
   const updates: string[] = [];
   const params: any[] = [];
@@ -1093,8 +1160,8 @@ apiRouter.put('/users/:id', requireRole('admin'), (req: any, res) => {
   if (role !== undefined) { updates.push('role = ?'); params.push(role); }
   if (is_active !== undefined) { updates.push('is_active = ?'); params.push(is_active ? 1 : 0); }
   if (password) {
-    const { hash, salt } = hashPassword(password);
-    updates.push('password_hash = ?'); params.push(`${salt}:${hash}`);
+    const hash = await hashPasswordBcrypt(password);
+    updates.push('password_hash = ?'); params.push(hash);
   }
   if (updates.length === 0) return res.status(400).json({ error: '无更新字段' });
   params.push(req.params.id);
@@ -4645,6 +4712,21 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 // 处理请求却撞上未迁移的 schema (e.g. 缺列 / 缺表)。
 async function start(): Promise<void> {
   await migrationsReady;
+  // v1.8.0 bucket 1: admin init is now async (bcrypt). Run it after migrations
+  // but before listen so the default admin row is in place when requests arrive.
+  await ensureAdminAccount();
+  // v1.8.0 bucket 1: JWT_SECRET production guard — fail fast if dev default
+  // is being used in production; warn loudly otherwise.
+  const DEFAULT_JWT_SECRET = 'biocore-dev-secret-change-in-production';
+  const effectiveJwtSecret = process.env.JWT_SECRET ?? DEFAULT_JWT_SECRET;
+  if (effectiveJwtSecret === DEFAULT_JWT_SECRET) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[FATAL] JWT_SECRET is set to the default value in production. Set a strong unique secret in env before starting.');
+      process.exit(1);
+    } else {
+      console.warn('[WARN] JWT_SECRET is the default dev value. Set a strong secret before deploying to production.');
+    }
+  }
   server.listen(PORT, () => {
   const VER = process.env.npm_package_version ?? '0.3.3';
   console.log(`
