@@ -9,9 +9,10 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
-import { Beaker, GitBranch, Wand2, Trash2, Save as SaveIcon, Plus } from 'lucide-react';
+import { Beaker, GitBranch, Wand2, Trash2, Save as SaveIcon, Plus, CornerDownRight } from 'lucide-react';
 import { PhaseNode } from './nodes/PhaseNode';
 import { BranchNode } from './nodes/BranchNode';
+import { GotoNode } from './nodes/GotoNode';
 import { StartNode, EndNode } from './nodes/StartEndNode';
 import { NodeInspector, type APIPhaseTemplate } from './NodeInspector';
 import { applyDagreLayout } from './layout';
@@ -22,13 +23,14 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 // 与 server/src/recipe-dag.ts 的 RecipeDAG 对齐
 export interface DAGNode {
   id: string;
-  type: 'start' | 'end' | 'phase' | 'branch';
+  type: 'start' | 'end' | 'phase' | 'branch' | 'goto';
   position?: { x: number; y: number };
   phase_id?: string;
   phase_type?: string;
   params?: Record<string, any>;
   label?: string;                    // 节点显示名 (操作员视角)
   expression?: string;
+  target?: string;                   // B1.3 goto: 跳转目标节点 id
 }
 export interface DAGEdge {
   id: string;
@@ -40,11 +42,14 @@ export interface RecipeDAG {
   schema_version: 2;
   nodes: DAGNode[];
   edges: DAGEdge[];
+  /** B1.3: recipe-level executor options (forwarded to DAGExecutor). */
+  options?: { maxRevisits?: number };
 }
 
 const nodeTypes: NodeTypes = {
   phase: PhaseNode,
   branch: BranchNode,
+  goto: GotoNode,
   start: StartNode,
   end: EndNode,
 };
@@ -61,6 +66,7 @@ function dagToFlow(dag: RecipeDAG): { nodes: Node[]; edges: Edge[] } {
       label: (n as any).label || n.phase_id || n.id,
       params: n.params || {},
       expression: n.expression || '',
+      target: n.target || '',           // B1.3 goto target
     },
   }));
   const edges: Edge[] = dag.edges.map(e => ({
@@ -96,6 +102,13 @@ function flowToDag(nodes: Node[], edges: Edge[]): RecipeDAG {
       }
       if (n.type === 'branch') {
         base.expression = d.expression;
+      }
+      if (n.type === 'goto') {
+        // B1.3: keep target in sync with the (single) outgoing edge.
+        // If the user wired a connection from this goto, prefer the edge's
+        // target; otherwise fall back to whatever the inspector last set.
+        const outEdge = edges.find(e => e.source === n.id);
+        base.target = outEdge?.target || d.target || '';
       }
       return base;
     }),
@@ -206,6 +219,19 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
     setSelectedNodeId(id);
   }, [nodes, setNodes]);
 
+  // B1.3: 添加 Goto 节点 (单出边跳转节点)
+  const addGotoNode = useCallback(() => {
+    const id = `n_${Date.now()}`;
+    const newNode: Node = {
+      id,
+      type: 'goto',
+      position: { x: 400, y: 150 + nodes.length * 30 },
+      data: { target: '' },
+    };
+    setNodes(prev => [...prev, newNode]);
+    setSelectedNodeId(id);
+  }, [nodes, setNodes]);
+
   // DAG 校验: 入口/出口 + 孤立节点 + 未连接 Phase (保存前检查)
   const validateDag = useCallback((): string[] => {
     const errs: string[] = [];
@@ -235,6 +261,27 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
         const d = n.data as any;
         if (!d.phase_id?.trim()) errs.push(`Phase 节点 ${d.label || n.id} 缺少 phase_id`);
         if (!d.phase_type?.trim()) errs.push(`Phase 节点 ${d.label || n.id} 缺少 phase_type`);
+      }
+      if (n.type === 'goto') {
+        // B1.3: Goto 必须恰好 1 条出边, 且 target 必须等于该边 to.
+        if (outEdges.length !== 1) {
+          errs.push(`Goto 节点 ${n.id} 必须恰好 1 条出边 (实际 ${outEdges.length})`);
+        }
+        const d = n.data as any;
+        const edgeTo = outEdges[0]?.target;
+        if (!d.target?.trim() && !edgeTo) {
+          errs.push(`Goto 节点 ${n.id} 缺少 target 目标`);
+        } else if (edgeTo && d.target && d.target !== edgeTo) {
+          errs.push(`Goto 节点 ${n.id} 的 target "${d.target}" 与连接 to "${edgeTo}" 不一致`);
+        }
+        const targetId = d.target || edgeTo;
+        const targetNode = nodes.find(x => x.id === targetId);
+        if (targetId && !targetNode) {
+          errs.push(`Goto 节点 ${n.id} 的 target "${targetId}" 不是 DAG 内已知节点`);
+        }
+        if (targetNode?.type === 'start') {
+          errs.push(`Goto 节点 ${n.id} 不能跳到 start 节点`);
+        }
       }
     });
     return errs;
@@ -285,6 +332,9 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
           <div className="text-[10px] font-semibold text-muted-foreground uppercase">添加节点</div>
           <Button variant="outline" size="sm" className="w-full justify-start" onClick={addBranchNode}>
             <GitBranch className="w-3.5 h-3.5 mr-1.5" />IF/ELSE 分支
+          </Button>
+          <Button variant="outline" size="sm" className="w-full justify-start" onClick={addGotoNode}>
+            <CornerDownRight className="w-3.5 h-3.5 mr-1.5" />Goto 跳转
           </Button>
           {apiTemplates.length === 0 && (
             <Button variant="outline" size="sm" className="w-full justify-start" onClick={addBlankPhaseNode}>
@@ -380,6 +430,7 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
               if (n.type === 'start') return '#16a34a';
               if (n.type === 'end') return '#dc2626';
               if (n.type === 'branch') return '#f59e0b';
+              if (n.type === 'goto') return '#8b5cf6';
               return '#3b82f6';
             }}
             maskColor="rgba(0, 0, 0, 0.6)"
@@ -393,6 +444,7 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
           node={selectedNode}
           template={findTemplate((selectedNode.data as any)?.phase_type || '')}
           allTemplates={apiTemplates}
+          allNodes={nodes}
           onChange={updateNodeData}
           onClose={() => setSelectedNodeId(null)}
         />

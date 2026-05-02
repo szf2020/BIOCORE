@@ -183,7 +183,7 @@ export interface PhaseConfig {
 //   - branch 出边: { from: 'branch_node', to, label: 'true' | 'false' }
 // ─────────────────────────────────────────────────────────────
 
-export type DAGNodeType = 'start' | 'end' | 'phase' | 'branch';
+export type DAGNodeType = 'start' | 'end' | 'phase' | 'branch' | 'goto';
 
 export interface DAGNodeBase {
   id: string;             // 节点唯一 ID (UI 用)
@@ -212,7 +212,17 @@ export interface DAGBranchNode extends DAGNodeBase {
   default_branch?: 'true' | 'false'; // PV 字段缺失时的回退分支
 }
 
-export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode;
+/**
+ * DAGGotoNode (B1.3) — single-out-edge pass-through routing node.
+ * Editor + recipe-validator enforce target == out-edge.to. Use cases:
+ * fault-recovery jumps, back-edges (need recipe.options.maxRevisits > 1).
+ */
+export interface DAGGotoNode extends DAGNodeBase {
+  type: 'goto';
+  target: string;              // 目标节点 id (与唯一出边 to 同步)
+}
+
+export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode | DAGGotoNode;
 
 export interface DAGEdge {
   id: string;
@@ -225,6 +235,14 @@ export interface RecipeDAG {
   schema_version: 2;
   nodes: DAGNode[];
   edges: DAGEdge[];
+  /**
+   * Recipe-level execution options (B1.3).
+   * `maxRevisits` is forwarded to DAGExecutor by BatchController so Goto
+   * back-edges can be enabled per-recipe (default = 1 keeps acyclic only).
+   */
+  options?: {
+    maxRevisits?: number;
+  };
 }
 
 // ─── 批次运行时实时状态 (T18) ───────────────────────────────

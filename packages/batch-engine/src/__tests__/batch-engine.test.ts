@@ -9,6 +9,7 @@ import {
   getStepDefinitions,
   StepConditionEvaluator,
   validateRecipe,
+  validateDag,
   RunningFaultMonitor,
 } from '../index';
 import { StepEngine } from '../step-engine';
@@ -366,5 +367,127 @@ describe('RunningFaultMonitor', () => {
     // reset后重新开始计时
     const faults = monitor.check({ TEMP_PV: 40, TEMP_SV: 37 });
     expect(faults.some(f => f.code === 'RF-03')).toBe(false);
+  });
+});
+
+// ─── B1.3 Goto validateDag rules (BV-18..BV-21) ──────────────
+
+describe('validateDag — B1.3 Goto rules', () => {
+  // Helper: build a minimally-valid DAG with a goto in the middle.
+  function makeGotoDag(opts: {
+    gotoOutEdges?: number;       // override out-edge count (default 1)
+    gotoTarget?: string;         // override goto.target (default 'c')
+    targetNodeType?: string;     // override the target node's type
+    targetNodeId?: string;       // override target node id (for "unknown id" tests)
+  } = {}) {
+    const targetId = opts.targetNodeId ?? 'c';
+    const targetType = opts.targetNodeType ?? 'phase';
+    const gotoTarget = opts.gotoTarget ?? targetId;
+    const gotoEdgeCount = opts.gotoOutEdges ?? 1;
+
+    const nodes: any[] = [
+      { id: 's', type: 'start' },
+      { id: 'a', type: 'phase' },
+      { id: 'g', type: 'goto', target: gotoTarget },
+      { id: targetId, type: targetType },
+      { id: 'e', type: 'end' },
+    ];
+    const edges: any[] = [
+      { id: 'e1', from: 's', to: 'a' },
+      { id: 'e2', from: 'a', to: 'g' },
+    ];
+    if (gotoEdgeCount >= 1) edges.push({ id: 'e3', from: 'g', to: targetId });
+    if (gotoEdgeCount >= 2) edges.push({ id: 'e3b', from: 'g', to: 'e' }); // extra
+    edges.push({ id: 'e4', from: targetId, to: 'e' });
+    return { nodes, edges };
+  }
+
+  it('BV-18: goto with 0 out-edges → invalid', () => {
+    const dag = makeGotoDag({ gotoOutEdges: 0 });
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-18')).toBe(true);
+  });
+
+  it('BV-18: goto with 2 out-edges → invalid', () => {
+    const dag = makeGotoDag({ gotoOutEdges: 2 });
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-18')).toBe(true);
+  });
+
+  it('BV-19: goto.target not equal to its out-edge.to → invalid', () => {
+    const dag = makeGotoDag({ gotoTarget: 'a' }); // edge points to 'c', target says 'a'
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-19')).toBe(true);
+  });
+
+  it('BV-20: goto.target = a start node id → invalid', () => {
+    // goto's target is 's' (start); also wire its edge to 's' so BV-19 is satisfied.
+    const dag = {
+      nodes: [
+        { id: 's', type: 'start' },
+        { id: 'a', type: 'phase' },
+        { id: 'g', type: 'goto', target: 's' },
+        { id: 'e', type: 'end' },
+      ],
+      edges: [
+        { id: 'e1', from: 's', to: 'a' },
+        { id: 'e2', from: 'a', to: 'g' },
+        { id: 'e3', from: 'g', to: 's' },
+        { id: 'e4', from: 'a', to: 'e' },
+      ],
+    };
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-20')).toBe(true);
+  });
+
+  it('BV-21: goto.target = unknown node id → invalid', () => {
+    const dag = makeGotoDag({ gotoTarget: 'nope_does_not_exist' });
+    const issues = validateDag(dag);
+    expect(issues.some(i => i.code === 'BV-21')).toBe(true);
+  });
+
+  it('valid: goto into a phase node passes (with maxRevisits-eligible cycle suppressed in BV-15)', () => {
+    // start → a → g(target=a) — goto's edge intentionally creates a cycle
+    // but BV-15 ignores goto's out-edges so it should NOT flag a cycle.
+    const dag = {
+      nodes: [
+        { id: 's', type: 'start' },
+        { id: 'a', type: 'phase' },
+        { id: 'g', type: 'goto', target: 'a' },
+        { id: 'e', type: 'end' },
+      ],
+      edges: [
+        { id: 'e1', from: 's', to: 'a' },
+        { id: 'e2', from: 'a', to: 'g' },
+        { id: 'e3', from: 'g', to: 'a' }, // back-edge, suppressed in BV-15
+        // Provide a path to end so the DAG is well-formed
+        { id: 'e4', from: 'a', to: 'e' },
+      ],
+    };
+    const issues = validateDag(dag);
+    // No goto-related errors
+    expect(issues.some(i => ['BV-18', 'BV-19', 'BV-20', 'BV-21'].includes(i.code))).toBe(false);
+    // No spurious BV-15 cycle (goto's back-edge is intentionally excluded)
+    expect(issues.some(i => i.code === 'BV-15')).toBe(false);
+  });
+
+  it('valid: goto reachability is honored by BV-16 (target via goto only is reachable)', () => {
+    // start → g → c → end ; the only path to c is via goto.
+    const dag = {
+      nodes: [
+        { id: 's', type: 'start' },
+        { id: 'g', type: 'goto', target: 'c' },
+        { id: 'c', type: 'phase' },
+        { id: 'e', type: 'end' },
+      ],
+      edges: [
+        { id: 'e1', from: 's', to: 'g' },
+        { id: 'e2', from: 'g', to: 'c' },
+        { id: 'e3', from: 'c', to: 'e' },
+      ],
+    };
+    const issues = validateDag(dag);
+    // BV-16 reachability must include goto's outgoing edge
+    expect(issues.some(i => i.code === 'BV-16')).toBe(false);
   });
 });

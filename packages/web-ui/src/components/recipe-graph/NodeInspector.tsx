@@ -5,7 +5,7 @@ import React from 'react';
 import type { Node } from '@xyflow/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { X, Beaker, GitBranch, Play, Square } from 'lucide-react';
+import { X, Beaker, GitBranch, Play, Square, CornerDownRight } from 'lucide-react';
 import { ConditionExpressionEditor } from './ConditionExpressionEditor';
 import { RecipeMaterialsEditor, type MaterialRef } from '@/components/recipes/RecipeMaterialsEditor';
 import { phaseLabel } from '@/lib/utils';
@@ -27,6 +27,8 @@ interface Props {
   node: Node | null;
   template?: APIPhaseTemplate;       // 当前 phase_type 对应的模板 (用于参数 schema)
   allTemplates?: APIPhaseTemplate[]; // 全部模板 (用于"类型"下拉)
+  // B1.3: 全部画布节点 — 用于 Goto target 下拉选项 (排除自身/start)
+  allNodes?: Array<{ id: string; type?: string; data?: any }>;
   onChange: (nodeId: string, patch: Record<string, any>) => void;
   onClose: () => void;
 }
@@ -47,7 +49,7 @@ function setNestedValue(obj: Record<string, any>, key: string, value: any): void
   cur[last] = value;
 }
 
-export function NodeInspector({ node, template, allTemplates, onChange, onClose }: Props) {
+export function NodeInspector({ node, template, allTemplates, allNodes, onChange, onClose }: Props) {
   if (!node) return null;
 
   const data = node.data as any;
@@ -117,11 +119,13 @@ export function NodeInspector({ node, template, allTemplates, onChange, onClose 
         <div className="flex items-center gap-2">
           {type === 'phase' && <Beaker className="w-4 h-4 text-primary" />}
           {type === 'branch' && <GitBranch className="w-4 h-4 text-amber-400" />}
+          {type === 'goto' && <CornerDownRight className="w-4 h-4 text-violet-400" />}
           {type === 'start' && <Play className="w-4 h-4 text-emerald-600" />}
           {type === 'end' && <Square className="w-4 h-4 text-red-600" />}
           <span className="text-sm font-semibold">
             {type === 'phase' ? 'Phase 节点' :
              type === 'branch' ? 'IF/ELSE 节点' :
+             type === 'goto' ? 'Goto 跳转节点' :
              type === 'start' ? 'Start 节点' : 'End 节点'}
           </span>
         </div>
@@ -284,6 +288,53 @@ export function NodeInspector({ node, template, allTemplates, onChange, onClose 
               <p className="mt-1 text-[10px] text-muted-foreground">
                 当表达式所需的 PV 字段缺失时使用此分支
               </p>
+            </div>
+          </>
+        )}
+
+        {type === 'goto' && (
+          <>
+            <div>
+              <Label className="text-xs">跳转目标节点 *</Label>
+              {allNodes && allNodes.length > 0 ? (
+                <select
+                  className="h-7 w-full text-xs font-mono mt-1 rounded bg-background border border-border px-1"
+                  value={data.target ?? ''}
+                  onChange={(e) => updateData({ target: e.target.value || undefined })}
+                >
+                  <option value="">— 选择目标 —</option>
+                  {allNodes
+                    .filter(n => n.id !== node.id && n.type !== 'start')
+                    .map(n => {
+                      const lbl = (n.data?.label || n.data?.phase_id || n.id) as string;
+                      return (
+                        <option key={n.id} value={n.id}>
+                          {lbl} ({n.type}) — {n.id}
+                        </option>
+                      );
+                    })}
+                </select>
+              ) : (
+                <Input
+                  value={data.target ?? ''}
+                  onChange={e => updateData({ target: e.target.value || undefined })}
+                  placeholder="目标节点 id (如 n_2)"
+                  className="h-7 text-xs font-mono mt-1"
+                />
+              )}
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Goto 节点跳到选定目标 (可用于循环回边或异常处理).
+                目标若需 ≥ 2 次重访, 须在 recipe.options.maxRevisits 中设置 &gt; 1.
+              </p>
+            </div>
+            <div className="pt-2 border-t border-border/40">
+              <Label className="text-xs">显示名 (可选)</Label>
+              <Input
+                value={data.label || ''}
+                onChange={e => updateData({ label: e.target.value })}
+                placeholder="跳转回 A"
+                className="h-7 text-xs mt-1"
+              />
             </div>
           </>
         )}

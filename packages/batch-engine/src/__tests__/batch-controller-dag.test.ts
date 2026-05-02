@@ -386,6 +386,96 @@ describe('v1.8.0 bucket 3 perf fix 1 — readProcessValues parallelism', () => {
   });
 });
 
+// ============================================================
+// B1.3 Goto nodes — BatchController forwards recipe.options.maxRevisits
+// to DAGExecutor on both start() and resumeBatch()
+// ============================================================
+describe('B1.3 — BatchController forwards recipe.dag.options.maxRevisits', () => {
+  function makeGotoCycleRecipe(maxRevisits?: number) {
+    // DAG: s → a → g(target=a)  with extra edge a → e so 'e' is reachable.
+    // Branching at 'a' is OK because executor takes the first out-edge (a → g);
+    // the 'a → e' edge only exists to satisfy BV-16 reachability.
+    return {
+      recipe_id: 'TEST_B13',
+      version: '1.0.0',
+      execution_mode: 'free',
+      vessel: { id: 'V1', working_volume_L: 5, total_volume_L: 16, tare_weight_kg: 12 },
+      phases: [
+        { phase_id: 'A', type: 'fermentation', params: {} },
+      ],
+      dag: {
+        schema_version: 2,
+        ...(maxRevisits !== undefined ? { options: { maxRevisits } } : {}),
+        nodes: [
+          { id: 's', type: 'start' },
+          { id: 'a', type: 'phase', phase_id: 'A', phase_type: 'fermentation', params: {} },
+          { id: 'g', type: 'goto', target: 'a' },
+          { id: 'e', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', from: 's', to: 'a' },
+          { id: 'e2', from: 'a', to: 'g' },
+          { id: 'e3', from: 'g', to: 'a' },
+          { id: 'e4', from: 'a', to: 'e' }, // ensures end is reachable for BV-16
+        ],
+      },
+    } as any;
+  }
+
+  it('start() default maxRevisits=1 keeps acyclic-only behavior', async () => {
+    const ctrl = makeCtrl();
+    const recipe = makeGotoCycleRecipe(); // no options.maxRevisits
+    const r = await ctrl.start(recipe, 'B-B13-1');
+    expect(r.success).toBe(true);
+    // The DAGExecutor was constructed with maxRevisits=1
+    const exec = (ctrl as any).dagExecutor;
+    expect(exec).toBeTruthy();
+    // First a is visited; advancing once moves to g; advancing again would
+    // try to revisit a and throw under the default limit.
+    expect((ctrl as any).currentNodeId).toBe('a');
+    exec.advance();
+    expect(exec.getCurrentNode()?.id).toBe('g');
+    expect(() => exec.advance()).toThrow(/MaxRevisitsExceeded/);
+    ctrl.destroy();
+  });
+
+  it('start() honors recipe.dag.options.maxRevisits=4', async () => {
+    const ctrl = makeCtrl();
+    const recipe = makeGotoCycleRecipe(4);
+    const r = await ctrl.start(recipe, 'B-B13-2');
+    expect(r.success).toBe(true);
+    const exec = (ctrl as any).dagExecutor;
+    // a count = 1, g count = 0
+    expect((ctrl as any).currentNodeId).toBe('a');
+    // a → g → a → g → a → g → a (4 visits to 'a' total)
+    exec.advance(); exec.advance(); // a → g → a (a=2)
+    exec.advance(); exec.advance(); // a → g → a (a=3)
+    exec.advance(); exec.advance(); // a → g → a (a=4)
+    expect(exec.getCurrentNode()?.id).toBe('a');
+    // Next a → g → would push a count to 5, exceeding limit=4
+    exec.advance(); // a → g
+    expect(exec.getCurrentNode()?.id).toBe('g');
+    expect(() => exec.advance()).toThrow(/MaxRevisitsExceeded.*maxRevisits=4/);
+    ctrl.destroy();
+  });
+
+  it('resumeBatch also honors recipe.dag.options.maxRevisits', () => {
+    const ctrl = makeCtrl();
+    const recipe = makeGotoCycleRecipe(3);
+    ctrl.resumeBatch('B-B13-3', recipe, 'a');
+    const exec = (ctrl as any).dagExecutor;
+    expect(exec).toBeTruthy();
+    // After resume, executor is at start (executor.start() was called); manually
+    // walk to verify the 3-revisit limit applies on the resumed executor too.
+    expect(exec.getCurrentNode()?.id).toBe('a');
+    exec.advance(); exec.advance(); // → g → a (a=2)
+    exec.advance(); exec.advance(); // → g → a (a=3)
+    exec.advance(); // → g
+    expect(() => exec.advance()).toThrow(/MaxRevisitsExceeded.*maxRevisits=3/);
+    ctrl.destroy();
+  });
+});
+
 describe('v1.8.0 bucket 3 perf fix 2 — phaseStatuses getter memoization', () => {
   it('caches the sorted array between reads and only rebuilds after Map mutation', async () => {
     const ctrl = makeCtrl();
