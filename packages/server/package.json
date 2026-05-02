@@ -9,9 +9,15 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@biocore/ai-analytics": "workspace:*",
+    "@biocore/ai-gateway": "workspace:*",
+    "@biocore/batch-engine": "workspace:*",
     "@biocore/data-service": "workspace:*",
+    "@biocore/experiment-optimizer": "workspace:*",
     "@biocore/notifier": "workspace:*",
+    "@biocore/plc-driver": "workspace:*",
     "@biocore/runtime-guard": "workspace:*",
+    "@biocore/soft-sensor": "workspace:*",
     "@influxdata/influxdb-client": "^1.33.0",
     "@types/bcrypt": "^6.0.0",
     "@types/papaparse": "^5.5.2",
