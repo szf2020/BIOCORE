@@ -9,10 +9,9 @@
 // ============================================================
 
 import type { Router } from 'express';
-import type { SQLiteService } from '../../data-service/src/sqlite-service';
-import { ReportGenerator } from '../../ai-gateway/src/report-generator';
-import { LLMClient } from '../../ai-gateway/src/llm-client';
-import type { Report, ReportContext } from '../../ai-gateway/src/report-types';
+import type { SQLiteService } from '@biocore/data-service';
+import { ReportGenerator, LLMClient } from '@biocore/ai-gateway';
+import type { Report, ReportContext } from '@biocore/ai-gateway';
 import { renderReportHtml } from './report-html-template';
 import { buildReportDocx } from './report-docx-builder';
 

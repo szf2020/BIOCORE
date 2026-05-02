@@ -3,6 +3,17 @@
 // 串联: plc-driver + batch-engine + data-service
 // 对外: REST API + WebSocket 实时推送
 // ============================================================
+//
+// IMPORT CONVENTION (v1.8.0 bucket 2):
+//   Always import from package barrels: `@biocore/<pkg>`.
+//   Do NOT use deep imports of the form `../../<pkg>/src/<file>`.
+//   Each cross-package symbol must travel through the package's
+//   `src/index.ts` so the package boundary stays explicit and the
+//   public surface is auditable. If a needed symbol is not on the
+//   barrel, add it there — do not reach in. ESLint enforcement of
+//   `no-restricted-imports` for this rule is tracked as a follow-up
+//   (no ESLint config exists in this repo yet).
+// ============================================================
 
 import express, { Router } from 'express';
 import cors from 'cors';
@@ -85,7 +96,7 @@ const RUNTIME_GUARD_OOM_THRESHOLD_MB =
     : undefined;  // undefined = MetricsCollector/MemoryWatchdog auto = RAM × 20%
 
 export const metricsCollector = new MetricsCollector({
-  serviceVersion: process.env.npm_package_version ?? '0.3.3',
+  serviceVersion: process.env.npm_package_version ?? '0.3.5',
   oomThresholdMb: RUNTIME_GUARD_OOM_THRESHOLD_MB,
 });
 metricsCollector.start();
@@ -162,17 +173,32 @@ installCrashHandlers({
 console.log(`[runtime-guard] installed (oom_threshold_mb=${metricsCollector.snapshot().memory.oom_threshold_mb})`);
 // ─────────────────────────────────────────────────────────────────────────────
 
-// plc-driver 工具函数 (直接导入，不依�� native 模块加载)
+// plc-driver utility functions
+//
+// EXCEPTION (v1.8.0 bucket 2): These deep imports are intentional and remain
+// after the cross-package import cleanup. The @biocore/plc-driver barrel
+// (src/index.ts) eagerly imports node-snap7 (a native binding) and
+// modbus-serial at module load. The server only needs the pure-JS utility
+// helpers and types — it has its own dynamic loader for S7Client. Importing
+// from the barrel would force-load node-snap7 native bindings on Node hosts
+// without the compiled .node file (e.g. tsx dev, MOCK_PLC environments).
+//
+// TODO (post-v1.8.0): split @biocore/plc-driver into a pure-JS sub-entry
+// (e.g. @biocore/plc-driver/utils via the package.json `exports` map) so
+// these consumers can use a documented public sub-path. For now the deep
+// import is the lesser evil — see release notes for ESLint rule plan that
+// will need to whitelist this exception or move it behind a sub-entry.
 import { parseAddr, byteLen, decode, scale, validateAddr } from '../../plc-driver/src/utils';
 import { VariableMappingManager } from '../../plc-driver/src/variable-mapping';
 import type { PLCConnectionConfig, PLCVariableMapping } from '../../plc-driver/src/types';
 
 // soft-sensor + experiment-optimizer (实际算法包)
-import { SoftSensorEngine } from '../../soft-sensor/src/index';
-import { FeedAdvisor } from '../../soft-sensor/src/feed-advisor';
-import { RootCauseAnalyzer } from '../../soft-sensor/src/root-cause';
-import { BayesianOptimizer } from '../../experiment-optimizer/src/bayesian-optimizer';
-import { CUSUMDetector } from '../../ai-analytics/src/cusum';
+import { SoftSensorEngine, FeedAdvisor, RootCauseAnalyzer } from '@biocore/soft-sensor';
+import { BayesianOptimizer } from '@biocore/experiment-optimizer';
+// CUSUMDetector: ai-analytics barrel exposes the new module under alias CUSUMDetectorV2;
+// the in-barrel CUSUMDetector class is the legacy in-file definition. We use the V2 alias here
+// because the previous deep import was './cusum' (the new module).
+import { CUSUMDetectorV2 as CUSUMDetector } from '@biocore/ai-analytics';
 import { registerCusumRoutes, initCusumBaselines, getDefaultBaselines } from './cusum-routes';
 import { registerBatchIntelligenceRoutes } from './batch-intelligence-routes';
 import { startSuggestionEngine } from './ai-suggestion-engine';
@@ -185,14 +211,15 @@ import { createNotificationsRouter } from './routes/notifications';
 import { listChannels as listNotifChannels, listRules as listNotifRules } from '@biocore/data-service';
 
 // JWT 认证
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'crypto';
+import bcrypt from 'bcrypt';
 
 const PORT = parseInt(process.env.PORT || '3001');
 const DATA_DIR = process.env.DATA_DIR || './data';
 
 // ─── SQLite 初始化 ─────────────────────────────────────────
 
-import { SQLiteService, getOrphanBatches, markBatchHeldForRecovery } from '../../data-service/src/sqlite-service';
+import { SQLiteService, getOrphanBatches, markBatchHeldForRecovery } from '@biocore/data-service';
 import { mkdirSync } from 'fs';
 import { runMigrations } from './migrator';
 
@@ -419,18 +446,40 @@ function startReactorCollector(reactorId: string): void {
       const batchId = ctrl && ctrl.currentState === 'running' && ctrl.currentBatchId
         ? ctrl.currentBatchId
         : 'idle';
+      // v1.8.0 bucket 3 (perf fix 3): dedupe PLC reads. Old code called
+      // devPlcRead(tag) ~32 times per tick (~18 for the InfluxDB Point + ~14
+      // for the WS broadcast pvPayload), even though only 19 unique tags
+      // are actually consumed. Hoist into a single rawPV map and read each
+      // tag once, then build both the Point and the broadcast payload from
+      // it. devPlcRead is currently sync (random-walk simulator); when
+      // MOCK_PLC=false the read becomes async and the 32→19 reduction will
+      // yield real network savings — see concerns note for the async-PLC
+      // follow-up.
+      const TAGS = [
+        'TEMP_PV', 'JACKET_PV', 'PH_PV', 'DO_PV', 'PRESSURE_PV', 'AIRFLOW_PV', 'WEIGHT_PV',
+        'VFD_ACTUAL_FREQ', 'VFD_CURRENT',
+        'STEAM_CV', 'COOL_CV', 'AIR_CV',
+        'P01_RATE', 'P02_RATE', 'P03_RATE', 'P04_RATE',
+        'TEMP_SV', 'PH_SV', 'DO_SV',
+      ];
+      const rawPV: Record<string, number> = {};
+      for (const tag of TAGS) {
+        try { rawPV[tag] = devPlcRead(tag); } catch { rawPV[tag] = 0; }
+      }
+      const rpmRaw = rawPV['VFD_ACTUAL_FREQ'] * 24;
+
       const point = new Point('process_data')
         .tag('reactor_id', reactorId)
         .tag('batch_id', String(batchId))
-        .floatField('temperature', devPlcRead('TEMP_PV'))
-        .floatField('jacket_temp', devPlcRead('JACKET_PV'))
-        .floatField('pH', devPlcRead('PH_PV'))
-        .floatField('DO', devPlcRead('DO_PV'))
-        .floatField('pressure', devPlcRead('PRESSURE_PV'))
-        .floatField('airflow', devPlcRead('AIRFLOW_PV'))
-        .floatField('weight', devPlcRead('WEIGHT_PV'))
-        .floatField('rpm', devPlcRead('VFD_ACTUAL_FREQ') * 24)
-        .floatField('vfd_current', devPlcRead('VFD_CURRENT'))
+        .floatField('temperature', rawPV['TEMP_PV'])
+        .floatField('jacket_temp', rawPV['JACKET_PV'])
+        .floatField('pH', rawPV['PH_PV'])
+        .floatField('DO', rawPV['DO_PV'])
+        .floatField('pressure', rawPV['PRESSURE_PV'])
+        .floatField('airflow', rawPV['AIRFLOW_PV'])
+        .floatField('weight', rawPV['WEIGHT_PV'])
+        .floatField('rpm', rpmRaw)
+        .floatField('vfd_current', rawPV['VFD_CURRENT'])
         .timestamp(new Date());
       influxWriteApi!.writePoint(point);
       // 异步 flush, 不阻塞下一次采样
@@ -442,26 +491,26 @@ function startReactorCollector(reactorId: string): void {
       const pvPayload = {
         timestamp: new Date().toISOString(),
         batch_id: batchId === 'idle' ? null : batchId,
-        'AI-0': devPlcRead('TEMP_PV'),      // 罐温
-        'AI-1': devPlcRead('JACKET_PV'),     // 夹套温度
-        'AI-2': devPlcRead('PH_PV'),         // pH
-        'AI-3': devPlcRead('DO_PV'),         // DO
-        'AI-4': devPlcRead('PRESSURE_PV'),   // 罐压
-        'AI-5': devPlcRead('AIRFLOW_PV'),    // 空气流量
-        'AI-6': devPlcRead('WEIGHT_PV'),     // 称重
-        rpm: Math.round(devPlcRead('VFD_ACTUAL_FREQ') * 24),
-        vfd_current: devPlcRead('VFD_CURRENT'),
-        'AO-0_cv': devPlcRead('STEAM_CV'),   // 蒸汽阀
-        'AO-1_cv': devPlcRead('COOL_CV'),    // 冷却阀
-        'AO-2_cv': devPlcRead('AIR_CV'),     // 空气阀
-        P01_rate: devPlcRead('P01_RATE'),     // 碱泵
-        P02_rate: devPlcRead('P02_RATE'),     // 补料泵
-        P03_rate: devPlcRead('P03_RATE'),     // 氮源泵
-        P04_rate: devPlcRead('P04_RATE'),     // 酸泵
-        temp_mode: 2,                         // 冷却模式
-        temp_sv: devPlcRead('TEMP_SV'),
-        pH_sv: devPlcRead('PH_SV'),
-        DO_sv: devPlcRead('DO_SV'),
+        'AI-0': rawPV['TEMP_PV'],      // 罐温
+        'AI-1': rawPV['JACKET_PV'],     // 夹套温度
+        'AI-2': rawPV['PH_PV'],         // pH
+        'AI-3': rawPV['DO_PV'],         // DO
+        'AI-4': rawPV['PRESSURE_PV'],   // 罐压
+        'AI-5': rawPV['AIRFLOW_PV'],    // 空气流量
+        'AI-6': rawPV['WEIGHT_PV'],     // 称重
+        rpm: Math.round(rpmRaw),
+        vfd_current: rawPV['VFD_CURRENT'],
+        'AO-0_cv': rawPV['STEAM_CV'],   // 蒸汽阀
+        'AO-1_cv': rawPV['COOL_CV'],    // 冷却阀
+        'AO-2_cv': rawPV['AIR_CV'],     // 空气阀
+        P01_rate: rawPV['P01_RATE'],     // 碱泵
+        P02_rate: rawPV['P02_RATE'],     // 补料泵
+        P03_rate: rawPV['P03_RATE'],     // 氮源泵
+        P04_rate: rawPV['P04_RATE'],     // 酸泵
+        temp_mode: 2,                     // 冷却模式
+        temp_sv: rawPV['TEMP_SV'],
+        pH_sv: rawPV['PH_SV'],
+        DO_sv: rawPV['DO_SV'],
       };
       broadcast('pv_realtime', pvPayload, batchId === 'idle' ? null : batchId, reactorId);
 
@@ -469,11 +518,11 @@ function startReactorCollector(reactorId: string): void {
       if (batchId !== 'idle') {
         const detMap = getCusumKey(batchId);
         const pvMap: Record<string, number> = {
-          temperature: devPlcRead('TEMP_PV'),
-          pH: devPlcRead('PH_PV'),
-          DO: devPlcRead('DO_PV'),
-          pressure: devPlcRead('PRESSURE_PV'),
-          rpm: devPlcRead('VFD_ACTUAL_FREQ') * 24,
+          temperature: rawPV['TEMP_PV'],
+          pH: rawPV['PH_PV'],
+          DO: rawPV['DO_PV'],
+          pressure: rawPV['PRESSURE_PV'],
+          rpm: rpmRaw,
         };
         const cusumResults: Array<{
           channel: string; anomaly: boolean; deviation: number;
@@ -607,33 +656,85 @@ function verifyJWT(token: string): Record<string, any> | null {
   } catch { return null; }
 }
 
-function hashPassword(password: string, salt?: string): { hash: string; salt: string } {
-  const s = salt || randomBytes(16).toString('hex');
-  const hash = createHash('sha256').update(password + s).digest('hex');
-  return { hash, salt: s };
+// ─── Password hashing (v1.8.0 bucket 1) ────────────────────────
+// bcrypt cost=12 — current OWASP-aligned default for 2025+.
+// Old SHA-256 hashes (`salt:hash` format) are still accepted for verification
+// and migrated on first successful login.
+const BCRYPT_COST = 12;
+
+/**
+ * Hash a password with bcrypt cost=12.
+ * Returns the bcrypt-formatted string (e.g. `$2b$12$<22-char salt><31-char hash>`).
+ */
+async function hashPasswordBcrypt(password: string): Promise<string> {
+  return bcrypt.hash(password, BCRYPT_COST);
 }
 
-// 初始化默认admin用户 (如果不存在或 hash 是占位符)
-try {
-  const db = sqlite.getDatabase();
-  const existing: any = db.prepare('SELECT user_id, password_hash FROM users WHERE username = ?').get('admin');
-  // password_hash 必须是 salt:sha256hash 格式 (32+1+64 = 97 字符以上),否则视为无效需重置
-  const hashOk = existing?.password_hash && /^[a-f0-9]{32}:[a-f0-9]{64}$/.test(existing.password_hash);
-  if (!existing || !hashOk) {
-    const { hash, salt } = hashPassword('admin123');
-    if (existing) {
-      db.prepare('UPDATE users SET password_hash = ?, display_name = ?, role = ?, is_active = 1 WHERE username = ?')
-        .run(`${salt}:${hash}`, '系统管理员', 'admin', 'admin');
-      // v1.7.3 C3-partial: 不再把默认密码字面值写进日志
-      console.log('[BOOT] Default admin account password reset. Password set in DB; reset via reset-admin script before production.');
-    } else {
-      db.prepare(`INSERT INTO users (user_id, username, display_name, password_hash, role)
-        VALUES (?, ?, ?, ?, ?)`).run('admin-001', 'admin', '系统管理员', `${salt}:${hash}`, 'admin');
-      // v1.7.3 C3-partial: 不再把默认密码字面值写进日志
-      console.log('[BOOT] Default admin account created. Password set in DB; reset via reset-admin script before production.');
+/**
+ * Verify a password against a stored hash. Supports two formats:
+ *  - bcrypt: starts with `$2`. Native `bcrypt.compare`.
+ *  - legacy SHA-256: matches /^[a-f0-9]{32}:[a-f0-9]{64}$/. Recomputes & compares.
+ *
+ * If `legacy` is true on success, callers MUST migrate the user's
+ * `password_hash` to the bcrypt format.
+ */
+async function verifyPassword(
+  password: string,
+  storedHash: string,
+): Promise<{ ok: boolean; legacy: boolean }> {
+  if (typeof storedHash !== 'string' || storedHash.length === 0) {
+    return { ok: false, legacy: false };
+  }
+  if (storedHash.startsWith('$2')) {
+    try {
+      const ok = await bcrypt.compare(password, storedHash);
+      return { ok, legacy: false };
+    } catch {
+      return { ok: false, legacy: false };
     }
   }
-} catch (e) { console.error(`[${new Date().toISOString()}] [ERROR] 初始化admin失败:`, e); }
+  const m = /^([a-f0-9]{32}):([a-f0-9]{64})$/.exec(storedHash);
+  if (!m) return { ok: false, legacy: false };
+  const [, salt, expectedHex] = m;
+  const computedHex = createHash('sha256').update(password + salt).digest('hex');
+  if (computedHex.length !== expectedHex.length) return { ok: false, legacy: true };
+  const ok = timingSafeEqual(
+    Buffer.from(computedHex, 'hex'),
+    Buffer.from(expectedHex, 'hex'),
+  );
+  return { ok, legacy: true };
+}
+
+export { hashPasswordBcrypt, verifyPassword };
+
+// 初始化默认admin用户 (如果不存在或 hash 是无效格式)
+// v1.7.3 H7: 此调用在 start() 中通过 ensureAdminAccount() 触发, 与 migrationsReady 串行。
+async function ensureAdminAccount(): Promise<void> {
+  try {
+    const db = sqlite.getDatabase();
+    const existing: any = db.prepare('SELECT user_id, password_hash FROM users WHERE username = ?').get('admin');
+    // 接受两种格式: 旧 sha256 (salt:hash) 或 新 bcrypt ($2[aby]$...)
+    const ph: string | undefined = existing?.password_hash;
+    const hashOk = !!ph && (
+      /^[a-f0-9]{32}:[a-f0-9]{64}$/.test(ph) ||
+      /^\$2[aby]\$/.test(ph)
+    );
+    if (!existing || !hashOk) {
+      const hash = await hashPasswordBcrypt('admin123');
+      if (existing) {
+        db.prepare('UPDATE users SET password_hash = ?, display_name = ?, role = ?, is_active = 1 WHERE username = ?')
+          .run(hash, '系统管理员', 'admin', 'admin');
+        console.log('[BOOT] Default admin account password reset. Password set in DB; reset via reset-admin script before production.');
+      } else {
+        db.prepare(`INSERT INTO users (user_id, username, display_name, password_hash, role)
+          VALUES (?, ?, ?, ?, ?)`).run('admin-001', 'admin', '系统管理员', hash, 'admin');
+        console.log('[BOOT] Default admin account created. Password set in DB; reset via reset-admin script before production.');
+      }
+    }
+  } catch (e) {
+    console.error(`[${new Date().toISOString()}] [ERROR] 初始化admin失败:`, e);
+  }
+}
 
 // ─── Express ───────────────────────────────────────────────
 
@@ -1044,16 +1145,30 @@ function stopHeartbeat(id: string): void {
  *       401: { description: 用户名或密码错误 }
  *       400: { description: 缺少必填字段 }
  */
-apiRouter.post('/auth/login', (req, res) => {
+apiRouter.post('/auth/login', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: '缺少用户名或密码' });
   const user: any = sqlite.getDatabase().prepare('SELECT * FROM users WHERE username = ? AND is_active = 1').get(username);
   if (!user) return res.status(401).json({ error: '用户名或密码错误' });
-  const parts = (user.password_hash || '').split(':');
-  if (parts.length !== 2) return res.status(401).json({ error: '用户名或密码错误' });
-  const [salt, storedHash] = parts;
-  const { hash } = hashPassword(password, salt);
-  if (hash !== storedHash) return res.status(401).json({ error: '用户名或密码错误' });
+  const result = await verifyPassword(password, user.password_hash || '');
+  if (!result.ok) return res.status(401).json({ error: '用户名或密码错误' });
+  // v1.8.0 bucket 1: migrate-on-login from legacy sha256 → bcrypt
+  if (result.legacy) {
+    try {
+      const newHash = await hashPasswordBcrypt(password);
+      sqlite.getDatabase().prepare('UPDATE users SET password_hash = ? WHERE user_id = ?').run(newHash, user.user_id);
+      sqlite.writeAuditLog({
+        user_id: user.user_id,
+        action: 'password_hash_migrated',
+        target_type: 'user',
+        target_id: user.user_id,
+        target_kind: 'user_id',
+        reason: 'sha256_to_bcrypt_v1.8.0',
+      });
+    } catch (e) {
+      console.warn(`[AUTH] failed to migrate password hash for ${user.user_id}:`, (e as Error).message);
+    }
+  }
   // 更新最后登录时间
   sqlite.getDatabase().prepare('UPDATE users SET last_login_at = datetime(\'now\') WHERE user_id = ?').run(user.user_id);
   const token = createJWT({ user_id: user.user_id, username: user.username, role: user.role, display_name: user.display_name });
@@ -1071,21 +1186,21 @@ apiRouter.get('/users', (req: any, res) => {
   res.json(rows);
 });
 
-apiRouter.post('/users', requireRole('admin'), (req: any, res) => {
+apiRouter.post('/users', requireRole('admin'), async (req: any, res) => {
   const { username, display_name, password, role } = req.body;
   if (!username || !password || !display_name) return res.status(400).json({ error: '缺少必填字段' });
   if (!['admin', 'engineer', 'operator', 'viewer'].includes(role)) return res.status(400).json({ error: '无效角色' });
   const existing = sqlite.getDatabase().prepare('SELECT user_id FROM users WHERE username = ?').get(username);
   if (existing) return res.status(409).json({ error: '用户名已存在' });
   const userId = `user-${crypto.randomUUID().slice(0, 8)}`;
-  const { hash, salt } = hashPassword(password);
+  const hash = await hashPasswordBcrypt(password);
   sqlite.getDatabase().prepare(`INSERT INTO users (user_id, username, display_name, password_hash, role) VALUES (?, ?, ?, ?, ?)`)
-    .run(userId, username, display_name, `${salt}:${hash}`, role);
+    .run(userId, username, display_name, hash, role);
   sqlite.writeAuditLog({ user_id: req.user?.user_id || 'system', action: 'user_create', target_type: 'user', target_id: userId, new_value: JSON.stringify({ username, role }), ip_address: req.ip || req.socket?.remoteAddress || null, trace_id: req.trace_id });
   res.json({ user_id: userId, username, display_name, role });
 });
 
-apiRouter.put('/users/:id', requireRole('admin'), (req: any, res) => {
+apiRouter.put('/users/:id', requireRole('admin'), async (req: any, res) => {
   const { display_name, role, is_active, password } = req.body;
   const updates: string[] = [];
   const params: any[] = [];
@@ -1093,8 +1208,8 @@ apiRouter.put('/users/:id', requireRole('admin'), (req: any, res) => {
   if (role !== undefined) { updates.push('role = ?'); params.push(role); }
   if (is_active !== undefined) { updates.push('is_active = ?'); params.push(is_active ? 1 : 0); }
   if (password) {
-    const { hash, salt } = hashPassword(password);
-    updates.push('password_hash = ?'); params.push(`${salt}:${hash}`);
+    const hash = await hashPasswordBcrypt(password);
+    updates.push('password_hash = ?'); params.push(hash);
   }
   if (updates.length === 0) return res.status(400).json({ error: '无更新字段' });
   params.push(req.params.id);
@@ -1353,7 +1468,7 @@ apiRouter.post('/phase-templates/init-defaults', (req, res) => {
 
 // ── 计算参数公式配置 API ──
 
-import { validateExpression, AVAILABLE_VARS } from '../../data-service/src/formula-evaluator';
+import { validateExpression, AVAILABLE_VARS } from '@biocore/data-service';
 
 /** GET /formula-configs — 列出所有公式 */
 apiRouter.get('/formula-configs', (_req, res) => {
@@ -2155,25 +2270,26 @@ apiRouter.delete('/recipes/:id', (req, res) => {
 
 import {
   generateDesignMatrix,
-  type DoEFactor,
-  type DesignType,
-} from '../../experiment-optimizer/src/doe-designs';
-import {
   fitResponseModel,
   findOptimum,
   paretoChart,
-  type ModelType,
-  type ObservationPoint,
-} from '../../experiment-optimizer/src/doe-analysis';
-// 正交/均匀设计 + 分析模块
-import { generateOrthogonalDesign } from '../../experiment-optimizer/src/doe-orthogonal';
-import { generateUniformDesign } from '../../experiment-optimizer/src/doe-uniform';
-import { rangeAnalysis, type ExperimentResult } from '../../experiment-optimizer/src/doe-range-analysis';
-import { orthogonalAnova } from '../../experiment-optimizer/src/doe-anova';
-import { multipleRegression, quadraticSurfaceRegression } from '../../experiment-optimizer/src/doe-regression';
-import type { RegressionPoint } from '../../experiment-optimizer/src/doe-regression';
-import type { DOEFactor as OrthDOEFactor } from '../../experiment-optimizer/src/doe-types';
-import { evaluateDesign } from '../../experiment-optimizer/src/doe-diagnostics';
+  generateOrthogonalDesign,
+  generateUniformDesign,
+  rangeAnalysis,
+  orthogonalAnova,
+  multipleRegression,
+  quadraticSurfaceRegression,
+  evaluateDesign,
+} from '@biocore/experiment-optimizer';
+import type {
+  DoEFactor,
+  DesignType,
+  ModelType,
+  ObservationPoint,
+  ExperimentResult,
+  RegressionPoint,
+  DOEFactor as OrthDOEFactor,
+} from '@biocore/experiment-optimizer';
 
 // 工具: 按 path (如 "HEAT_01.target_temp_C") 注入到配方 phase.params
 function injectFactorIntoPhases(phases: any[], path: string | undefined, value: number): any[] {
@@ -3645,9 +3761,8 @@ apiRouter.post('/reactor-configs/init-defaults', (_req, res) => {
 
 // ── 多反应器管理 API ──
 
-import { ReactorManager } from '../../batch-engine/src/reactor-manager';
-import type { BatchControllerConfig } from '../../batch-engine/src/batch-controller';
-import { checkInterlocks } from '../../batch-engine/src/index';
+import { ReactorManager, checkInterlocks } from '@biocore/batch-engine';
+import type { BatchControllerConfig } from '@biocore/batch-engine';
 
 const reactorManager = new ReactorManager();
 
@@ -4577,7 +4692,7 @@ apiRouter.get('/trends', async (req: any, res) => {
 
 apiRouter.get('/status', (_req, res) => {
   res.json({
-    version: process.env.npm_package_version ?? '0.3.3',
+    version: process.env.npm_package_version ?? '0.3.5',
     uptime: process.uptime(),
     ws_clients: wss.clients.size,
     heartbeats: [...heartbeats.entries()].map(([id, s]) => ({
@@ -4645,8 +4760,23 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 // 处理请求却撞上未迁移的 schema (e.g. 缺列 / 缺表)。
 async function start(): Promise<void> {
   await migrationsReady;
+  // v1.8.0 bucket 1: admin init is now async (bcrypt). Run it after migrations
+  // but before listen so the default admin row is in place when requests arrive.
+  await ensureAdminAccount();
+  // v1.8.0 bucket 1: JWT_SECRET production guard — fail fast if dev default
+  // is being used in production; warn loudly otherwise.
+  const DEFAULT_JWT_SECRET = 'biocore-dev-secret-change-in-production';
+  const effectiveJwtSecret = process.env.JWT_SECRET ?? DEFAULT_JWT_SECRET;
+  if (effectiveJwtSecret === DEFAULT_JWT_SECRET) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[FATAL] JWT_SECRET is set to the default value in production. Set a strong unique secret in env before starting.');
+      process.exit(1);
+    } else {
+      console.warn('[WARN] JWT_SECRET is the default dev value. Set a strong secret before deploying to production.');
+    }
+  }
   server.listen(PORT, () => {
-  const VER = process.env.npm_package_version ?? '0.3.3';
+  const VER = process.env.npm_package_version ?? '0.3.5';
   console.log(`
   ╔══════════════════════════════════════════════╗
   ║         BIOCore Server v${VER}                ║

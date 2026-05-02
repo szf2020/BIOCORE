@@ -154,21 +154,45 @@ importers:
 
   packages/server:
     dependencies:
+      '@biocore/ai-analytics':
+        specifier: workspace:*
+        version: link:../ai-analytics
+      '@biocore/ai-gateway':
+        specifier: workspace:*
+        version: link:../ai-gateway
+      '@biocore/batch-engine':
+        specifier: workspace:*
+        version: link:../batch-engine
       '@biocore/data-service':
         specifier: workspace:*
         version: link:../data-service
+      '@biocore/experiment-optimizer':
+        specifier: workspace:*
+        version: link:../experiment-optimizer
       '@biocore/notifier':
         specifier: workspace:*
         version: link:../notifier
+      '@biocore/plc-driver':
+        specifier: workspace:*
+        version: link:../plc-driver
       '@biocore/runtime-guard':
         specifier: workspace:*
         version: link:../runtime-guard
+      '@biocore/soft-sensor':
+        specifier: workspace:*
+        version: link:../soft-sensor
       '@influxdata/influxdb-client':
         specifier: ^1.33.0
         version: 1.35.0
+      '@types/bcrypt':
+        specifier: ^6.0.0
+        version: 6.0.0
       '@types/papaparse':
         specifier: ^5.5.2
         version: 5.5.2
+      bcrypt:
+        specifier: ^6.0.0
+        version: 6.0.0
       better-sqlite3:
         specifier: ^11.0.0
         version: 11.10.0
@@ -1075,6 +1099,9 @@ packages:
   '@types/argparse@1.0.38':
     resolution: {integrity: sha512-ebDJ9b0e702Yr7pWgB0jzm+CX4Srzz8RcXtLJDJB+BSccqMa36uyH/zUsSYao5+BD1ytv3k3rPYCq4mAE1hsXA==}
 
+  '@types/bcrypt@6.0.0':
+    resolution: {integrity: sha512-/oJGukuH3D2+D+3H4JWLaAsJ/ji86dhRidzZ/Od7H/i8g+aCmvkeCc6Ni/f9uxGLSQVCRZkX2/lqEFG2BvWtlQ==}
+
   '@types/better-sqlite3@7.6.13':
     resolution: {integrity: sha512-NMv9ASNARoKksWtsq/SHakpYAYnhBrQgGD8zkLYk/jaK8jUGn08CfEdTRgYhMypUQAfzSP8W6gNLe0q19/t4VA==}
 
@@ -1375,6 +1402,10 @@ packages:
   basic-ftp@5.2.2:
     resolution: {integrity: sha512-1tDrzKsdCg70WGvbFss/ulVAxupNauGnOlgpyjKzeQxzyllBLS0CGLV7tjIXTK3ZQA9/FBEm9qyFFN1bciA6pw==}
     engines: {node: '>=10.0.0'}
+
+  bcrypt@6.0.0:
+    resolution: {integrity: sha512-cU8v/EGSrnH+HnxV2z0J7/blxH8gq7Xh2JFT6Aroax7UohdmiJJlxApMxtKfuI7z68NvvVcmR78k2LbT6efhRg==}
+    engines: {node: '>= 18'}
 
   better-sqlite3@11.10.0:
     resolution: {integrity: sha512-EwhOpyXiOEL/lKzHz9AW1msWFNzGc/z+LzeB3/jnFJpxu+th2yqvzsSWas1v9jgs9+xiXJcD5A8CJxAG2TaghQ==}
@@ -3728,6 +3759,10 @@ snapshots:
 
   '@types/argparse@1.0.38': {}
 
+  '@types/bcrypt@6.0.0':
+    dependencies:
+      '@types/node': 20.19.39
+
   '@types/better-sqlite3@7.6.13':
     dependencies:
       '@types/node': 20.19.39
@@ -4064,6 +4099,11 @@ snapshots:
   baseline-browser-mapping@2.10.14: {}
 
   basic-ftp@5.2.2: {}
+
+  bcrypt@6.0.0:
+    dependencies:
+      node-addon-api: 8.3.0
+      node-gyp-build: 4.8.4
 
   better-sqlite3@11.10.0:
     dependencies:
@@ -5083,11 +5123,9 @@ snapshots:
     dependencies:
       semver: 7.7.4
 
-  node-addon-api@8.3.0:
-    optional: true
+  node-addon-api@8.3.0: {}
 
-  node-gyp-build@4.8.4:
-    optional: true
+  node-gyp-build@4.8.4: {}
 
   node-releases@2.0.37: {}
 

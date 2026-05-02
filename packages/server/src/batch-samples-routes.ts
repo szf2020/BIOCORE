@@ -6,7 +6,7 @@
 // ============================================================
 
 import type { Router } from 'express';
-import type { SQLiteService } from '../../data-service/src/sqlite-service';
+import type { SQLiteService } from '@biocore/data-service';
 
 // 允许更新的字段白名单
 const UPDATABLE_FIELDS = new Set([

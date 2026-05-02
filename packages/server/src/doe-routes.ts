@@ -8,37 +8,35 @@
 // ============================================================
 
 import type { Router } from 'express';
-import type { SQLiteService } from '../../data-service/src/sqlite-service';
+import type { SQLiteService } from '@biocore/data-service';
 import {
   generateOrthogonalDesign,
   listOrthogonalArrays,
   selectOrthogonalArray,
-} from '../../experiment-optimizer/src/doe-orthogonal';
-import {
   rangeAnalysis,
   compositeScore,
   multiIndicatorRangeAnalysis,
-} from '../../experiment-optimizer/src/doe-range-analysis';
-import type { ExperimentResult, MultiIndicatorResult } from '../../experiment-optimizer/src/doe-range-analysis';
-import { orthogonalAnova, orthogonalAnovaWithReplicates } from '../../experiment-optimizer/src/doe-anova';
-import type { ReplicatedResult } from '../../experiment-optimizer/src/doe-anova';
-import {
+  orthogonalAnova,
+  orthogonalAnovaWithReplicates,
   generateUniformDesign,
   listUniformTables,
-} from '../../experiment-optimizer/src/doe-uniform';
-import {
   createGoldenSearch,
   advanceGoldenSearch,
   createMultiFactorSearch,
-} from '../../experiment-optimizer/src/doe-golden-section';
-import {
   multipleRegression,
   quadraticSurfaceRegression,
   polynomialRegression,
   diagnoseResiduals,
-} from '../../experiment-optimizer/src/doe-regression';
-import type { RegressionPoint } from '../../experiment-optimizer/src/doe-regression';
-import type { DOEFactor, IndicatorWeight, OptimizationGoal } from '../../experiment-optimizer/src/doe-types';
+} from '@biocore/experiment-optimizer';
+import type {
+  ExperimentResult,
+  MultiIndicatorResult,
+  ReplicatedResult,
+  RegressionPoint,
+  DOEFactor,
+  IndicatorWeight,
+  OptimizationGoal,
+} from '@biocore/experiment-optimizer';
 
 /**
  * 注册 DOE 路由

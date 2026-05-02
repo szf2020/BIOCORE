@@ -319,3 +319,110 @@ describe('BatchController — v1.7.1 lastSampledPV wiring', () => {
     ctrl.destroy();
   });
 });
+
+// ============================================================
+// v1.8.0 bucket 3 — perf fixes
+// ============================================================
+
+describe('v1.8.0 bucket 3 perf fix 1 — readProcessValues parallelism', () => {
+  it('reads all 12 PLC tags in parallel, not serially', async () => {
+    // Each plcRead intentionally blocks for 10ms. Serial 12 reads = ~120ms;
+    // parallel = ~10-15ms. We assert under 50ms which gives enough slack
+    // for slow CI machines while still proving parallelism.
+    const READ_DELAY_MS = 10;
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const plcRead = async (_tag: string): Promise<number> => {
+      inFlight++;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise(r => setTimeout(r, READ_DELAY_MS));
+      inFlight--;
+      return 42;
+    };
+
+    const ctrl = new BatchController({
+      plcRead,
+      plcWrite: async () => { /* no-op */ },
+      pollIntervalMs: 1_000_000,
+    });
+
+    const t0 = Date.now();
+    const pv = await (ctrl as any).readProcessValues();
+    const elapsedMs = Date.now() - t0;
+
+    // Sanity: all 12 raw PLC tags + the 10 aliases (AI-0..6 + temperature/pH/DO/weight)
+    expect(pv['TEMP_PV']).toBe(42);
+    expect(pv['VFD_FAULT_CODE']).toBe(42);
+    expect(pv['temperature']).toBe(42);
+
+    // Parallel: completes in ~10-15ms, not 120ms
+    expect(elapsedMs).toBeLessThan(50);
+    // And we observed multiple reads in flight at the same time
+    expect(maxInFlight).toBeGreaterThan(1);
+
+    ctrl.destroy();
+  });
+
+  it('preserves silent-skip semantics when one PLC tag throws', async () => {
+    const plcRead = async (tag: string): Promise<number> => {
+      if (tag === 'PH_PV') throw new Error('mock PLC fault');
+      return 7;
+    };
+
+    const ctrl = new BatchController({
+      plcRead,
+      plcWrite: async () => { /* no-op */ },
+      pollIntervalMs: 1_000_000,
+    });
+
+    const pv = await (ctrl as any).readProcessValues();
+
+    // PH_PV missing (silent-skip), other tags still populated
+    expect(pv['PH_PV']).toBeUndefined();
+    expect(pv['TEMP_PV']).toBe(7);
+    expect(pv['DO_PV']).toBe(7);
+
+    ctrl.destroy();
+  });
+});
+
+describe('v1.8.0 bucket 3 perf fix 2 — phaseStatuses getter memoization', () => {
+  it('caches the sorted array between reads and only rebuilds after Map mutation', async () => {
+    const ctrl = makeCtrl();
+    const recipe = makeLinearRecipe();
+    await ctrl.start(recipe, 'BATCH_PERF_2');
+
+    // Two reads back-to-back must return the SAME array reference (cache hit)
+    const first = (ctrl as any).phaseStatuses;
+    const second = (ctrl as any).phaseStatuses;
+    expect(first).toBe(second);
+
+    // Manually invalidate (simulating a Map mutation site) → reference must change
+    (ctrl as any).invalidatePhaseStatusesCache();
+    const third = (ctrl as any).phaseStatuses;
+    expect(third).not.toBe(first);
+
+    // But content is identical post-rebuild
+    expect(third.map((p: any) => p.phase_id)).toEqual(first.map((p: any) => p.phase_id));
+
+    ctrl.destroy();
+  });
+
+  it('in-place value mutations are visible through cached array (shared references)', async () => {
+    const ctrl = makeCtrl();
+    const recipe = makeLinearRecipe();
+    await ctrl.start(recipe, 'BATCH_PERF_2B');
+
+    const arr = (ctrl as any).phaseStatuses;
+    const ps0 = arr[0];
+
+    // In-place mutation — does NOT change Map structure, no invalidation needed.
+    // The cached array shares the same value reference, so the mutation is visible.
+    ps0.state = 'held';
+    const arrAgain = (ctrl as any).phaseStatuses;
+    expect(arrAgain).toBe(arr); // still cached
+    expect(arrAgain[0].state).toBe('held');
+
+    ctrl.destroy();
+  });
+});

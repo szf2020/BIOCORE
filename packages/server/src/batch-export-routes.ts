@@ -4,7 +4,7 @@
 // ============================================================
 
 import type { Router } from 'express';
-import type { SQLiteService } from '../../data-service/src/sqlite-service';
+import type { SQLiteService } from '@biocore/data-service';
 import ExcelJS from 'exceljs';
 
 export function registerBatchExportRoutes(

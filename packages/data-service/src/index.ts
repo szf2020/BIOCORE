@@ -187,9 +187,11 @@ export class InfluxService {
   }
 }
 
-// ─── SQLite 业务数据服务 ────────────────────────────────────
-
-export class SQLiteService {
+// ─── SQLite 业务数据服务 (legacy stub — kept for backward compat, not exported) ─────────────
+// NOTE: The canonical SQLiteService is the richer implementation in ./sqlite-service.ts,
+// re-exported below at the barrel boundary. This in-file class predates that one and is
+// intentionally not part of the public surface (renamed to avoid shadowing).
+class LegacySQLiteService {
   private db: Database.Database;
 
   constructor(dbPath: string = './data/biocore.db') {
@@ -409,7 +411,11 @@ export class SQLiteService {
 
 // ─── 重导出 ───────────────────────────────────────────────────
 
-export { SQLiteService as SQLiteServiceNew } from './sqlite-service';
+// v1.8.0 bucket 2: canonical SQLiteService is the implementation in ./sqlite-service.ts.
+// (Previously this barrel re-exported it as SQLiteServiceNew while the in-file legacy
+// class shadowed the public name. Server's deep-import path resolved to the real class;
+// the new public path now does the same.)
+export { SQLiteService } from './sqlite-service';
 export { DataCollector } from './collector';
 export type { CollectorConfig, ProcessValues, CalculatedParams } from './collector';
 
@@ -429,5 +435,8 @@ export { updateBatchCurrentNodeId, getBatchCurrentNodeId } from './sqlite-servic
 // v1.7.2: boot-time crash-recovery helpers
 export { getOrphanBatches, markBatchHeldForRecovery } from './sqlite-service';
 export type { OrphanBatchRow } from './sqlite-service';
+
+// v1.8.0 bucket 2: formula-evaluator public surface (consumed by @biocore/server formula route)
+export { validateExpression, evaluateExpression, AVAILABLE_VARS } from './formula-evaluator';
 
 export { InfluxService as default };

@@ -1,6 +1,6 @@
 {
   "name": "@biocore/server",
-  "version": "0.3.3",
+  "version": "0.3.5",
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -9,11 +9,19 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@biocore/ai-analytics": "workspace:*",
+    "@biocore/ai-gateway": "workspace:*",
+    "@biocore/batch-engine": "workspace:*",
     "@biocore/data-service": "workspace:*",
+    "@biocore/experiment-optimizer": "workspace:*",
     "@biocore/notifier": "workspace:*",
+    "@biocore/plc-driver": "workspace:*",
     "@biocore/runtime-guard": "workspace:*",
+    "@biocore/soft-sensor": "workspace:*",
     "@influxdata/influxdb-client": "^1.33.0",
+    "@types/bcrypt": "^6.0.0",
     "@types/papaparse": "^5.5.2",
+    "bcrypt": "^6.0.0",
     "better-sqlite3": "^11.0.0",
     "cors": "^2.8.5",
     "deep-diff": "^1.0.2",
