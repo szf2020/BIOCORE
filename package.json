@@ -1,6 +1,6 @@
 {
   "name": "biocore",
-  "version": "1.7.3",
+  "version": "1.8.0-rc.1",
   "private": true,
   "description": "BIOCore — 实验室R&D发酵控制平台",
   "scripts": {
