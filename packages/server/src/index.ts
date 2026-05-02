@@ -53,6 +53,7 @@ import { registerDoeRoutes } from './doe-routes';
 import { registerKpiRoutes, computeAndStore as computeKpi } from './kpi-routes';
 import { registerSpcRoutes } from './spc-routes';
 import { registerRecipeRoutes } from './recipe-routes';
+import { registerBatchRoutes } from './batch-routes';
 import {
   installCrashHandlers,
   MemoryWatchdog,
@@ -500,6 +501,7 @@ registerRecipeRoutes(apiRouter, {
   parseRecipeRow,
   writeRecipeAudit,
 });
+registerBatchRoutes(apiRouter, sqlite);
 
 // T36: runtime-guard exposure (admin health endpoints).
 // /liveness is in PUBLIC_PATHS (auth.ts) so docker healthcheck can probe it.
@@ -2010,70 +2012,9 @@ apiRouter.post('/doe/studies/:id/create-optimal-recipe', (req: any, res) => {
 });
 
 // ── 批次 API ──
-
-/**
- * @openapi
- * /batches:
- *   get:
- *     summary: 列出批次
- *     tags: [Batches]
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema: { type: integer, default: 50 }
- *       - in: query
- *         name: offset
- *         schema: { type: integer, default: 0 }
- *     responses:
- *       200:
- *         description: 批次列表
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/UnifiedResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           batch_id: { type: string }
- *                           recipe_id: { type: string }
- *                           recipe_version: { type: string }
- *                           reactor_id: { type: string }
- *                           organism: { type: string, nullable: true }
- *                           current_state: { type: string, enum: [idle, running, held, paused, stopped, complete] }
- *                           started_at: { type: string, format: date-time, nullable: true }
- *                           ended_at: { type: string, format: date-time, nullable: true }
- */
-apiRouter.get('/batches', (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
-  const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
-  // M2.3: 可选 reactor_id 过滤 (正则消毒)
-  const reactorIdRaw = String(req.query.reactor_id || '').replace(/[^A-Za-z0-9_-]/g, '');
-  const reactorId = reactorIdRaw || undefined;
-  res.json(sqlite.listBatches(limit, offset, reactorId));
-});
-
-apiRouter.get('/batches/:id', (req, res) => {
-  const batch = sqlite.getBatch(req.params.id);
-  if (!batch) return res.status(404).json({ error: '批次不存在' });
-  res.json(batch);
-});
-
-apiRouter.get('/batches/:id/transitions', (req, res) => {
-  res.json(sqlite.getStateTransitions(req.params.id));
-});
-
-apiRouter.get('/batches/:id/phases', (req, res) => {
-  res.json(sqlite.getPhaseLogs(req.params.id));
-});
-
-apiRouter.get('/batches/:id/steps', (req, res) => {
-  res.json(sqlite.getStepLogs(req.params.id));
-});
+// route-handler-split: 已抽离到 ./batch-routes (仅只读路由)。
+// 批次状态变更 (start/stop/hold) 走反应器路由 (reactor-scoped)。
+// 取样/报告/导出/摘要在各自 *-routes.ts 中。
 
 // ── 报警 API ──
 
