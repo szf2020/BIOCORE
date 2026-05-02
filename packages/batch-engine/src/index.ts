@@ -506,6 +506,8 @@ export type {
   DAGPhaseNode, DAGBranchNode, DAGStartNode, DAGEndNode,
   // v1.10.0 P3: frame-stack infrastructure
   DAGExecutorOptions, LoopFrame,
+  // v1.11.0 B1.3: Goto pass-through node
+  DAGGotoNode,
 } from './dag-executor';
 // Sprint 3 M3.8: 条件表达式求值器
 export {

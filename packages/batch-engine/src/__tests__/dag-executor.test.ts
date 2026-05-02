@@ -314,6 +314,175 @@ describe('DAGExecutor v1.10.0 P3 — visitCount + LoopFrame stack', () => {
     });
   });
 
+  // ==========================================================================
+  // B1.3 Goto nodes (v1.11.0)
+  // ==========================================================================
+  describe('B1.3 Goto nodes', () => {
+    it('goto node passes through to its target on advance', () => {
+      // DAG: start → a → goto(target=c) → c → end
+      // edges encode the routing; goto.target redundant but matches.
+      const dag: RecipeDAG = {
+        schema_version: 2,
+        nodes: [
+          { id: 's', type: 'start' },
+          { id: 'a', type: 'phase', phase_id: 'A', phase_type: 'fermentation' },
+          { id: 'g', type: 'goto', target: 'c' },
+          { id: 'c', type: 'phase', phase_id: 'C', phase_type: 'cooling' },
+          { id: 'e', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', from: 's', to: 'a' },
+          { id: 'e2', from: 'a', to: 'g' },
+          { id: 'e3', from: 'g', to: 'c' },
+          { id: 'e4', from: 'c', to: 'e' },
+        ],
+      };
+      const exec = new DAGExecutor(dag);
+      exec.start();
+      // After start(), advanceToPhaseOrEnd parks on phase 'a'
+      expect(exec.getCurrentNode()?.id).toBe('a');
+      exec.advance(); // a → g
+      expect(exec.getCurrentNode()?.id).toBe('g');
+      exec.advance(); // g → c (pass-through)
+      expect(exec.getCurrentNode()?.id).toBe('c');
+      exec.advance(); // c → e
+      expect(exec.getCurrentNode()?.type).toBe('end');
+    });
+
+    it('goto back-edge with default maxRevisits=1 throws on first revisit', () => {
+      // Degenerate cycle: start → a → goto(target=a) — second visit to a fails.
+      const dag: RecipeDAG = {
+        schema_version: 2,
+        nodes: [
+          { id: 's', type: 'start' },
+          { id: 'a', type: 'phase', phase_id: 'A', phase_type: 'heating' },
+          { id: 'g', type: 'goto', target: 'a' },
+          { id: 'e', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', from: 's', to: 'a' },
+          { id: 'e2', from: 'a', to: 'g' },
+          { id: 'e3', from: 'g', to: 'a' }, // back-edge
+        ],
+      };
+      const exec = new DAGExecutor(dag); // default maxRevisits=1
+      exec.start();
+      expect(exec.getCurrentNode()?.id).toBe('a');
+      exec.advance(); // a → g
+      expect(exec.getCurrentNode()?.id).toBe('g');
+      // g → a would push a to count=2, exceeding maxRevisits=1
+      expect(() => exec.advance()).toThrow(/MaxRevisitsExceeded.*'a'.*maxRevisits=1/);
+    });
+
+    it('goto back-edge with maxRevisits=3 allows 3 visits then throws', () => {
+      // start → a → g(target=a)
+      // visits: a(1) → g(1) → a(2) → g(2) → a(3) → g(3) → a(4) THROWS
+      const dag: RecipeDAG = {
+        schema_version: 2,
+        nodes: [
+          { id: 's', type: 'start' },
+          { id: 'a', type: 'phase', phase_id: 'A', phase_type: 'heating' },
+          { id: 'g', type: 'goto', target: 'a' },
+          { id: 'e', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', from: 's', to: 'a' },
+          { id: 'e2', from: 'a', to: 'g' },
+          { id: 'e3', from: 'g', to: 'a' },
+        ],
+      };
+      const exec = new DAGExecutor(dag, { maxRevisits: 3 });
+      exec.start();
+      // a count = 1 after start
+      expect(exec.getCurrentNode()?.id).toBe('a');
+      exec.advance(); // → g, g count = 1
+      expect(exec.getCurrentNode()?.id).toBe('g');
+      exec.advance(); // → a, a count = 2
+      expect(exec.getCurrentNode()?.id).toBe('a');
+      exec.advance(); // → g, g count = 2
+      expect(exec.getCurrentNode()?.id).toBe('g');
+      exec.advance(); // → a, a count = 3 (at limit)
+      expect(exec.getCurrentNode()?.id).toBe('a');
+      exec.advance(); // → g, g count = 3 (at limit)
+      expect(exec.getCurrentNode()?.id).toBe('g');
+      // Next would push a to count=4
+      expect(() => exec.advance()).toThrow(/MaxRevisitsExceeded.*'a'.*maxRevisits=3/);
+    });
+
+    it('passing recipe.options.maxRevisits through DAGExecutor honors override', () => {
+      // Verifies the controller-side construction pattern:
+      //   new DAGExecutor(dag, { maxRevisits: dag.options?.maxRevisits ?? 1 })
+      const dag: RecipeDAG = {
+        schema_version: 2,
+        options: { maxRevisits: 5 },
+        nodes: [
+          { id: 's', type: 'start' },
+          { id: 'a', type: 'phase', phase_id: 'A', phase_type: 'heating' },
+          { id: 'g', type: 'goto', target: 'a' },
+          { id: 'e', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', from: 's', to: 'a' },
+          { id: 'e2', from: 'a', to: 'g' },
+          { id: 'e3', from: 'g', to: 'a' },
+        ],
+      };
+      const exec = new DAGExecutor(dag, { maxRevisits: dag.options?.maxRevisits ?? 1 });
+      exec.start();
+      // Walk up to 5 visits of 'a' before throwing
+      let aVisits = 1;
+      let lastError: Error | null = null;
+      for (let i = 0; i < 20; i++) {
+        try {
+          exec.advance();
+        } catch (e) {
+          lastError = e as Error;
+          break;
+        }
+        if (exec.getCurrentNode()?.id === 'a') aVisits++;
+      }
+      expect(lastError?.message).toMatch(/MaxRevisitsExceeded.*maxRevisits=5/);
+      // Throws when trying to push a to count=6, so we observed 5 visits to 'a'
+      expect(aVisits).toBe(5);
+    });
+
+    it('goto with maxRevisits>1 traverses fwd-then-back-edge cycle correctly', () => {
+      // More realistic: start → a → b → goto(target=a). Verify b is also visited
+      // each cycle, not just a, until limit hits.
+      const dag: RecipeDAG = {
+        schema_version: 2,
+        nodes: [
+          { id: 's', type: 'start' },
+          { id: 'a', type: 'phase', phase_id: 'A', phase_type: 'heating' },
+          { id: 'b', type: 'phase', phase_id: 'B', phase_type: 'fermentation' },
+          { id: 'g', type: 'goto', target: 'a' },
+        ],
+        edges: [
+          { id: 'e1', from: 's', to: 'a' },
+          { id: 'e2', from: 'a', to: 'b' },
+          { id: 'e3', from: 'b', to: 'g' },
+          { id: 'e4', from: 'g', to: 'a' },
+        ],
+      };
+      const exec = new DAGExecutor(dag, { maxRevisits: 2 });
+      exec.start();
+      const visits: string[] = [exec.getCurrentNode()!.id];
+      let err: Error | null = null;
+      try {
+        for (let i = 0; i < 50; i++) {
+          exec.advance();
+          visits.push(exec.getCurrentNode()!.id);
+        }
+      } catch (e) {
+        err = e as Error;
+      }
+      expect(err?.message).toMatch(/MaxRevisitsExceeded/);
+      // Visited a twice and b twice before erroring on the third a
+      expect(visits.filter(v => v === 'a').length).toBe(2);
+      expect(visits.filter(v => v === 'b').length).toBe(2);
+    });
+  });
+
   describe('backward compatibility', () => {
     it('linear DAG (no loops, no revisits) traverses unchanged', () => {
       const dag = linearToDag([

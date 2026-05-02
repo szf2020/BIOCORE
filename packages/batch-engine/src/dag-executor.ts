@@ -15,7 +15,7 @@
 // ============================================================
 
 // 与 server/src/recipe-dag.ts 保持一致 (避免 batch-engine 包反向依赖 server)
-export type DAGNodeType = 'start' | 'end' | 'phase' | 'branch';
+export type DAGNodeType = 'start' | 'end' | 'phase' | 'branch' | 'goto';
 
 export interface DAGNodeBase {
   id: string;
@@ -38,7 +38,25 @@ export interface DAGBranchNode extends DAGNodeBase {
    */
   default_branch?: 'true' | 'false';
 }
-export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode;
+/**
+ * DAGGotoNode (B1.3) — single-out-edge pass-through node.
+ *
+ * Routes execution to its target node when reached. Editor + recipe-validator
+ * enforce that the goto has exactly 1 outgoing edge whose `to` equals `target`.
+ * The redundant `target` field lets the editor render "Goto: <target>" without
+ * graph traversal.
+ *
+ * Use cases:
+ *   - Fault-recovery jumps (alarm → safe-shutdown phase)
+ *   - Back-edges (re-run phase B after D under condition) — requires
+ *     `recipe.options.maxRevisits > 1` (default = 1 keeps acyclic-only behavior)
+ */
+export interface DAGGotoNode extends DAGNodeBase {
+  type: 'goto';
+  /** Target node id. Must equal the to-id of the (single) outgoing edge. */
+  target: string;
+}
+export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode | DAGGotoNode;
 
 export interface DAGEdge {
   id: string;
@@ -51,6 +69,19 @@ export interface RecipeDAG {
   schema_version: 2;
   nodes: DAGNode[];
   edges: DAGEdge[];
+  /**
+   * Optional recipe-level execution options (B1.3).
+   * Currently only `maxRevisits` is honored — passed through to DAGExecutor
+   * by BatchController so back-edges introduced by Goto nodes can be enabled
+   * per-recipe without touching the controller's construction signature.
+   */
+  options?: {
+    /**
+     * Maximum visits per node. Default 1 (acyclic only — preserves v1.7-v1.10
+     * behavior). Set >1 to allow Goto back-edges that revisit nodes.
+     */
+    maxRevisits?: number;
+  };
 }
 
 /**
@@ -177,6 +208,13 @@ export class DAGExecutor {
         throw new Error(`Branch 节点 ${node.id} 找不到 ${targetLabel} 出边`);
       }
       nextId = targetEdge.to;
+    } else if (node.type === 'goto') {
+      // Goto (B1.3): pass-through. Take its single out-edge.
+      // Editor + recipe-validator ensure exactly 1 out-edge whose `to`
+      // equals `target`. visitCount/maxRevisits below enforce back-edge
+      // safety — back-edges into already-visited nodes need maxRevisits>1
+      // in DAGExecutor options or they will throw MaxRevisitsExceeded.
+      nextId = outEdges[0].to;
     } else {
       // start / phase 节点: 取第一条边
       nextId = outEdges[0].to;
@@ -198,6 +236,7 @@ export class DAGExecutor {
    * 从当前节点起推进到第一个 phase、branch 或 end 节点。
    * 用于 start() 初始化时跳过 start 节点。
    * Branch 节点作为暂停点保留，等待调用方提供 ctx 后再 advance()。
+   * Goto 节点 (B1.3) 也是 pass-through, 不作为暂停点 — 由 advance() 自然推进。
    */
   private advanceToPhaseOrEnd(ctx?: DAGEvalContext): void {
     let guard = 0;
@@ -205,7 +244,7 @@ export class DAGExecutor {
       const node = this.getNode(this.currentNodeId);
       if (!node) break;
       if (node.type === 'phase' || node.type === 'end' || node.type === 'branch') break;
-      // start 节点需要推进
+      // start / goto 节点需要推进 (pass-through)
       const ok = this.advance(ctx);
       if (!ok) break;
       if (++guard > 1000) throw new Error('advanceToPhaseOrEnd 防护: 超过 1000 次推进');

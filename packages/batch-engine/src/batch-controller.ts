@@ -203,8 +203,12 @@ export class BatchController extends EventEmitter {
     this.batchStartTime = Date.now();
 
     // T7: parallel DAG runtime initialization (does not affect old phaseIndex path yet)
+    // B1.3: honor recipe.dag.options.maxRevisits so back-edges introduced via Goto
+    // nodes can be enabled per-recipe. Default = 1 keeps acyclic-only behavior.
     this.dag = this.linearToDagIfNeeded(recipe);
-    this.dagExecutor = new DAGExecutor(this.dag);
+    this.dagExecutor = new DAGExecutor(this.dag, {
+      maxRevisits: this.dag.options?.maxRevisits ?? 1,
+    });
     this.dagExecutor.start();
     this._currentNodeId = this.dagExecutor.getCurrentNode()?.id ?? null;
     // T12: persist initial node id for crash recovery
@@ -446,7 +450,10 @@ export class BatchController extends EventEmitter {
     this.batchId = batchId;
     this.recipe = recipe;
     this.dag = this.linearToDagIfNeeded(recipe);
-    this.dagExecutor = new DAGExecutor(this.dag);
+    // B1.3: honor recipe.dag.options.maxRevisits on resume too
+    this.dagExecutor = new DAGExecutor(this.dag, {
+      maxRevisits: this.dag.options?.maxRevisits ?? 1,
+    });
 
     // Rebuild phaseStatuses from DAG phase nodes (parallels start()'s init)
     this.phaseStatusesMap.clear();
@@ -555,8 +562,9 @@ export class BatchController extends EventEmitter {
     // pause points the loop steps through; pairing the node id with the
     // evaluation index gives accurate node_id attribution for IF/ELSE DAGs.
     const branchNodeIds: string[] = [];
-    // advance() may need to traverse branch → next phase; loop until we land
-    // on a phase or end node (DAGExecutor.advance handles single hops only).
+    // advance() may need to traverse branch / goto → next phase; loop until we
+    // land on a phase or end node (DAGExecutor.advance handles single hops only).
+    // Goto nodes (B1.3) are pass-through — keep stepping until phase/end.
     let guard = 0;
     while (true) {
       const beforeNode = this.dagExecutor.getCurrentNode();
