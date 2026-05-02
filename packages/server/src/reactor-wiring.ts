@@ -351,6 +351,106 @@ export function createReactorWiring(deps: ReactorWiringDeps): ReactorWiringHandl
       });
     });
 
+    // B1.2: loop_entered 审计/广播桥 — 循环开始 (frame pushed)
+    // 严格平行 branch_evaluated; try/catch wrap per v1.7.1 listener-hardening
+    // pattern so audit/queue/broadcast errors cannot crash the controller.
+    ctrl.on('loop_entered', (data: any) => {
+      try {
+        const batchId = data?.batch_id ?? ctrl.currentBatchId;
+        broadcast('loop_entered', {
+          reactor_id: reactorId,
+          type: 'loop_entered',
+          payload_version: 2,
+          batch_id: batchId,
+          node_id: data?.node_id ?? null,
+          iteration: data?.iteration ?? 0,
+          maxIterations: data?.maxIterations,
+          exitExpression: data?.exitExpression,
+          pv_snapshot: data?.pv_snapshot,
+        }, batchId, reactorId);
+        getAuditQueue().enqueue({
+          user_id: 'system',
+          action: 'loop_entered',
+          target_type: 'loop',
+          target_id: data?.node_id ?? 'unknown',
+          target_kind: 'node_id',
+          batch_id: batchId || undefined,
+          new_value: JSON.stringify({
+            iteration: data?.iteration ?? 0,
+            maxIterations: data?.maxIterations,
+            exitExpression: data?.exitExpression,
+            pv_snapshot: data?.pv_snapshot,
+          }),
+        });
+      } catch (err) {
+        console.warn('[reactor-wiring] loop_entered listener error:', (err as Error).message);
+      }
+    });
+
+    // B1.2: loop_iterated — 循环每迭代一轮 (iteration 自增)
+    ctrl.on('loop_iterated', (data: any) => {
+      try {
+        const batchId = data?.batch_id ?? ctrl.currentBatchId;
+        broadcast('loop_iterated', {
+          reactor_id: reactorId,
+          type: 'loop_iterated',
+          payload_version: 2,
+          batch_id: batchId,
+          node_id: data?.node_id ?? null,
+          iteration: data?.iteration ?? 0,
+          maxIterations: data?.maxIterations,
+          exitExpression: data?.exitExpression,
+          pv_snapshot: data?.pv_snapshot,
+        }, batchId, reactorId);
+        getAuditQueue().enqueue({
+          user_id: 'system',
+          action: 'loop_iterated',
+          target_type: 'loop',
+          target_id: data?.node_id ?? 'unknown',
+          target_kind: 'node_id',
+          batch_id: batchId || undefined,
+          new_value: JSON.stringify({
+            iteration: data?.iteration ?? 0,
+            maxIterations: data?.maxIterations,
+            exitExpression: data?.exitExpression,
+            pv_snapshot: data?.pv_snapshot,
+          }),
+        });
+      } catch (err) {
+        console.warn('[reactor-wiring] loop_iterated listener error:', (err as Error).message);
+      }
+    });
+
+    // B1.2: loop_exited — 循环结束 (frame popped); payload 含 final_iteration
+    ctrl.on('loop_exited', (data: any) => {
+      try {
+        const batchId = data?.batch_id ?? ctrl.currentBatchId;
+        broadcast('loop_exited', {
+          reactor_id: reactorId,
+          type: 'loop_exited',
+          payload_version: 2,
+          batch_id: batchId,
+          node_id: data?.node_id ?? null,
+          final_iteration: data?.final_iteration ?? 0,
+          pv_snapshot: data?.pv_snapshot,
+        }, batchId, reactorId);
+        getAuditQueue().enqueue({
+          user_id: 'system',
+          action: 'loop_exited',
+          target_type: 'loop',
+          target_id: data?.node_id ?? 'unknown',
+          target_kind: 'node_id',
+          batch_id: batchId || undefined,
+          new_value: JSON.stringify({
+            final_iteration: data?.final_iteration ?? 0,
+            pv_snapshot: data?.pv_snapshot,
+          }),
+        });
+      } catch (err) {
+        console.warn('[reactor-wiring] loop_exited listener error:', (err as Error).message);
+      }
+    });
+
     // Step完成
     ctrl.on('step_completed', (log: any) => {
       broadcast('step_progress', { reactor_id: reactorId, event: 'step_completed', ...log }, null, reactorId);

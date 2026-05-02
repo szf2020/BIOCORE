@@ -670,6 +670,15 @@ export class BatchController extends EventEmitter {
     // pause points the loop steps through; pairing the node id with the
     // evaluation index gives accurate node_id attribution for IF/ELSE DAGs.
     const branchNodeIds: string[] = [];
+    // B1.2: snapshot the loop frame stack BEFORE the advance pass. After the
+    // pass we diff prev vs new top to derive loop_entered / loop_iterated /
+    // loop_exited events. Cloning the stack lets us also detect "exit A then
+    // enter B" in one batch (rare but possible for sequential loops).
+    const prevFrames = this.dagExecutor.snapshotFrames();
+    const prevTop = prevFrames.length > 0 ? prevFrames[prevFrames.length - 1] : undefined;
+    const prevLoopId = prevTop?.loopNodeId;
+    const prevIteration = prevTop?.iteration;
+
     // advance() may need to traverse branch / goto → next phase; loop until we
     // land on a phase or end node (DAGExecutor.advance handles single hops only).
     // Goto nodes (B1.3) are pass-through — keep stepping until phase/end.
@@ -696,6 +705,52 @@ export class BatchController extends EventEmitter {
         result: ev.result,
         skipped: ev.skipped,
         pv_snapshot: ev.pv,
+      });
+    }
+
+    // B1.2: derive loop lifecycle events by comparing top-of-stack snapshots.
+    // Cases (single-frame depth = locked spec Q5):
+    //   - prev=undefined,  new=L      → loop_entered (push)
+    //   - prev=L,          new=L iter+1 → loop_iterated
+    //   - prev=L,          new=undefined → loop_exited (pop)
+    //   - prev=A,          new=B      → loop_exited(A) + loop_entered(B)  (sequential loops)
+    // Edge case where one batch both exits A and enters B emits both events
+    // naturally below.
+    const newFrames = this.dagExecutor.snapshotFrames();
+    const newTop = newFrames.length > 0 ? newFrames[newFrames.length - 1] : undefined;
+    const newLoopId = newTop?.loopNodeId;
+    const newIteration = newTop?.iteration;
+    const pvSnapshot = this.lastSampledPV ?? {};
+
+    // 1. Pop / transition: prevLoopId existed and is gone (or replaced)
+    if (prevLoopId && prevLoopId !== newLoopId) {
+      this.emit('loop_exited', {
+        batch_id: this.batchId,
+        node_id: prevLoopId,
+        final_iteration: prevIteration ?? 0,
+        pv_snapshot: pvSnapshot,
+      });
+    }
+
+    // 2. Push / new entry: newLoopId differs from prev (could be fresh or after exit)
+    if (newLoopId && newLoopId !== prevLoopId) {
+      this.emit('loop_entered', {
+        batch_id: this.batchId,
+        node_id: newLoopId,
+        iteration: newIteration ?? 0,
+        maxIterations: newTop?.maxIterations,
+        exitExpression: newTop?.exitExpression,
+        pv_snapshot: pvSnapshot,
+      });
+    } else if (newLoopId && newLoopId === prevLoopId && newIteration !== prevIteration) {
+      // 3. Same frame, iteration bumped → loop_iterated
+      this.emit('loop_iterated', {
+        batch_id: this.batchId,
+        node_id: newLoopId,
+        iteration: newIteration ?? 0,
+        maxIterations: newTop?.maxIterations,
+        exitExpression: newTop?.exitExpression,
+        pv_snapshot: pvSnapshot,
       });
     }
 

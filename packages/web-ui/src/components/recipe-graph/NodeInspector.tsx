@@ -5,7 +5,7 @@ import React from 'react';
 import type { Node } from '@xyflow/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { X, Beaker, GitBranch, Play, Square, CornerDownRight } from 'lucide-react';
+import { X, Beaker, GitBranch, Play, Square, CornerDownRight, Repeat } from 'lucide-react';
 import { ConditionExpressionEditor } from './ConditionExpressionEditor';
 import { RecipeMaterialsEditor, type MaterialRef } from '@/components/recipes/RecipeMaterialsEditor';
 import { phaseLabel } from '@/lib/utils';
@@ -120,12 +120,14 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
           {type === 'phase' && <Beaker className="w-4 h-4 text-primary" />}
           {type === 'branch' && <GitBranch className="w-4 h-4 text-amber-400" />}
           {type === 'goto' && <CornerDownRight className="w-4 h-4 text-violet-400" />}
+          {type === 'loop' && <Repeat className="w-4 h-4 text-teal-400" />}
           {type === 'start' && <Play className="w-4 h-4 text-emerald-600" />}
           {type === 'end' && <Square className="w-4 h-4 text-red-600" />}
           <span className="text-sm font-semibold">
             {type === 'phase' ? 'Phase 节点' :
              type === 'branch' ? 'IF/ELSE 节点' :
              type === 'goto' ? 'Goto 跳转节点' :
+             type === 'loop' ? 'Loop 循环节点' :
              type === 'start' ? 'Start 节点' : 'End 节点'}
           </span>
         </div>
@@ -338,6 +340,68 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
             </div>
           </>
         )}
+
+        {type === 'loop' && (() => {
+          const exitExpr = (data.exitExpression || '').trim();
+          const maxIter = data.maxIterations;
+          const hasMax = maxIter != null && Number.isFinite(maxIter) && maxIter > 0;
+          const bothEmpty = !exitExpr && !hasMax;
+          return (
+            <>
+              <div>
+                <Label className="text-xs">退出条件 exitExpression</Label>
+                <ConditionExpressionEditor
+                  value={data.exitExpression || ''}
+                  onChange={(expression) => updateData({ exitExpression: expression })}
+                />
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  repeat-until 语义: 表达式为 true 时退出循环 (PV 缺失时继续循环)
+                </p>
+              </div>
+              <div className="pt-2 border-t border-border/40">
+                <Label className="text-xs">最大迭代次数 maxIterations</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={10000}
+                  value={data.maxIterations ?? ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '') {
+                      updateData({ maxIterations: undefined });
+                    } else {
+                      const n = parseInt(v, 10);
+                      updateData({ maxIterations: Number.isFinite(n) ? n : undefined });
+                    }
+                  }}
+                  placeholder="5"
+                  className="h-7 text-xs font-mono mt-1"
+                />
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  fixed-N 硬上限 (1~10000). 与 exitExpression 任一先满足即退出.
+                </p>
+              </div>
+              {bothEmpty && (
+                <div className="text-[11px] text-red-500 bg-red-500/10 border border-red-500/30 rounded px-2 py-1">
+                  必须至少设置 exitExpression 或 maxIterations 之一
+                </div>
+              )}
+              <div className="pt-2 border-t border-border/40">
+                <Label className="text-xs">显示名 (可选)</Label>
+                <Input
+                  value={data.label || ''}
+                  onChange={(e) => updateData({ label: e.target.value })}
+                  placeholder="OD 采样循环"
+                  className="h-7 text-xs mt-1"
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground pt-1">
+                提示: 从 body handle 拉一条边到循环体起点; 从 exit handle 拉一条边到循环外的下一步;
+                循环体必须有至少一条 back-edge 回到本 Loop 节点.
+              </p>
+            </>
+          );
+        })()}
 
         {(type === 'start' || type === 'end') && (
           <div className="text-xs text-muted-foreground py-4 text-center">

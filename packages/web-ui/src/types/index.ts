@@ -183,7 +183,7 @@ export interface PhaseConfig {
 //   - branch 出边: { from: 'branch_node', to, label: 'true' | 'false' }
 // ─────────────────────────────────────────────────────────────
 
-export type DAGNodeType = 'start' | 'end' | 'phase' | 'branch' | 'goto';
+export type DAGNodeType = 'start' | 'end' | 'phase' | 'branch' | 'goto' | 'loop';
 
 export interface DAGNodeBase {
   id: string;             // 节点唯一 ID (UI 用)
@@ -222,13 +222,28 @@ export interface DAGGotoNode extends DAGNodeBase {
   target: string;              // 目标节点 id (与唯一出边 to 同步)
 }
 
-export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode | DAGGotoNode;
+/**
+ * DAGLoopNode (B1.2) — repeat-until / fixed-N loop with two out-edges.
+ * Validator BV-22..25 enforces:
+ *   - at least one of {exitExpression, maxIterations>0}
+ *   - exactly 2 out-edges with labels {'body', 'exit'}
+ *   - body subgraph cannot contain another Loop (depth=1, no nesting)
+ *   - at least one back-edge from body subgraph back to this loop node
+ */
+export interface DAGLoopNode extends DAGNodeBase {
+  type: 'loop';
+  exitExpression?: string;     // 例如 'OD600 >= 5' (repeat-until)
+  maxIterations?: number;      // 硬上限 (fixed-N), 范围 [1, 10000]
+}
+
+export type DAGNode = DAGStartNode | DAGEndNode | DAGPhaseNode | DAGBranchNode | DAGGotoNode | DAGLoopNode;
 
 export interface DAGEdge {
   id: string;
   from: string;           // source node id
   to: string;             // target node id
-  label?: 'true' | 'false'; // 仅用于 branch 出边
+  // branch 出边: 'true'|'false'; loop 出边 (B1.2): 'body'|'exit'
+  label?: 'true' | 'false' | 'body' | 'exit';
 }
 
 export interface RecipeDAG {

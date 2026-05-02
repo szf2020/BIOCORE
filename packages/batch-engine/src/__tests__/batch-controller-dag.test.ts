@@ -760,3 +760,116 @@ describe('B1.2 Loop persistence', () => {
     ctrl.destroy();
   });
 });
+
+// ============================================================
+// B1.2 — Loop lifecycle events (commit 4 of 4)
+//
+// Verifies that BatchController.readyNextPhase() emits the three
+// loop_* events derived from frame-stack diffs:
+//   - loop_entered  on first push (prev: undef → new: L)
+//   - loop_iterated on iteration bump (prev: L iter=N → new: L iter=N+1)
+//   - loop_exited   on pop (prev: L → new: undef)
+// reactor-wiring.ts mirrors these events to WS + audit-queue.
+// ============================================================
+describe('B1.2 Loop lifecycle events', () => {
+  function makeLoopEventRecipe() {
+    // Same shape as makeLoopRecipe in the persistence describe block, but
+    // duplicated locally to keep these tests self-contained.
+    return {
+      recipe_id: 'TEST_B12_EVT',
+      version: '1.0.0',
+      execution_mode: 'free',
+      vessel: { id: 'V1', working_volume_L: 5, total_volume_L: 16, tare_weight_kg: 12 },
+      phases: [
+        { phase_id: 'P0', type: 'fermentation', params: {} },
+        { phase_id: 'PB', type: 'feeding', params: {} },
+        { phase_id: 'PE', type: 'feeding', params: {} },
+      ],
+      dag: {
+        schema_version: 2,
+        options: { maxRevisits: 10 },
+        nodes: [
+          { id: 's', type: 'start' },
+          { id: 'p0', type: 'phase', phase_id: 'P0', phase_type: 'fermentation', params: {} },
+          { id: 'l', type: 'loop', maxIterations: 3 },
+          { id: 'pb', type: 'phase', phase_id: 'PB', phase_type: 'feeding', params: {} },
+          { id: 'pe', type: 'phase', phase_id: 'PE', phase_type: 'feeding', params: {} },
+          { id: 'e', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', from: 's', to: 'p0' },
+          { id: 'e2', from: 'p0', to: 'l' },
+          { id: 'e3', from: 'l', to: 'pb', label: 'body' },
+          { id: 'e4', from: 'l', to: 'pe', label: 'exit' },
+          { id: 'e5', from: 'pb', to: 'l' },
+          { id: 'e6', from: 'pe', to: 'e' },
+        ],
+      },
+    } as any;
+  }
+
+  it('emits loop_entered on first push (prev empty → new frame)', () => {
+    const ctrl = makeCtrl();
+    const recipe = makeLoopEventRecipe();
+    ctrl.resumeBatch('B-LE-1', recipe, 'p0');
+    const events: any[] = [];
+    ctrl.on('loop_entered', (e) => events.push(e));
+    ctrl.on('loop_iterated', (e) => events.push({ _bad: 'iter', ...e }));
+    ctrl.on('loop_exited', (e) => events.push({ _bad: 'exited', ...e }));
+    (ctrl as any).readyNextPhase(0);
+    // Should land on pb after pushing a frame and taking body
+    expect((ctrl as any).currentNodeId).toBe('pb');
+    expect(events.length).toBe(1);
+    expect(events[0].batch_id).toBe('B-LE-1');
+    expect(events[0].node_id).toBe('l');
+    expect(events[0].iteration).toBe(0);
+    expect(events[0].maxIterations).toBe(3);
+    ctrl.destroy();
+  });
+
+  it('emits loop_iterated on iteration bump (back-edge re-entry)', () => {
+    const ctrl = makeCtrl();
+    const recipe = makeLoopEventRecipe();
+    // Park at p0 → first advance pass enters loop and lands on pb (iter=0)
+    ctrl.resumeBatch('B-LE-2', recipe, 'p0');
+    (ctrl as any).readyNextPhase(0); // → pb, frame iter=0 pushed
+    expect((ctrl as any).currentNodeId).toBe('pb');
+
+    const events: any[] = [];
+    ctrl.on('loop_iterated', (e) => events.push(e));
+    ctrl.on('loop_entered', (e) => events.push({ _bad: 'entered', ...e }));
+    ctrl.on('loop_exited', (e) => events.push({ _bad: 'exited', ...e }));
+
+    // Next advance: pb → l (back-edge, iter→1, takes body) → pb again
+    (ctrl as any).readyNextPhase(0);
+    expect((ctrl as any).currentNodeId).toBe('pb');
+    expect(events.length).toBe(1);
+    expect(events[0].node_id).toBe('l');
+    expect(events[0].iteration).toBe(1);
+    expect(events[0].maxIterations).toBe(3);
+    ctrl.destroy();
+  });
+
+  it('emits loop_exited when frame popped (maxIterations reached)', () => {
+    const ctrl = makeCtrl();
+    const recipe = makeLoopEventRecipe();
+    ctrl.resumeBatch('B-LE-3', recipe, 'p0');
+    (ctrl as any).readyNextPhase(0); // p0 → l(push, iter=0) → pb
+    (ctrl as any).readyNextPhase(0); // pb → l(iter=1, body) → pb
+    (ctrl as any).readyNextPhase(0); // pb → l(iter=2, body) → pb
+    expect((ctrl as any).currentNodeId).toBe('pb');
+
+    const events: any[] = [];
+    ctrl.on('loop_exited', (e) => events.push(e));
+    ctrl.on('loop_iterated', (e) => events.push({ _bad: 'iter', ...e }));
+    ctrl.on('loop_entered', (e) => events.push({ _bad: 'entered', ...e }));
+
+    // Next advance: pb → l(iter=3, hits max=3, pops, takes exit) → pe
+    (ctrl as any).readyNextPhase(0);
+    expect((ctrl as any).currentNodeId).toBe('pe');
+    expect(events.length).toBe(1);
+    expect(events[0].node_id).toBe('l');
+    expect(events[0].final_iteration).toBe(2);
+    ctrl.destroy();
+  });
+});

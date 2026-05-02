@@ -9,10 +9,11 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
-import { Beaker, GitBranch, Wand2, Trash2, Save as SaveIcon, Plus, CornerDownRight } from 'lucide-react';
+import { Beaker, GitBranch, Wand2, Trash2, Save as SaveIcon, Plus, CornerDownRight, Repeat } from 'lucide-react';
 import { PhaseNode } from './nodes/PhaseNode';
 import { BranchNode } from './nodes/BranchNode';
 import { GotoNode } from './nodes/GotoNode';
+import { LoopNode } from './nodes/LoopNode';
 import { StartNode, EndNode } from './nodes/StartEndNode';
 import { NodeInspector, type APIPhaseTemplate } from './NodeInspector';
 import { applyDagreLayout } from './layout';
@@ -23,7 +24,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 // 与 server/src/recipe-dag.ts 的 RecipeDAG 对齐
 export interface DAGNode {
   id: string;
-  type: 'start' | 'end' | 'phase' | 'branch' | 'goto';
+  type: 'start' | 'end' | 'phase' | 'branch' | 'goto' | 'loop';
   position?: { x: number; y: number };
   phase_id?: string;
   phase_type?: string;
@@ -31,12 +32,16 @@ export interface DAGNode {
   label?: string;                    // 节点显示名 (操作员视角)
   expression?: string;
   target?: string;                   // B1.3 goto: 跳转目标节点 id
+  // B1.2 loop:
+  exitExpression?: string;           // repeat-until 退出条件
+  maxIterations?: number;            // fixed-N 硬上限
 }
 export interface DAGEdge {
   id: string;
   from: string;
   to: string;
-  label?: 'true' | 'false';
+  // branch 出边: 'true'|'false'; loop 出边 (B1.2): 'body'|'exit'
+  label?: 'true' | 'false' | 'body' | 'exit';
 }
 export interface RecipeDAG {
   schema_version: 2;
@@ -50,6 +55,7 @@ const nodeTypes: NodeTypes = {
   phase: PhaseNode,
   branch: BranchNode,
   goto: GotoNode,
+  loop: LoopNode,
   start: StartNode,
   end: EndNode,
 };
@@ -67,16 +73,23 @@ function dagToFlow(dag: RecipeDAG): { nodes: Node[]; edges: Edge[] } {
       params: n.params || {},
       expression: n.expression || '',
       target: n.target || '',           // B1.3 goto target
+      // B1.2 loop fields — pass through so LoopNode + inspector can render/edit them
+      exitExpression: n.exitExpression || '',
+      maxIterations: n.maxIterations,
     },
   }));
   const edges: Edge[] = dag.edges.map(e => ({
     id: e.id,
     source: e.from,
     target: e.to,
-    sourceHandle: e.label || undefined, // branch 节点用 label (true/false) 作为 handle id
+    sourceHandle: e.label || undefined, // branch true/false; loop body/exit
     label: e.label,
-    labelStyle: e.label === 'true' ? { fill: '#4ade80', fontWeight: 600 } :
-                e.label === 'false' ? { fill: '#f87171', fontWeight: 600 } : undefined,
+    labelStyle:
+      e.label === 'true'  ? { fill: '#4ade80', fontWeight: 600 } :
+      e.label === 'false' ? { fill: '#f87171', fontWeight: 600 } :
+      e.label === 'body'  ? { fill: '#14b8a6', fontWeight: 600 } :
+      e.label === 'exit'  ? { fill: '#fb923c', fontWeight: 600 } :
+                            undefined,
     markerEnd: { type: MarkerType.ArrowClosed },
     style: { strokeWidth: 1.5 },
   }));
@@ -110,13 +123,23 @@ function flowToDag(nodes: Node[], edges: Edge[]): RecipeDAG {
         const outEdge = edges.find(e => e.source === n.id);
         base.target = outEdge?.target || d.target || '';
       }
+      if (n.type === 'loop') {
+        // B1.2: persist exitExpression / maxIterations from inspector data
+        if (d.exitExpression && String(d.exitExpression).trim().length > 0) {
+          base.exitExpression = String(d.exitExpression).trim();
+        }
+        if (d.maxIterations != null && Number.isFinite(d.maxIterations)) {
+          base.maxIterations = Number(d.maxIterations);
+        }
+      }
       return base;
     }),
     edges: edges.map(e => ({
       id: e.id,
       from: e.source,
       to: e.target,
-      label: (e.sourceHandle as 'true' | 'false' | undefined) || undefined,
+      // B1.2: preserve sourceHandle for loop edges (body|exit) as well as branch (true|false)
+      label: (e.sourceHandle as 'true' | 'false' | 'body' | 'exit' | undefined) || undefined,
     })),
   };
 }
@@ -232,6 +255,19 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
     setSelectedNodeId(id);
   }, [nodes, setNodes]);
 
+  // B1.2: 添加 Loop 节点 (双出边 body/exit)
+  const addLoopNode = useCallback(() => {
+    const id = `n_${Date.now()}`;
+    const newNode: Node = {
+      id,
+      type: 'loop',
+      position: { x: 400, y: 150 + nodes.length * 30 },
+      data: { exitExpression: '', maxIterations: 5 },
+    };
+    setNodes(prev => [...prev, newNode]);
+    setSelectedNodeId(id);
+  }, [nodes, setNodes]);
+
   // DAG 校验: 入口/出口 + 孤立节点 + 未连接 Phase (保存前检查)
   const validateDag = useCallback((): string[] => {
     const errs: string[] = [];
@@ -281,6 +317,60 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
         }
         if (targetNode?.type === 'start') {
           errs.push(`Goto 节点 ${n.id} 不能跳到 start 节点`);
+        }
+      }
+      if (n.type === 'loop') {
+        // B1.2 client-side mirror of recipe-validator BV-22..25.
+        const d = n.data as any;
+        const exitExpr = (d.exitExpression || '').trim();
+        const maxIter = d.maxIterations;
+        const hasMax = maxIter != null && Number.isFinite(maxIter) && maxIter > 0;
+        // BV-22: at least one of {exitExpression, maxIterations>0}
+        if (!exitExpr && !hasMax) {
+          errs.push(`Loop 节点 ${n.id} 必须至少设置 exitExpression 或 maxIterations 之一`);
+        }
+        // BV-23: exactly 2 out-edges with labels {body, exit}
+        if (outEdges.length !== 2) {
+          errs.push(`Loop 节点 ${n.id} 必须恰好 2 条出边 (实际 ${outEdges.length})`);
+        } else {
+          const labels = new Set(outEdges.map(e => e.sourceHandle || e.label));
+          if (!labels.has('body')) {
+            errs.push(`Loop 节点 ${n.id} 缺少 'body' 出边 (从 body handle 拉线)`);
+          }
+          if (!labels.has('exit')) {
+            errs.push(`Loop 节点 ${n.id} 缺少 'exit' 出边 (从 exit handle 拉线)`);
+          }
+        }
+        // Compute body-reachable set via BFS from the body out-edge target.
+        // Stop at: this loop node (back-edge), other end nodes, or visited.
+        const bodyEdge = outEdges.find(e => (e.sourceHandle || e.label) === 'body');
+        const bodyReachable = new Set<string>();
+        if (bodyEdge?.target) {
+          const queue: string[] = [bodyEdge.target];
+          while (queue.length > 0) {
+            const cur = queue.shift()!;
+            if (cur === n.id) continue;             // reached loop again — back-edge boundary
+            if (bodyReachable.has(cur)) continue;
+            bodyReachable.add(cur);
+            const next = edges.filter(e => e.source === cur);
+            for (const ne of next) {
+              if (ne.target && !bodyReachable.has(ne.target) && ne.target !== n.id) {
+                queue.push(ne.target);
+              }
+            }
+          }
+        }
+        // BV-24: no nested loop in body subgraph
+        for (const reachableId of bodyReachable) {
+          const rn = nodes.find(x => x.id === reachableId);
+          if (rn?.type === 'loop' && rn.id !== n.id) {
+            errs.push(`Loop 节点 ${n.id} 的 body 子图包含嵌套 Loop ${rn.id} (depth>1 不支持)`);
+          }
+        }
+        // BV-25: at least one back-edge from body subgraph back to this loop node
+        const hasBackEdge = edges.some(e => bodyReachable.has(e.source) && e.target === n.id);
+        if (!hasBackEdge && bodyEdge) {
+          errs.push(`Loop 节点 ${n.id} 缺少 back-edge (body 子图必须至少有 1 条边回到 loop)`);
         }
       }
     });
@@ -335,6 +425,9 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
           </Button>
           <Button variant="outline" size="sm" className="w-full justify-start" onClick={addGotoNode}>
             <CornerDownRight className="w-3.5 h-3.5 mr-1.5" />Goto 跳转
+          </Button>
+          <Button variant="outline" size="sm" className="w-full justify-start" onClick={addLoopNode}>
+            <Repeat className="w-3.5 h-3.5 mr-1.5" />Loop 循环
           </Button>
           {apiTemplates.length === 0 && (
             <Button variant="outline" size="sm" className="w-full justify-start" onClick={addBlankPhaseNode}>
@@ -431,6 +524,7 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
               if (n.type === 'end') return '#dc2626';
               if (n.type === 'branch') return '#f59e0b';
               if (n.type === 'goto') return '#8b5cf6';
+              if (n.type === 'loop') return '#14b8a6';
               return '#3b82f6';
             }}
             maskColor="rgba(0, 0, 0, 0.6)"
