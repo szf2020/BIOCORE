@@ -96,7 +96,7 @@ const RUNTIME_GUARD_OOM_THRESHOLD_MB =
     : undefined;  // undefined = MetricsCollector/MemoryWatchdog auto = RAM × 20%
 
 export const metricsCollector = new MetricsCollector({
-  serviceVersion: process.env.npm_package_version ?? '0.3.4',
+  serviceVersion: process.env.npm_package_version ?? '0.3.5',
   oomThresholdMb: RUNTIME_GUARD_OOM_THRESHOLD_MB,
 });
 metricsCollector.start();
@@ -4692,7 +4692,7 @@ apiRouter.get('/trends', async (req: any, res) => {
 
 apiRouter.get('/status', (_req, res) => {
   res.json({
-    version: process.env.npm_package_version ?? '0.3.4',
+    version: process.env.npm_package_version ?? '0.3.5',
     uptime: process.uptime(),
     ws_clients: wss.clients.size,
     heartbeats: [...heartbeats.entries()].map(([id, s]) => ({
@@ -4776,7 +4776,7 @@ async function start(): Promise<void> {
     }
   }
   server.listen(PORT, () => {
-  const VER = process.env.npm_package_version ?? '0.3.4';
+  const VER = process.env.npm_package_version ?? '0.3.5';
   console.log(`
   ╔══════════════════════════════════════════════╗
   ║         BIOCore Server v${VER}                ║
