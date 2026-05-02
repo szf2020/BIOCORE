@@ -446,18 +446,40 @@ function startReactorCollector(reactorId: string): void {
       const batchId = ctrl && ctrl.currentState === 'running' && ctrl.currentBatchId
         ? ctrl.currentBatchId
         : 'idle';
+      // v1.8.0 bucket 3 (perf fix 3): dedupe PLC reads. Old code called
+      // devPlcRead(tag) ~32 times per tick (~18 for the InfluxDB Point + ~14
+      // for the WS broadcast pvPayload), even though only 19 unique tags
+      // are actually consumed. Hoist into a single rawPV map and read each
+      // tag once, then build both the Point and the broadcast payload from
+      // it. devPlcRead is currently sync (random-walk simulator); when
+      // MOCK_PLC=false the read becomes async and the 32→19 reduction will
+      // yield real network savings — see concerns note for the async-PLC
+      // follow-up.
+      const TAGS = [
+        'TEMP_PV', 'JACKET_PV', 'PH_PV', 'DO_PV', 'PRESSURE_PV', 'AIRFLOW_PV', 'WEIGHT_PV',
+        'VFD_ACTUAL_FREQ', 'VFD_CURRENT',
+        'STEAM_CV', 'COOL_CV', 'AIR_CV',
+        'P01_RATE', 'P02_RATE', 'P03_RATE', 'P04_RATE',
+        'TEMP_SV', 'PH_SV', 'DO_SV',
+      ];
+      const rawPV: Record<string, number> = {};
+      for (const tag of TAGS) {
+        try { rawPV[tag] = devPlcRead(tag); } catch { rawPV[tag] = 0; }
+      }
+      const rpmRaw = rawPV['VFD_ACTUAL_FREQ'] * 24;
+
       const point = new Point('process_data')
         .tag('reactor_id', reactorId)
         .tag('batch_id', String(batchId))
-        .floatField('temperature', devPlcRead('TEMP_PV'))
-        .floatField('jacket_temp', devPlcRead('JACKET_PV'))
-        .floatField('pH', devPlcRead('PH_PV'))
-        .floatField('DO', devPlcRead('DO_PV'))
-        .floatField('pressure', devPlcRead('PRESSURE_PV'))
-        .floatField('airflow', devPlcRead('AIRFLOW_PV'))
-        .floatField('weight', devPlcRead('WEIGHT_PV'))
-        .floatField('rpm', devPlcRead('VFD_ACTUAL_FREQ') * 24)
-        .floatField('vfd_current', devPlcRead('VFD_CURRENT'))
+        .floatField('temperature', rawPV['TEMP_PV'])
+        .floatField('jacket_temp', rawPV['JACKET_PV'])
+        .floatField('pH', rawPV['PH_PV'])
+        .floatField('DO', rawPV['DO_PV'])
+        .floatField('pressure', rawPV['PRESSURE_PV'])
+        .floatField('airflow', rawPV['AIRFLOW_PV'])
+        .floatField('weight', rawPV['WEIGHT_PV'])
+        .floatField('rpm', rpmRaw)
+        .floatField('vfd_current', rawPV['VFD_CURRENT'])
         .timestamp(new Date());
       influxWriteApi!.writePoint(point);
       // 异步 flush, 不阻塞下一次采样
@@ -469,26 +491,26 @@ function startReactorCollector(reactorId: string): void {
       const pvPayload = {
         timestamp: new Date().toISOString(),
         batch_id: batchId === 'idle' ? null : batchId,
-        'AI-0': devPlcRead('TEMP_PV'),      // 罐温
-        'AI-1': devPlcRead('JACKET_PV'),     // 夹套温度
-        'AI-2': devPlcRead('PH_PV'),         // pH
-        'AI-3': devPlcRead('DO_PV'),         // DO
-        'AI-4': devPlcRead('PRESSURE_PV'),   // 罐压
-        'AI-5': devPlcRead('AIRFLOW_PV'),    // 空气流量
-        'AI-6': devPlcRead('WEIGHT_PV'),     // 称重
-        rpm: Math.round(devPlcRead('VFD_ACTUAL_FREQ') * 24),
-        vfd_current: devPlcRead('VFD_CURRENT'),
-        'AO-0_cv': devPlcRead('STEAM_CV'),   // 蒸汽阀
-        'AO-1_cv': devPlcRead('COOL_CV'),    // 冷却阀
-        'AO-2_cv': devPlcRead('AIR_CV'),     // 空气阀
-        P01_rate: devPlcRead('P01_RATE'),     // 碱泵
-        P02_rate: devPlcRead('P02_RATE'),     // 补料泵
-        P03_rate: devPlcRead('P03_RATE'),     // 氮源泵
-        P04_rate: devPlcRead('P04_RATE'),     // 酸泵
-        temp_mode: 2,                         // 冷却模式
-        temp_sv: devPlcRead('TEMP_SV'),
-        pH_sv: devPlcRead('PH_SV'),
-        DO_sv: devPlcRead('DO_SV'),
+        'AI-0': rawPV['TEMP_PV'],      // 罐温
+        'AI-1': rawPV['JACKET_PV'],     // 夹套温度
+        'AI-2': rawPV['PH_PV'],         // pH
+        'AI-3': rawPV['DO_PV'],         // DO
+        'AI-4': rawPV['PRESSURE_PV'],   // 罐压
+        'AI-5': rawPV['AIRFLOW_PV'],    // 空气流量
+        'AI-6': rawPV['WEIGHT_PV'],     // 称重
+        rpm: Math.round(rpmRaw),
+        vfd_current: rawPV['VFD_CURRENT'],
+        'AO-0_cv': rawPV['STEAM_CV'],   // 蒸汽阀
+        'AO-1_cv': rawPV['COOL_CV'],    // 冷却阀
+        'AO-2_cv': rawPV['AIR_CV'],     // 空气阀
+        P01_rate: rawPV['P01_RATE'],     // 碱泵
+        P02_rate: rawPV['P02_RATE'],     // 补料泵
+        P03_rate: rawPV['P03_RATE'],     // 氮源泵
+        P04_rate: rawPV['P04_RATE'],     // 酸泵
+        temp_mode: 2,                     // 冷却模式
+        temp_sv: rawPV['TEMP_SV'],
+        pH_sv: rawPV['PH_SV'],
+        DO_sv: rawPV['DO_SV'],
       };
       broadcast('pv_realtime', pvPayload, batchId === 'idle' ? null : batchId, reactorId);
 
@@ -496,11 +518,11 @@ function startReactorCollector(reactorId: string): void {
       if (batchId !== 'idle') {
         const detMap = getCusumKey(batchId);
         const pvMap: Record<string, number> = {
-          temperature: devPlcRead('TEMP_PV'),
-          pH: devPlcRead('PH_PV'),
-          DO: devPlcRead('DO_PV'),
-          pressure: devPlcRead('PRESSURE_PV'),
-          rpm: devPlcRead('VFD_ACTUAL_FREQ') * 24,
+          temperature: rawPV['TEMP_PV'],
+          pH: rawPV['PH_PV'],
+          DO: rawPV['DO_PV'],
+          pressure: rawPV['PRESSURE_PV'],
+          rpm: rpmRaw,
         };
         const cusumResults: Array<{
           channel: string; anomaly: boolean; deviation: number;
