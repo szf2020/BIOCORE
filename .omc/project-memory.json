@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1776693267796,
+  "lastScanned": 1778556789102,
   "projectRoot": "C:\\BIOCore",
   "techStack": {
     "languages": [
@@ -36,7 +36,11 @@
       "test": "pnpm -r run test",
       "lint": "pnpm -r run lint",
       "db:init": "pnpm --filter @biocore/data-service run db:init",
-      "plc:test": "pnpm --filter @biocore/plc-driver run test:connection"
+      "plc:test": "pnpm --filter @biocore/plc-driver run test:connection",
+      "soak": "node scripts/soak-test.mjs",
+      "soak:short": "SOAK_DURATION_HOURS=1 node scripts/soak-test.mjs",
+      "soak:tiny": "SOAK_DURATION_HOURS=0.05 SOAK_BROWSER=false node scripts/soak-test.mjs",
+      "healthcheck": "node scripts/healthcheck.mjs"
     }
   },
   "conventions": {
@@ -60,16 +64,29 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 1,
-      "lastAccessed": 1776693267712,
+      "lastAccessed": 1778556789040,
       "keyFiles": [
         "default-plc-variables.ts"
+      ]
+    },
+    "crashes": {
+      "path": "crashes",
+      "purpose": null,
+      "fileCount": 16,
+      "lastAccessed": 1778556789071,
+      "keyFiles": [
+        "2026-05-01T06-21-18-357Z-26208.json",
+        "2026-05-01T07-14-11-419Z-24784.json",
+        "2026-05-01T07-22-27-380Z-19548.json",
+        "2026-05-01T07-38-41-791Z-25328.json",
+        "2026-05-01T07-39-16-668Z-13752.json"
       ]
     },
     "data": {
       "path": "data",
       "purpose": "Data files",
       "fileCount": 3,
-      "lastAccessed": 1776693267713,
+      "lastAccessed": 1778556789071,
       "keyFiles": [
         "biocore.db",
         "biocore.db-shm",
@@ -79,8 +96,8 @@
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
-      "fileCount": 24,
-      "lastAccessed": 1776693267713,
+      "fileCount": 27,
+      "lastAccessed": 1778556789072,
       "keyFiles": [
         "00_BIOCore_产品规划主文档.md",
         "01_PLC硬件规格.md",
@@ -89,52 +106,64 @@
         "04_配方JSON规范.md"
       ]
     },
+    "observability": {
+      "path": "observability",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1778556789072,
+      "keyFiles": [
+        "prometheus.yml"
+      ]
+    },
     "openspec": {
       "path": "openspec",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1776693267754,
+      "lastAccessed": 1778556789072,
       "keyFiles": []
     },
     "packages": {
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1776693267754,
+      "lastAccessed": 1778556789073,
       "keyFiles": []
     },
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
-      "fileCount": 1,
-      "lastAccessed": 1776693267755,
+      "fileCount": 8,
+      "lastAccessed": 1778556789073,
       "keyFiles": [
-        "generate-mock-batch.ts"
+        "b1-e2e.sh",
+        "generate-mock-batch.ts",
+        "healthcheck.mjs",
+        "install-windows-service.ps1",
+        "jq.exe"
+      ]
+    },
+    "soak-runs": {
+      "path": "soak-runs",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1778556789073,
+      "keyFiles": [
+        "2026-05-01T07-54-17-521Z.csv"
       ]
     },
     "stitch_duplicate_of_biocore": {
       "path": "stitch_duplicate_of_biocore",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1776693267755,
+      "lastAccessed": 1778556789074,
       "keyFiles": []
     },
     "{docs,packages": {
       "path": "{docs,packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1776693267756,
+      "lastAccessed": 1778556789074,
       "keyFiles": []
-    },
-    "packages\\types": {
-      "path": "packages\\types",
-      "purpose": "Type definitions",
-      "fileCount": 2,
-      "lastAccessed": 1776693267757,
-      "keyFiles": [
-        "package.json",
-        "tsconfig.json"
-      ]
     }
   },
   "hotPaths": [

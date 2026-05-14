@@ -12,6 +12,11 @@ export class SQLiteService {
     this.db = new Database(dbPath);
     this.db.pragma('journal_mode = WAL');
     this.db.pragma('foreign_keys = ON');
+    this.db.pragma('busy_timeout = 5000');      // 多连接等锁 5s 重试, 避免 SQLITE_BUSY
+    this.db.pragma('synchronous = NORMAL');     // WAL 下推荐, 比 FULL 快且仍崩溃安全
+    this.db.pragma('cache_size = -64000');      // 64MB 页缓存 (负值=KB)
+    this.db.pragma('temp_store = MEMORY');      // 临时表/索引走内存
+    this.db.pragma('mmap_size = 268435456');    // 256MB mmap, 读密集型加速
     // 注: 不再调用 initSchema(). schema 创建/演化已由 packages/server/migrations/
     // 下的 .sql 文件管理, 由 packages/server/src/migrator.ts 在 server 启动时执行.
   }

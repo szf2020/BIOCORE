@@ -244,6 +244,7 @@ import {
   runOrphanRecoveryScan,
   pickRecoveryPolicyFromEnv,
 } from './startup';
+import { assertProductionReady } from './production-guards';
 
 mkdirSync(DATA_DIR, { recursive: true });
 const sqlite = new SQLiteService(`${DATA_DIR}/biocore.db`);
@@ -3018,6 +3019,13 @@ async function start(): Promise<void> {
   // v1.8.0 bucket 1: admin init is async (bcrypt). Run after migrations
   // but before listen so the default admin row is in place when requests arrive.
   await ensureAdminAccount({ db: sqlite.getDatabase(), hashPasswordBcrypt });
+  // 生产环境启动期 fail-fast: MOCK_PLC=true / admin 默认密码仍在用 → 拒启动。
+  // 失败时抛错, start() 链路 reject → unhandled rejection 自然退出。
+  await assertProductionReady({
+    nodeEnv: process.env.NODE_ENV,
+    mockPlc: process.env.MOCK_PLC === 'true',
+    sqlite,
+  });
   // v1.8.0 bucket 1: JWT_SECRET production guard.
   assertJwtSecretSafe();
   server.listen(PORT, () => {

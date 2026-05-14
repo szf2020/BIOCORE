@@ -15,7 +15,9 @@
     "soak": "node scripts/soak-test.mjs",
     "soak:short": "SOAK_DURATION_HOURS=1 node scripts/soak-test.mjs",
     "soak:tiny": "SOAK_DURATION_HOURS=0.05 SOAK_BROWSER=false node scripts/soak-test.mjs",
-    "healthcheck": "node scripts/healthcheck.mjs"
+    "healthcheck": "node scripts/healthcheck.mjs",
+    "backup": "bash scripts/backup-db.sh",
+    "backup:restore": "bash scripts/restore-db.sh"
   },
   "engines": {
     "node": ">=20.0.0",
