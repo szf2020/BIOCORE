@@ -55,10 +55,100 @@ VALUES (
   'admin'
 );
 
+-- ── 配方 2: E.coli BL21(DE3) IPTG 诱导产重组蛋白 ──
+INSERT OR IGNORE INTO recipes
+  (recipe_id, version, name, author, target_organism,
+   vessel_config, phases, status, dag_schema_version, is_template, created_by)
+VALUES (
+  'EC-BL21-001', '1.0.0', 'E.coli BL21(DE3) IPTG 诱导产蛋白 (5L)',
+  'admin', 'E.coli BL21(DE3)',
+  '{"id":"F02","working_volume_L":4}',
+  '[
+    {"phase_id":"P01","type":"cip_rinse","params":{"duration_min":12,"water_temp_C":40}},
+    {"phase_id":"P02","type":"sip","params":{"duration_min":25,"sip_temp_C":121,"pressure_kPa":205}},
+    {"phase_id":"P03","type":"cooling","params":{"target_temp_C":37,"max_duration_min":30}},
+    {"phase_id":"P04","type":"medium_charge","params":{"medium_id":"LB-Kan","volume_L":3.0}},
+    {"phase_id":"P05","type":"inoculate","params":{"seed_volume_L":0.3,"od600":0.1}},
+    {"phase_id":"P06","type":"growth","params":{"setpoint_temp_C":37,"setpoint_pH":7.0,"setpoint_DO_pct":30,"rpm":400,"duration_h":4,"target_od600":0.8}},
+    {"phase_id":"P07","type":"induction","params":{"setpoint_temp_C":25,"iptg_mM":0.5,"duration_h":16,"rpm":350}},
+    {"phase_id":"P08","type":"harvest","params":{"chill_temp_C":10,"chill_duration_min":20}},
+    {"phase_id":"P09","type":"drain","params":{"transfer_rate_L_min":1.0}},
+    {"phase_id":"P10","type":"post_cip","params":{"duration_min":15,"naoh_pct":2.0}}
+  ]',
+  'draft', 1, 0, 'admin'
+);
+
+-- ── 配方 3: 酿酒酵母 乙醇发酵 (8 phases, 简化无诱导期) ──
+INSERT OR IGNORE INTO recipes
+  (recipe_id, version, name, author, target_organism,
+   vessel_config, phases, status, dag_schema_version, is_template, created_by)
+VALUES (
+  'SC-ETOH-001', '1.0.0', '酿酒酵母 乙醇发酵 (5L)',
+  'admin', 'S.cerevisiae',
+  '{"id":"F03","working_volume_L":4.5}',
+  '[
+    {"phase_id":"P01","type":"cip_rinse","params":{"duration_min":15}},
+    {"phase_id":"P02","type":"sip","params":{"duration_min":30,"sip_temp_C":121}},
+    {"phase_id":"P03","type":"cooling","params":{"target_temp_C":30}},
+    {"phase_id":"P04","type":"medium_charge","params":{"medium_id":"YPD-glucose-200","volume_L":4.0}},
+    {"phase_id":"P05","type":"inoculate","params":{"seed_volume_L":0.5,"cell_density_e6":5}},
+    {"phase_id":"P06","type":"fermentation","params":{"setpoint_temp_C":30,"setpoint_pH":4.5,"rpm":120,"duration_h":48,"anaerobic":true}},
+    {"phase_id":"P07","type":"harvest","params":{"chill_temp_C":8,"chill_duration_min":40}},
+    {"phase_id":"P08","type":"post_cip","params":{"duration_min":18,"naoh_pct":1.5}}
+  ]',
+  'draft', 1, 0, 'admin'
+);
+
+-- ── 配方 4: CHO 灌流培养 (高密度连续灌流) ──
+INSERT OR IGNORE INTO recipes
+  (recipe_id, version, name, author, target_organism,
+   vessel_config, phases, status, dag_schema_version, is_template, created_by)
+VALUES (
+  'CHO-PERF-001', '1.0.0', 'CHO 高密度灌流培养 (5L)',
+  'admin', 'CHO-DG44',
+  '{"id":"F04","working_volume_L":3.5}',
+  '[
+    {"phase_id":"P01","type":"cip_rinse","params":{"duration_min":15,"rinse_cycles":3}},
+    {"phase_id":"P02","type":"cip_clean","params":{"duration_min":35,"naoh_pct":1.0}},
+    {"phase_id":"P03","type":"sip","params":{"duration_min":35,"sip_temp_C":121}},
+    {"phase_id":"P04","type":"cooling","params":{"target_temp_C":37}},
+    {"phase_id":"P05","type":"medium_charge","params":{"medium_id":"CD-Perf-Base","volume_L":3.0}},
+    {"phase_id":"P06","type":"inoculate","params":{"seed_volume_L":0.5,"cell_density_e6":1.0}},
+    {"phase_id":"P07","type":"growth","params":{"setpoint_temp_C":37,"setpoint_pH":7.1,"setpoint_DO_pct":50,"rpm":180,"duration_h":48}},
+    {"phase_id":"P08","type":"perfusion","params":{"setpoint_temp_C":37,"vvd":1.0,"bleed_rate_mL_h":15,"target_density_e6":80,"duration_d":14}},
+    {"phase_id":"P09","type":"harvest","params":{"chill_temp_C":12,"clarification":"depth_filter"}},
+    {"phase_id":"P10","type":"post_cip","params":{"duration_min":25,"naoh_pct":1.5,"rinse_cycles":3}}
+  ]',
+  'draft', 1, 0, 'admin'
+);
+
+-- ── 配方 5: HEK293 病毒颗粒生产 ──
+INSERT OR IGNORE INTO recipes
+  (recipe_id, version, name, author, target_organism,
+   vessel_config, phases, status, dag_schema_version, is_template, created_by)
+VALUES (
+  'HEK-VLP-001', '1.0.0', 'HEK293 病毒颗粒 (VLP) 生产 (5L)',
+  'admin', 'HEK293T',
+  '{"id":"F01","working_volume_L":3.5}',
+  '[
+    {"phase_id":"P01","type":"cip_rinse","params":{"duration_min":15}},
+    {"phase_id":"P02","type":"sip","params":{"duration_min":30,"sip_temp_C":121}},
+    {"phase_id":"P03","type":"cooling","params":{"target_temp_C":37}},
+    {"phase_id":"P04","type":"medium_charge","params":{"medium_id":"Expi293","volume_L":3.0}},
+    {"phase_id":"P05","type":"inoculate","params":{"seed_volume_L":0.5,"cell_density_e6":2.0}},
+    {"phase_id":"P06","type":"growth","params":{"setpoint_temp_C":37,"setpoint_pH":7.1,"setpoint_DO_pct":40,"rpm":120,"duration_h":48,"target_density_e6":5.0}},
+    {"phase_id":"P07","type":"transfection","params":{"plasmid_ug_mL":1.0,"pei_ratio":3,"duration_h":4}},
+    {"phase_id":"P08","type":"vlp_production","params":{"setpoint_temp_C":35,"setpoint_pH":7.0,"duration_h":72,"feed_id":"glucose-stock-200"}},
+    {"phase_id":"P09","type":"harvest","params":{"chill_temp_C":10,"clarification":"centrifuge","rpm_clarify":4000}},
+    {"phase_id":"P10","type":"post_cip","params":{"duration_min":25,"naoh_pct":2.0}}
+  ]',
+  'draft', 1, 0, 'admin'
+);
+
 COMMIT;
 
 -- ── 验证输出 ──
 SELECT '反应器:' AS section;
 SELECT reactor_id, name, vessel_volume_L, enabled FROM reactor_configs ORDER BY sort_order;
 SELECT '配方:' AS section;
-SELECT recipe_id, version, name, status, json_array_length(phases) AS phase_count FROM recipes WHERE recipe_id='CHO-PROD-001';
+SELECT recipe_id, version, name, status, json_array_length(phases) AS phase_count FROM recipes ORDER BY recipe_id;
