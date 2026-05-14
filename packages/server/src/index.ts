@@ -381,12 +381,27 @@ function convertSingleCondition(c: any): any {
   return result;
 }
 
-// IL/RF 配置从数据库读取
-function getInterlockConfigsFromDB(): any[] {
+// IL/RF 配置从数据库读取 (反应器优先, 缺失回退全局)
+function getInterlockConfigsFromDB(reactorId?: string): any[] {
   try {
-    const rows = sqlite.getDatabase().prepare(
-      'SELECT * FROM interlock_configs WHERE is_enabled = 1 ORDER BY sort_order'
-    ).all();
+    const db = sqlite.getDatabase();
+    const rows: any[] = reactorId
+      ? db.prepare(`
+          WITH merged AS (
+            SELECT * FROM interlock_configs WHERE reactor_id = ? AND is_enabled = 1
+            UNION ALL
+            SELECT g.* FROM interlock_configs g
+            WHERE g.reactor_id IS NULL AND g.is_enabled = 1
+              AND NOT EXISTS (
+                SELECT 1 FROM interlock_configs r
+                WHERE r.id = g.id AND r.reactor_id = ?
+              )
+          )
+          SELECT * FROM merged ORDER BY sort_order
+        `).all(reactorId, reactorId)
+      : db.prepare(
+          'SELECT * FROM interlock_configs WHERE reactor_id IS NULL AND is_enabled = 1 ORDER BY sort_order'
+        ).all();
     return rows.map((r: any) => ({
       ...r,
       plc_tags: typeof r.plc_tags === 'string' ? JSON.parse(r.plc_tags) : (r.plc_tags || []),
@@ -1092,27 +1107,112 @@ apiRouter.post('/formula-configs/validate', (req, res) => {
 
 // ── IL/RF 连锁故障配置 API ──
 
-/** GET /interlock-configs — 列出所有 IL+RF 配置 */
-apiRouter.get('/interlock-configs', (_req, res) => {
+/** GET /interlock-configs — 列出 IL+RF 配置
+ *    ?reactor_id=<id>  返回该罐的 (覆盖 ∪ 全局未覆盖) 合并视图, 每行附 is_override 标识
+ *    无参数            返回全局默认 (reactor_id IS NULL) 列表
+ */
+apiRouter.get('/interlock-configs', (req, res) => {
   try {
-    const rows = sqlite.getDatabase().prepare('SELECT * FROM interlock_configs ORDER BY sort_order').all();
+    const rid = (req.query.reactor_id as string) || '';
+    const db = sqlite.getDatabase();
+    let rows: any[];
+    if (rid) {
+      // 合并视图: 反应器覆盖优先, 未覆盖回退全局
+      rows = db.prepare(`
+        WITH merged AS (
+          SELECT *, 1 AS is_override FROM interlock_configs WHERE reactor_id = ?
+          UNION ALL
+          SELECT g.*, 0 AS is_override FROM interlock_configs g
+          WHERE g.reactor_id IS NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM interlock_configs r
+              WHERE r.id = g.id AND r.reactor_id = ?
+            )
+        )
+        SELECT * FROM merged ORDER BY sort_order
+      `).all(rid, rid);
+    } else {
+      rows = db.prepare(
+        "SELECT *, 0 AS is_override FROM interlock_configs WHERE reactor_id IS NULL ORDER BY sort_order"
+      ).all();
+    }
     res.json(rows.map((r: any) => ({ ...r, plc_tags: safeJSON(r.plc_tags, []), condition: safeJSON(r.condition, {}) })));
   } catch (e) { res.status(500).json({ error: (e as Error).message }); }
 });
 
-/** GET /interlock-configs/:id */
+/** GET /interlock-configs/:id?reactor_id=<id>
+ *  优先返回该罐覆盖, 若无则返回全局默认
+ */
 apiRouter.get('/interlock-configs/:id', (req, res) => {
   try {
-    const row: any = sqlite.getDatabase().prepare('SELECT * FROM interlock_configs WHERE id = ?').get(req.params.id);
+    const rid = (req.query.reactor_id as string) || '';
+    const db = sqlite.getDatabase();
+    let row: any;
+    if (rid) {
+      row = db.prepare('SELECT * FROM interlock_configs WHERE id = ? AND reactor_id = ?').get(req.params.id, rid);
+    }
+    if (!row) {
+      row = db.prepare('SELECT * FROM interlock_configs WHERE id = ? AND reactor_id IS NULL').get(req.params.id);
+    }
     if (!row) return res.status(404).json({ error: '不存在' });
     res.json({ ...row, plc_tags: safeJSON(row.plc_tags, []), condition: safeJSON(row.condition, {}) });
   } catch (e) { res.status(500).json({ error: (e as Error).message }); }
 });
 
-/** PUT /interlock-configs/:id — 修改配置 */
+/** PUT /interlock-configs/:id?reactor_id=<id>
+ *  - 无 reactor_id: 改全局默认 (reactor_id IS NULL 那行)
+ *  - 有 reactor_id: upsert 该罐覆盖 (从全局默认派生缺失字段)
+ */
 apiRouter.put('/interlock-configs/:id', (req, res) => {
   try {
     const b = req.body || {};
+    const rid = (req.query.reactor_id as string) || '';
+    const db = sqlite.getDatabase();
+
+    if (rid) {
+      // 反应器覆盖 upsert
+      const existing: any = db.prepare(
+        'SELECT * FROM interlock_configs WHERE id = ? AND reactor_id = ?'
+      ).get(req.params.id, rid);
+      const base: any = existing || db.prepare(
+        'SELECT * FROM interlock_configs WHERE id = ? AND reactor_id IS NULL'
+      ).get(req.params.id);
+      if (!base) return res.status(404).json({ error: '不存在全局默认或覆盖' });
+
+      const merged = {
+        id: req.params.id,
+        reactor_id: rid,
+        category: base.category,
+        name: b.name ?? base.name,
+        description: b.description ?? base.description,
+        check_type: base.check_type,
+        plc_tags: b.plc_tags !== undefined ? JSON.stringify(b.plc_tags) : base.plc_tags,
+        condition: b.condition !== undefined ? JSON.stringify(b.condition) : base.condition,
+        duration_sec: b.duration_sec ?? base.duration_sec,
+        severity: b.severity ?? base.severity,
+        hold_action: b.hold_action ?? base.hold_action,
+        display_name: b.display_name ?? base.display_name,
+        is_enabled: b.is_enabled !== undefined ? (b.is_enabled ? 1 : 0) : base.is_enabled,
+        is_system: 0,
+        sort_order: base.sort_order,
+      };
+      db.prepare(`
+        INSERT INTO interlock_configs (id, reactor_id, category, name, description, check_type, plc_tags, condition,
+            duration_sec, severity, hold_action, display_name, is_enabled, is_system, sort_order, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        ON CONFLICT (id, IFNULL(reactor_id, '__global__')) DO UPDATE SET
+          name=excluded.name, description=excluded.description,
+          plc_tags=excluded.plc_tags, condition=excluded.condition,
+          duration_sec=excluded.duration_sec, severity=excluded.severity,
+          hold_action=excluded.hold_action, display_name=excluded.display_name,
+          is_enabled=excluded.is_enabled, updated_at=datetime('now')
+      `).run(merged.id, merged.reactor_id, merged.category, merged.name, merged.description, merged.check_type,
+        merged.plc_tags, merged.condition, merged.duration_sec, merged.severity, merged.hold_action,
+        merged.display_name, merged.is_enabled, merged.is_system, merged.sort_order);
+      return res.json({ success: true, override: true });
+    }
+
+    // 全局默认更新 (reactor_id IS NULL)
     const sets: string[] = [];
     const params: any[] = [];
     if (b.name !== undefined)        { sets.push('name = ?'); params.push(b.name); }
@@ -1127,21 +1227,21 @@ apiRouter.put('/interlock-configs/:id', (req, res) => {
     if (sets.length === 0) return res.status(400).json({ error: '无修改内容' });
     sets.push("updated_at = datetime('now')");
     params.push(req.params.id);
-    sqlite.getDatabase().prepare(`UPDATE interlock_configs SET ${sets.join(', ')} WHERE id = ?`).run(...params);
-    res.json({ success: true });
+    db.prepare(`UPDATE interlock_configs SET ${sets.join(', ')} WHERE id = ? AND reactor_id IS NULL`).run(...params);
+    res.json({ success: true, override: false });
   } catch (e) { res.status(500).json({ error: (e as Error).message }); }
 });
 
-/** POST /interlock-configs — 新增自定义检测项 */
+/** POST /interlock-configs — 新增自定义检测项 (reactor_id 可选, 缺省=全局) */
 apiRouter.post('/interlock-configs', (req, res) => {
   try {
     const b = req.body || {};
     if (!b.id || !b.category || !b.name) return res.status(400).json({ error: '缺少 id, category, name' });
     sqlite.getDatabase().prepare(`
-      INSERT INTO interlock_configs (id, category, name, description, check_type, plc_tags, condition, duration_sec, severity, hold_action, display_name, is_enabled, is_system, sort_order)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)
+      INSERT INTO interlock_configs (id, reactor_id, category, name, description, check_type, plc_tags, condition, duration_sec, severity, hold_action, display_name, is_enabled, is_system, sort_order)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)
     `).run(
-      b.id, b.category, b.name, b.description || '',
+      b.id, b.reactor_id || null, b.category, b.name, b.description || '',
       b.check_type || 'tag_compare',
       JSON.stringify(b.plc_tags || []),
       JSON.stringify(b.condition || {}),
@@ -1155,12 +1255,21 @@ apiRouter.post('/interlock-configs', (req, res) => {
   } catch (e) { res.status(400).json({ error: (e as Error).message }); }
 });
 
-/** DELETE /interlock-configs/:id — 删除自定义项 (系统内置不可删) */
+/** DELETE /interlock-configs/:id?reactor_id=<id>
+ *  - 有 reactor_id: 删除该罐覆盖 (回退到全局默认)
+ *  - 无 reactor_id: 删除全局自定义项 (系统内置不可删)
+ */
 apiRouter.delete('/interlock-configs/:id', (req, res) => {
   try {
-    const row: any = sqlite.getDatabase().prepare('SELECT is_system FROM interlock_configs WHERE id = ?').get(req.params.id);
+    const rid = (req.query.reactor_id as string) || '';
+    const db = sqlite.getDatabase();
+    if (rid) {
+      const r: any = db.prepare('DELETE FROM interlock_configs WHERE id = ? AND reactor_id = ?').run(req.params.id, rid);
+      return res.json({ success: true, deleted: r.changes });
+    }
+    const row: any = db.prepare('SELECT is_system FROM interlock_configs WHERE id = ? AND reactor_id IS NULL').get(req.params.id);
     if (row?.is_system) return res.status(400).json({ error: '系统内置检测项不可删除，可禁用' });
-    sqlite.getDatabase().prepare('DELETE FROM interlock_configs WHERE id = ?').run(req.params.id);
+    db.prepare('DELETE FROM interlock_configs WHERE id = ? AND reactor_id IS NULL').run(req.params.id);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: (e as Error).message }); }
 });
@@ -2782,7 +2891,7 @@ const {
 // shared by /reactors POST, /reactors/:id/download-recipe, and the
 // runOrphanRecoveryScan hook in startup.ts. Previously the same config
 // literal was inlined 3 times — now they all delegate to this one helper.
-function buildReactorConfig(_reactorId: string): BatchControllerConfig {
+function buildReactorConfig(reactorId: string): BatchControllerConfig {
   return {
     plcRead: async (tag: string) => {
       if (MOCK_PLC) return devPlcRead(tag);
@@ -2792,7 +2901,7 @@ function buildReactorConfig(_reactorId: string): BatchControllerConfig {
     plcWrite: async (_tag: string, _value: number) => {},
     pollIntervalMs: 1000,
     getTemplateSteps: getTemplateStepsFromDB,
-    getInterlockConfigs: getInterlockConfigsFromDB,
+    getInterlockConfigs: () => getInterlockConfigsFromDB(reactorId),
     // B1.1 (currentNodeId) + B1.2 (loop frames) crash-recovery persistence.
     // Both callbacks are fire-and-forget — failure to persist must not crash
     // the controller; sqlite errors surface elsewhere.

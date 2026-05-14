@@ -1,8 +1,8 @@
-// IL/RF 连锁故障配置页
+// IL/RF 连锁故障配置页 — 全局默认 + 反应器覆盖 (Option A)
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { ShieldCheck, ShieldAlert, Save, RotateCcw, Plus, Trash2 } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Save, Trash2, Globe, Wrench } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,10 +12,11 @@ import { useAudit } from '@/hooks/useAudit';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 interface InterlockConfig {
-  id: string; category: 'IL' | 'RF'; name: string; description: string;
+  id: string; reactor_id: string | null; category: 'IL' | 'RF'; name: string; description: string;
   check_type: string; plc_tags: string[]; condition: any; duration_sec: number;
   severity: string; hold_action: string | null; display_name: string | null;
   is_enabled: number; is_system: number; sort_order: number; updated_at: string;
+  is_override?: number;  // 1 = 该反应器覆盖, 0 = 来自全局默认
 }
 
 export default function InterlockConfigPage() {
@@ -24,6 +25,11 @@ export default function InterlockConfigPage() {
   const [selected, setSelected] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // 反应器选择 — '' = 编辑全局默认
+  const [reactorIds, setReactorIds] = useState<string[]>([]);
+  const [selectedReactor, setSelectedReactor] = useState<string>('');
+
   // 编辑状态
   const [editName, setEditName] = useState('');
   const [editDesc, setEditDesc] = useState('');
@@ -34,17 +40,32 @@ export default function InterlockConfigPage() {
   const [editCondition, setEditCondition] = useState('');
   const [editPlcTags, setEditPlcTags] = useState('');
 
+  // 拉反应器列表
+  useEffect(() => {
+    apiFetch(`${API}/api/reactor-configs`)
+      .then(r => r.ok ? r.json() : [])
+      .then((rows: any[]) => {
+        const ids = Array.isArray(rows) ? rows.filter(r => r?.enabled !== 0).map(r => r.reactor_id).filter(Boolean) : [];
+        setReactorIds(ids);
+      })
+      .catch(() => { /* offline OK */ });
+  }, []);
+
+  // 拉连锁配置 (按 selectedReactor 维度)
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await apiFetch(`${API}/api/v1/interlock-configs`);
+      const url = selectedReactor
+        ? `${API}/api/v1/interlock-configs?reactor_id=${encodeURIComponent(selectedReactor)}`
+        : `${API}/api/v1/interlock-configs`;
+      const r = await apiFetch(url);
       if (r.ok) {
         const d = await r.json();
         setConfigs(Array.isArray(d?.data ?? d) ? (d?.data ?? d) : []);
       }
     } catch { /* ignore */ }
     setLoading(false);
-  }, []);
+  }, [selectedReactor]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -61,7 +82,7 @@ export default function InterlockConfigPage() {
       setEditCondition(JSON.stringify(current.condition, null, 2));
       setEditPlcTags(current.plc_tags.join(', '));
     }
-  }, [selected, current?.updated_at]);
+  }, [selected, current?.updated_at, selectedReactor]);
 
   const saveConfig = () => {
     if (!current) return;
@@ -69,12 +90,16 @@ export default function InterlockConfigPage() {
     try { parsedCondition = JSON.parse(editCondition); }
     catch { alert('条件 JSON 格式错误'); return; }
 
+    const isOverride = !!selectedReactor;
+    const targetLabel = isOverride ? `${selectedReactor} 覆盖` : '全局默认';
     audit.confirm({
-      description: `修改连锁配置 ${current.id}: ${editName}`,
-      action: 'interlock_update', targetType: 'interlock_config', targetId: current.id,
+      description: `修改 ${targetLabel} 连锁配置 ${current.id}: ${editName}`,
+      action: 'interlock_update', targetType: 'interlock_config',
+      targetId: isOverride ? `${current.id}@${selectedReactor}` : current.id,
       onConfirm: async () => {
         setSaving(true);
-        const r = await apiFetch(`${API}/api/v1/interlock-configs/${current.id}`, {
+        const qs = selectedReactor ? `?reactor_id=${encodeURIComponent(selectedReactor)}` : '';
+        const r = await apiFetch(`${API}/api/v1/interlock-configs/${current.id}${qs}`, {
           method: 'PUT', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             display_name: editName !== current.name ? editName : null,
@@ -94,6 +119,17 @@ export default function InterlockConfigPage() {
     });
   };
 
+  const revertOverride = async () => {
+    if (!current || !selectedReactor || !current.is_override) return;
+    if (!confirm(`确认删除 ${selectedReactor} 的 ${current.id} 覆盖, 回退到全局默认?`)) return;
+    const r = await apiFetch(
+      `${API}/api/v1/interlock-configs/${current.id}?reactor_id=${encodeURIComponent(selectedReactor)}`,
+      { method: 'DELETE' }
+    );
+    if (r.ok) { setSelected(''); await load(); }
+    else alert('删除覆盖失败');
+  };
+
   const ilConfigs = configs.filter(c => c.category === 'IL');
   const rfConfigs = configs.filter(c => c.category === 'RF');
 
@@ -106,14 +142,42 @@ export default function InterlockConfigPage() {
           <ShieldCheck className="w-5 h-5 text-primary" /> 连锁/故障配置
         </h1>
         <p className="text-xs text-muted-foreground mt-1">
-          配置启动连锁 (IL) 和运行故障 (RF) 的变量、阈值、严重性和显示内容
+          配置启动连锁 (IL) 和运行故障 (RF) 的变量、阈值、严重性和显示内容 — 全局默认或单罐覆盖
         </p>
+      </div>
+
+      {/* 反应器选择栏 */}
+      <div className="flex items-center gap-2 px-3 py-2 border border-border rounded bg-card/50 overflow-x-auto">
+        <span className="text-xs text-muted-foreground shrink-0">作用对象:</span>
+        <button
+          onClick={() => { setSelectedReactor(''); setSelected(''); }}
+          className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium shrink-0 transition-all ${
+            selectedReactor === ''
+              ? 'bg-primary/15 text-primary border border-primary/40'
+              : 'bg-muted/50 text-muted-foreground border border-transparent hover:bg-muted'
+          }`}>
+          <Globe className="w-3 h-3" /> 全局默认
+        </button>
+        {reactorIds.length === 0 && (
+          <span className="text-xs text-muted-foreground">无反应器</span>
+        )}
+        {reactorIds.map(id => (
+          <button
+            key={id}
+            onClick={() => { setSelectedReactor(id); setSelected(''); }}
+            className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-mono font-semibold shrink-0 transition-all ${
+              selectedReactor === id
+                ? 'bg-primary/15 text-primary border border-primary/40'
+                : 'bg-muted/50 text-muted-foreground border border-transparent hover:bg-muted'
+            }`}>
+            <Wrench className="w-3 h-3" /> {id}
+          </button>
+        ))}
       </div>
 
       <div className="grid md:grid-cols-3 gap-4">
         {/* 左侧列表 */}
         <div className="space-y-3">
-          {/* IL */}
           <div>
             <div className="flex items-center gap-1.5 mb-1.5 text-xs font-semibold">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> 启动连锁 IL ({ilConfigs.length})
@@ -124,7 +188,6 @@ export default function InterlockConfigPage() {
               ))}
             </div>
           </div>
-          {/* RF */}
           <div>
             <div className="flex items-center gap-1.5 mb-1.5 text-xs font-semibold">
               <ShieldAlert className="w-3.5 h-3.5 text-amber-600" /> 运行故障 RF ({rfConfigs.length})
@@ -142,12 +205,27 @@ export default function InterlockConfigPage() {
           {current ? (
             <Card>
               <CardContent className="p-5 space-y-4">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono font-bold text-primary">{current.id}</span>
                   <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${current.severity === 'critical' ? 'bg-red-500/15 text-red-600' : current.severity === 'warning' ? 'bg-yellow-500/15 text-amber-600' : 'bg-blue-500/15 text-blue-600'}`}>
                     {current.severity === 'critical' ? '严重' : current.severity === 'warning' ? '警告' : '信息'}
                   </span>
                   {!current.is_enabled && <span className="text-[9px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">已禁用</span>}
+                  {selectedReactor ? (
+                    current.is_override ? (
+                      <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded flex items-center gap-1">
+                        <Wrench className="w-2.5 h-2.5" /> {selectedReactor} 覆盖
+                      </span>
+                    ) : (
+                      <span className="text-[9px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded flex items-center gap-1">
+                        <Globe className="w-2.5 h-2.5" /> 来自全局默认 — 保存即创建 {selectedReactor} 覆盖
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-[9px] bg-blue-500/15 text-blue-600 px-1.5 py-0.5 rounded flex items-center gap-1">
+                      <Globe className="w-2.5 h-2.5" /> 全局默认
+                    </span>
+                  )}
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -200,18 +278,23 @@ export default function InterlockConfigPage() {
 
                 <div className="flex items-center gap-2 pt-2 border-t border-border">
                   <Button size="sm" onClick={saveConfig} disabled={saving}>
-                    <Save className="w-3.5 h-3.5 mr-1" />{saving ? '保存中...' : '保存修改'}
+                    <Save className="w-3.5 h-3.5 mr-1" />
+                    {saving ? '保存中...' : (selectedReactor && !current.is_override ? `创建 ${selectedReactor} 覆盖` : '保存修改')}
                   </Button>
-                  {current.is_system ? (
+                  {selectedReactor && current.is_override ? (
+                    <Button size="sm" variant="outline" className="text-amber-600" onClick={revertOverride}>
+                      <Trash2 className="w-3.5 h-3.5 mr-1" />删除覆盖 (回退全局)
+                    </Button>
+                  ) : (!selectedReactor && current.is_system) ? (
                     <span className="text-[9px] text-muted-foreground">系统内置 · 可修改阈值但不可删除</span>
-                  ) : (
+                  ) : (!selectedReactor && !current.is_system) ? (
                     <Button size="sm" variant="outline" className="text-red-600" onClick={async () => {
                       const r = await apiFetch(`${API}/api/v1/interlock-configs/${current.id}`, { method: 'DELETE' });
                       if (r.ok) { setSelected(''); await load(); }
                     }}>
                       <Trash2 className="w-3.5 h-3.5 mr-1" />删除
                     </Button>
-                  )}
+                  ) : null}
                 </div>
               </CardContent>
             </Card>
@@ -219,7 +302,11 @@ export default function InterlockConfigPage() {
             <Card>
               <CardContent className="p-10 text-center text-muted-foreground">
                 <ShieldCheck className="w-10 h-10 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-sm">选择左侧检测项查看和编辑配置</p>
+                <p className="text-sm">
+                  {loading ? '加载中...' : selectedReactor
+                    ? `选择左侧检测项查看 ${selectedReactor} 的配置 (覆盖优先, 否则显示全局默认)`
+                    : '选择左侧检测项查看和编辑全局默认配置'}
+                </p>
               </CardContent>
             </Card>
           )}
@@ -238,6 +325,9 @@ function ConfigCard({ config, selected, onClick }: { config: InterlockConfig; se
       <div className="flex items-center gap-2">
         <span className="font-mono font-bold w-10 flex-shrink-0">{c.id}</span>
         <span className="flex-1 truncate">{c.display_name || c.name}</span>
+        {c.is_override ? (
+          <span className="text-[8px] bg-primary/15 text-primary px-1 rounded shrink-0">覆盖</span>
+        ) : null}
         <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.severity === 'critical' ? 'bg-red-500' : c.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'}`} />
       </div>
       {c.duration_sec > 0 && <span className="text-[9px] text-muted-foreground ml-12">持续 {c.duration_sec}s</span>}
