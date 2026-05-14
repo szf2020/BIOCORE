@@ -11,6 +11,7 @@ import {
   Database, Bot, Settings, Wifi, WifiOff, Blocks, ChevronDown,
   Gauge, Users, Bell, User, Activity, Droplets, LogOut, Key, FileText, FlaskConical,
   ShieldCheck, Sigma, Shield, TrendingUp, Brain, Workflow, Building2, Sun, Moon, Monitor,
+  ChevronUp,
 } from 'lucide-react';
 import { useTheme, type ThemeMode } from '@/hooks/useTheme';
 
@@ -340,7 +341,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          {/* Right: connection + alarm + user + clock */}
+          {/* Middle: 报警信息条 — 显示最新一条报警, 上/下翻 */}
+          <TopBarAlarmStrip alarms={alarms} />
+
+          {/* Right: connection + theme + user + clock (Bell 已并入中间报警条) */}
           <div className="flex items-center gap-5">
             <div className="flex items-center gap-1.5" title={wsConnected ? '服务器已连接' : '服务器未连接'}>
               {wsConnected ? (
@@ -352,15 +356,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             <ThemeToggle />
-
-            <button className="relative p-1.5 rounded-md hover:bg-accent transition-colors" title="报警">
-              <Bell className="w-4 h-4 text-muted-foreground" />
-              {unacknowledgedCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-mes-red text-white text-[10px] font-bold leading-none">
-                  {unacknowledgedCount > 99 ? '99+' : unacknowledgedCount}
-                </span>
-              )}
-            </button>
 
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
@@ -383,6 +378,73 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Page Content — on surface-base (lightest layer) */}
         <main className="flex-1 overflow-auto mes-scroll surface-base">{children}</main>
       </div>
+    </div>
+  );
+}
+
+// 判定 alarm 是否为 CUSUM/AI 类提示 (与 NoticeBanner.isNotice 一致)
+function isNoticeAlarm(a: any): boolean {
+  const src = String(a?.source || '');
+  const code = String(a?.alarm_code || '');
+  return src.startsWith('ai:') || src === 'cusum_anomaly' || code.startsWith('CUSUM_');
+}
+
+// TopBar 报警信息条 — 显示最新一条操作性报警, 上/下翻 (过滤掉 CUSUM 提示)
+function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
+  const unack = React.useMemo(
+    () => alarms.filter(a => !a.acknowledged && !isNoticeAlarm(a)),
+    [alarms]
+  );
+  const [idx, setIdx] = React.useState(0);
+  React.useEffect(() => {
+    if (idx >= unack.length) setIdx(0);
+  }, [unack.length, idx]);
+
+  if (unack.length === 0) {
+    return (
+      <div className="flex-1 flex items-center gap-2 px-4 mx-4 max-w-5xl">
+        <Bell className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
+        <span className="text-xs text-muted-foreground/60">报警信息</span>
+        <span className="flex-1 text-xs text-muted-foreground/50 truncate">无未确认报警</span>
+      </div>
+    );
+  }
+
+  const cur = unack[idx] || unack[0];
+  const sev = (cur as any).severity || 'warning';
+  const sevColor = sev === 'critical' ? 'bg-red-500/15 text-red-600 border-red-500/30'
+    : sev === 'warning' ? 'bg-yellow-500/15 text-amber-600 border-yellow-500/30'
+    : 'bg-blue-500/15 text-blue-600 border-blue-500/30';
+
+  return (
+    <div className="flex-1 flex items-center gap-2 px-3 mx-4 max-w-5xl rounded-md border border-border bg-card/60 h-9">
+      <Bell className="w-3.5 h-3.5 text-mes-red shrink-0" />
+      <span className="text-xs font-medium text-foreground/80 shrink-0">报警信息</span>
+      <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border ${sevColor}`}>
+        {unack.length}
+      </span>
+      <span className="flex-1 text-xs text-foreground truncate" title={cur.message}>
+        {cur.message || '(无消息)'}
+      </span>
+      <span className="shrink-0 text-[10px] text-muted-foreground font-mono tabular-nums">
+        {idx + 1}/{unack.length}
+      </span>
+      <button
+        onClick={() => setIdx(i => (i - 1 + unack.length) % unack.length)}
+        disabled={unack.length < 2}
+        className="shrink-0 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        title="上一条"
+      >
+        <ChevronUp className="w-3 h-3" />
+      </button>
+      <button
+        onClick={() => setIdx(i => (i + 1) % unack.length)}
+        disabled={unack.length < 2}
+        className="shrink-0 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        title="下一条"
+      >
+        <ChevronDown className="w-3 h-3" />
+      </button>
     </div>
   );
 }
