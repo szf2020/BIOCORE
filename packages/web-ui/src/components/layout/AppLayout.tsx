@@ -10,8 +10,9 @@ import {
   LayoutDashboard, LineChart, BookOpen, History,
   Database, Bot, Settings, Wifi, WifiOff, Blocks, ChevronDown,
   Gauge, Users, Bell, User, Activity, Droplets, LogOut, Key, FileText, FlaskConical,
-  ShieldCheck, Sigma, Shield, TrendingUp, Brain, Workflow, Building2,
+  ShieldCheck, Sigma, Shield, TrendingUp, Brain, Workflow, Building2, Sun, Moon, Monitor,
 } from 'lucide-react';
+import { useTheme, type ThemeMode } from '@/hooks/useTheme';
 
 const NAV_ITEMS = [
   { href: '/dashboard', icon: LayoutDashboard, label: '监控面板', children: [
@@ -350,6 +351,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <div className={`status-led ${wsConnected ? 'status-led-running' : 'status-led-stopped'}`} />
             </div>
 
+            <ThemeToggle />
+
             <button className="relative p-1.5 rounded-md hover:bg-accent transition-colors" title="报警">
               <Bell className="w-4 h-4 text-muted-foreground" />
               {unacknowledgedCount > 0 && (
@@ -381,5 +384,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-auto mes-scroll surface-base">{children}</main>
       </div>
     </div>
+  );
+}
+
+// 主题切换按钮 — 循环 light → dark → system
+function ThemeToggle() {
+  const { mode, cycle } = useTheme();
+  const LABEL: Record<ThemeMode, string> = { light: '浅色', dark: '深色', system: '跟随系统' };
+  const Icon = mode === 'light' ? Sun : mode === 'dark' ? Moon : Monitor;
+  return (
+    <button
+      onClick={cycle}
+      title={`主题: ${LABEL[mode]} (点击切换)`}
+      className="p-1.5 rounded-md hover:bg-accent transition-colors"
+    >
+      <Icon className="w-4 h-4 text-muted-foreground" />
+    </button>
   );
 }
