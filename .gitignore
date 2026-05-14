@@ -13,3 +13,7 @@ logs/
 *.tmp
 .obsidian/
 **/.omc/state/
+**/.omc/sessions/
+.DS_Store
+**/.DS_Store
+backups/
