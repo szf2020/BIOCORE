@@ -264,17 +264,7 @@ export default function DashboardPage() {
             })}
           </div>
 
-          {/* ② 次要参数行 */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-border bg-card px-5 py-3 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">通气量</span>
-              <span className="font-mono font-bold text-xl">{airflow !== null ? airflow.toFixed(1) : '--'} <span className="text-sm text-muted-foreground font-normal">NL/min</span></span>
-            </div>
-            <div className="rounded-lg border border-border bg-card px-5 py-3 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">补料速率</span>
-              <span className="font-mono font-bold text-xl">{feedRate !== null ? feedRate.toFixed(1) : '--'} <span className="text-sm text-muted-foreground font-normal">mL/h</span></span>
-            </div>
-          </div>
+          {/* ② 次要参数行已并入底部 CalculatedParamsBar (通气量 / 补料速率) */}
 
           {/* ③ 实时趋势图 (按布局配置显隐) */}
           {dashLayout.showTrends && (
@@ -313,7 +303,13 @@ export default function DashboardPage() {
       </div>
 
       {/* 底部测算值横条 (按布局配置显隐) */}
-      {dashLayout.showCalculated && <CalculatedParamsBar params={calculatedParams} />}
+      {dashLayout.showCalculated && (
+        <CalculatedParamsBar
+          params={calculatedParams}
+          airflow={_isReactorActive ? airflow : null}
+          feedRate={_isReactorActive ? feedRate : null}
+        />
+      )}
 
       {/* 布局编辑器弹窗 */}
       <DashboardLayoutEditor
