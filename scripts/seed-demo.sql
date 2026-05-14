@@ -1,8 +1,10 @@
 -- ============================================================
 -- BIOCore Demo Seed
--- 用途: 演示/开发环境初始化 — 4 反应器 + 1 完整配方 (10 phases)
--- 用法: sqlite3 data/biocore.db < scripts/seed-demo.sql
+-- 用途: 演示/开发环境初始化 — 4 反应器 + 5 完整配方
+-- 用法: sqlite3 packages/server/data/biocore.db < scripts/seed-demo.sql
 --      或: pnpm seed:demo
+-- 注意: 服务器 DATA_DIR='./data' 相对路径 + cwd=packages/server,
+--      所以服务器 DB 路径是 packages/server/data/biocore.db, 不是 repo 根 ./data
 -- 幂等: INSERT OR REPLACE 用于反应器, INSERT OR IGNORE 用于配方 (PK 冲突跳过)
 -- ============================================================
 
