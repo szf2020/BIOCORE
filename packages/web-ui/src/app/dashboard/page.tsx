@@ -13,8 +13,8 @@ import { useRealtimeStore } from '@/stores/realtime-store';
 import dynamic from 'next/dynamic';
 import { ControlPanel } from '@/components/dashboard/ControlPanel';
 import { TrendChartGroup } from '@/components/dashboard/TrendChartGroup';
-import { AlarmBanner } from '@/components/dashboard/AlarmBanner';
-import { NoticeBanner, isNotice } from '@/components/dashboard/NoticeBanner';
+import { EventCenter } from '@/components/dashboard/EventCenter';
+import { isNotice } from '@/components/dashboard/NoticeBanner';
 import { CalculatedParamsBar } from '@/components/dashboard/CalculatedParamsBar';
 import { CusumAlertPanel } from '@/components/dashboard/CusumAlertPanel';
 import { FeedAdvisorCard } from '@/components/dashboard/FeedAdvisorCard';
@@ -276,7 +276,7 @@ export default function DashboardPage() {
           />
           )}
 
-          {/* ④ 报警信息 (操作性故障 — 泵故障/液位超限/RF 触发) */}
+          {/* ④ 事件中心 — 报警 + 提示合并卡 (Tabs 切换, 限高内滚) */}
           {dashLayout.showAlarms && (() => {
             const acknowledgeFn = async (id: string) => {
               try {
@@ -289,12 +289,7 @@ export default function DashboardPage() {
             };
             const operAlarms = alarms.filter(a => !isNotice(a));
             const noticeAlarms = alarms.filter(a => isNotice(a));
-            return (
-              <>
-                <AlarmBanner alarms={operAlarms} onAcknowledge={acknowledgeFn} />
-                <NoticeBanner notices={noticeAlarms} onAcknowledge={acknowledgeFn} />
-              </>
-            );
+            return <EventCenter alarms={operAlarms} notices={noticeAlarms} onAcknowledge={acknowledgeFn} />;
           })()}
 
           {/* ⑤ CUSUM 实时异常检测 */}
