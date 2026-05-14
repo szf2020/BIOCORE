@@ -239,10 +239,10 @@ export default function RecipeListPage() {
     });
   };
 
-  // 下载配方到罐子
-  const REACTORS = ['F01', 'F02', 'F03', 'F04', 'F05', 'F06', 'F07', 'F08'];
+  // 下载配方到罐子 — REACTORS 从 /api/reactor-configs 动态拉取
+  const [reactorIds, setReactorIds] = useState<string[]>([]);
   const [showDownload, setShowDownload] = useState<RecipeSummary | null>(null);
-  const [downloadReactor, setDownloadReactor] = useState('F01');
+  const [downloadReactor, setDownloadReactor] = useState<string>('');
   const [downloading, setDownloading] = useState(false);
   const [downloadResult, setDownloadResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [reactorStatuses, setReactorStatuses] = useState<Record<string, any>>({});
@@ -250,21 +250,36 @@ export default function RecipeListPage() {
   // M3.1: 历史抽屉
   const [historyOpenFor, setHistoryOpenFor] = useState<string | null>(null);
 
+  // 拉取启用反应器
+  useEffect(() => {
+    fetch(`${API}/api/reactor-configs`)
+      .then(r => r.ok ? r.json() : [])
+      .then((rows: any[]) => {
+        const ids = Array.isArray(rows)
+          ? rows.filter(r => r?.enabled !== 0).map(r => r.reactor_id).filter(Boolean)
+          : [];
+        setReactorIds(ids);
+        setDownloadReactor(prev => (prev && ids.includes(prev)) ? prev : (ids[0] || ''));
+      })
+      .catch(() => { /* offline OK */ });
+  }, []);
+
   // 轮询罐子配方状态
   useEffect(() => {
+    if (reactorIds.length === 0) return;
     const poll = () => {
-      Promise.all(REACTORS.map(id =>
+      Promise.all(reactorIds.map(id =>
         fetch(`${API}/api/reactors/${id}/recipe`).then(r => r.json()).catch(() => ({ downloaded: false }))
       )).then(results => {
         const map: Record<string, any> = {};
-        REACTORS.forEach((id, i) => { map[id] = results[i]; });
+        reactorIds.forEach((id, i) => { map[id] = results[i]; });
         setReactorStatuses(map);
       });
     };
     poll();
     const t = setInterval(poll, 2000);
     return () => clearInterval(t);
-  }, []);
+  }, [reactorIds]);
 
   const doDownload = async () => {
     if (!showDownload) return;
@@ -530,7 +545,10 @@ export default function RecipeListPage() {
       <div className="bg-card border border-border rounded-md p-3">
         <div className="text-xs font-semibold text-foreground mb-2">罐子配方状态</div>
         <div className="flex flex-wrap gap-2">
-          {REACTORS.map(id => {
+          {reactorIds.length === 0 && (
+            <span className="text-[10px] text-muted-foreground">无可用反应器</span>
+          )}
+          {reactorIds.map(id => {
             const st = reactorStatuses[id];
             const hasRecipe = st?.downloaded;
             return (
@@ -582,7 +600,10 @@ export default function RecipeListPage() {
               <div>
                 <div className="text-xs font-medium text-foreground mb-2">选择目标罐</div>
                 <div className="grid grid-cols-4 gap-2">
-                  {REACTORS.map(id => {
+                  {reactorIds.length === 0 && (
+                    <span className="col-span-4 text-xs text-muted-foreground text-center py-4">无可用反应器</span>
+                  )}
+                  {reactorIds.map(id => {
                     const st = reactorStatuses[id];
                     const hasRecipe = st?.downloaded;
                     const selected = downloadReactor === id;
