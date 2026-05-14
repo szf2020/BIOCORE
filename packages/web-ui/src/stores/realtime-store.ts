@@ -53,6 +53,36 @@ interface ReactorRecipe {
   downloaded_at: string;
 }
 
+// 多反应器隔离: 单反应器完整运行时数据
+export interface ReactorRuntimeData {
+  processValues: ProcessValues | null;
+  stateUpdate: StateUpdatePayload | null;
+  calculatedParams: CalculatedParams | null;
+  alarms: Alarm[];
+  cusumAlerts: Array<{ channel: string; deviation: number; alarming: boolean; cumPos: number; cumNeg: number }>;
+  cusumHistory: Record<string, Array<{ t: number; cumPos: number; cumNeg: number; deviation: number }>>;
+  softSensorData: SoftSensorData | null;
+  trendBuffer: {
+    timestamps: string[];
+    temperature: number[];
+    pH: number[];
+    DO: number[];
+    rpm: number[];
+    airflow: number[];
+  };
+}
+
+const EMPTY_REACTOR_DATA: ReactorRuntimeData = {
+  processValues: null,
+  stateUpdate: null,
+  calculatedParams: null,
+  alarms: [],
+  cusumAlerts: [],
+  cusumHistory: {},
+  softSensorData: null,
+  trendBuffer: { timestamps: [], temperature: [], pH: [], DO: [], rpm: [], airflow: [] },
+};
+
 interface RealtimeState {
   // 连接状态
   wsConnected: boolean;
@@ -76,6 +106,8 @@ interface RealtimeState {
   // 多反应器: per-reactor 状态映射 (替代 setInterval 轮询)
   reactorStates: Record<string, StateUpdatePayload>;
   reactorRecipes: Record<string, ReactorRecipe | null>;
+  // 多反应器隔离: 各反应器完整运行时数据 (PV/计算/报警/趋势/CUSUM/软测量)
+  reactorData: Record<string, ReactorRuntimeData>;
 
   // 趋势数据缓冲 (最近60分钟, 用于Dashboard趋势图)
   trendBuffer: {
@@ -125,6 +157,7 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
   softSensorData: null,
   reactorStates: {},
   reactorRecipes: {},
+  reactorData: {},
   trendBuffer: { timestamps: [], temperature: [], pH: [], DO: [], rpm: [], airflow: [] },
   batchRuntime: {},
   recentBranchEvaluations: [],
@@ -155,34 +188,63 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
         return;
       }
 
+      // 多反应器隔离 helper: 把 partial 合并到 reactorData[rid]
+      // rid 缺失时退化为只更新顶层字段 (legacy 兼容)
+      const updateReactor = (rid: string | null | undefined, patch: Partial<ReactorRuntimeData>) => {
+        if (!rid) return;
+        set((s) => {
+          const prev = s.reactorData[rid] || EMPTY_REACTOR_DATA;
+          return {
+            reactorData: { ...s.reactorData, [rid]: { ...prev, ...patch } },
+          };
+        });
+      };
+
       switch (msg.channel) {
-        case 'pv_realtime':
+        case 'pv_realtime': {
           // 追加到趋势缓冲 (single set() call)
           // T13 风险 #5 缓解：环形缓冲上限 3600 = 60min × 1Hz, 防止 24h dashboard 视图无限增长。
-          // 若放宽 (e.g. 7200=2h@1Hz)，需同步更新 scripts/leak-audit/regression-guard-pv-cap.mjs
           const buf = get().trendBuffer;
-          const MAX_POINTS = 3600; // 60分钟 * 60秒 (T13 risk#5 cap, regression-guarded)
-          set({
-            processValues: msg.payload as ProcessValues,
-            trendBuffer: {
-              timestamps: [...buf.timestamps, msg.timestamp].slice(-MAX_POINTS),
-              temperature: [...buf.temperature, msg.payload['AI-0'] ?? 0].slice(-MAX_POINTS),
-              pH: [...buf.pH, msg.payload['AI-2'] ?? 0].slice(-MAX_POINTS),
-              DO: [...buf.DO, msg.payload['AI-3'] ?? 0].slice(-MAX_POINTS),
-              rpm: [...buf.rpm, msg.payload.rpm ?? 0].slice(-MAX_POINTS),
-              airflow: [...buf.airflow, msg.payload['AI-5'] ?? 0].slice(-MAX_POINTS),
-            },
-          });
+          const MAX_POINTS = 3600;
+          const pv = msg.payload as ProcessValues;
+          const nextTrend = {
+            timestamps: [...buf.timestamps, msg.timestamp].slice(-MAX_POINTS),
+            temperature: [...buf.temperature, msg.payload['AI-0'] ?? 0].slice(-MAX_POINTS),
+            pH: [...buf.pH, msg.payload['AI-2'] ?? 0].slice(-MAX_POINTS),
+            DO: [...buf.DO, msg.payload['AI-3'] ?? 0].slice(-MAX_POINTS),
+            rpm: [...buf.rpm, msg.payload.rpm ?? 0].slice(-MAX_POINTS),
+            airflow: [...buf.airflow, msg.payload['AI-5'] ?? 0].slice(-MAX_POINTS),
+          };
+          // legacy 顶层 (单反应器组件仍用)
+          set({ processValues: pv, trendBuffer: nextTrend });
+          // 反应器隔离写入
+          const rid = msg.reactor_id;
+          if (rid) {
+            const prevReactor = get().reactorData[rid] || EMPTY_REACTOR_DATA;
+            const reactorTrend = prevReactor.trendBuffer;
+            updateReactor(rid, {
+              processValues: pv,
+              trendBuffer: {
+                timestamps: [...reactorTrend.timestamps, msg.timestamp].slice(-MAX_POINTS),
+                temperature: [...reactorTrend.temperature, msg.payload['AI-0'] ?? 0].slice(-MAX_POINTS),
+                pH: [...reactorTrend.pH, msg.payload['AI-2'] ?? 0].slice(-MAX_POINTS),
+                DO: [...reactorTrend.DO, msg.payload['AI-3'] ?? 0].slice(-MAX_POINTS),
+                rpm: [...reactorTrend.rpm, msg.payload.rpm ?? 0].slice(-MAX_POINTS),
+                airflow: [...reactorTrend.airflow, msg.payload['AI-5'] ?? 0].slice(-MAX_POINTS),
+              },
+            });
+          }
           break;
+        }
 
         case 'state_update': {
           const payload = msg.payload as StateUpdatePayload & { reactor_id?: string };
           // 旧字段保留用于全局组件 (TopBar 状态徽章)
           set({ stateUpdate: payload });
-          // 多反应器: 按 reactor_id 写入 map
           const rid = payload.reactor_id || msg.reactor_id;
           if (rid) {
             set((s) => ({ reactorStates: { ...s.reactorStates, [rid]: payload } }));
+            updateReactor(rid, { stateUpdate: payload });
           }
           break;
         }
@@ -208,14 +270,23 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
           break;
         }
 
-        case 'calculated':
-          set({ calculatedParams: msg.payload as CalculatedParams });
+        case 'calculated': {
+          const calc = msg.payload as CalculatedParams;
+          set({ calculatedParams: calc });
+          updateReactor(msg.reactor_id, { calculatedParams: calc });
           break;
+        }
 
-        case 'alarm':
+        case 'alarm': {
           const alarm = msg.payload as Alarm;
           set((s) => ({ alarms: [alarm, ...s.alarms].slice(0, 100) }));
+          const rid = msg.reactor_id;
+          if (rid) {
+            const prev = get().reactorData[rid] || EMPTY_REACTOR_DATA;
+            updateReactor(rid, { alarms: [alarm, ...prev.alarms].slice(0, 100) });
+          }
           break;
+        }
 
         case 'cusum': {
           const alerts = msg.payload as Array<{
@@ -223,7 +294,7 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
             cumPos: number; cumNeg: number;
           }>;
           const now = Date.now();
-          const MAX_CUSUM_POINTS = 300; // 最近 300 个采样点 (~5 分钟 @1s) (T13 risk#5 cap, regression-guarded)
+          const MAX_CUSUM_POINTS = 300;
           const prevHistory = get().cusumHistory;
           const nextHistory = { ...prevHistory };
           for (const a of alerts) {
@@ -233,6 +304,19 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
             ].slice(-MAX_CUSUM_POINTS);
           }
           set({ cusumAlerts: alerts, cusumHistory: nextHistory });
+          // 反应器隔离: 维护各反应器的 cusumHistory
+          const rid = msg.reactor_id;
+          if (rid) {
+            const prev = get().reactorData[rid] || EMPTY_REACTOR_DATA;
+            const rHist = { ...prev.cusumHistory };
+            for (const a of alerts) {
+              const arr = rHist[a.channel] || [];
+              rHist[a.channel] = [
+                ...arr, { t: now, cumPos: a.cumPos, cumNeg: a.cumNeg, deviation: a.deviation },
+              ].slice(-MAX_CUSUM_POINTS);
+            }
+            updateReactor(rid, { cusumAlerts: alerts, cusumHistory: rHist });
+          }
           break;
         }
 
@@ -288,9 +372,12 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
           set((s) => ({ aiSuggestions: [suggestion, ...s.aiSuggestions].slice(0, 50) }));
           break;
 
-        case 'soft_sensor':
-          set({ softSensorData: msg.payload as SoftSensorData });
+        case 'soft_sensor': {
+          const ss = msg.payload as SoftSensorData;
+          set({ softSensorData: ss });
+          updateReactor(msg.reactor_id, { softSensorData: ss });
           break;
+        }
       }
     };
 

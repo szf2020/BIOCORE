@@ -18,7 +18,7 @@ import { CalculatedParamsBar } from '@/components/dashboard/CalculatedParamsBar'
 import { CusumAlertPanel } from '@/components/dashboard/CusumAlertPanel';
 import { FeedAdvisorCard } from '@/components/dashboard/FeedAdvisorCard';
 import { InterlockPanel } from '@/components/dashboard/InterlockPanel';
-import { Server, Plus, Settings, Workflow } from 'lucide-react';
+import { Server, Plus, Settings } from 'lucide-react';
 import { loadDashboardLayout } from '@/components/dashboard/dashboard-layout-config';
 import type { DashboardLayout } from '@/components/dashboard/dashboard-layout-config';
 
@@ -93,13 +93,22 @@ function BigParamCard({ label, value, unit, sv, precision = 1, color = 'text-for
 // ─── 主页面 ────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const processValues = useRealtimeStore(s => s.processValues);
-  const stateUpdate = useRealtimeStore(s => s.stateUpdate);
-  const calculatedParams = useRealtimeStore(s => s.calculatedParams);
-  const alarms = useRealtimeStore(s => s.alarms);
-  const trendBuffer = useRealtimeStore(s => s.trendBuffer);
-  const reactorStates = useRealtimeStore(s => s.reactorStates);
   const [selectedReactor, setSelectedReactor] = useState('');
+  // 多反应器隔离: 按 selectedReactor 从 reactorData[id] 取数据
+  // selectedReactor 缺失时退化为顶层 (启动期未拉到 reactor 列表前)
+  const reactorData = useRealtimeStore(s => s.reactorData);
+  const reactorStates = useRealtimeStore(s => s.reactorStates);
+  const _topProcessValues = useRealtimeStore(s => s.processValues);
+  const _topStateUpdate = useRealtimeStore(s => s.stateUpdate);
+  const _topCalculatedParams = useRealtimeStore(s => s.calculatedParams);
+  const _topAlarms = useRealtimeStore(s => s.alarms);
+  const _topTrendBuffer = useRealtimeStore(s => s.trendBuffer);
+  const _rd = selectedReactor ? reactorData[selectedReactor] : null;
+  const processValues = _rd?.processValues ?? _topProcessValues;
+  const stateUpdate = _rd?.stateUpdate ?? _topStateUpdate;
+  const calculatedParams = _rd?.calculatedParams ?? _topCalculatedParams;
+  const alarms = _rd?.alarms ?? _topAlarms;
+  const trendBuffer = _rd?.trendBuffer ?? _topTrendBuffer;
   const [configuredIds, setConfiguredIds] = useState<string[]>([]);
   const [configLoaded, setConfigLoaded] = useState(false);
   const [layoutEditorOpen, setLayoutEditorOpen] = useState(false);
@@ -181,12 +190,8 @@ export default function DashboardPage() {
             </button>
           );
         })}
-        {/* 二级菜单 + 布局自定义按钮 */}
-        <div className="ml-auto flex items-center gap-1">
-          <Link href="/dashboard/hmi" title="工艺画面 (FUXA HMI)"
-            className="p-2 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            <Workflow className="w-4 h-4" />
-          </Link>
+        {/* 布局自定义按钮 */}
+        <div className="ml-auto">
           <button onClick={() => setLayoutEditorOpen(true)} title="自定义仪表盘布局"
             className="p-2 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             <Settings className="w-4 h-4" />
@@ -278,7 +283,7 @@ export default function DashboardPage() {
           )}
 
           {/* ⑤ CUSUM 实时异常检测 */}
-          <CusumAlertPanel batchId={reactorList.find(r => r.id === selectedReactor)?.batchId} />
+          <CusumAlertPanel batchId={reactorList.find(r => r.id === selectedReactor)?.batchId} reactorId={selectedReactor} />
 
           {/* ⑥ 补料建议 */}
           <FeedAdvisorCard batchId={reactorList.find(r => r.id === selectedReactor)?.batchId} />

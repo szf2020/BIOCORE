@@ -62,8 +62,10 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
   const [selectedRecipeId, setSelectedRecipeId] = useState('');
   const [downloading, setDownloading] = useState(false);
   const [batchIdInput, setBatchIdInput] = useState('');
-  // 报警 + per-reactor 状态/配方 全部从 WS store 取 (替代轮询)
-  const alarms = useRealtimeStore(s => s.alarms);
+  // 多反应器隔离: alarms 按 reactorId 取, 未匹配 fallback 顶层
+  const _topAlarms = useRealtimeStore(s => s.alarms);
+  const _reactorAlarms = useRealtimeStore(s => s.reactorData[reactorId]?.alarms);
+  const alarms = _reactorAlarms ?? _topAlarms;
   const setAlarms = useRealtimeStore(s => s.setAlarms);
   const ackAlarmInStore = useRealtimeStore(s => s.acknowledgeAlarm);
   const reactorStateFromWS = useRealtimeStore(s => s.reactorStates[reactorId]);

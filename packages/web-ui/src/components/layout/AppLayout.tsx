@@ -9,11 +9,12 @@ import {
   LayoutDashboard, LineChart, BookOpen, History,
   Database, Bot, Settings, Wifi, WifiOff, Blocks, ChevronDown,
   Gauge, Users, Bell, User, Activity, Droplets, LogOut, Key, FileText, FlaskConical,
-  ShieldCheck, Sigma, Shield, TrendingUp, Brain,
+  ShieldCheck, Sigma, Shield, TrendingUp, Brain, Workflow,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { href: '/dashboard', icon: LayoutDashboard, label: '监控面板', children: [
+    { href: '/dashboard/hmi', icon: Workflow, label: '工艺画面' },
     { href: '/clean', icon: Droplets, label: '清洗灭菌' },
     { href: '/trends', icon: LineChart, label: '趋势图表' },
   ]},
@@ -300,11 +301,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="h-14 surface-base flex items-center justify-between px-6 flex-shrink-0">
           {/* Left: MES breadcrumb */}
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">生产车间</span>
+            <span className="text-muted-foreground">{process.env.NEXT_PUBLIC_FACILITY_NAME || '生产车间'}</span>
             <span className="text-muted-foreground/40">/</span>
-            <span className="text-muted-foreground">发酵产线 #1</span>
+            <span className="text-muted-foreground">{process.env.NEXT_PUBLIC_LINE_NAME || '发酵产线 #1'}</span>
             <span className="text-muted-foreground/40">/</span>
-            <span className="text-foreground font-semibold tracking-tight">5L 研发罐组</span>
+            <span className="text-foreground font-semibold tracking-tight">{process.env.NEXT_PUBLIC_REACTOR_GROUP_NAME || '5L 研发罐组'}</span>
 
             {stateUpdate && (
               <>

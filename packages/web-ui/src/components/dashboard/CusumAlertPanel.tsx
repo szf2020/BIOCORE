@@ -105,9 +105,14 @@ function buildCusumChartOption(
   };
 }
 
-export function CusumAlertPanel({ batchId }: { batchId?: string }) {
-  const cusumAlerts = useRealtimeStore((s) => s.cusumAlerts);
-  const cusumHistory = useRealtimeStore((s) => s.cusumHistory);
+export function CusumAlertPanel({ batchId, reactorId }: { batchId?: string; reactorId?: string }) {
+  // 多反应器隔离: 按 reactorId 取 CUSUM 数据, 未匹配 fallback 顶层
+  const _topCusumAlerts = useRealtimeStore((s) => s.cusumAlerts);
+  const _topCusumHistory = useRealtimeStore((s) => s.cusumHistory);
+  const _reactorCusumAlerts = useRealtimeStore((s) => reactorId ? s.reactorData[reactorId]?.cusumAlerts : undefined);
+  const _reactorCusumHistory = useRealtimeStore((s) => reactorId ? s.reactorData[reactorId]?.cusumHistory : undefined);
+  const cusumAlerts = _reactorCusumAlerts ?? _topCusumAlerts;
+  const cusumHistory = _reactorCusumHistory ?? _topCusumHistory;
 
   // 按通道构建图表 option (仅对有历史数据的通道)
   const chartOptions = useMemo(() => {
