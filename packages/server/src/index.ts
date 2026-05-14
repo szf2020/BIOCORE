@@ -22,6 +22,7 @@ import http from 'http';
 // wireReactorEvents, gracefulShutdown, /status) keep working unchanged.
 import { createWsServer } from './ws-server';
 import { createMqttPublisher } from './mqtt-publisher';
+import { createMqttSubscriber } from './mqtt-subscriber';
 // node-snap7 动态加载: Node v24 可能缺少编译后的 native binding
 let S7Client: any;
 try {
@@ -635,6 +636,15 @@ const { wss, broadcast } = createWsServer({
   verifyJWT,
   authEnabled: AUTH_ENABLED,
   mqttPublisher,
+});
+
+// M3 (Level 3): MQTT subscriber — FUXA/HMI 写意图 → 建议缓冲区
+// 订阅 biocore/commands/+ → 收到 write_intent → ai_suggestions 表 + audit + WS
+// CLAUDE.md 第 7 节硬约束: 绝不直写 PLC, 必经人工确认
+const mqttSubscriber = createMqttSubscriber({
+  enabled: process.env.MQTT_ENABLED !== 'false',
+  sqlite,
+  broadcast,
 });
 
 // ─── 只读 S7 连接 (安全: 测试操作绝不写入PLC) ─────────────
