@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Bell, Sparkles, AlertTriangle, AlertCircle, Info, Check } from 'lucide-react';
+import { Sparkles, AlertTriangle, AlertCircle, Info, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Alarm, AlarmSeverity } from '@/types';
 
@@ -99,22 +99,14 @@ function Section({ title, icon: Icon, color, items, kind, onAck, emptyText }: {
   );
 }
 
-export function EventCenter({ alarms, notices, onAcknowledge }: Props) {
-  const unackAlarms = alarms.filter(a => !a.acknowledged);
+// alarms prop 保留参数签名兼容旧调用, 但 EventCenter 现在只展示"提示信息"
+// (报警在 TopBar AlarmStrip 显示, 避免重复)
+export function EventCenter({ notices, onAcknowledge }: Props) {
   const unackNotices = notices.filter(n => !n.acknowledged);
 
   return (
     <Card>
       <CardContent className="p-0">
-        <Section
-          title="报警信息"
-          icon={Bell}
-          color="text-red-600"
-          items={unackAlarms}
-          kind="alarm"
-          onAck={onAcknowledge}
-          emptyText="无未确认报警"
-        />
         <Section
           title="提示信息"
           icon={Sparkles}
