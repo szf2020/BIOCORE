@@ -144,6 +144,7 @@ export function registerReactorRoutes(
     res.json({
       id: req.params.id,
       state: ctrl.currentState,
+      batch_id: ctrl.currentBatchId || null,
       buttons: ctrl.buttons,
       phase_statuses: ctrl.getPhaseStatuses(),
     });

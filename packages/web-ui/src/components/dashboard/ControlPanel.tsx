@@ -74,7 +74,22 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
   const setReactorStateInStore = useRealtimeStore(s => s.setReactorState);
   // T19: DAG runtime phase_id — find the entry for the current batch (batch_id from reactorStateFromWS)
   const batchRuntime = useRealtimeStore(s => s.batchRuntime);
-  const currentBatchId = (reactorStateFromWS as any)?.batch_id ?? '';
+  // 初次加载 / 刷新 / WS 漏 state_changed 时回退拉 /status (含 batch_id)
+  const [statusBatchId, setStatusBatchId] = useState('');
+  useEffect(() => {
+    if (!reactorId) return;
+    let cancelled = false;
+    const fetchStatus = () => {
+      fetch(`${API}/api/reactors/${reactorId}/status`)
+        .then(r => r.ok ? r.json() : null)
+        .then((d: any) => { if (!cancelled && d?.batch_id) setStatusBatchId(d.batch_id); })
+        .catch(() => {});
+    };
+    fetchStatus();
+    const t = setInterval(fetchStatus, 5000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [reactorId]);
+  const currentBatchId = (reactorStateFromWS as any)?.batch_id || statusBatchId || '';
   const dagRuntime = currentBatchId ? batchRuntime[currentBatchId] : undefined;
   // 审计追踪 hook
   const audit = useAudit();

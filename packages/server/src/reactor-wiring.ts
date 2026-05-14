@@ -272,6 +272,7 @@ export function createReactorWiring(deps: ReactorWiringDeps): ReactorWiringHandl
       broadcast('state_update', {
         reactor_id: reactorId,
         state,
+        batch_id: ctrl.currentBatchId || null,
       }, null, reactorId);
 
       // v1.7.2: 批次进入 running 时初始化 CUSUM 基线 — 任何异常都不能冒到 emit 链
