@@ -10,7 +10,6 @@ import { Play, Pause, Square, RotateCcw, AlertTriangle, AlertOctagon } from 'luc
 import { phaseLabel, phaseStateLabel } from '@/lib/utils';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const REACTORS = ['F01', 'F02', 'F03', 'F04', 'F05', 'F06', 'F07', 'F08'];
 
 type PhaseState = 'pending' | 'ready' | 'running' | 'held' | 'completed' | 'skipped' | 'failed';
 
@@ -35,11 +34,27 @@ const stateColors: Record<string, string> = {
 };
 
 export default function CleanPage() {
-  const [selectedReactor, setSelectedReactor] = useState('F01');
+  const [reactorIds, setReactorIds] = useState<string[]>([]);
+  const [selectedReactor, setSelectedReactor] = useState<string>('');
   const [reactorState, setReactorState] = useState<any>(null);
   const [batchState, setBatchState] = useState('idle');
 
+  // 拉取启用的反应器配置 (与 dashboard/hmi 同源)
+  useEffect(() => {
+    fetch(`${API}/api/reactor-configs`)
+      .then(r => r.ok ? r.json() : [])
+      .then((rows: any[]) => {
+        const ids = Array.isArray(rows)
+          ? rows.filter(r => r?.enabled !== 0).map(r => r.reactor_id).filter(Boolean)
+          : [];
+        setReactorIds(ids);
+        setSelectedReactor(prev => (prev && ids.includes(prev)) ? prev : (ids[0] || ''));
+      })
+      .catch(() => { /* offline OK */ });
+  }, []);
+
   const fetchStatus = async () => {
+    if (!selectedReactor) return;
     try {
       const resp = await fetch(`${API}/api/reactors/${selectedReactor}/status`);
       if (resp.ok) {
@@ -51,6 +66,7 @@ export default function CleanPage() {
   };
 
   useEffect(() => {
+    if (!selectedReactor) return;
     fetchStatus();
     const t = setInterval(fetchStatus, 2000);
     return () => clearInterval(t);
@@ -188,10 +204,13 @@ export default function CleanPage() {
   return (
     <div className="h-full flex flex-col">
       {/* 罐选择 */}
-      <div className="flex items-center gap-1 px-3 py-2 border-b border-border bg-card/50">
-        {REACTORS.map(id => (
+      <div className="flex items-center gap-1 px-3 py-2 border-b border-border bg-card/50 overflow-x-auto">
+        {reactorIds.length === 0 && (
+          <span className="text-xs text-muted-foreground px-2">无可用反应器</span>
+        )}
+        {reactorIds.map(id => (
           <button key={id} onClick={() => setSelectedReactor(id)}
-            className={`px-3 py-1.5 rounded text-xs font-medium transition-all
+            className={`px-3 py-1.5 rounded text-xs font-medium transition-all shrink-0
               ${selectedReactor === id
                 ? 'bg-primary/15 text-primary border border-primary/40'
                 : 'bg-muted/50 text-muted-foreground border border-transparent hover:bg-muted'}`}>
