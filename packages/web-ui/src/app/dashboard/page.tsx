@@ -201,9 +201,10 @@ export default function DashboardPage() {
 
       {/* 主内容区 */}
       <div className="flex-1 flex gap-4 p-4 overflow-hidden">
-        {/* 左: 状态机连锁面板 + 控制面板 (连锁置顶, 启动前看到阻塞项) */}
+        {/* 左: 控制面板 + 状态机连锁面板 */}
         <div className="w-[360px] flex-shrink-0 flex flex-col gap-3 overflow-y-auto mes-scroll">
-          {/* 状态机 RF/IL 连锁关联显示 — 置顶, 故障时强制可见 */}
+          <ControlPanel state={stateUpdate} reactorId={selectedReactor} />
+          {/* 状态机 RF/IL 连锁关联显示 (放在启动按钮下面, 故障自动展开) */}
           {selectedReactor && (
             <InterlockPanel
               reactorId={selectedReactor}
@@ -211,7 +212,6 @@ export default function DashboardPage() {
               activeFaultCodes={alarms.filter(a => !a.acknowledged_at).map(a => (a as any).code).filter(Boolean)}
             />
           )}
-          <ControlPanel state={stateUpdate} reactorId={selectedReactor} />
         </div>
 
         {/* 右: 参数 + 趋势 + 报警 */}
