@@ -299,15 +299,34 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             );
           })}
         </div>
-        {/* Bottom connection status */}
-        <div className="px-4 py-3 text-xs text-muted-foreground space-y-1.5">
-          <div className="flex items-center gap-2">
+        {/* Bottom: 连接状态 + 主题 + 用户 + 时钟 (从 TopBar 移入此处) */}
+        <div className="px-4 py-3 text-xs text-muted-foreground space-y-2 border-t border-border/40">
+          {/* WS / PLC 状态 */}
+          <div className="flex items-center gap-3" title={wsConnected ? '服务器已连接' : '服务器未连接'}>
             <div className={`status-led ${wsConnected ? 'status-led-running' : 'status-led-stopped'}`} />
             <span className="font-mono text-[11px]">WS {wsConnected ? '已连接' : '未连接'}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className={`status-led ${heartbeatStatus?.alive ? 'status-led-running' : 'status-led-idle'}`} />
             <span className="font-mono text-[11px]">PLC {heartbeatStatus?.alive ? '在线' : '离线'}</span>
+          </div>
+          {/* 主题切换 + 用户 + 时钟 */}
+          <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-1">
+            <ThemeToggle />
+            <LiveClock />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <User className="w-3.5 h-3.5 text-primary" />
+            </div>
+            <span title={`${user.username} (${user.role})`} className="font-medium text-foreground text-[11px] truncate flex-1">{user.display_name}</span>
+            <button
+              onClick={logout}
+              title="退出登录"
+              className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </nav>
@@ -341,38 +360,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          {/* Middle: 报警信息条 — 显示最新一条报警, 上/下翻 */}
+          {/* Right: 报警信息条 — 占满右侧, 贴近右边界
+              (WS/Theme/User/Clock 已搬到侧栏底部) */}
           <TopBarAlarmStrip alarms={alarms} />
-
-          {/* Right: connection + theme + user + clock (Bell 已并入中间报警条) */}
-          <div className="flex items-center gap-5">
-            <div className="flex items-center gap-1.5" title={wsConnected ? '服务器已连接' : '服务器未连接'}>
-              {wsConnected ? (
-                <Wifi className="w-3.5 h-3.5 text-mes-green" />
-              ) : (
-                <WifiOff className="w-3.5 h-3.5 text-mes-red" />
-              )}
-              <div className={`status-led ${wsConnected ? 'status-led-running' : 'status-led-stopped'}`} />
-            </div>
-
-            <ThemeToggle />
-
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="w-3.5 h-3.5 text-primary" />
-              </div>
-              <span title={`${user.username} (${user.role})`} className="font-medium text-foreground">{user.display_name}</span>
-              <button
-                onClick={logout}
-                title="退出登录"
-                className="ml-1 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            <LiveClock />
-          </div>
         </header>
 
         {/* Page Content — on surface-base (lightest layer) */}
@@ -402,7 +392,7 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
 
   if (unack.length === 0) {
     return (
-      <div className="flex-1 flex items-center gap-2 px-4 mx-4 max-w-5xl">
+      <div className="ml-auto flex items-center gap-2 px-4 w-full max-w-5xl">
         <Bell className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
         <span className="text-xs text-muted-foreground/60">报警信息</span>
         <span className="flex-1 text-xs text-muted-foreground/50 truncate">无未确认报警</span>
@@ -417,7 +407,7 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
     : 'bg-blue-500/15 text-blue-600 border-blue-500/30';
 
   return (
-    <div className="flex-1 flex items-center gap-2 px-3 mx-4 max-w-5xl rounded-md border border-border bg-card/60 h-9">
+    <div className="ml-auto flex items-center gap-2 px-3 w-full max-w-5xl rounded-md border border-border bg-card/60 h-9">
       <Bell className="w-3.5 h-3.5 text-mes-red shrink-0" />
       <span className="text-xs font-medium text-foreground/80 shrink-0">报警信息</span>
       <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border ${sevColor}`}>
