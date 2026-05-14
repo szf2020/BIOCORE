@@ -307,14 +307,14 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
             </div>
           )}
 
-          {/* 罐号 + 批次号输入 */}
+          {/* 罐号 + 批次号输入 (idle 时本地输入; 非 idle 时显示运行中 batch_id) */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground flex-shrink-0">{reactorId}</span>
-            <input value={batchIdInput}
+            <input value={realIsIdle ? batchIdInput : (currentBatchId || batchIdInput)}
               onChange={e => setBatchIdInput(e.target.value)}
               placeholder="输入批次号 (统计报表用)"
               disabled={!realIsIdle}
-              className="flex-1 h-7 px-2 rounded bg-background border border-border text-xs font-mono text-foreground placeholder:text-muted-foreground/50 disabled:opacity-50" />
+              className="flex-1 h-7 px-2 rounded bg-background border border-border text-xs font-mono text-foreground placeholder:text-muted-foreground/50 disabled:opacity-50 disabled:text-foreground" />
             {(state?.batch_elapsed_sec ?? 0) > 0 && (
               <span className="font-mono text-xs text-foreground flex-shrink-0">{formatTime(state?.batch_elapsed_sec ?? 0)}</span>
             )}
