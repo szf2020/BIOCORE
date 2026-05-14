@@ -391,12 +391,12 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
 
   if (unack.length === 0) {
     return (
-      <div className="ml-auto flex items-center gap-2 px-3 w-full max-w-5xl rounded-md border border-border/60 bg-card/40 h-9">
-        <Bell className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
-        <span className="text-xs text-muted-foreground/70 shrink-0">报警信息</span>
-        <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border border-muted text-muted-foreground/60">0</span>
-        <span className="flex-1 text-xs text-muted-foreground/60 truncate">无未确认报警</span>
-        <span className="shrink-0 text-[10px] text-muted-foreground/50 font-mono tabular-nums">0/0</span>
+      <div className="ml-auto flex items-center gap-2 px-3 w-full max-w-2xl rounded-md border border-border bg-muted h-9">
+        <Bell className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+        <span className="text-xs text-muted-foreground shrink-0">报警信息</span>
+        <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border border-muted-foreground/40 text-muted-foreground/70">0</span>
+        <span className="flex-1 text-xs text-muted-foreground truncate">无未确认报警</span>
+        <span className="shrink-0 text-[10px] text-muted-foreground/60 font-mono tabular-nums">0/0</span>
         <button disabled className="shrink-0 p-1 rounded text-muted-foreground/30 cursor-not-allowed" title="上一条">
           <ChevronUp className="w-3 h-3" />
         </button>
@@ -414,13 +414,13 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
     : 'bg-blue-500/15 text-blue-600 border-blue-500/30';
 
   return (
-    <div className="ml-auto flex items-center gap-2 px-3 w-full max-w-5xl rounded-md border border-border bg-card/60 h-9">
+    <div className="ml-auto flex items-center gap-2 px-3 w-full max-w-2xl rounded-md border border-red-500/40 bg-red-500/10 dark:bg-red-500/15 h-9">
       <Bell className="w-3.5 h-3.5 text-mes-red shrink-0" />
-      <span className="text-xs font-medium text-foreground/80 shrink-0">报警信息</span>
+      <span className="text-xs font-medium text-red-700 dark:text-red-300 shrink-0">报警信息</span>
       <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border ${sevColor}`}>
         {unack.length}
       </span>
-      <span className="flex-1 text-xs text-foreground truncate" title={cur.message}>
+      <span className="flex-1 text-xs font-medium text-red-700 dark:text-red-300 truncate" title={cur.message}>
         {cur.message || '(无消息)'}
       </span>
       <span className="shrink-0 text-[10px] text-muted-foreground font-mono tabular-nums">
