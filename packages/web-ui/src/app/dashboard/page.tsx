@@ -233,17 +233,22 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* 右: 参数 + 趋势 + 报警 */}
-        <div className="flex-1 flex flex-col gap-4 overflow-y-auto mes-scroll">
+        {/* 右: 参数 + 趋势 + 报警 (计算参数横条固定置顶, 其余滚动) */}
+        <div className="flex-1 flex flex-col min-h-0">
 
-          {/* ⓪ 计算参数横条 (通气量 / 补料速率 / OUR / kLa / μ / Vₗ / 累积补料 / 累积补碱 / F₀) */}
+          {/* ⓪ 计算参数横条 (固定, 不随下方内容滚动) */}
           {dashLayout.showCalculated && (
-            <CalculatedParamsBar
-              params={calculatedParams}
-              airflow={_isReactorActive ? airflow : null}
-              feedRate={_isReactorActive ? feedRate : null}
-            />
+            <div className="shrink-0">
+              <CalculatedParamsBar
+                params={calculatedParams}
+                airflow={_isReactorActive ? airflow : null}
+                feedRate={_isReactorActive ? feedRate : null}
+              />
+            </div>
           )}
+
+          {/* 滚动区: 大字参数 + 趋势 + 报警 + ... */}
+          <div className="flex-1 flex flex-col gap-4 overflow-y-auto mes-scroll min-h-0 pt-4">
 
           {/* ① 大字参数卡片 — 按布局配置动态渲染 */}
           <div className="grid grid-cols-3 xl:grid-cols-6 gap-2.5">
@@ -308,6 +313,7 @@ export default function DashboardPage() {
 
           {/* ⑥ 补料建议 */}
           <FeedAdvisorCard batchId={reactorList.find(r => r.id === selectedReactor)?.batchId} />
+          </div>
         </div>
       </div>
 
