@@ -201,8 +201,8 @@ export default function DashboardPage() {
 
       {/* 主内容区 */}
       <div className="flex-1 flex gap-4 p-4 overflow-hidden">
-        {/* 左: 控制面板 + 状态机连锁面板 (min-h-0 让 flex 子项可缩, overflow-y-auto 才能生效) */}
-        <div className="w-[360px] flex-shrink-0 flex flex-col gap-3 overflow-y-auto mes-scroll min-h-0">
+        {/* 左: 控制面板 + 状态机连锁面板 (min-h-0 让 flex 子项可缩, overflow-y-scroll 强制显示滚动条) */}
+        <div className="w-[360px] flex-shrink-0 flex flex-col gap-3 overflow-y-scroll mes-scroll min-h-0">
           <ControlPanel state={stateUpdate} reactorId={selectedReactor} />
           {/* 状态机 RF/IL 连锁关联显示 (放在启动按钮下面, 故障自动展开) */}
           {selectedReactor && (
