@@ -1,10 +1,24 @@
-# BIOCore Compose — InfluxDB + biocore-server
+# BIOCore × FUXA 统一 Compose (M4)
+# 单文件管理所有服务: biocore-server + influxdb (核心) + mosquitto + fuxa + nginx (HMI/生产)
+# 通过 profiles 控制启动范围:
+#   docker compose up -d                       # 仅核心 (biocore-server + influxdb)
+#   docker compose --profile hmi up -d         # 核心 + FUXA + mosquitto (开发期 HMI 直连 1881)
+#   docker compose --profile production up -d  # 完整栈含 nginx 反代 (生产单入口 8080)
+#
+# 生命周期联动 (depends_on healthcheck):
+#   biocore-server ← influxdb (healthy)
+#   fuxa           ← mosquitto (healthy)
+#   nginx          ← fuxa (healthy) + biocore-server (healthy)
+#
+# 网络: 所有容器加入 user-defined bridge `biocore-net`, 通过容器名互访.
 # Hardened for 7×24 production runs (Sprint 4 Track A, T24)
 
 services:
   influxdb:
     image: influxdb:2.7
     container_name: biocore-influxdb
+    networks:
+      - biocore-net
     ports:
       - "8086:8086"
     volumes:
@@ -33,6 +47,8 @@ services:
     image: biocore-server:local
     container_name: biocore-server
     restart: unless-stopped
+    networks:
+      - biocore-net
     depends_on:
       influxdb:
         condition: service_healthy
@@ -54,6 +70,8 @@ services:
       # SQLite 路径 (映射到 host volume)
       - DATA_DIR=/app/data
       - SQLITE_PATH=/app/data/biocore.db
+      # MQTT broker (hmi/production profile 启 mosquitto 时连容器, 否则可缺省)
+      - MQTT_BROKER_URL=${MQTT_BROKER_URL:-mqtt://mosquitto:1883}
       # PORT
       - PORT=3001
       # 生产部署前必须设为 false（默认从 .env 读，未设为 false 时上方 env 优先）
@@ -73,6 +91,106 @@ services:
       options:
         max-size: "50m"
         max-file: "10"
+
+  # ───── MQTT Broker (FUXA ↔ BIOCore 数据桥) ─────
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: biocore-mosquitto
+    profiles: ["hmi", "production"]
+    restart: unless-stopped
+    networks:
+      - biocore-net
+    ports:
+      - "1883:1883"   # MQTT TCP (BIOCore server + FUXA 连)
+      - "9001:9001"   # MQTT WebSocket (浏览器端可选)
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/#' -C 1 -W 3 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ───── FUXA HMI (SCADA 可视化) ─────
+  fuxa:
+    image: frangoteam/fuxa:latest
+    container_name: biocore-fuxa
+    profiles: ["hmi", "production"]
+    restart: unless-stopped
+    networks:
+      - biocore-net
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    # hmi profile: 暴露 1881 供开发期浏览器直连
+    # production profile: 仍暴露 (nginx 通过容器名 biocore-fuxa:1881 反代, 端口可选关闭)
+    ports:
+      - "1881:1881"
+    volumes:
+      - ./fuxa/appdata:/usr/src/app/FUXA/server/_appdata
+      - ./fuxa/db:/usr/src/app/FUXA/server/_db
+      - ./fuxa/logs:/usr/src/app/FUXA/server/_logs
+      - ./fuxa/images:/usr/src/app/FUXA/server/_images
+    environment:
+      - NODE_ENV=production
+      # FUXA 内部用户系统禁用 (W3 改用 BIOCore JWT via nginx 转发)
+      # 临时: 允许匿名访问 editor/runtime, 上线前必须配 nginx 反代
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:1881/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # ───── nginx 反代 + JWT SSO (生产单入口) ─────
+  # 浏览器统一入口 http://localhost:8080
+  # / → biocore-server :3001 (静态 + API + WS), /fuxa/ → biocore-fuxa:1881 (含 auth_request)
+  nginx:
+    image: nginx:alpine
+    container_name: biocore-nginx
+    profiles: ["production"]
+    restart: unless-stopped
+    networks:
+      - biocore-net
+    depends_on:
+      biocore-server:
+        condition: service_healthy
+      fuxa:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/logs:/var/log/nginx
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/__nginx_health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  biocore-net:
+    name: biocore-net
+    driver: bridge
 
 volumes:
   influxdb_data:

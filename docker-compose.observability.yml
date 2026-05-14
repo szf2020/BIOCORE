@@ -1,14 +1,21 @@
-# BIOCore Observability Profile (T44 — Sprint 4 Track A)
-# 可选加强包：Prometheus 抓 biocore-server 的 /api/v1/admin/metrics + Grafana 看板
+# BIOCore Observability Profile (T44 — Sprint 4 Track A · M4 加强 FUXA/MQTT/nginx)
+# 可选加强包：Prometheus 抓 biocore-server + FUXA/mosquitto/nginx 容器 + Grafana 看板
 #
-# 启动 (与基础 compose 合并):
-#   docker compose -f docker-compose.yml -f docker-compose.observability.yml \
-#     --profile observability up -d
+# 启动 (与基础 compose + FUXA compose 合并):
+#   docker compose -f docker-compose.yml -f docker-compose.fuxa.yml \
+#     -f docker-compose.observability.yml --profile observability up -d
 #
 # Grafana 默认登录: admin / biocore_admin
-# Grafana URL:  http://localhost:3002
+# Grafana URL:    http://localhost:3002
 # Prometheus URL: http://localhost:9090
-# 端口避开 BIOCore (3001) / web-ui (3000) / InfluxDB (8086)
+# cAdvisor URL:   http://localhost:8081
+# 端口避开 BIOCore (3001) / web-ui (3000) / InfluxDB (8086) / FUXA (1881) / nginx (8080)
+#
+# 监控目标 (M4):
+# - biocore-server   /api/v1/admin/metrics (prom-client 自定义指标)
+# - mosquitto        通过 mqtt-exporter 订阅 $SYS/# 转 Prometheus 格式
+# - nginx            通过 nginx-prometheus-exporter 抓 /stub_status
+# - 所有容器         通过 cAdvisor 抓 docker 引擎 (CPU/mem/network/IO)
 
 services:
   prometheus:
@@ -51,6 +58,84 @@ services:
       prometheus:
         condition: service_healthy
     restart: unless-stopped
+
+  # ───── cAdvisor: 通用容器指标 (CPU/mem/net/io) ─────
+  # 覆盖所有容器, 含 biocore-fuxa / biocore-mosquitto / biocore-nginx
+  # 端口 8081 (8080 已被 nginx 占用)
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: biocore-cadvisor
+    profiles: ["observability"]
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - '--housekeeping_interval=15s'
+      - '--docker_only=true'
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ───── mqtt-exporter: 订阅 mosquitto $SYS/# 转 Prometheus 格式 ─────
+  # 镜像: kpetremann/mqtt-exporter (公共, 轻量, 无需配置文件)
+  # 抓取 mosquitto 内部 $SYS topic, 含连接数/消息率/字节数
+  # 端口 9234 (host 暴露), 容器内监听 9000
+  mqtt-exporter:
+    image: kpetremann/mqtt-exporter:latest
+    container_name: biocore-mqtt-exporter
+    profiles: ["observability"]
+    ports:
+      - "9234:9000"
+    environment:
+      - MQTT_ADDRESS=biocore-mosquitto
+      - MQTT_PORT=1883
+      - MQTT_TOPIC=$$SYS/#
+      - MQTT_KEEPALIVE=60
+      - LOG_LEVEL=INFO
+      - PROMETHEUS_PORT=9000
+      # 重置长期未更新的 metric, 防止 stale
+      - MQTT_EXPIRE_METRICS_TIME=300
+    restart: unless-stopped
+    # 注: mosquitto 在 docker-compose.fuxa.yml 中, 需与 fuxa stack 共网络
+    # 用默认 bridge 时 Docker 自动跨 compose 解析容器名 (前提: 同 compose project)
+    # 若 mosquitto 在自定义网络, 加 networks 字段对齐
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9000/metrics"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ───── nginx-prometheus-exporter: 抓 nginx /stub_status ─────
+  # 镜像: nginx/nginx-prometheus-exporter (官方)
+  # 依赖: nginx.conf 必须暴露 stub_status (见 nginx/nginx.conf - location = /stub_status)
+  # 端口 9113 (默认)
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:1.1.0
+    container_name: biocore-nginx-exporter
+    profiles: ["observability"]
+    ports:
+      - "9113:9113"
+    command:
+      - '--nginx.scrape-uri=http://biocore-nginx:8080/stub_status'
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9113/metrics"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   prometheus_data:

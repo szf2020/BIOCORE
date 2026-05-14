@@ -1,6 +1,13 @@
-# Prometheus scrape config for BIOCore (T44 — Sprint 4 Track A)
-# 与 docker-compose.observability.yml 配套使用：
-#   docker compose -f docker-compose.yml -f docker-compose.observability.yml --profile observability up -d
+# Prometheus scrape config for BIOCore (T44 — Sprint 4 Track A · M4 加强)
+# 与 docker-compose.observability.yml + docker-compose.fuxa.yml 配套使用：
+#   docker compose -f docker-compose.yml -f docker-compose.fuxa.yml \
+#     -f docker-compose.observability.yml --profile observability up -d
+#
+# 抓取目标:
+#   - biocore-server  自定义业务指标 (heap/event-loop/PLC/WS)
+#   - cadvisor        所有容器 CPU/mem/net/io (含 FUXA + mosquitto + nginx)
+#   - mqtt-exporter   mosquitto $SYS topic 翻译的 Prometheus 指标
+#   - nginx-exporter  nginx stub_status (active/accepted/handled/requests + reading/writing/waiting)
 
 global:
   scrape_interval: 15s
@@ -9,9 +16,41 @@ global:
     deployment: biocore
 
 scrape_configs:
+  # BIOCore 应用层指标 (prom-client 自定义)
   - job_name: biocore-server
     metrics_path: /api/v1/admin/metrics
     static_configs:
       - targets: ['biocore-server:3001']
         labels:
           service: biocore-server
+
+  # cAdvisor: 通用容器指标 (CPU/mem/net/io), 含 FUXA/mosquitto/nginx
+  - job_name: cadvisor
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: cadvisor
+
+  # mqtt-exporter: mosquitto $SYS topic → Prometheus
+  # 暴露连接数, 消息收发率, 字节数等
+  - job_name: mqtt-broker
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['mqtt-exporter:9000']
+        labels:
+          service: mosquitto
+          broker: biocore-mosquitto
+
+  # nginx-prometheus-exporter: 反代请求指标
+  - job_name: nginx
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+        labels:
+          service: nginx
+          frontend: biocore-nginx
+
+  # 注: FUXA 官方镜像 frangoteam/fuxa 未暴露 /metrics endpoint (源码无 prom-client)
+  # FUXA 容器层指标由 cAdvisor 覆盖; 应用层指标待 W3 fork 时补
+

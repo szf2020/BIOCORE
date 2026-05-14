@@ -1,15 +1,7 @@
-// ============================================================
-// MQTT Subscriber — FUXA / 外部 HMI 写操作 → BIOCore 建议缓冲区
-// 阶段 M3 (Level 3): 不修改 FUXA 源码, 通过 MQTT 反向通信
-//   FUXA HMI 按钮点击 → setValue → publish biocore/commands/write_intent
-//   → BIOCore 订阅接收 → 插入 ai_suggestions 表 (status=pending)
-//   → audit_logs 记录 action=hmi_write_intent
-//   → WS broadcast 'suggestion_new' 通知操作员
-//   → 操作员前端确认 → 现有 /api/v1/ai-suggestions/:id/accept → batch-engine 下发 PLC
-//
-// 安全约束 (CLAUDE.md 第 7 节硬约束):
-//   AI / HMI / 外部系统 永不直写 PLC. 一律走"建议缓冲区"-"人工确认"-"engine 下发".
-// ============================================================
+// MQTT Subscriber — FUXA / 外部 HMI → BIOCore (M3 Level 3). 订阅 biocore/commands/+ :
+//   write_intent → ai_suggestions + audit_logs + WS;  view_change / device_config_change /
+//   alarm_ack → audit_logs;  user_login → 仅 log.
+// 硬约束: AI / HMI 永不直写 PLC, 一律走"建议-人工确认-engine 下发".
 
 import mqtt, { MqttClient } from 'mqtt';
 import type { SQLiteService } from '@biocore/data-service';
@@ -37,6 +29,40 @@ interface WriteIntentPayload {
   reasoning?: string;
   current_value?: number;
   confidence?: number;
+}
+
+// FUXA view 编辑/保存事件 payload
+interface ViewChangePayload {
+  user_id?: string;
+  view_id: string;
+  action?: 'create' | 'update' | 'delete';
+  changes_summary?: string;
+  batch_id?: string;
+}
+
+// FUXA device 配置变更事件 payload
+interface DeviceConfigChangePayload {
+  user_id?: string;
+  device_id: string;
+  action?: string;
+  field?: string;
+  old_value?: unknown;
+  new_value?: unknown;
+  batch_id?: string;
+}
+
+// HMI 端报警确认事件 payload
+interface AlarmAckPayload {
+  user_id?: string;
+  alarm_id: string;
+  batch_id?: string;
+}
+
+// FUXA 端用户活动指示 payload (仅 log, 不入 DB)
+interface UserLoginPayload {
+  user_id?: string;
+  session_id?: string;
+  action?: 'login' | 'logout' | 'activity';
 }
 
 export function createMqttSubscriber(opts: MqttSubscriberOptions): MqttSubscriber {
@@ -80,10 +106,24 @@ export function createMqttSubscriber(opts: MqttSubscriberOptions): MqttSubscribe
       const cmd = topic.slice('biocore/commands/'.length);
       try {
         const msg = JSON.parse(raw.toString('utf8'));
-        if (cmd === 'write_intent') {
-          handleWriteIntent(msg as WriteIntentPayload, opts);
-        } else {
-          console.warn(`[MQTT-Sub] 未知 command: ${cmd}`);
+        switch (cmd) {
+          case 'write_intent':
+            handleWriteIntent(msg as WriteIntentPayload, opts);
+            break;
+          case 'view_change':
+            handleViewChange(msg as ViewChangePayload, opts);
+            break;
+          case 'device_config_change':
+            handleDeviceConfigChange(msg as DeviceConfigChangePayload, opts);
+            break;
+          case 'alarm_ack':
+            handleAlarmAck(msg as AlarmAckPayload, opts);
+            break;
+          case 'user_login':
+            handleUserLogin(msg as UserLoginPayload);
+            break;
+          default:
+            console.warn(`[MQTT-Sub] 未知 command: ${cmd}`);
         }
       } catch (e) {
         console.warn(`[MQTT-Sub] 消息解析失败 topic=${topic}: ${(e as Error).message}`);
@@ -155,4 +195,102 @@ function handleWriteIntent(msg: WriteIntentPayload, deps: MqttSubscriberOptions)
   } catch (e) {
     console.warn(`[MQTT-Sub] 处理 write_intent 失败: ${(e as Error).message}`);
   }
+}
+
+// ─── 公共审计辅助: 仅写 audit_logs, 不入 ai_suggestions / 不广播 WS ───
+
+interface HmiAuditMessage {
+  user_id?: string;
+  batch_id?: string;
+  target_id?: string;
+  view_id?: string;
+  device_id?: string;
+  alarm_id?: string;
+  old_value?: unknown;
+  new_value?: unknown;
+  reasoning?: string;
+  changes_summary?: string;
+}
+
+function recordHmiAudit(
+  deps: MqttSubscriberOptions,
+  msg: HmiAuditMessage,
+  action: string,
+  target_type: string,
+): void {
+  const targetId =
+    msg.target_id || msg.view_id || msg.device_id || msg.alarm_id;
+  deps.sqlite.writeAuditLog({
+    user_id: msg.user_id || 'hmi-anonymous',
+    action,
+    target_type,
+    target_id: targetId,
+    batch_id: msg.batch_id,
+    old_value: msg.old_value != null ? String(msg.old_value) : undefined,
+    new_value: msg.new_value != null ? String(msg.new_value) : undefined,
+    reason: msg.reasoning || msg.changes_summary,
+  });
+}
+
+// ─── FUXA view 编辑/保存 → 仅审计 ───
+function handleViewChange(msg: ViewChangePayload, deps: MqttSubscriberOptions) {
+  if (!msg.view_id) {
+    console.warn(`[MQTT-Sub] view_change 缺 view_id, 丢弃`);
+    return;
+  }
+  try {
+    recordHmiAudit(deps, msg, 'fuxa_view_change', 'hmi_view');
+    console.log(`[MQTT-Sub] view_change → audit (view=${msg.view_id} action=${msg.action || 'update'})`);
+  } catch (e) {
+    console.warn(`[MQTT-Sub] 处理 view_change 失败: ${(e as Error).message}`);
+  }
+}
+
+// ─── FUXA device 配置变更 → 仅审计 (记录 old/new 用于回溯) ───
+function handleDeviceConfigChange(
+  msg: DeviceConfigChangePayload,
+  deps: MqttSubscriberOptions,
+) {
+  if (!msg.device_id) {
+    console.warn(`[MQTT-Sub] device_config_change 缺 device_id, 丢弃`);
+    return;
+  }
+  try {
+    // 把 field 拼进 reason, 便于审计页阅读
+    const reason = msg.field
+      ? `field=${msg.field}${msg.action ? ` action=${msg.action}` : ''}`
+      : msg.action;
+    recordHmiAudit(
+      deps,
+      { ...msg, reasoning: reason },
+      'fuxa_device_config_change',
+      'hmi_device',
+    );
+    console.log(
+      `[MQTT-Sub] device_config_change → audit (device=${msg.device_id} field=${msg.field || '-'})`,
+    );
+  } catch (e) {
+    console.warn(`[MQTT-Sub] 处理 device_config_change 失败: ${(e as Error).message}`);
+  }
+}
+
+// ─── HMI 端报警确认 → 仅审计来源 (不调 BIOCore acknowledge API, 前端已调过) ───
+function handleAlarmAck(msg: AlarmAckPayload, deps: MqttSubscriberOptions) {
+  if (!msg.alarm_id) {
+    console.warn(`[MQTT-Sub] alarm_ack 缺 alarm_id, 丢弃`);
+    return;
+  }
+  try {
+    recordHmiAudit(deps, msg, 'fuxa_alarm_ack', 'alarm');
+    console.log(`[MQTT-Sub] alarm_ack → audit (alarm=${msg.alarm_id} user=${msg.user_id || 'hmi-anonymous'})`);
+  } catch (e) {
+    console.warn(`[MQTT-Sub] 处理 alarm_ack 失败: ${(e as Error).message}`);
+  }
+}
+
+// ─── FUXA 端用户活动心跳 → 仅 log (避免 audit_logs 噪音) ───
+function handleUserLogin(msg: UserLoginPayload) {
+  const user = msg.user_id || 'hmi-anonymous';
+  const session = msg.session_id ? ` session=${msg.session_id}` : '';
+  console.log(`[MQTT-Sub] user_login → ${user} ${msg.action || 'activity'}${session}`);
 }
