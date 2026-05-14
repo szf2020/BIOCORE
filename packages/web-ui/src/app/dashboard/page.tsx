@@ -236,6 +236,15 @@ export default function DashboardPage() {
         {/* 右: 参数 + 趋势 + 报警 */}
         <div className="flex-1 flex flex-col gap-4 overflow-y-auto mes-scroll">
 
+          {/* ⓪ 计算参数横条 (通气量 / 补料速率 / OUR / kLa / μ / Vₗ / 累积补料 / 累积补碱 / F₀) */}
+          {dashLayout.showCalculated && (
+            <CalculatedParamsBar
+              params={calculatedParams}
+              airflow={_isReactorActive ? airflow : null}
+              feedRate={_isReactorActive ? feedRate : null}
+            />
+          )}
+
           {/* ① 大字参数卡片 — 按布局配置动态渲染 */}
           <div className="grid grid-cols-3 xl:grid-cols-6 gap-2.5">
             {dashLayout.bigParams.filter(p => p.visible).map(p => {
@@ -302,14 +311,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 底部测算值横条 (按布局配置显隐) */}
-      {dashLayout.showCalculated && (
-        <CalculatedParamsBar
-          params={calculatedParams}
-          airflow={_isReactorActive ? airflow : null}
-          feedRate={_isReactorActive ? feedRate : null}
-        />
-      )}
+      {/* 计算参数横条已移到大字参数卡片上方 (右列顶部) */}
 
       {/* 布局编辑器弹窗 */}
       <DashboardLayoutEditor
