@@ -121,15 +121,24 @@ export function authMiddleware(req: any, res: Response, next: NextFunction): voi
     return next();
   }
 
-  // 2. 否则用 JWT Bearer token (供前端 UI 使用)
+  // 2. 否则用 JWT Bearer token (供前端 UI 使用) 或 cookie (W3 nginx auth_request SSO)
   // P0 修复: 无 token 时必须返回 401, 不再回退到 admin 身份
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ error: '未授权: 请提供 Authorization Bearer token 或 X-API-Key' });
+  let token: string | undefined;
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.slice(7);
+  } else {
+    // W3: 从 cookie biocore_token 读取 (iframe 跨页无法加 header)
+    const cookieHeader = req.headers.cookie || '';
+    const match = cookieHeader.match(/(?:^|;\s*)biocore_token=([^;]+)/);
+    if (match) token = decodeURIComponent(match[1]);
+  }
+  if (!token) {
+    res.status(401).json({ error: '未授权: 请提供 Authorization Bearer token / X-API-Key / Cookie biocore_token' });
     return;
   }
 
-  const payload = verifyJWT(authHeader.slice(7));
+  const payload = verifyJWT(token);
   if (!payload) {
     res.status(401).json({ error: 'Token 无效或已过期' });
     return;

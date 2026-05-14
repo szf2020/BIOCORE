@@ -53,3 +53,23 @@ DELETED=$(find "$BACKUP_DIR" -name "biocore-*.db.gz" -mtime "+$RETENTION_DAYS" -
 if [[ "$DELETED" -gt 0 ]]; then
   echo "[backup] 清理 $DELETED 个超 $RETENTION_DAYS 天旧备份"
 fi
+
+# ─── W2 扩展: FUXA HMI 项目 + mosquitto 持久化数据备份 ───
+# Level 3 任务: 单一备份覆盖 BIOCore + FUXA + MQTT broker
+if [[ -d "./fuxa" ]] && [[ "$(ls -A ./fuxa/appdata 2>/dev/null)" || "$(ls -A ./fuxa/db 2>/dev/null)" ]]; then
+  FUXA_OUT="$BACKUP_DIR/fuxa-$TS.tar.gz"
+  echo "[backup] FUXA 数据 → $FUXA_OUT"
+  tar -czf "$FUXA_OUT" -C . fuxa/appdata fuxa/db fuxa/images 2>/dev/null || true
+  FUXA_SIZE=$(du -h "$FUXA_OUT" 2>/dev/null | cut -f1)
+  echo "[backup] FUXA 完成: $FUXA_OUT ($FUXA_SIZE)"
+  find "$BACKUP_DIR" -name "fuxa-*.tar.gz" -mtime "+$RETENTION_DAYS" -delete 2>/dev/null
+fi
+
+if [[ -d "./mosquitto/data" ]] && [[ "$(ls -A ./mosquitto/data 2>/dev/null)" ]]; then
+  MQTT_OUT="$BACKUP_DIR/mosquitto-$TS.tar.gz"
+  echo "[backup] mosquitto 数据 → $MQTT_OUT"
+  tar -czf "$MQTT_OUT" -C . mosquitto/data 2>/dev/null || true
+  MQTT_SIZE=$(du -h "$MQTT_OUT" 2>/dev/null | cut -f1)
+  echo "[backup] mosquitto 完成: $MQTT_OUT ($MQTT_SIZE)"
+  find "$BACKUP_DIR" -name "mosquitto-*.tar.gz" -mtime "+$RETENTION_DAYS" -delete 2>/dev/null
+fi

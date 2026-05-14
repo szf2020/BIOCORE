@@ -21,6 +21,7 @@ import http from 'http';
 // `broadcast` references so existing call sites (route handlers,
 // wireReactorEvents, gracefulShutdown, /status) keep working unchanged.
 import { createWsServer } from './ws-server';
+import { createMqttPublisher } from './mqtt-publisher';
 // node-snap7 动态加载: Node v24 可能缺少编译后的 native binding
 let S7Client: any;
 try {
@@ -620,11 +621,20 @@ const server = http.createServer(app);
 // live in ./ws-server. Keep the local `wss` / `broadcast` aliases so
 // downstream code (route handlers, wireReactorEvents, /status,
 // gracefulShutdown) keeps working unchanged.
+// MQTT Publisher (W2: BIOCore broadcast 镜像到 mosquitto, FUXA 订阅)
+// 环境变量:
+//   MQTT_BROKER_URL=mqtt://localhost:1883  (默认)
+//   MQTT_ENABLED=false                     可关闭
+const mqttPublisher = createMqttPublisher({
+  enabled: process.env.MQTT_ENABLED !== 'false',
+});
+
 const { wss, broadcast } = createWsServer({
   server,
   sqlite,
   verifyJWT,
   authEnabled: AUTH_ENABLED,
+  mqttPublisher,
 });
 
 // ─── 只读 S7 连接 (安全: 测试操作绝不写入PLC) ─────────────

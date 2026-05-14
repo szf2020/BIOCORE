@@ -108,11 +108,27 @@ export function registerAuthRoutes(
     // 更新最后登录时间
     sqlite.getDatabase().prepare('UPDATE users SET last_login_at = datetime(\'now\') WHERE user_id = ?').run(user.user_id);
     const token = createJWT({ user_id: user.user_id, username: user.username, role: user.role, display_name: user.display_name });
+    // W3 SSO: 同时种 httpOnly cookie, 用于 nginx auth_request 校验 FUXA iframe 访问
+    // 前端现有 fetch 仍用 localStorage + Authorization header, 此 cookie 仅为跨 iframe 自动携带
+    res.cookie('biocore_token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000, // 24h
+      path: '/',
+    });
     res.json({ token, user: { user_id: user.user_id, username: user.username, display_name: user.display_name, role: user.role } });
   });
 
   apiRouter.get('/auth/me', (req: any, res) => {
     res.json(req.user || null);
+  });
+
+  // W3 集成: nginx auth_request 调用. 已通过全局 auth middleware 校验 JWT/API-Key,
+  // 走到此 handler 即视为已认证, 返 204 No Content (无 body, 性能高).
+  // 未授权请求被全局 middleware 拦截返 401.
+  apiRouter.get('/auth/verify', (_req: any, res) => {
+    res.status(204).end();
   });
 
   // ── 用户管理 API ──

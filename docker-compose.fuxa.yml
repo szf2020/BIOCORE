@@ -7,10 +7,38 @@
 # 网络: 与 biocore-server 同 network 时, 通过容器名互访 (后续 W2 MQTT 桥用)
 
 services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: biocore-mosquitto
+    restart: unless-stopped
+    ports:
+      - '1883:1883'   # MQTT TCP (BIOCore server + FUXA 连)
+      - '9001:9001'   # MQTT WebSocket (浏览器端可选)
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/#' -C 1 -W 3 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   fuxa:
     image: frangoteam/fuxa:latest
     container_name: biocore-fuxa
     restart: unless-stopped
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    # 开发期: 保留 1881 host port (nginx 通过 host.docker.internal 反代; 直连调试也方便)
+    # 生产期: 注释下面 ports, 改 nginx upstream fuxa 为容器名 biocore-fuxa:1881
     ports:
       - '1881:1881'
     volumes:
@@ -33,6 +61,37 @@ services:
       options:
         max-size: "20m"
         max-file: "5"
+
+  # W3: nginx 反代 + JWT SSO
+  # 浏览器统一入口 http://localhost:8080
+  # 反代 / → BIOCore web-ui :3000, /api/ → server :3001, /fuxa/ → fuxa:1881 (含 auth_request)
+  nginx:
+    image: nginx:alpine
+    container_name: biocore-nginx
+    restart: unless-stopped
+    depends_on:
+      - fuxa
+      - mosquitto
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/logs:/var/log/nginx
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/__nginx_health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    extra_hosts:
+      # macOS/Windows: 让 nginx 通过 host.docker.internal 访问宿主上的 BIOCore web-ui + server
+      # Linux 需手动配 host-gateway, 或把 BIOCore 也容器化
+      - "host.docker.internal:host-gateway"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 # 提示:
 # - W2 任务: 加 mqtt broker (mosquitto), 让 FUXA 通过 MQTT 订阅 BIOCore tag

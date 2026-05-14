@@ -19,6 +19,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import type Database from 'better-sqlite3';
 
 import { hashApiKey } from './middlewares/auth';
+import type { MqttPublisher } from './mqtt-publisher';
 
 export type BroadcastFn = (
   channel: string,
@@ -37,14 +38,24 @@ export interface CreateWsServerOptions {
   sqlite: { getDatabase: () => Database.Database };
   verifyJWT: (token: string) => Record<string, any> | null;
   authEnabled: boolean;
+  mqttPublisher?: MqttPublisher;   // 可选: 提供时所有 broadcast 自动 mirror 到 MQTT topic
 }
 
 export function createWsServer(opts: CreateWsServerOptions): WsServerHandles {
-  const { server, sqlite, verifyJWT, authEnabled } = opts;
+  const { server, sqlite, verifyJWT, authEnabled, mqttPublisher } = opts;
 
   const wss = new WebSocketServer({ server, path: '/ws' });
 
   const broadcast: BroadcastFn = (channel, payload, batchId, reactorId) => {
+    // 镜像到 MQTT (fire-and-forget, 失败不阻塞 WS 主路径)
+    if (mqttPublisher) {
+      try {
+        mqttPublisher.publish(channel, payload, batchId, reactorId);
+      } catch (e) {
+        console.warn(`[MQTT-mirror] publish 失败 channel=${channel}: ${(e as Error).message}`);
+      }
+    }
+
     const msg = JSON.stringify({
       channel,
       timestamp: new Date().toISOString(),
