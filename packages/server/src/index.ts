@@ -1274,6 +1274,81 @@ apiRouter.delete('/interlock-configs/:id', (req, res) => {
   } catch (e) { res.status(500).json({ error: (e as Error).message }); }
 });
 
+// ── 系统级配置 (面包屑等元数据) ──
+
+const CATEGORY_ZH: Record<string, string> = {
+  fermenter: '研发', bioreactor: '生物反应', centrifuge: '离心',
+  purification: '纯化', mixer: '混合', other: '其他',
+};
+
+function deriveReactorGroupName(): string | null {
+  try {
+    const rows: any[] = sqlite.getDatabase().prepare(
+      'SELECT vessel_volume_L, category FROM reactor_configs WHERE enabled = 1'
+    ).all();
+    if (rows.length === 0) return null;
+    const volCount: Record<string, number> = {};
+    const catCount: Record<string, number> = {};
+    rows.forEach(r => {
+      const v = String(r.vessel_volume_L ?? 5);
+      const c = String(r.category || 'fermenter');
+      volCount[v] = (volCount[v] || 0) + 1;
+      catCount[c] = (catCount[c] || 0) + 1;
+    });
+    const modeVol = Object.entries(volCount).sort((a, b) => b[1] - a[1])[0][0];
+    const modeCat = Object.entries(catCount).sort((a, b) => b[1] - a[1])[0][0];
+    return `${modeVol}L ${CATEGORY_ZH[modeCat] || modeCat}罐组 · ${rows.length}台`;
+  } catch { return null; }
+}
+
+function readSystemConfig(): Record<string, string | null> {
+  try {
+    const rows: any[] = sqlite.getDatabase().prepare(
+      'SELECT key, value FROM system_config'
+    ).all();
+    const out: Record<string, string | null> = {};
+    rows.forEach(r => { out[r.key] = r.value; });
+    return out;
+  } catch { return {}; }
+}
+
+/** GET /system-config — 面包屑等系统元数据 (db > env > 推导/硬编码) */
+apiRouter.get('/system-config', (_req, res) => {
+  try {
+    const db = readSystemConfig();
+    const derived = deriveReactorGroupName();
+    res.json({
+      facility_name: db.facility_name || process.env.FACILITY_NAME || '生产车间',
+      line_name: db.line_name || process.env.LINE_NAME || '发酵产线 #1',
+      reactor_group_name: db.reactor_group_name || derived || '反应器组未配置',
+      _meta: {
+        facility_source: db.facility_name ? 'db' : (process.env.FACILITY_NAME ? 'env' : 'default'),
+        line_source: db.line_name ? 'db' : (process.env.LINE_NAME ? 'env' : 'default'),
+        reactor_group_source: db.reactor_group_name ? 'db' : (derived ? 'derived' : 'default'),
+      },
+    });
+  } catch (e) { res.status(500).json({ error: (e as Error).message }); }
+});
+
+/** PUT /system-config — 批量更新 (body: { key1: value1, key2: value2 }) */
+apiRouter.put('/system-config', (req, res) => {
+  try {
+    const ALLOWED = new Set(['facility_name', 'line_name', 'reactor_group_name']);
+    const updates = req.body || {};
+    const stmt = sqlite.getDatabase().prepare(
+      "UPDATE system_config SET value = ?, updated_at = datetime('now') WHERE key = ?"
+    );
+    let count = 0;
+    Object.entries(updates).forEach(([k, v]) => {
+      if (!ALLOWED.has(k)) return;
+      const val = (v === '' || v == null) ? null : String(v);
+      stmt.run(val, k);
+      count++;
+    });
+    res.json({ success: true, updated: count });
+  } catch (e) { res.status(500).json({ error: (e as Error).message }); }
+});
+
 // ── 配方 API ──
 
 // M3.5: DAG 兼容层

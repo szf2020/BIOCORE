@@ -10,7 +10,7 @@ import {
   LayoutDashboard, LineChart, BookOpen, History,
   Database, Bot, Settings, Wifi, WifiOff, Blocks, ChevronDown,
   Gauge, Users, Bell, User, Activity, Droplets, LogOut, Key, FileText, FlaskConical,
-  ShieldCheck, Sigma, Shield, TrendingUp, Brain, Workflow,
+  ShieldCheck, Sigma, Shield, TrendingUp, Brain, Workflow, Building2,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -35,6 +35,7 @@ const NAV_ITEMS = [
   ]},
   { href: '/ai', icon: Bot, label: 'AI助手' },
   { href: '/settings', icon: Settings, label: '系统设置', children: [
+    { href: '/settings/site-meta', icon: Building2, label: '站点元数据' },
     { href: '/settings/device-config', icon: Activity, label: '设备配置' },
     { href: '/settings/plc-config', icon: Wifi, label: 'PLC通讯配置' },
     { href: '/settings/phase-templates', icon: Blocks, label: 'Phase模板配置' },
@@ -60,37 +61,8 @@ function formatElapsed(totalSeconds: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// 反应器组名称: 从启用反应器 vessel_volume_L 众数 + category 推导
-//   优先级: 自定义环境变量 > 自动推导 > 占位
+// 系统级元数据 (面包屑) — 后端 /api/system-config 已合并 db>env>推导, 前端直接渲染返回值
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const CATEGORY_ZH: Record<string, string> = {
-  fermenter: '研发',
-  bioreactor: '生物反应',
-  centrifuge: '离心',
-  purification: '纯化',
-  mixer: '混合',
-  other: '其他',
-};
-function deriveReactorGroup(rows: any[]): string | null {
-  const enabled = rows.filter(r => r?.enabled !== 0);
-  if (enabled.length === 0) return null;
-  // volume 众数
-  const volCount: Record<string, number> = {};
-  enabled.forEach(r => {
-    const v = String(r.vessel_volume_L ?? 5);
-    volCount[v] = (volCount[v] || 0) + 1;
-  });
-  const modeVol = Object.entries(volCount).sort((a, b) => b[1] - a[1])[0][0];
-  // category 众数
-  const catCount: Record<string, number> = {};
-  enabled.forEach(r => {
-    const c = String(r.category || 'fermenter');
-    catCount[c] = (catCount[c] || 0) + 1;
-  });
-  const modeCat = Object.entries(catCount).sort((a, b) => b[1] - a[1])[0][0];
-  const catZh = CATEGORY_ZH[modeCat] || modeCat;
-  return `${modeVol}L ${catZh}罐组 · ${enabled.length}台`;
-}
 
 function LiveClock() {
   const [time, setTime] = useState('');
@@ -194,16 +166,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [stateUpdate?.batch_elapsed_sec]);
 
-  // 反应器组面包屑: 拉 reactor-configs 推导名称 (env 覆盖优先, 否则 vessel+category 众数计算)
-  const [reactorGroupName, setReactorGroupName] = useState<string>('');
+  // 面包屑系统元数据 (后端合并 db > env > 自动推导)
+  const [siteMeta, setSiteMeta] = useState<{ facility_name: string; line_name: string; reactor_group_name: string } | null>(null);
   useEffect(() => {
     if (!user || isLoginPage) return;
-    apiFetch(`${API_BASE}/api/reactor-configs`)
-      .then(r => r.ok ? r.json() : [])
-      .then((rows: any[]) => {
-        const derived = Array.isArray(rows) ? deriveReactorGroup(rows) : null;
-        setReactorGroupName(derived || '');
-      })
+    apiFetch(`${API_BASE}/api/system-config`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setSiteMeta(data); })
       .catch(() => { /* offline OK */ });
   }, [user, isLoginPage]);
 
@@ -347,12 +316,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="h-14 surface-base flex items-center justify-between px-6 flex-shrink-0">
           {/* Left: MES breadcrumb */}
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">{process.env.NEXT_PUBLIC_FACILITY_NAME || '生产车间'}</span>
+            <span className="text-muted-foreground">{siteMeta?.facility_name || process.env.NEXT_PUBLIC_FACILITY_NAME || '生产车间'}</span>
             <span className="text-muted-foreground/40">/</span>
-            <span className="text-muted-foreground">{process.env.NEXT_PUBLIC_LINE_NAME || '发酵产线 #1'}</span>
+            <span className="text-muted-foreground">{siteMeta?.line_name || process.env.NEXT_PUBLIC_LINE_NAME || '发酵产线 #1'}</span>
             <span className="text-muted-foreground/40">/</span>
             <span className="text-foreground font-semibold tracking-tight">
-              {process.env.NEXT_PUBLIC_REACTOR_GROUP_NAME || reactorGroupName || '反应器组未配置'}
+              {siteMeta?.reactor_group_name || process.env.NEXT_PUBLIC_REACTOR_GROUP_NAME || '反应器组未配置'}
             </span>
 
             {stateUpdate && (
