@@ -123,11 +123,15 @@ export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] 
             </span>
           )}
           {/* 运行故障计数 */}
-          {activeRfCount > 0 && (
+          {activeRfCount > 0 ? (
             <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-yellow-500/15 text-amber-600 border border-yellow-500/30">
               RF {activeRfCount} 触发
             </span>
-          )}
+          ) : rfList.length > 0 ? (
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-500/15 text-emerald-600 border border-green-500/30">
+              RF 全通过
+            </span>
+          ) : null}
           {collapsed ? <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
         </div>
       </button>
