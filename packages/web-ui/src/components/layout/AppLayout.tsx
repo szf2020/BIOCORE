@@ -299,34 +299,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             );
           })}
         </div>
-        {/* Bottom: 连接状态 + 主题 + 用户 + 时钟 (从 TopBar 移入此处) */}
-        <div className="px-4 py-3 text-xs text-muted-foreground space-y-2 border-t border-border/40">
-          {/* WS / PLC 状态 */}
-          <div className="flex items-center gap-3" title={wsConnected ? '服务器已连接' : '服务器未连接'}>
+        {/* Bottom connection status (原状: 只显 WS + PLC) */}
+        <div className="px-4 py-3 text-xs text-muted-foreground space-y-1.5">
+          <div className="flex items-center gap-2">
             <div className={`status-led ${wsConnected ? 'status-led-running' : 'status-led-stopped'}`} />
             <span className="font-mono text-[11px]">WS {wsConnected ? '已连接' : '未连接'}</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className={`status-led ${heartbeatStatus?.alive ? 'status-led-running' : 'status-led-idle'}`} />
             <span className="font-mono text-[11px]">PLC {heartbeatStatus?.alive ? '在线' : '离线'}</span>
-          </div>
-          {/* 主题切换 + 用户 + 时钟 */}
-          <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-1">
-            <ThemeToggle />
-            <LiveClock />
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <User className="w-3.5 h-3.5 text-primary" />
-            </div>
-            <span title={`${user.username} (${user.role})`} className="font-medium text-foreground text-[11px] truncate flex-1">{user.display_name}</span>
-            <button
-              onClick={logout}
-              title="退出登录"
-              className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
           </div>
         </div>
       </nav>
@@ -360,9 +341,27 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          {/* Right: 报警信息条 — 占满右侧, 贴近右边界
-              (WS/Theme/User/Clock 已搬到侧栏底部) */}
+          {/* Middle: 报警信息条 (撑满中部, 至 max-w-5xl) */}
           <TopBarAlarmStrip alarms={alarms} />
+
+          {/* Right: theme + user + clock */}
+          <div className="flex items-center gap-4 shrink-0">
+            <ThemeToggle />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <span title={`${user.username} (${user.role})`} className="font-medium text-foreground">{user.display_name}</span>
+              <button
+                onClick={logout}
+                title="退出登录"
+                className="ml-1 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <LiveClock />
+          </div>
         </header>
 
         {/* Page Content — on surface-base (lightest layer) */}
