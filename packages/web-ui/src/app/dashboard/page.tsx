@@ -105,11 +105,23 @@ export default function DashboardPage() {
   const _topAlarms = useRealtimeStore(s => s.alarms);
   const _topTrendBuffer = useRealtimeStore(s => s.trendBuffer);
   const _rd = selectedReactor ? reactorData[selectedReactor] : null;
-  const processValues = _rd?.processValues ?? _topProcessValues;
-  const stateUpdate = _rd?.stateUpdate ?? _topStateUpdate;
-  const calculatedParams = _rd?.calculatedParams ?? _topCalculatedParams;
-  const alarms = _rd?.alarms ?? _topAlarms;
-  const trendBuffer = _rd?.trendBuffer ?? _topTrendBuffer;
+  // 反应器隔离: selectedReactor 选定时只用其独立数据, 不 fallback 顶层
+  // (避免 F01 running 的 PV 渗透到 F02 idle 视图)
+  const _reactorState = selectedReactor ? reactorStates[selectedReactor] : null;
+  const _isReactorActive = !!_reactorState && _reactorState.state !== 'idle' && _reactorState.state !== 'stopped';
+  // PV/计算参数/趋势只在该反应器活跃时显示, 否则 null (UI 显 '--')
+  const processValues = selectedReactor
+    ? (_isReactorActive ? (_rd?.processValues ?? null) : null)
+    : _topProcessValues;
+  const stateUpdate = _rd?.stateUpdate ?? (selectedReactor ? null : _topStateUpdate);
+  const calculatedParams = selectedReactor
+    ? (_isReactorActive ? (_rd?.calculatedParams ?? null) : null)
+    : _topCalculatedParams;
+  const alarms = _rd?.alarms ?? (selectedReactor ? [] : _topAlarms);
+  const _emptyTrend = { timestamps: [], temperature: [], pH: [], DO: [], rpm: [], airflow: [] };
+  const trendBuffer = selectedReactor
+    ? (_isReactorActive ? (_rd?.trendBuffer ?? _topTrendBuffer) : _emptyTrend)
+    : _topTrendBuffer;
   const [configuredIds, setConfiguredIds] = useState<string[]>([]);
   const [configLoaded, setConfigLoaded] = useState(false);
   const [layoutEditorOpen, setLayoutEditorOpen] = useState(false);
