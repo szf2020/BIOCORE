@@ -15,6 +15,10 @@
 //   (no ESLint config exists in this repo yet).
 // ============================================================
 
+// 必须在所有其它 import 前: 提前加载 .env, 让 plc-bridge 等模块 top-level
+// 读取 process.env.MOCK_PLC 时拿到正确值 (修复 IL/RF 检测的 'PLC 未连接' 问题)
+import './_env';
+
 import http from 'http';
 // v1.9.0 P2 bucket 1: WebSocketServer + connection auth + broadcast()
 // extracted to ./ws-server. We keep the module-level `wss` and
@@ -3286,6 +3290,29 @@ async function start(): Promise<void> {
       wireReactorEvents,
     },
   });
+
+  // 自动注册所有 enabled 反应器 (启动后 reactor_configs 中标记启用但未由 orphan
+  // recovery 注册的, 在此补齐). 避免每次手动 POST /api/reactors.
+  try {
+    const configured = sqlite.listReactorConfigs();
+    for (const cfg of configured) {
+      if (!cfg.enabled || cfg.enabled === 0) continue;
+      if (reactorManager.getReactor(cfg.reactor_id)) continue;
+      // try/catch 防止重复注册或其它边缘错误
+      try {
+        reactorManager.addReactor(cfg.reactor_id, buildReactorConfig(cfg.reactor_id));
+        wireReactorEvents(cfg.reactor_id);
+        console.log(`[BOOT] 自动注册反应器 ${cfg.reactor_id}`);
+      } catch (e) {
+        // 已注册 (orphan recovery 已处理) 或其它错误 — 静默跳过
+        if (!/already/i.test((e as Error).message)) {
+          console.warn(`[BOOT] 反应器 ${cfg.reactor_id} 注册失败: ${(e as Error).message}`);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn(`[BOOT] 自动注册扫描异常: ${(e as Error).message}`);
+  }
 
   // M2 Level 3: 启动后异步全量同步 BIOCore → FUXA users
   // (失败仅 warn, 不阻塞; 后续每小时由 fuxaUserSync 内部 setInterval reconcile)
