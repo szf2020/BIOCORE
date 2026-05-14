@@ -49,7 +49,7 @@ export function CalculatedParamsBar({ params, airflow, feedRate }: CalculatedPar
   const airflowStr = typeof airflow === 'number' ? airflow.toFixed(1) : '--';
   const feedRateStr = typeof feedRate === 'number' ? feedRate.toFixed(1) : '--';
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t bg-card px-5 py-2.5">
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-lg border border-border bg-card px-5 py-2.5">
       <Cell label="通气量" value={airflowStr} unit="NL/min" />
       <Cell label="补料速率" value={feedRateStr} unit="mL/h" />
       {PARAMS.map(({ label, key, unit, precision }) => {
