@@ -50,7 +50,8 @@ interface Props {
 export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] }: Props) {
   const [ilData, setIlData] = useState<InterlockResponse | null>(null);
   const [rfList, setRfList] = useState<RunningFaultItem[]>([]);
-  const [collapsed, setCollapsed] = useState(false);
+  // userCollapsed: null=auto (跟随故障状态), true/false=用户手动覆盖
+  const [userCollapsed, setUserCollapsed] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
 
   const loadIl = useCallback(async () => {
@@ -92,11 +93,16 @@ export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] 
   const activeFaultSet = new Set(activeFaultCodes);
   const activeRfCount = rfList.filter(rf => activeFaultSet.has(rf.code)).length;
 
+  // 自动展开逻辑: 有故障默认展开, 无故障默认折叠. 用户手动操作后尊重选择
+  const hasIssues = ilFailedCount > 0 || activeRfCount > 0;
+  const collapsed = userCollapsed === null ? !hasIssues : userCollapsed;
+  const setCollapsed = (c: boolean) => setUserCollapsed(c);
+
   return (
     <div className="bg-card border border-border rounded-md overflow-hidden">
       {/* 标题栏 */}
       <button
-        onClick={() => setCollapsed(c => !c)}
+        onClick={() => setCollapsed(!collapsed)}
         className="w-full flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30 hover:bg-muted/50 transition-colors"
       >
         <div className="flex items-center gap-2">
