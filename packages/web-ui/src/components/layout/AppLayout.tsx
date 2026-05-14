@@ -391,7 +391,7 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
 
   if (unack.length === 0) {
     return (
-      <div className="ml-auto flex items-center gap-2 px-3 w-full max-w-2xl rounded-md border border-border bg-muted h-9">
+      <div className="ml-auto flex items-center gap-2 px-3 w-full max-w-[840px] rounded-md border border-border bg-muted h-9">
         <Bell className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
         <span className="text-xs text-muted-foreground shrink-0">报警信息</span>
         <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border border-muted-foreground/40 text-muted-foreground/70">0</span>
@@ -414,7 +414,7 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
     : 'bg-blue-500/15 text-blue-600 border-blue-500/30';
 
   return (
-    <div className="ml-auto flex items-center gap-2 px-3 w-full max-w-2xl rounded-md border border-red-500/40 bg-red-500/10 dark:bg-red-500/15 h-9">
+    <div className="ml-auto flex items-center gap-2 px-3 w-full max-w-[840px] rounded-md border border-red-500/40 bg-red-500/10 dark:bg-red-500/15 h-9">
       <Bell className="w-3.5 h-3.5 text-mes-red shrink-0" />
       <span className="text-xs font-medium text-red-700 dark:text-red-300 shrink-0">报警信息</span>
       <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border ${sevColor}`}>
