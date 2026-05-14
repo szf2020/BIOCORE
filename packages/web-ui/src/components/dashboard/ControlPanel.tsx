@@ -435,14 +435,14 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
             </button>
           )}
 
-          {/* Phase 控制列表 */}
+          {/* Phase 控制列表 — 限高内滚, 避免占满左列挤掉连锁面板 */}
           {realPhaseStatuses.length > 0 && (
             <div className="border-t border-border pt-3">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-1 h-3.5 bg-primary rounded" />
-                <span className="text-xs font-semibold text-foreground">Phase 控制列表</span>
+                <span className="text-xs font-semibold text-foreground">Phase 控制列表 ({realPhaseStatuses.length})</span>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 max-h-64 overflow-y-auto mes-scroll pr-1">
                 {realPhaseStatuses.map(ps => {
                   const cfg = phaseStateColors[ps.state] || phaseStateColors.pending;
                   const progress = ps.total_steps > 0 ? Math.round((ps.step_number / ps.total_steps) * 100) : 0;
