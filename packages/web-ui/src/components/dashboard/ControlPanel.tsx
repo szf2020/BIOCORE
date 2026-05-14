@@ -367,13 +367,15 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                 return (
                   <div className="border border-border rounded p-2 space-y-1">
                     <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">生产 Phase ({prodPhases.length})</div>
-                    {prodPhases.map((p: any, i: number) => (
-                      <div key={i} className="flex items-center gap-2 text-xs px-1.5 py-1 rounded bg-muted/20">
-                        <span className="w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold flex-shrink-0">{i + 1}</span>
-                        <span className="font-medium text-foreground">{phaseLabel(p.type)}</span>
-                        <span className="ml-auto px-1.5 py-0.5 rounded text-[9px] bg-gray-500/15 text-gray-400 border border-gray-500/20">待执行</span>
-                      </div>
-                    ))}
+                    <div className="space-y-1 max-h-48 overflow-y-auto mes-scroll pr-1">
+                      {prodPhases.map((p: any, i: number) => (
+                        <div key={i} className="flex items-center gap-2 text-xs px-1.5 py-1 rounded bg-muted/20">
+                          <span className="w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold flex-shrink-0">{i + 1}</span>
+                          <span className="font-medium text-foreground">{phaseLabel(p.type)}</span>
+                          <span className="ml-auto px-1.5 py-0.5 rounded text-[9px] bg-gray-500/15 text-gray-400 border border-gray-500/20">待执行</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 );
               })()}
