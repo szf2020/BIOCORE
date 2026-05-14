@@ -262,11 +262,18 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
     return `剩余 ${formatTime(remaining)}`;
   };
 
-  const unacknowledgedAlarms = alarms.filter(a => !a.acknowledged_at);
+  // 报警 vs 提示分类: CUSUM/AI 类 source 算"提示", 其它算"报警"
+  // (与 NoticeBanner.isNotice 同语义, 此处内联避免循环 import)
+  const isNoticeAlarm = (a: any): boolean => {
+    const src = String(a.source || '');
+    const code = String(a.alarm_code || '');
+    return src.startsWith('ai:') || src === 'cusum_anomaly' || code.startsWith('CUSUM_');
+  };
+  const unacknowledgedAlarms = alarms.filter(a => !a.acknowledged_at && !isNoticeAlarm(a));
 
   return (
     <div className="space-y-3">
-      {/* ═══ 报警提示 (在配方主控上方) ═══ */}
+      {/* ═══ 报警提示 (在配方主控上方) — 只显示操作性故障, CUSUM 类提示在右侧 NoticeBanner ═══ */}
       {unacknowledgedAlarms.length > 0 && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-md p-2.5 space-y-1.5">
           <div className="flex items-center gap-1.5 text-sm font-semibold text-red-600">
