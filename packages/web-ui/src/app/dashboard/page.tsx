@@ -18,7 +18,7 @@ import { CalculatedParamsBar } from '@/components/dashboard/CalculatedParamsBar'
 import { CusumAlertPanel } from '@/components/dashboard/CusumAlertPanel';
 import { FeedAdvisorCard } from '@/components/dashboard/FeedAdvisorCard';
 import { InterlockPanel } from '@/components/dashboard/InterlockPanel';
-import { Server, Plus, Settings } from 'lucide-react';
+import { Server, Plus, Settings, Workflow } from 'lucide-react';
 import { loadDashboardLayout } from '@/components/dashboard/dashboard-layout-config';
 import type { DashboardLayout } from '@/components/dashboard/dashboard-layout-config';
 
@@ -181,8 +181,12 @@ export default function DashboardPage() {
             </button>
           );
         })}
-        {/* 布局自定义按钮 */}
-        <div className="ml-auto">
+        {/* 二级菜单 + 布局自定义按钮 */}
+        <div className="ml-auto flex items-center gap-1">
+          <Link href="/dashboard/hmi" title="工艺画面 (FUXA HMI)"
+            className="p-2 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            <Workflow className="w-4 h-4" />
+          </Link>
           <button onClick={() => setLayoutEditorOpen(true)} title="自定义仪表盘布局"
             className="p-2 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             <Settings className="w-4 h-4" />
