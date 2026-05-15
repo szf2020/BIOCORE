@@ -7,7 +7,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Pencil, Eye } from 'lucide-react';
 import { useRealtimeStore } from '@/stores/realtime-store';
 
 const FUXA_URL = process.env.NEXT_PUBLIC_FUXA_URL || 'http://localhost:1881';
@@ -44,6 +44,7 @@ export default function HmiPage() {
   const reactorStates = useRealtimeStore(s => s.reactorStates);
   const [reactorIds, setReactorIds] = useState<string[]>([]);
   const [selectedReactor, setSelectedReactor] = useState<string>('');
+  const [editMode, setEditMode] = useState<boolean>(false);
 
   // 拉取反应器配置 (与 dashboard 同源 /api/reactor-configs)
   useEffect(() => {
@@ -65,10 +66,12 @@ export default function HmiPage() {
     }));
   }, [reactorIds, reactorStates]);
 
-  // FUXA iframe URL 含 reactor 参数 (FUXA project 可读取; 当前未对接也无害)
+  // FUXA iframe URL 含 reactor 参数; editMode=true → /editor (编辑), false → /lab (运行视图)
   const iframeSrc = useMemo(() => {
-    return selectedReactor ? `${FUXA_URL}/?reactor=${encodeURIComponent(selectedReactor)}` : FUXA_URL;
-  }, [selectedReactor]);
+    const path = editMode ? '/editor' : '/lab';
+    const q = selectedReactor ? `?reactor=${encodeURIComponent(selectedReactor)}` : '';
+    return `${FUXA_URL}${path}${q}`;
+  }, [selectedReactor, editMode]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-70px)] bg-slate-50">
@@ -105,6 +108,20 @@ export default function HmiPage() {
             </button>
           );
         })}
+
+        {/* 右上角: 切换 FUXA 编辑/查看模式 */}
+        <button
+          onClick={() => setEditMode(v => !v)}
+          title={editMode ? '切换到查看模式' : '切换到编辑模式'}
+          className={`ml-auto flex items-center gap-1.5 px-3 py-1 rounded text-sm shrink-0 border transition-colors ${
+            editMode
+              ? 'bg-blue-500 text-white border-blue-600 hover:bg-blue-600'
+              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+          }`}
+        >
+          {editMode ? <Pencil className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          {editMode ? '编辑模式' : '查看模式'}
+        </button>
       </header>
 
       {/* FUXA iframe 主区 — key 让 selectedReactor 切换时强制 reload */}
