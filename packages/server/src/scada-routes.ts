@@ -244,4 +244,41 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
     broadcast('scada:view:deleted', { view_id: viewId, project_id: old.project_id });
     res.json({ success: true });
   });
+
+  // ─── 写意图 (建议缓冲区入口, 永不直写 PLC) ──────────────────
+  apiRouter.post('/scada/write-intents', requireRole('admin', 'engineer', 'operator'), (req, res) => {
+    const { tag, value, reason, view_id, widget_id, batch_id } = req.body ?? {};
+    if (isBlankString(tag) || isBlankString(view_id) || isBlankString(widget_id) || isBlankString(reason)) {
+      return res.status(400).json({ error: 'missing_required_fields' });
+    }
+    if (reason.trim().length < 3) {
+      return res.status(400).json({ error: 'reason_too_short' });
+    }
+    if (value !== null && value !== undefined &&
+        !['number', 'string', 'boolean'].includes(typeof value)) {
+      return res.status(400).json({ error: 'invalid_value_type' });
+    }
+
+    const suggestion_id = sqlite.createSuggestion({
+      batch_id: (typeof batch_id === 'string' && batch_id) ? batch_id : 'manual',
+      suggestion_type: 'widget_button',
+      source_module: 'scada',
+      target_param: tag,
+      suggested_value: typeof value === 'number' ? value : undefined,
+      reasoning: JSON.stringify({ reason: reason.trim(), value, view_id, widget_id }),
+    });
+
+    const userId = getUserId(req);
+    sqlite.writeAuditLog({
+      user_id: userId,
+      action: 'scada_write_intent',
+      target_type: 'ai_suggestion',
+      target_id: String(suggestion_id),
+      new_value: JSON.stringify({ tag, value, view_id, widget_id, reason: reason.trim() }),
+      ip_address: getIp(req),
+    });
+
+    broadcast('ai_suggestion', { id: suggestion_id, action: 'created', source: 'scada' });
+    res.json({ success: true, suggestion_id });
+  });
 }

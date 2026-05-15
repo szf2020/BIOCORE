@@ -243,3 +243,84 @@ describe('SCADA REST API — audit + broadcast', () => {
     expect(broadcasts.map(b => b.channel)).toContain('scada:project:deleted');
   });
 });
+
+describe('POST /scada/write-intents', () => {
+  function setupWithAiSuggestions() {
+    const ctx = makeApp();
+    ctx.sqlite.getDatabase().exec(`
+      CREATE TABLE IF NOT EXISTS ai_suggestions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        batch_id TEXT NOT NULL,
+        suggestion_type TEXT NOT NULL,
+        source_module TEXT NOT NULL,
+        target_param TEXT NOT NULL,
+        current_value REAL,
+        suggested_value REAL,
+        confidence REAL,
+        reasoning TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        expires_at TEXT,
+        decided_by TEXT,
+        decided_at TEXT
+      );
+    `);
+    return ctx;
+  }
+
+  it('operator role: valid payload → 200, inserts ai_suggestions row, writes audit, broadcasts', async () => {
+    const { app, sqlite, broadcasts } = setupWithAiSuggestions();
+    const r = await request(app)
+      .post('/api/v1/scada/write-intents')
+      .set('X-Test-Role', 'operator')
+      .send({
+        tag: 'F01.SP-temp', value: 38, reason: '测试温度提升',
+        view_id: 'v1', widget_id: 'b1',
+      });
+    expect(r.status).toBe(200);
+    expect(r.body.success).toBe(true);
+    expect(typeof r.body.suggestion_id).toBe('number');
+
+    const row: any = sqlite.getDatabase()
+      .prepare('SELECT * FROM ai_suggestions WHERE id = ?').get(r.body.suggestion_id);
+    expect(row).toBeTruthy();
+    expect(row.source_module).toBe('scada');
+    expect(row.suggestion_type).toBe('widget_button');
+    expect(row.target_param).toBe('F01.SP-temp');
+    expect(row.suggested_value).toBe(38);
+    expect(JSON.parse(row.reasoning).reason).toBe('测试温度提升');
+
+    const audit: any = sqlite.getDatabase()
+      .prepare("SELECT * FROM audit_logs WHERE action = 'scada_write_intent'").get();
+    expect(audit).toBeTruthy();
+    expect(audit.target_id).toBe(String(r.body.suggestion_id));
+
+    expect(broadcasts.find(b => b.channel === 'ai_suggestion')).toBeTruthy();
+  });
+
+  it('missing reason → 400 missing_required_fields; short reason → 400 reason_too_short', async () => {
+    const { app } = setupWithAiSuggestions();
+    const r1 = await request(app)
+      .post('/api/v1/scada/write-intents')
+      .set('X-Test-Role', 'operator')
+      .send({ tag: 'F01.SP', view_id: 'v1', widget_id: 'b1' });
+    expect(r1.status).toBe(400);
+    expect(r1.body.error).toBe('missing_required_fields');
+
+    const r2 = await request(app)
+      .post('/api/v1/scada/write-intents')
+      .set('X-Test-Role', 'operator')
+      .send({ tag: 'F01.SP', reason: 'aa', view_id: 'v1', widget_id: 'b1' });
+    expect(r2.status).toBe(400);
+    expect(r2.body.error).toBe('reason_too_short');
+  });
+
+  it('viewer role → 403 (operator/engineer/admin only)', async () => {
+    const { app } = setupWithAiSuggestions();
+    const r = await request(app)
+      .post('/api/v1/scada/write-intents')
+      .set('X-Test-Role', 'viewer')
+      .send({ tag: 'F01.SP', reason: '尝试', view_id: 'v1', widget_id: 'b1' });
+    expect(r.status).toBe(403);
+  });
+});
