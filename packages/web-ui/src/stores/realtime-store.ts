@@ -26,14 +26,19 @@ interface StepProgress {
 }
 
 interface AiSuggestion {
-  id: string;
-  type: string;
-  message: string;
+  id: number | string;
+  type?: string;
+  message?: string;
   parameter?: string;
   current_value?: number;
-  suggested_value?: number;
+  suggested_value?: number | null;
   confidence?: number;
-  timestamp: string;
+  timestamp?: string;
+  // SCADA display fields (sub-project 6)
+  action?: string;
+  source?: string;
+  source_module?: string;
+  target_param?: string;
 }
 
 interface SoftSensorData {
