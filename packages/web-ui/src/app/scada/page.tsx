@@ -2,12 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { fetchProjects, fetchProject, type ScadaProject, type ScadaViewSummary } from '@/api/scada';
+import { NewViewDialog } from '@/components/scada/editor/NewViewDialog';
 
 export default function ScadaIndexPage() {
   const [projects, setProjects] = useState<ScadaProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [views, setViews] = useState<ScadaViewSummary[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  const [newOpen, setNewOpen] = useState(false);
 
   useEffect(() => {
     fetchProjects()
@@ -32,7 +34,17 @@ export default function ScadaIndexPage() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">SCADA 工艺画面</h1>
-        <Link href="/dashboard" className="text-sm text-blue-600 hover:underline">← 返回 Dashboard</Link>
+        <div className="flex items-center gap-3 text-sm">
+          <button
+            type="button"
+            onClick={() => setNewOpen(true)}
+            disabled={projects.length === 0}
+            className="px-3 py-1.5 bg-blue-600 text-white rounded disabled:opacity-50"
+          >
+            + 新建视图
+          </button>
+          <Link href="/dashboard" className="text-blue-600 hover:underline">← 返回 Dashboard</Link>
+        </div>
       </div>
 
       {err && <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded text-sm">{err}</div>}
@@ -90,6 +102,8 @@ export default function ScadaIndexPage() {
           </tbody>
         </table>
       )}
+
+      <NewViewDialog open={newOpen} projects={projects} onClose={() => setNewOpen(false)} />
     </div>
   );
 }
