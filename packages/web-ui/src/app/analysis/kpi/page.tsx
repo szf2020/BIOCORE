@@ -117,7 +117,7 @@ export default function KpiDashboardPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-4">
+    <div className="p-4 space-y-4">
       {/* 标题 */}
       <div className="flex items-center justify-between">
         <div>

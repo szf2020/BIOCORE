@@ -160,7 +160,7 @@ export default function AuditLogsPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-4">
+    <div className="p-4 space-y-4">
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
