@@ -89,6 +89,10 @@ WriteIntentDialog
   → 操作员输 reason (textarea, ≥3 字符 校验, submit disabled until valid)
   → 取消 → close, pending=null
   → 提交 →
+      // payload.tag = 真正的 PLC tag (例如 'F01.SP-temp'),
+      // action     = widget-action 类型枚举 (例如 'open_suggest_dialog')
+      // fallback action 作为 tag 仅在编辑器未配 payload.tag 时兜底,
+      // 操作员可在 dialog 内编辑显示的 tag 字段
       api.submitWriteIntent({
         tag: payload?.tag ?? action,
         value: payload?.value ?? null,
@@ -215,7 +219,7 @@ export default function ScadaViewerPage() {
   useEffect(() => { reload(); }, [viewId]);
   useEffect(() => {
     if (savedTick?.view_id === viewId && savedTick.updated_at !== view?.updated_at) reload();
-  }, [savedTick]);
+  }, [savedTick, viewId, view?.updated_at]);
 
   if (err) return <div className="p-6 text-red-600">{err}</div>;
   if (!view) return <div className="p-6">加载中...</div>;
@@ -249,7 +253,7 @@ Test 覆盖: 2 cases (dispatch view:saved → tick set; dispatch view:deleted �
 | 文件 | Case | 描述 |
 |---|---|---|
 | WidgetView.test.tsx | 1 | items={} → 空画布 (0 BoundWidget) |
-| WidgetView.test.tsx | 2 | 3 items → 3 BoundWidget mount, 各 key 含 bindings.length |
+| WidgetView.test.tsx | 2 | 3 items → 3 stub BoundWidget mount, 通过 `data-blen` 属性验证各 widget.bindings.length 传入 (key 不可读, 间接验证) |
 | WidgetView.test.tsx | 3 | view.width/height/background 应用为 inline style |
 | ViewActionRouter.test.tsx | 1 | dispatchEvent widget-action → dialog 出现 with widgetId |
 | ViewActionRouter.test.tsx | 2 | unmount → listener removed (再 dispatch 不触发 state) |
