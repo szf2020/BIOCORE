@@ -25,6 +25,8 @@ export interface ScadaRoutesDeps {
   broadcast: (channel: string, payload: any) => void;
 }
 
+// Fallback to 'unknown' is defensive; requireAuth middleware ensures req.user is set in production.
+// Only fires in misconfigured tests.
 function getUserId(req: Request): string {
   return (req as any).user?.user_id || 'unknown';
 }
@@ -55,7 +57,14 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
       return res.status(409).json({ error: 'project_id_conflict' });
     }
     const userId = getUserId(req);
-    sqlite.createScadaProject({ project_id, name, description: description ?? null, created_by: userId });
+    try {
+      sqlite.createScadaProject({ project_id, name, description: description ?? null, created_by: userId });
+    } catch (e: any) {
+      if (e?.code === 'SQLITE_CONSTRAINT_PRIMARYKEY' || /UNIQUE/i.test(e?.message ?? '')) {
+        return res.status(409).json({ error: 'project_id_conflict' });
+      }
+      throw e;
+    }
     sqlite.writeAuditLog({
       user_id: userId,
       action: 'scada_project_create',
