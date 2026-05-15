@@ -143,6 +143,10 @@ export interface ScadaSuggestion {
   expires_at: string | null;
   decided_by: string | null;
   decided_at: string | null;
+  dispatch_status?: 'pending_dispatch' | 'dispatching' | 'dispatched' | 'failed' | null;
+  dispatch_retry_count?: number;
+  dispatched_at?: string | null;
+  dispatch_error?: string | null;
 }
 
 function unwrap<T>(body: any): T {

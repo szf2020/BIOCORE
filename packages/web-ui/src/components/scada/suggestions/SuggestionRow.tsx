@@ -2,6 +2,20 @@
 import React from 'react';
 import type { ScadaSuggestion } from '@/api/scada';
 
+const DISPATCH_LABELS: Record<string, string> = {
+  pending_dispatch: '待下发',
+  dispatching: '下发中',
+  dispatched: '已下发',
+  failed: '下发失败',
+};
+
+const DISPATCH_COLORS: Record<string, string> = {
+  pending_dispatch: 'bg-yellow-100 text-yellow-700',
+  dispatching: 'bg-blue-100 text-blue-700',
+  dispatched: 'bg-green-100 text-green-700',
+  failed: 'bg-red-100 text-red-700',
+};
+
 interface Props {
   suggestion: ScadaSuggestion;
   onAccept: (id: number) => void;
@@ -28,9 +42,19 @@ export function SuggestionRow({ suggestion, onAccept, onReject }: Props) {
 
   return (
     <div className="border rounded p-3 bg-white space-y-2">
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-baseline justify-between gap-2">
         <div className="font-mono text-sm">{suggestion.target_param}</div>
-        <span className="text-xs text-gray-400">#{suggestion.id} · {suggestion.created_at}</span>
+        <div className="flex items-center gap-2">
+          {suggestion.dispatch_status && DISPATCH_LABELS[suggestion.dispatch_status] && (
+            <span
+              title={suggestion.dispatch_error ?? undefined}
+              className={`text-xs px-2 py-0.5 rounded ${DISPATCH_COLORS[suggestion.dispatch_status]}`}
+            >
+              {DISPATCH_LABELS[suggestion.dispatch_status]}
+            </span>
+          )}
+          <span className="text-xs text-gray-400">#{suggestion.id} · {suggestion.created_at}</span>
+        </div>
       </div>
       <div className="text-sm">
         <span className="text-gray-500">建议值: </span>
