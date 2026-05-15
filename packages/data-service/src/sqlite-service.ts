@@ -293,6 +293,52 @@ export class SQLiteService {
     ).all();
   }
 
+  setDispatchPending(id: number): void {
+    this.db.prepare(`
+      UPDATE ai_suggestions SET dispatch_status='pending_dispatch'
+      WHERE id=? AND suggestion_type='widget_button' AND source_module='scada'
+    `).run(id);
+  }
+
+  claimPendingDispatches(limit: number): any[] {
+    return this.db.transaction(() => {
+      const rows = this.db.prepare(`
+        SELECT * FROM ai_suggestions
+        WHERE dispatch_status='pending_dispatch'
+        ORDER BY id LIMIT ?
+      `).all(limit) as any[];
+      if (rows.length === 0) return [];
+      const ids = rows.map((r: any) => r.id);
+      const placeholders = ids.map(() => '?').join(',');
+      this.db.prepare(`UPDATE ai_suggestions SET dispatch_status='dispatching' WHERE id IN (${placeholders})`).run(...ids);
+      return rows;
+    })();
+  }
+
+  markDispatched(id: number): void {
+    this.db.prepare(`
+      UPDATE ai_suggestions
+      SET dispatch_status='dispatched', dispatched_at=datetime('now'), dispatch_error=NULL
+      WHERE id=?
+    `).run(id);
+  }
+
+  markDispatchFailed(id: number, err: string): void {
+    this.db.prepare(`UPDATE ai_suggestions SET dispatch_status='failed', dispatch_error=? WHERE id=?`).run(err, id);
+  }
+
+  incrementDispatchRetry(id: number): void {
+    this.db.prepare(`
+      UPDATE ai_suggestions
+      SET dispatch_status='pending_dispatch', dispatch_retry_count=dispatch_retry_count+1
+      WHERE id=?
+    `).run(id);
+  }
+
+  rollbackInProgressDispatches(): void {
+    this.db.prepare(`UPDATE ai_suggestions SET dispatch_status='pending_dispatch' WHERE dispatch_status='dispatching'`).run();
+  }
+
   getPendingSuggestionsBySource(batchId?: string, sourceModule?: string): any[] {
     const clauses: string[] = ["status = 'pending'"];
     const params: any[] = [];
