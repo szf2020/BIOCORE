@@ -18,7 +18,6 @@ import { isNotice } from '@/components/dashboard/NoticeBanner';
 import { CalculatedParamsBar } from '@/components/dashboard/CalculatedParamsBar';
 import { CusumAlertPanel } from '@/components/dashboard/CusumAlertPanel';
 import { FeedAdvisorCard } from '@/components/dashboard/FeedAdvisorCard';
-import { InterlockPanel } from '@/components/dashboard/InterlockPanel';
 import { Server, Plus, Settings } from 'lucide-react';
 import { loadDashboardLayout } from '@/components/dashboard/dashboard-layout-config';
 import type { DashboardLayout } from '@/components/dashboard/dashboard-layout-config';
@@ -74,15 +73,15 @@ function BigParamCard({ label, value, unit, sv, precision = 1, color = 'text-for
   const displayVal = value !== null && value !== undefined ? value.toFixed(precision) : '--';
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5 flex flex-col justify-between min-h-[130px]">
+    <div className="rounded-lg border border-border bg-card px-3 py-2 flex flex-col justify-between min-h-[87px] flex-1 min-w-[120px]">
       <div className="text-sm text-muted-foreground">{label}</div>
-      <div className="flex items-baseline gap-1.5 mt-2">
-        <span className={`text-5xl font-bold font-mono tracking-tight ${color}`}>{displayVal}</span>
-        <span className="text-base text-muted-foreground">{unit}</span>
+      <div className="flex items-baseline gap-1.5 mt-0.5">
+        <span className={`text-3xl font-bold font-mono tracking-tight ${color}`}>{displayVal}</span>
+        <span className="text-xs text-muted-foreground">{unit}</span>
       </div>
       {sv !== undefined && (
-        <div className="mt-2">
-          <span className="text-base font-mono font-semibold px-2.5 py-1 rounded bg-primary/15 text-primary">
+        <div className="mt-1">
+          <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-primary/15 text-primary">
             SP: {sv}
           </span>
         </div>
@@ -185,12 +184,12 @@ export default function DashboardPage() {
   return (
     <div className="h-full flex flex-col">
       {/* 反应器选择栏 */}
-      <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-border bg-card/50">
+      <div className="flex items-center gap-2 px-4 py-1 border-b border-border bg-card/50">
         {reactorList.map(reactor => {
           const isSelected = selectedReactor === reactor.id;
           return (
             <button key={reactor.id} onClick={() => setSelectedReactor(reactor.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-4 py-1 rounded text-sm font-medium transition-all ${
                 isSelected
                   ? 'bg-primary/15 text-primary border border-primary/40'
                   : 'bg-muted/50 text-muted-foreground border border-transparent hover:bg-muted hover:text-foreground'
@@ -206,31 +205,19 @@ export default function DashboardPage() {
         {/* 布局自定义按钮 */}
         <div className="ml-auto">
           <button onClick={() => setLayoutEditorOpen(true)} title="自定义仪表盘布局"
-            className="p-2 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             <Settings className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       {/* 主内容区 */}
-      <div className="flex-1 flex gap-4 p-4 overflow-hidden">
+      <div className="flex-1 flex gap-2 p-2 overflow-hidden">
         {/* 左: 控制面板 + 状态机连锁面板
             min-h-0 + overflow-y-scroll: 列可滚动
             内层 wrap 加 flex-shrink-0: panel 保持自然高度, 不被 flex 压缩 */}
-        <div className="w-[360px] flex-shrink-0 flex flex-col gap-3 overflow-y-scroll mes-scroll min-h-0">
-          <div className="flex-shrink-0">
-            <ControlPanel state={stateUpdate} reactorId={selectedReactor} />
-          </div>
-          {/* 状态机 RF/IL 连锁关联显示 (放在启动按钮下面, 故障自动展开) */}
-          {selectedReactor && (
-            <div className="flex-shrink-0">
-              <InterlockPanel
-                reactorId={selectedReactor}
-                currentState={(reactorStates[selectedReactor]?.state as string) || stateUpdate?.state}
-                activeFaultCodes={alarms.filter(a => !a.acknowledged_at).map(a => (a as any).code).filter(Boolean)}
-              />
-            </div>
-          )}
+        <div className="w-[360px] flex-shrink-0 flex flex-col min-h-0">
+          <ControlPanel state={stateUpdate} reactorId={selectedReactor} />
         </div>
 
         {/* 右: 参数 + 趋势 + 报警 (计算参数横条固定置顶, 其余滚动) */}
@@ -246,7 +233,7 @@ export default function DashboardPage() {
               />
             )}
             {/* ① 大字参数卡片 — 按布局配置动态渲染 */}
-            <div className="grid grid-cols-3 xl:grid-cols-6 gap-2.5">
+            <div className="flex flex-wrap gap-2">
               {dashLayout.bigParams.filter(p => p.visible).map(p => {
                 const pvLookup: Record<string, number | null> = {
                   temperature: temp, pH: ph, DO: doVal,

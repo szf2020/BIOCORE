@@ -14,6 +14,8 @@ import type { StateUpdatePayload, BatchState, Alarm } from '@/types';
 import { phaseLabel } from '@/lib/utils';
 import { useAudit } from '@/hooks/useAudit';
 import { useRealtimeStore } from '@/stores/realtime-store';
+import { InterlockPanel } from './InterlockPanel';
+import { apiFetch } from '@/lib/auth';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -62,10 +64,9 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
   const [selectedRecipeId, setSelectedRecipeId] = useState('');
   const [downloading, setDownloading] = useState(false);
   const [batchIdInput, setBatchIdInput] = useState('');
-  // 多反应器隔离: alarms 按 reactorId 取, 未匹配 fallback 顶层
+  // 多反应器严格隔离: 仅显示本罐子的报警 (按 reactor 分片优先, 否则按 batch_id 过滤全局列表)
   const _topAlarms = useRealtimeStore(s => s.alarms);
   const _reactorAlarms = useRealtimeStore(s => s.reactorData[reactorId]?.alarms);
-  const alarms = _reactorAlarms ?? _topAlarms;
   const setAlarms = useRealtimeStore(s => s.setAlarms);
   const ackAlarmInStore = useRealtimeStore(s => s.acknowledgeAlarm);
   const reactorStateFromWS = useRealtimeStore(s => s.reactorStates[reactorId]);
@@ -80,7 +81,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
     if (!reactorId) return;
     let cancelled = false;
     const fetchStatus = () => {
-      fetch(`${API}/api/reactors/${reactorId}/status`)
+      apiFetch(`${API}/api/reactors/${reactorId}/status`)
         .then(r => r.ok ? r.json() : null)
         .then((d: any) => { if (!cancelled && d?.batch_id) setStatusBatchId(d.batch_id); })
         .catch(() => {});
@@ -91,6 +92,12 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
   }, [reactorId]);
   const currentBatchId = (reactorStateFromWS as any)?.batch_id || statusBatchId || '';
   const dagRuntime = currentBatchId ? batchRuntime[currentBatchId] : undefined;
+  // 本罐子报警: WS 分片优先, 否则按 batch_id 过滤全局列表; 无 batch_id → 空
+  const alarms = useMemo(() => {
+    if (_reactorAlarms && _reactorAlarms.length > 0) return _reactorAlarms;
+    if (currentBatchId) return _topAlarms.filter((a: any) => a.batch_id === currentBatchId);
+    return [];
+  }, [_reactorAlarms, _topAlarms, currentBatchId]);
   // 审计追踪 hook
   const audit = useAudit();
   // Phase计时器
@@ -100,7 +107,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
   // 加载 Phase 模板 (一次) — 关联系统设置中的 Phase 模板配置
   const [phaseTemplateMap, setPhaseTemplateMap] = useState<Record<string, string>>({});
   useEffect(() => {
-    fetch(`${API}/api/phase-templates`).then(r => r.ok ? r.json() : []).then((data: any[]) => {
+    apiFetch(`${API}/api/phase-templates`).then(r => r.ok ? r.json() : []).then((data: any[]) => {
       if (Array.isArray(data)) {
         const map: Record<string, string> = {};
         data.forEach(t => { if (t.type && t.label) map[t.type] = t.label; });
@@ -111,12 +118,12 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
 
   // 加载配方列表 (一次)
   useEffect(() => {
-    fetch(`${API}/api/recipes?status=approved`).then(r => r.json()).then(data => setApprovedRecipes(Array.isArray(data) ? data : [])).catch(() => {});
+    apiFetch(`${API}/api/recipes?status=approved`).then(r => r.json()).then(data => setApprovedRecipes(Array.isArray(data) ? data : [])).catch(() => {});
   }, []);
 
   // 初始报警快照 (后续由 WS 'alarm' channel 推送增量)
   useEffect(() => {
-    fetch(`${API}/api/alarms`).then(r => r.ok ? r.json() : []).then((data: Alarm[]) => {
+    apiFetch(`${API}/api/alarms`).then(r => r.ok ? r.json() : []).then((data: Alarm[]) => {
       if (Array.isArray(data)) setAlarms(data);
     }).catch(() => {});
   }, [setAlarms]);
@@ -127,7 +134,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
     setDownloading(true);
     try {
       const [recipeId, version] = selectedRecipeId.split('::');
-      const resp = await fetch(`${API}/api/reactors/${reactorId}/download-recipe`, {
+      const resp = await apiFetch(`${API}/api/reactors/${reactorId}/download-recipe`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ recipe_id: recipeId, version }),
       });
@@ -142,10 +149,10 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
 
   // 切换反应器时,初始 fetch 一次配方状态 (后续由 WS 推送增量)
   useEffect(() => {
-    fetch(`${API}/api/reactors/${reactorId}/recipe`).then(r => r.ok ? r.json() : null).then((data: any) => {
+    apiFetch(`${API}/api/reactors/${reactorId}/recipe`).then(r => r.ok ? r.json() : null).then((data: any) => {
       if (data?.downloaded && data?.recipe_id) {
         // 拉完整 phases (列表 API 不返回 phases)
-        fetch(`${API}/api/recipes/${data.recipe_id}?version=${data.version}`).then(r => r.json()).then(rData => {
+        apiFetch(`${API}/api/recipes/${data.recipe_id}?version=${data.version}`).then(r => r.json()).then(rData => {
           setReactorRecipe(reactorId, {
             recipe_id: data.recipe_id,
             recipe_name: data.recipe_name || data.recipe_id,
@@ -164,7 +171,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
   // 切换反应器时,初始 fetch 一次罐状态 (后续由 WS state_update 推送增量)
   const fetchStatus = useCallback(async () => {
     try {
-      const resp = await fetch(`${API}/api/reactors/${reactorId}/status`);
+      const resp = await apiFetch(`${API}/api/reactors/${reactorId}/status`);
       if (resp.ok) {
         const data = await resp.json();
         setReactorStateInStore(reactorId, { ...data, reactor_id: reactorId });
@@ -232,7 +239,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
     const route = CMD_ROUTES[command];
     if (!route) return;
     try {
-      await fetch(`${API}/api/reactors/${reactorId}/${route}`, {
+      await apiFetch(`${API}/api/reactors/${reactorId}/${route}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ batch_id: batchIdInput || undefined }),
       });
@@ -242,7 +249,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
 
   const sendPhaseCmd = async (phaseIndex: number, action: string) => {
     try {
-      await fetch(`${API}/api/reactors/${reactorId}/phases/${phaseIndex}/${action}`, {
+      await apiFetch(`${API}/api/reactors/${reactorId}/phases/${phaseIndex}/${action}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
       });
       await fetchStatus();
@@ -272,7 +279,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
   const unacknowledgedAlarms = alarms.filter(a => !a.acknowledged_at && !isNoticeAlarm(a));
 
   return (
-    <div className="space-y-3">
+    <div className="h-full flex flex-col gap-3 min-h-0">
       {/* ═══ 报警提示 (在配方主控上方) — 只显示操作性故障, CUSUM 类提示在右侧 NoticeBanner ═══ */}
       {unacknowledgedAlarms.length > 0 && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-md p-2.5 space-y-1.5">
@@ -287,7 +294,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
               </span>
               <span className="text-red-300 truncate flex-1">{a.message}</span>
               <button onClick={async () => {
-                const resp = await fetch(`${API}/api/alarms/${a.id}/acknowledge`, {
+                const resp = await apiFetch(`${API}/api/alarms/${a.id}/acknowledge`, {
                   method: 'POST', headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ user_id: 'admin-001' }),
                 });
@@ -301,16 +308,21 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
       )}
 
       {/* ═══ 配方主控 ═══ */}
-      <div className="bg-card border border-border rounded-md overflow-hidden">
+      <div className="bg-card border border-border rounded-md overflow-hidden flex-shrink-0">
         {/* 标题栏 */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30">
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 bg-primary rounded" />
             <span className="text-sm font-semibold text-foreground">配方主控</span>
           </div>
-          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${stateColors[realBatchState] || stateColors.idle}`}>
-            {STATE_LABELS[realBatchState] || realBatchState}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`px-3 py-1 rounded text-[15px] font-semibold border ${stateColors[realBatchState] || stateColors.idle}`}>
+              {STATE_LABELS[realBatchState] || realBatchState}
+            </span>
+            {(state?.batch_elapsed_sec ?? 0) > 0 && (
+              <span className="font-mono text-[15px] text-foreground">{formatTime(state?.batch_elapsed_sec ?? 0)}</span>
+            )}
+          </div>
         </div>
 
         <div className="p-3 space-y-3">
@@ -337,9 +349,6 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
               placeholder="输入批次号 (统计报表用)"
               disabled={!realIsIdle}
               className="flex-1 h-7 px-2 rounded bg-background border border-border text-xs font-mono text-foreground placeholder:text-muted-foreground/50 disabled:opacity-50 disabled:text-foreground" />
-            {(state?.batch_elapsed_sec ?? 0) > 0 && (
-              <span className="font-mono text-xs text-foreground flex-shrink-0">{formatTime(state?.batch_elapsed_sec ?? 0)}</span>
-            )}
           </div>
 
           {/* 配方选择与下载 */}
@@ -374,13 +383,19 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                 <div className="flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5 flex-shrink-0" />
                   <span>{realIsIdle ? '配方已就绪' : '当前配方'}: <strong>{downloadedRecipeName}</strong></span>
-                  <span className={`ml-1 px-1.5 py-0.5 rounded text-[9px] font-semibold ${
-                    downloadedExecutionMode === 'sequential' ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-muted text-muted-foreground border border-border'
-                  }`}>{downloadedExecutionMode === 'sequential' ? '顺序' : '自由'}</span>
+                  <span className={`ml-1 px-2 py-1 rounded text-[12px] font-semibold ${
+                    downloadedExecutionMode === 'sequential' ? 'bg-primary/20 text-primary border border-primary/30'
+                      : (downloadedExecutionMode as string) === 'dag' ? 'bg-blue-500/15 text-blue-600 border border-blue-500/30'
+                      : 'bg-muted text-muted-foreground border border-border'
+                  }`}>{
+                    downloadedExecutionMode === 'sequential' ? '顺序模式'
+                      : (downloadedExecutionMode as string) === 'dag' ? 'DAG模式'
+                      : '自由模式'
+                  }</span>
                 </div>
                 {realIsIdle && (
                   <button onClick={() => { setChangingRecipe(true); setReactorRecipe(reactorId, null); }}
-                    className="text-[10px] text-muted-foreground hover:text-foreground underline">更换</button>
+                    className="text-[12px] text-muted-foreground hover:text-foreground underline">更换</button>
                 )}
               </div>
               {realIsIdle && downloadedPhases.length > 0 && (() => {
@@ -412,6 +427,15 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
             </div>
           )}
 
+          {/* 状态机连锁 IL/RF 状态行 (启动按钮上方) */}
+          {reactorId && (
+            <InterlockPanel
+              reactorId={reactorId}
+              currentState={(reactorStateFromWS as any)?.state || state?.state}
+              activeFaultCodes={alarms.filter(a => !a.acknowledged_at).map((a: any) => a.code).filter(Boolean)}
+            />
+          )}
+
           {/* 主控按钮 */}
           <div className="grid grid-cols-2 gap-2">
             <button onClick={() => audit.confirm({
@@ -422,18 +446,18 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
               onConfirm: () => sendBatchCommand('cmd_start'),
             })}
               disabled={!realIsIdle || !recipeDownloaded || !batchIdInput.trim()}
-              className={`flex items-center justify-center gap-1 h-9 rounded text-xs font-semibold border transition-all ${
+              className={`flex items-center justify-center gap-1 h-9 rounded text-sm font-semibold border transition-all ${
                 realIsIdle && recipeDownloaded && batchIdInput.trim() ? 'bg-green-500/15 text-emerald-600 border-green-500/40 hover:bg-green-500/25' : 'bg-muted/30 text-muted-foreground/40 border-border cursor-not-allowed'}`}
               title={!batchIdInput.trim() ? '必须先输入批次号' : '启动批次'}>
               <Play className="w-3.5 h-3.5" /> 启动
             </button>
             <button onClick={() => sendBatchCommand('cmd_pause')} disabled={!realIsRunning}
-              className={`flex items-center justify-center gap-1 h-9 rounded text-xs font-semibold border transition-all ${
+              className={`flex items-center justify-center gap-1 h-9 rounded text-sm font-semibold border transition-all ${
                 realIsRunning ? 'bg-yellow-500/15 text-amber-600 border-yellow-500/40 hover:bg-yellow-500/25' : 'bg-muted/30 text-muted-foreground/40 border-border cursor-not-allowed'}`}>
               <Pause className="w-3.5 h-3.5" /> 暂停
             </button>
             <button onClick={() => sendBatchCommand(realIsHeld ? 'cmd_restart' : 'cmd_unpause')} disabled={!realIsPaused && !realIsHeld}
-              className={`flex items-center justify-center gap-1 h-9 rounded text-xs font-semibold border transition-all ${
+              className={`flex items-center justify-center gap-1 h-9 rounded text-sm font-semibold border transition-all ${
                 realIsPaused || realIsHeld ? 'bg-blue-500/15 text-blue-600 border-blue-500/40 hover:bg-blue-500/25' : 'bg-muted/30 text-muted-foreground/40 border-border cursor-not-allowed'}`}>
               <RotateCcw className="w-3.5 h-3.5" /> 恢复
             </button>
@@ -445,7 +469,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
               onConfirm: () => sendBatchCommand('cmd_stop'),
             })}
               disabled={!realIsPaused && !realIsHeld}
-              className={`flex items-center justify-center gap-1 h-9 rounded text-xs font-semibold border transition-all ${
+              className={`flex items-center justify-center gap-1 h-9 rounded text-sm font-semibold border transition-all ${
                 realIsPaused || realIsHeld ? 'bg-red-500/15 text-red-600 border-red-500/40 hover:bg-red-500/25' : 'bg-muted/30 text-muted-foreground/40 border-border cursor-not-allowed'}`}>
               <Square className="w-3.5 h-3.5" /> 放弃
             </button>
@@ -458,15 +482,21 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
               <RotateCcw className="w-3.5 h-3.5" /> 复位
             </button>
           )}
+        </div>
+      </div>
 
-          {/* Phase 控制列表 — 限高内滚, 避免占满左列挤掉连锁面板 */}
-          {realPhaseStatuses.length > 0 && (
-            <div className="border-t border-border pt-3">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-1 h-3.5 bg-primary rounded" />
-                <span className="text-xs font-semibold text-foreground">Phase 控制列表 ({realPhaseStatuses.length})</span>
-              </div>
-              <div className="space-y-1 max-h-64 overflow-y-auto mes-scroll pr-1">
+      {/* ═══ Phase 控制列表 (独立卡片, 拉伸到底部) ═══ */}
+      {realPhaseStatuses.length > 0 && (
+        <div className="bg-card border border-border rounded-md overflow-hidden flex-1 min-h-0 flex flex-col">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-4 bg-primary rounded" />
+              <span className="text-sm font-semibold text-foreground">Phase 控制列表</span>
+              <span className="text-[10px] text-muted-foreground font-mono">({realPhaseStatuses.length})</span>
+            </div>
+          </div>
+          <div className="p-3 flex-1 min-h-0 flex flex-col">
+            <div className="space-y-1 flex-1 overflow-y-auto mes-scroll pr-1">
                 {realPhaseStatuses.map(ps => {
                   const cfg = phaseStateColors[ps.state] || phaseStateColors.pending;
                   const progress = ps.total_steps > 0 ? Math.round((ps.step_number / ps.total_steps) * 100) : 0;
@@ -534,11 +564,10 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                     </div>
                   );
                 })}
-              </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {audit.dialog}
     </div>
