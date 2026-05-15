@@ -182,7 +182,10 @@ async function dispatchTick(deps): Promise<void> {
 
 async function dispatchOne(row, deps): Promise<void> {
   try {
-    const mapping = mappingManager.lookupByTag(row.target_param);
+    // VariableMappingManager 现有 API: getVariables() + getConnections().
+    // 不另加 lookupByTag / getConnection 接口, 由 dispatcher 内 find 简单查找
+    // (variable + connection 集合常驻内存, find O(n) 可接受, n < 200).
+    const mapping = mappingManager.getVariables().find((v) => v.tag_name === row.target_param);
     if (!mapping) throw new DispatchError('NO_MAPPING', `no mapping for tag ${row.target_param}`);
     if (mapping.direction !== 'write') throw new DispatchError('READ_ONLY', `tag ${row.target_param} is read-only`);
     if (row.suggested_value == null) throw new DispatchError('NULL_VALUE', 'suggested_value is null');
@@ -190,7 +193,8 @@ async function dispatchOne(row, deps): Promise<void> {
       throw new DispatchError('OUT_OF_RANGE', `${row.suggested_value} out of [${mapping.eng_min},${mapping.eng_max}]`);
     }
 
-    const conn = mappingManager.getConnection(mapping.connection_id);
+    const conn = mappingManager.getConnections().find((c) => c.id === mapping.connection_id);
+    if (!conn) throw new DispatchError('NO_CONNECTION', `connection ${mapping.connection_id} not found`);
     const writer = writerFactory(conn.protocol);
     await writer.write(conn, mapping, row.suggested_value);
 
@@ -205,7 +209,7 @@ async function dispatchOne(row, deps): Promise<void> {
     });
   } catch (e) {
     const err = e as Error;
-    const isPermanent = err instanceof DispatchError && ['NO_MAPPING', 'READ_ONLY', 'NULL_VALUE', 'OUT_OF_RANGE'].includes(err.code);
+    const isPermanent = err instanceof DispatchError && ['NO_MAPPING', 'NO_CONNECTION', 'READ_ONLY', 'NULL_VALUE', 'OUT_OF_RANGE'].includes(err.code);
     if (isPermanent || row.dispatch_retry_count + 1 >= MAX_RETRIES) {
       sqlite.markDispatchFailed(row.id, err.message);
       broadcast('ai_suggestion', { id: row.id, action: 'dispatch_failed', source_module: 'scada', error: err.message });
