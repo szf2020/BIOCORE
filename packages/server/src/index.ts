@@ -2819,18 +2819,18 @@ apiRouter.post('/reactor-configs/init-defaults', (_req, res) => {
 apiRouter.get('/ai/suggestions', (req, res) => {
   const status = req.query.status as string || 'pending';
   const batchId = req.query.batch_id as string | undefined;
+  const source = req.query.source_module as string | undefined;
   if (status === 'pending') {
     // 先过期已超时的建议
     sqlite.expirePendingSuggestions(batchId || '');
-    res.json(sqlite.getPendingSuggestions(batchId));
-  } else {
-    const rows = sqlite.getDatabase().prepare(
-      batchId
-        ? 'SELECT * FROM ai_suggestions WHERE batch_id = ? AND status = ? ORDER BY created_at DESC LIMIT 50'
-        : 'SELECT * FROM ai_suggestions WHERE status = ? ORDER BY created_at DESC LIMIT 50'
-    ).all(...(batchId ? [batchId, status] : [status]));
-    res.json(rows);
+    return res.json(sqlite.getPendingSuggestionsBySource(batchId, source));
   }
+  const clauses: string[] = ['status = ?'];
+  const params: any[] = [status];
+  if (batchId) { clauses.push('batch_id = ?'); params.push(batchId); }
+  if (source) { clauses.push('source_module = ?'); params.push(source); }
+  const sql = `SELECT * FROM ai_suggestions WHERE ${clauses.join(' AND ')} ORDER BY created_at DESC LIMIT 50`;
+  return res.json(sqlite.getDatabase().prepare(sql).all(...params));
 });
 
 apiRouter.post('/ai/suggestions/:id/accept', (req: any, res) => {
