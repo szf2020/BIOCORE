@@ -420,8 +420,10 @@ export function _resetCompileCache() {
 - value='OK' (字符串) → 直显 (不 toFixed)
 
 **Trend.test.tsx** (2 用例 — 简化, ECharts 实际渲染靠 wrapper):
-- series=[] → 渲染容器 (无 echarts series option 项)
-- series=[{tag:'F01.AI-0'}] → mock useTagHistory 返 5 点, ECharts option 含 5 数据点 (验 setOption 调用)
+- 测试 setup 用 `vi.mock('@/components/charts/EChartsWrapper')` 替成 `props => <div data-testid="echarts" data-option={JSON.stringify(props.option)}>` 占位
+- series=[] → 渲染容器, ECharts option.series 数组长度=0
+- series=[{tag:'F01.AI-0'}] → `vi.mock('@/hooks/useTagHistory')` 返 5 点 fixture; option.series[0].data 长度=5
+- 不调真 echarts.init
 
 **Label.test.tsx** (2 用例):
 - text='Hello' → DOM 含 "Hello"
@@ -444,8 +446,9 @@ export function _resetCompileCache() {
 - `compileTransform('invalid syntax {')` 返 IDENTITY (调用返 v 原值), console.warn 触发一次 (vi.spyOn)
 
 **BoundWidget.test.tsx** (4 用例):
+- 测试 setup: `vi.mock('@/hooks', () => ({ useTag: vi.fn(() => ({ value: 75, isStale: false, ageMs: 100 })) }))`. 每用例可在 it 内 `vi.mocked(useTag).mockReturnValueOnce(...)` 覆盖
 - 未知 widget.type → 渲染 'Unknown widget: ...' 占位
-- bindings=[] → defaultProps + widget.props 合并, 渲染纯 widget
+- bindings=[] → defaultProps + widget.props 合并, 渲染纯 widget (verify Tank 实际收到 props 由 spy/snapshot)
 - bindings=[{tag:'F01.AI-0', prop:'fillPct'}] → mock useTag 返 75 → Tank 收到 fillPct=75
 - bindings=[{tag:..., transform:'v > 50 ? 100 : 0'}] → mock useTag 返 75 → prop=100
 
