@@ -65,6 +65,8 @@ import { registerBatchRoutes } from './batch-routes';
 import { registerReactorRoutes } from './reactor-routes';
 import { registerAuthRoutes } from './auth-routes';
 import { registerScadaRoutes } from './scada-routes';
+import { startScadaWriteDispatcher } from './engine/scada-write-dispatcher';
+import { createPlcWriter } from './engine/plc-writer';
 import { registerAuditLogRoutes } from './audit-log-routes';
 import type { BatchControllerConfig } from '@biocore/batch-engine';
 import {
@@ -2836,6 +2838,7 @@ apiRouter.get('/ai/suggestions', (req, res) => {
 apiRouter.post('/ai/suggestions/:id/accept', (req: any, res) => {
   try {
     sqlite.acceptSuggestion(parseInt(req.params.id), req.user?.user_id || 'admin-001');
+    sqlite.setDispatchPending(parseInt(req.params.id));
     sqlite.writeAuditLog({
       user_id: req.user?.user_id || 'admin-001',
       action: 'ai_suggestion_accept',
@@ -3258,6 +3261,14 @@ async function start(): Promise<void> {
   });
   // v1.8.0 bucket 1: JWT_SECRET production guard.
   assertJwtSecretSafe();
+  const scadaDispatcherHandle = startScadaWriteDispatcher({
+    sqlite,
+    broadcast,
+    writerFactory: createPlcWriter,
+    mappingManager: varManager,
+  });
+  process.on('SIGTERM', () => scadaDispatcherHandle.stop());
+  process.on('SIGINT', () => scadaDispatcherHandle.stop());
   server.listen(PORT, () => {
   console.log(`
   ╔══════════════════════════════════════════════╗

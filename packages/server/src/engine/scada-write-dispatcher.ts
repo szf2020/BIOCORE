@@ -14,8 +14,8 @@ export class DispatchError extends Error {
 interface MappingManagerShape {
   getVariables(): Array<{
     id: string; tag_name: string; plc_address: string; data_type: string;
-    direction: string; scaling_enabled: number; eng_min: number; eng_max: number;
-    connection_id: string; enabled?: number;
+    direction: string; scaling_enabled: boolean | number; eng_min: number; eng_max: number;
+    connection_id: string; enabled?: boolean | number;
   }>;
   getConnections(): Array<{
     id: string; protocol: string; ip?: string; rack?: number; slot?: number; s7_db?: number;
