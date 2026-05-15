@@ -34,7 +34,6 @@ import {
 import { phaseLabel } from '@/lib/utils';
 import { useAudit } from '@/hooks/useAudit';
 import { copyPhases, readClipboard, preparePaste, type ClipboardPhase } from '@/lib/phase-clipboard';
-import { RecipeMaterialsEditor, type MaterialRef } from '@/components/recipes/RecipeMaterialsEditor';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Phase模板从API动态加载，不再使用硬编码
@@ -188,12 +187,11 @@ function ParamInput({ field, value, onChange }: { field: ParamField; value: any;
 
 // ─── 可排序Phase卡片 ──────────────────────────────────────────
 
-function SortablePhaseCard({ phase, index, total, executionMode, isSelected, onRemove, onToggle, onParamChange, onMaterialsChange, onLabelChange, onCopy, onSelect, getTemplate }: {
+function SortablePhaseCard({ phase, index, total, executionMode, isSelected, onRemove, onToggle, onParamChange, onLabelChange, onCopy, onSelect, getTemplate }: {
   phase: PhaseInstance; index: number; total: number; executionMode: ExecutionMode;
   isSelected: boolean;
   onRemove: () => void; onToggle: () => void;
   onParamChange: (key: string, value: any) => void;
-  onMaterialsChange: (materials: MaterialRef[]) => void;
   onLabelChange: (label: string) => void;
   onCopy: () => void;
   onSelect: () => void;
@@ -353,14 +351,6 @@ function SortablePhaseCard({ phase, index, total, executionMode, isSelected, onR
                 </div>
               );
             })()}
-
-            {/* 原料关联 (从原料库选择, 存入 phase.params.materials) */}
-            <div className="pt-2 border-t border-border/50">
-              <RecipeMaterialsEditor
-                materials={(phase.params?.materials as MaterialRef[]) || []}
-                onChange={onMaterialsChange}
-              />
-            </div>
 
             {/* 无步骤无参数时的提示 */}
             {(!tmpl?.steps?.length && !tmpl?.fixed_steps && !(tmpl?.param_schema?.length)) && (
@@ -557,14 +547,6 @@ export default function RecipeEditorPage() {
       const params = structuredClone(p.params);
       setNestedValue(params, key, value);
       return { ...p, params };
-    }));
-  }, []);
-
-  // 更新 phase.params.materials (原料关联列表)
-  const updateMaterials = useCallback((id: string, materials: MaterialRef[]) => {
-    setPhases(prev => prev.map(p => {
-      if (p.id !== id) return p;
-      return { ...p, params: { ...p.params, materials } };
     }));
   }, []);
 
@@ -855,7 +837,6 @@ export default function RecipeEditorPage() {
                         onRemove={() => removePhase(phase.id)}
                         onToggle={() => togglePhase(phase.id)}
                         onParamChange={(k, v) => updateParam(phase.id, k, v)}
-                        onMaterialsChange={(mats) => updateMaterials(phase.id, mats)}
                         onLabelChange={(l) => updateLabel(phase.id, l)}
                         onCopy={() => copySinglePhase(phase.id)}
                         onSelect={() => togglePhaseSelection(phase.id)}

@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { X, Beaker, GitBranch, Play, Square, CornerDownRight, Repeat } from 'lucide-react';
 import { ConditionExpressionEditor } from './ConditionExpressionEditor';
-import { RecipeMaterialsEditor, type MaterialRef } from '@/components/recipes/RecipeMaterialsEditor';
 import { phaseLabel } from '@/lib/utils';
 
 // 从 v1 编辑器复用的 Phase 模板类型
@@ -255,13 +254,6 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
               );
             })()}
 
-            {/* 原料关联 (与 v1 编辑器一致) */}
-            <div className="pt-2 border-t border-border/40">
-              <RecipeMaterialsEditor
-                materials={(data.params?.materials as MaterialRef[]) || []}
-                onChange={(materials) => updateParam('materials', materials)}
-              />
-            </div>
           </>
         )}
 

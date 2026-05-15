@@ -25,8 +25,6 @@ const NAV_ITEMS = [
     { href: '/recipes/review-queue', icon: ShieldCheck, label: '审核队列' },
     { href: '/doe', icon: Sigma, label: 'DoE 实验设计' },
   ]},
-  // 原料库提升为一级菜单 — 与配方管理并列, 独立管理原料/试剂/缓冲液主数据
-  { href: '/analysis/raw-materials', icon: FlaskConical, label: '原料库' },
   { href: '/analysis', icon: LineChart, label: '数据分析', children: [
     { href: '/batches', icon: History, label: '批次历史' },
     { href: '/analysis/alarm-history', icon: Bell, label: '报警历史' },

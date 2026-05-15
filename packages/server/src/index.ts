@@ -51,7 +51,6 @@ import { v1ResponseWrapper } from './middlewares/response-wrapper';
 import { createApp } from './bootstrap';
 import { ROOT_VERSION } from './version';
 import { lttb } from './lttb';
-import { registerRawMaterialsRoutes } from './raw-materials-routes';
 import { registerBatchCompareRoutes } from './batch-compare-routes';
 import { registerBatchSamplesRoutes } from './batch-samples-routes';
 import { registerBatchExportRoutes } from './batch-export-routes';
@@ -511,8 +510,6 @@ const { app, apiRouter, authEnabled: AUTH_ENABLED } = createApp({
   apiV0Sunset: API_V0_SUNSET,
 });
 
-// M2.6: 原料库 M9 路由 (7 端点: CRUD + MSDS 上传/下载)
-registerRawMaterialsRoutes(apiRouter, sqlite, DATA_DIR);
 registerBatchCompareRoutes(apiRouter, sqlite);
 registerBatchSamplesRoutes(apiRouter, sqlite);
 registerBatchExportRoutes(apiRouter, sqlite);
