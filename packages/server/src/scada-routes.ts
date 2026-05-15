@@ -299,7 +299,14 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
       ip_address: getIp(req),
     });
 
-    broadcast('ai_suggestion', { id: suggestion_id, action: 'created', source: 'scada' });
+    broadcast('ai_suggestion', {
+      id: suggestion_id,
+      action: 'created',
+      source: 'scada',
+      source_module: 'scada',
+      target_param: tag,
+      suggested_value: typeof value === 'number' ? value : null,
+    });
     res.json({ success: true, suggestion_id });
   });
 }

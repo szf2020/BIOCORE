@@ -187,11 +187,11 @@ function generateSuggestions(deps: SuggestionDeps): void {
         // WebSocket 推送
         deps.broadcast('ai_suggestion', {
           id,
-          batch_id: batchId,
-          ...s,
-          status: 'pending',
-          created_at: new Date().toISOString(),
-          expires_at: expiresAt,
+          action: 'created',
+          source: 'ai_auto',
+          source_module: s.source_module ?? 'ai_auto',
+          target_param: s.target_param,
+          suggested_value: s.suggested_value,
         }, batchId, reactorId);
       } catch { /* ignore write errors */ }
     }
