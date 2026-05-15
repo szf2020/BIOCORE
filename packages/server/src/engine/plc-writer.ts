@@ -127,3 +127,23 @@ export class ModbusPlcWriter implements PlcWriter {
     throw new Error('NOT_IMPLEMENTED: Modbus writer pending hardware integration');
   }
 }
+
+// ─── Factory ─────────────────────────────────────────────────────────────────
+
+let s7Singleton: S7PlcWriter | null = null;
+let modbusSingleton: ModbusPlcWriter | null = null;
+
+export function createPlcWriter(protocol: string): PlcWriter {
+  if (process.env.MOCK_PLC === 'true') return getMockPlcWriter();
+  switch ((protocol || '').toLowerCase()) {
+    case 's7':
+      if (!s7Singleton) s7Singleton = new S7PlcWriter();
+      return s7Singleton;
+    case 'modbus':
+    case 'modbus-rtu':
+      if (!modbusSingleton) modbusSingleton = new ModbusPlcWriter();
+      return modbusSingleton;
+    default:
+      throw new Error(`unsupported PLC protocol: ${protocol}`);
+  }
+}

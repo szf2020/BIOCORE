@@ -52,3 +52,19 @@ describe('ModbusPlcWriter', () => {
     await expect(w.write(conn, mapping, 1)).rejects.toThrow(/NOT_IMPLEMENTED/);
   });
 });
+
+import { createPlcWriter } from '../plc-writer';
+
+describe('createPlcWriter factory', () => {
+  it('returns MockPlcWriter when MOCK_PLC=true', () => {
+    process.env.MOCK_PLC = 'true';
+    const w = createPlcWriter('s7');
+    expect((w as any).read).toBeDefined();
+    delete process.env.MOCK_PLC;
+  });
+
+  it('throws for unsupported protocol', () => {
+    process.env.MOCK_PLC = '';
+    expect(() => createPlcWriter('opc-ua')).toThrow(/unsupported PLC protocol/);
+  });
+});
