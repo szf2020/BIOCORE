@@ -1,7 +1,7 @@
 # SCADA Suggestion Review UI + WS Toast 设计 (子项目 6/7)
 
 **Branch:** `feat/scada-data-model`
-**Status:** Draft
+**Status:** Done
 **Scope:** 操作员审核 SCADA 来源 (`source_module='scada'`) write-intent suggestion 的专用 UI + WebSocket 实时弹窗. 操作员 accept/reject 复用现有 REST 端点. **PLC 实际下发延后至子项目 7**。
 
 ---
