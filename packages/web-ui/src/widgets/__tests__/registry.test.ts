@@ -16,4 +16,15 @@ describe('WIDGET_REGISTRY', () => {
       expect(typeof entry.defaultProps()).toBe('object');
     }
   });
+
+  it('2. each entry has non-empty propsSchema + bindableProps array', () => {
+    const keys = ['tank','valve','pump','indicator','trend','label','button','lamp'] as const;
+    for (const k of keys) {
+      const entry = WIDGET_REGISTRY[k] as any;
+      expect(entry.propsSchema).toBeDefined();
+      expect(typeof entry.propsSchema).toBe('object');
+      expect(Object.keys(entry.propsSchema).length).toBeGreaterThan(0);
+      expect(Array.isArray(entry.bindableProps)).toBe(true);
+    }
+  });
 });
