@@ -214,4 +214,10 @@ export { markBatchAborted } from './sqlite-service';
 // v1.8.0 bucket 2: formula-evaluator public surface (consumed by @biocore/server formula route)
 export { validateExpression, evaluateExpression, AVAILABLE_VARS } from './formula-evaluator';
 
+// SCADA 数据模型 (migration 028)
+export {
+  SCADA_ITEMS_MAX_BYTES,
+} from './sqlite-service';
+export type { ScadaProjectMeta, ScadaViewMeta, ScadaView } from './sqlite-service';
+
 export { InfluxService as default };

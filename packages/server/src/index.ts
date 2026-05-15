@@ -64,6 +64,7 @@ import { registerRecipeRoutes } from './recipe-routes';
 import { registerBatchRoutes } from './batch-routes';
 import { registerReactorRoutes } from './reactor-routes';
 import { registerAuthRoutes } from './auth-routes';
+import { registerScadaRoutes } from './scada-routes';
 import { registerAuditLogRoutes } from './audit-log-routes';
 import type { BatchControllerConfig } from '@biocore/batch-engine';
 import {
@@ -2999,6 +3000,9 @@ registerReactorRoutes(apiRouter, {
   wireReactorEvents,
   broadcast,
 });
+
+// SCADA 项目 + 视图 REST API (broadcast 已在作用域内)
+registerScadaRoutes(apiRouter, { sqlite, broadcast });
 
 // ── 趋势历史数据 (InfluxDB) ──
 
