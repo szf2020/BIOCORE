@@ -148,12 +148,19 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
       const err = checkItemsSize(items);
       if (err) return res.status(400).json({ error: err });
     }
-    sqlite.createScadaView({
-      view_id, project_id: projectId, name,
-      reactor_id: reactor_id ?? null,
-      width, height, background, display_order,
-      items: items ?? {},
-    });
+    try {
+      sqlite.createScadaView({
+        view_id, project_id: projectId, name,
+        reactor_id: reactor_id ?? null,
+        width, height, background, display_order,
+        items: items ?? {},
+      });
+    } catch (e: any) {
+      if (e?.code === 'SQLITE_CONSTRAINT_PRIMARYKEY' || /UNIQUE/i.test(e?.message ?? '')) {
+        return res.status(409).json({ error: 'view_id_conflict' });
+      }
+      throw e;
+    }
     const after = sqlite.getScadaView(view_id)!;
     const userId = getUserId(req);
     sqlite.writeAuditLog({
