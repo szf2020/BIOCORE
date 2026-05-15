@@ -86,6 +86,8 @@ const EMPTY_REACTOR_DATA: ReactorRuntimeData = {
 interface RealtimeState {
   // 连接状态
   wsConnected: boolean;
+  // 全局 1Hz tick — hook 用来周期性重判 staleness (即使 WS 断, store 不再 set, hook 仍能 re-eval)
+  _tick: number;
 
   // 各频道数据
   processValues: ProcessValues | null;
@@ -145,6 +147,7 @@ const MAX_RECONNECT_DELAY_MS = 30000;
 
 export const useRealtimeStore = create<RealtimeState>((set, get) => ({
   wsConnected: false,
+  _tick: 0,
   processValues: null,
   stateUpdate: null,
   calculatedParams: null,
