@@ -14,6 +14,7 @@ const API = 'http://localhost:3001';
 interface Batch {
   id: string;
   batch_id: string;
+  reactor_id?: string;
   recipe_name?: string;
   organism?: string;
   state: string;
@@ -107,6 +108,7 @@ export default function BatchesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>批次号</TableHead>
+                  <TableHead>罐号</TableHead>
                   <TableHead>配方</TableHead>
                   <TableHead>菌种</TableHead>
                   <TableHead>状态</TableHead>
@@ -119,6 +121,7 @@ export default function BatchesPage() {
                 {filtered.map(b => (
                   <TableRow key={b.id ?? b.batch_id} className="cursor-pointer" onClick={() => router.push(`/batches/${b.id ?? b.batch_id}`)}>
                     <TableCell className="font-medium">{b.batch_id ?? b.id}</TableCell>
+                    <TableCell className="font-mono font-semibold">{b.reactor_id ?? '-'}</TableCell>
                     <TableCell>{b.recipe_name ?? '-'}</TableCell>
                     <TableCell>{b.organism ?? '-'}</TableCell>
                     <TableCell>
