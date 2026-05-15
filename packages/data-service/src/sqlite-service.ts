@@ -8,15 +8,19 @@ import Database from 'better-sqlite3';
 export class SQLiteService {
   private db: Database.Database;
 
-  constructor(dbPath: string = './data/biocore.db') {
-    this.db = new Database(dbPath);
-    this.db.pragma('journal_mode = WAL');
-    this.db.pragma('foreign_keys = ON');
-    this.db.pragma('busy_timeout = 5000');      // 多连接等锁 5s 重试, 避免 SQLITE_BUSY
-    this.db.pragma('synchronous = NORMAL');     // WAL 下推荐, 比 FULL 快且仍崩溃安全
-    this.db.pragma('cache_size = -64000');      // 64MB 页缓存 (负值=KB)
-    this.db.pragma('temp_store = MEMORY');      // 临时表/索引走内存
-    this.db.pragma('mmap_size = 268435456');    // 256MB mmap, 读密集型加速
+  constructor(dbOrPath: string | Database.Database = './data/biocore.db') {
+    if (typeof dbOrPath === 'string') {
+      this.db = new Database(dbOrPath);
+      this.db.pragma('journal_mode = WAL');
+      this.db.pragma('foreign_keys = ON');
+      this.db.pragma('busy_timeout = 5000');      // 多连接等锁 5s 重试, 避免 SQLITE_BUSY
+      this.db.pragma('synchronous = NORMAL');     // WAL 下推荐, 比 FULL 快且仍崩溃安全
+      this.db.pragma('cache_size = -64000');      // 64MB 页缓存 (负值=KB)
+      this.db.pragma('temp_store = MEMORY');      // 临时表/索引走内存
+      this.db.pragma('mmap_size = 268435456');    // 256MB mmap, 读密集型加速
+    } else {
+      this.db = dbOrPath;
+    }
     // 注: 不再调用 initSchema(). schema 创建/演化已由 packages/server/migrations/
     // 下的 .sql 文件管理, 由 packages/server/src/migrator.ts 在 server 启动时执行.
   }
@@ -831,6 +835,45 @@ export class SQLiteService {
     `).run(JSON.stringify(responses), notes || null, studyId, runIndex);
   }
 
+  // ─── SCADA 项目 ───────────────────────────────────────────
+  listScadaProjects(): ScadaProjectMeta[] {
+    return this.db.prepare(
+      'SELECT project_id, name, description, created_by, created_at, updated_at FROM scada_projects ORDER BY updated_at DESC'
+    ).all() as ScadaProjectMeta[];
+  }
+
+  getScadaProject(projectId: string): ScadaProjectMeta | null {
+    const row = this.db.prepare(
+      'SELECT project_id, name, description, created_by, created_at, updated_at FROM scada_projects WHERE project_id = ?'
+    ).get(projectId) as ScadaProjectMeta | undefined;
+    return row || null;
+  }
+
+  createScadaProject(p: { project_id: string; name: string; description?: string | null; created_by?: string | null }): void {
+    this.db.prepare(
+      'INSERT INTO scada_projects (project_id, name, description, created_by) VALUES (?, ?, ?, ?)'
+    ).run(p.project_id, p.name, p.description ?? null, p.created_by ?? null);
+  }
+
+  updateScadaProject(projectId: string, patch: Partial<{ name: string; description: string | null }>): boolean {
+    const sets: string[] = [];
+    const vals: any[] = [];
+    if (patch.name !== undefined) { sets.push('name = ?'); vals.push(patch.name); }
+    if (patch.description !== undefined) { sets.push('description = ?'); vals.push(patch.description); }
+    if (sets.length === 0) return false;
+    sets.push("updated_at = datetime('now')");
+    vals.push(projectId);
+    const r = this.db.prepare(`UPDATE scada_projects SET ${sets.join(', ')} WHERE project_id = ?`).run(...vals);
+    return r.changes > 0;
+  }
+
+  deleteScadaProject(projectId: string): { deleted_views: number } {
+    const viewCount = (this.db.prepare('SELECT COUNT(*) AS n FROM scada_views WHERE project_id = ?').get(projectId) as { n: number }).n;
+    this.db.pragma('foreign_keys = ON');
+    this.db.prepare('DELETE FROM scada_projects WHERE project_id = ?').run(projectId);
+    return { deleted_views: viewCount };
+  }
+
   // ─── 工具 ─────────────────────────────────────────────────
 
   getDatabase(): Database.Database { return this.db; }
@@ -1051,3 +1094,31 @@ export function markBatchAborted(
     "UPDATE batches SET current_state = 'stopped', stop_trigger = 'cmd_stop', notes = COALESCE(notes, '') || ? WHERE batch_id = ?",
   ).run(`\nrecovery_abort: ${reason}`, batchId);
 }
+
+// ─── SCADA 类型 ───────────────────────────────────────────
+export interface ScadaProjectMeta {
+  project_id: string;
+  name: string;
+  description: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScadaViewMeta {
+  view_id: string;
+  project_id: string;
+  name: string;
+  reactor_id: string | null;
+  display_order: number;
+  width: number;
+  height: number;
+  background: string;
+  updated_at: string;
+}
+
+export interface ScadaView extends ScadaViewMeta {
+  items: Record<string, any>;
+}
+
+export const SCADA_ITEMS_MAX_BYTES = 500 * 1024;
