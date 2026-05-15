@@ -127,3 +127,48 @@ export async function createView(
   }
   return r.json();
 }
+
+export interface ScadaSuggestion {
+  id: number;
+  batch_id: string;
+  suggestion_type: string;
+  source_module: string;
+  target_param: string;
+  current_value: number | null;
+  suggested_value: number | null;
+  confidence: number | null;
+  reasoning: string | null;
+  status: string;
+  created_at: string;
+  expires_at: string | null;
+  decided_by: string | null;
+  decided_at: string | null;
+}
+
+export async function fetchScadaSuggestions(): Promise<ScadaSuggestion[]> {
+  const r = await fetch(`${API}/api/v1/ai/suggestions?status=pending&source_module=scada`, { headers: authHeaders() });
+  if (!r.ok) throw new Error(`fetchScadaSuggestions ${r.status}`);
+  return r.json();
+}
+
+export async function acceptSuggestion(id: number): Promise<{ success: boolean }> {
+  const r = await fetch(`${API}/api/v1/ai/suggestions/${id}/accept`, {
+    method: 'POST', headers: authHeaders(),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ error: 'unknown' }));
+    throw new Error(err.error || `acceptSuggestion ${r.status}`);
+  }
+  return r.json();
+}
+
+export async function rejectSuggestion(id: number): Promise<{ success: boolean }> {
+  const r = await fetch(`${API}/api/v1/ai/suggestions/${id}/reject`, {
+    method: 'POST', headers: authHeaders(),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ error: 'unknown' }));
+    throw new Error(err.error || `rejectSuggestion ${r.status}`);
+  }
+  return r.json();
+}
