@@ -66,12 +66,22 @@ export default function HmiPage() {
     }));
   }, [reactorIds, reactorStates]);
 
-  // FUXA iframe URL 含 reactor 参数; editMode=true → /editor (编辑), false → /lab (运行视图)
+  // FUXA iframe URL 含 reactor 参数; editMode=true → /editor (编辑), false → / (运行视图)
   const iframeSrc = useMemo(() => {
-    const path = editMode ? '/editor' : '/lab';
+    const path = editMode ? '/editor' : '/';
     const q = selectedReactor ? `?reactor=${encodeURIComponent(selectedReactor)}` : '';
     return `${FUXA_URL}${path}${q}`;
   }, [selectedReactor, editMode]);
+
+  // FUXA 可达性探测: mount 时一次, 不可达显示友好提示
+  const [fuxaReachable, setFuxaReachable] = useState<boolean | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${FUXA_URL}/`, { method: 'GET', mode: 'no-cors' })
+      .then(() => { if (!cancelled) setFuxaReachable(true); })
+      .catch(() => { if (!cancelled) setFuxaReachable(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="flex flex-col h-[calc(100vh-70px)] bg-slate-50">
@@ -124,15 +134,36 @@ export default function HmiPage() {
         </button>
       </header>
 
-      {/* FUXA iframe 主区 — key 让 selectedReactor 切换时强制 reload */}
+      {/* FUXA iframe 主区 — key 含 editMode 让模式切换也强制 reload */}
       <main className="flex-1 relative bg-slate-100">
-        <iframe
-          key={selectedReactor}
-          src={iframeSrc}
-          className="absolute inset-0 w-full h-full border-0"
-          title="FUXA HMI"
-          allow="clipboard-read; clipboard-write"
-        />
+        {fuxaReachable === false ? (
+          <div className="absolute inset-0 flex items-center justify-center p-8">
+            <div className="max-w-md text-center space-y-3 bg-white border rounded-lg p-6 shadow-sm">
+              <div className="text-lg font-semibold text-slate-800">FUXA HMI 未启动</div>
+              <div className="text-sm text-slate-600">
+                无法连接 <code className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">{FUXA_URL}</code>
+              </div>
+              <div className="text-xs text-slate-500 space-y-1 mt-3 text-left">
+                <div>启动 FUXA (monorepo 方案 A):</div>
+                <pre className="bg-slate-900 text-slate-100 p-3 rounded font-mono text-xs overflow-x-auto">pnpm --filter @biocore/fuxa dev</pre>
+              </div>
+              <button
+                onClick={() => setFuxaReachable(null)}
+                className="mt-2 px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                重试
+              </button>
+            </div>
+          </div>
+        ) : (
+          <iframe
+            key={`${selectedReactor}-${editMode ? 'edit' : 'view'}`}
+            src={iframeSrc}
+            className="absolute inset-0 w-full h-full border-0"
+            title="FUXA HMI"
+            allow="clipboard-read; clipboard-write"
+          />
+        )}
       </main>
     </div>
   );
