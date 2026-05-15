@@ -130,7 +130,7 @@ getPendingSuggestionsBySource(batchId?: string, sourceModule?: string): any[] {
   const params: any[] = [];
   if (batchId) { clauses.push('batch_id = ?'); params.push(batchId); }
   if (sourceModule) { clauses.push('source_module = ?'); params.push(sourceModule); }
-  const sql = `SELECT * FROM ai_suggestions WHERE ${clauses.join(' AND ')} ORDER BY created_at DESC`;
+  const sql = `SELECT * FROM ai_suggestions WHERE ${clauses.join(' AND ')} ORDER BY created_at DESC LIMIT 100`;
   return this.db.prepare(sql).all(...params);
 }
 ```
@@ -145,16 +145,20 @@ getPendingSuggestionsBySource(batchId?: string, sourceModule?: string): any[] {
 broadcast('ai_suggestion', { id: suggestion_id, action: 'created', source: 'scada' });
 ```
 
-改为同时含 `source_module`:
+改为含完整 toast 所需字段:
 
 ```ts
 broadcast('ai_suggestion', {
   id: suggestion_id,
   action: 'created',
-  source: 'scada',          // 保留, 向后兼容
-  source_module: 'scada',   // 新增, 客户端 useScadaSuggestions/ScadaToast 用
+  source: 'scada',                                          // 保留, 向后兼容
+  source_module: 'scada',                                   // 新增, 客户端过滤用
+  target_param: tag,                                        // toast 显示
+  suggested_value: typeof value === 'number' ? value : null, // toast 显示
 });
 ```
+
+这样 ScadaToast 可直接读 `latest.target_param` + `latest.suggested_value` 显示 "新写意图: F01.SP-temp = 38" 而无需额外 fetch.
 
 ### 3.4 ai-suggestion-engine.ts broadcast
 
