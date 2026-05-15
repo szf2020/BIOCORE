@@ -126,6 +126,9 @@ interface RealtimeState {
   // T18: ring buffer of recent branch evaluation events (capped at 50)
   recentBranchEvaluations: BranchEvaluationEntry[];
 
+  // sub-project 4: SCADA view 协同保存 tick (其他用户保存 / 删除时通知)
+  _scadaViewSavedTick: { view_id: string; updated_at: string } | null;
+
   // Actions
   connect: (url?: string) => void;
   disconnect: () => void;
@@ -164,6 +167,7 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
   trendBuffer: { timestamps: [], temperature: [], pH: [], DO: [], rpm: [], airflow: [] },
   batchRuntime: {},
   recentBranchEvaluations: [],
+  _scadaViewSavedTick: null,
 
   connect: (baseUrl = 'ws://localhost:3001/ws') => {
     if (ws?.readyState === WebSocket.OPEN || ws?.readyState === WebSocket.CONNECTING) return;
@@ -373,6 +377,24 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
         case 'ai_suggestion':
           const suggestion = msg.payload as AiSuggestion;
           set((s) => ({ aiSuggestions: [suggestion, ...s.aiSuggestions].slice(0, 50) }));
+          break;
+
+        case 'scada:view:saved':
+          set({
+            _scadaViewSavedTick: {
+              view_id: msg.payload.view_id,
+              updated_at: msg.payload.updated_at,
+            },
+          });
+          break;
+
+        case 'scada:view:deleted':
+          set({
+            _scadaViewSavedTick: {
+              view_id: msg.payload.view_id,
+              updated_at: 'deleted',
+            },
+          });
           break;
 
         case 'soft_sensor': {

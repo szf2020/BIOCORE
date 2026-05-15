@@ -363,7 +363,9 @@ export type WSChannel =
   | 'soft_sensor'
   | 'heartbeat'
   | 'cusum'
-  | 'recipe_downloaded';
+  | 'recipe_downloaded'
+  | 'scada:view:saved'
+  | 'scada:view:deleted';
 
 export interface WSMessage<T = Record<string, any>> {
   channel: WSChannel;
