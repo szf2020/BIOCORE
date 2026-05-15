@@ -118,4 +118,113 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
     broadcast('scada:project:deleted', { project_id: projectId });
     res.json({ success: true, deleted_views: r.deleted_views });
   });
+
+  // ─── 视图 ─────────────────────────────────────────────────
+  function checkItemsSize(items: any): string | null {
+    const str = JSON.stringify(items);
+    if (Buffer.byteLength(str, 'utf8') > SCADA_ITEMS_MAX_BYTES) {
+      return 'items_too_large';
+    }
+    return null;
+  }
+
+  apiRouter.get('/scada/views/:viewId', (req, res) => {
+    const view = sqlite.getScadaView(req.params.viewId);
+    if (!view) return res.status(404).json({ error: 'view_not_found' });
+    res.json(view);
+  });
+
+  apiRouter.get('/scada/reactors/:reactorId/views', (req, res) => {
+    res.json({ items: sqlite.listScadaViewsByReactor(req.params.reactorId) });
+  });
+
+  apiRouter.post('/scada/projects/:projectId/views', requireRole('admin', 'engineer'), (req, res) => {
+    const { projectId } = req.params;
+    if (!sqlite.getScadaProject(projectId)) return res.status(404).json({ error: 'project_not_found' });
+    const { view_id, name, reactor_id, width, height, background, display_order, items } = req.body ?? {};
+    if (!view_id || !name) return res.status(400).json({ error: 'view_id_and_name_required' });
+    if (sqlite.getScadaView(view_id)) return res.status(409).json({ error: 'view_id_conflict' });
+    if (items !== undefined) {
+      const err = checkItemsSize(items);
+      if (err) return res.status(400).json({ error: err });
+    }
+    sqlite.createScadaView({
+      view_id, project_id: projectId, name,
+      reactor_id: reactor_id ?? null,
+      width, height, background, display_order,
+      items: items ?? {},
+    });
+    const after = sqlite.getScadaView(view_id)!;
+    const userId = getUserId(req);
+    sqlite.writeAuditLog({
+      user_id: userId,
+      action: 'scada_view_create',
+      target_type: 'scada_view',
+      target_id: view_id,
+      new_value: JSON.stringify({ name, reactor_id: reactor_id ?? null, project_id: projectId }),
+      ip_address: getIp(req),
+    });
+    broadcast('scada:view:saved', {
+      view_id, project_id: projectId, updated_at: after.updated_at, updated_by: userId,
+    });
+    res.status(201).json({ success: true, view_id });
+  });
+
+  apiRouter.put('/scada/views/:viewId', requireRole('admin', 'engineer'), (req, res) => {
+    const { viewId } = req.params;
+    const old = sqlite.getScadaView(viewId);
+    if (!old) return res.status(404).json({ error: 'view_not_found' });
+    const body = req.body ?? {};
+    if (body.items !== undefined) {
+      const err = checkItemsSize(body.items);
+      if (err) return res.status(400).json({ error: err });
+    }
+    const r = sqlite.updateScadaView(viewId, {
+      name: body.name,
+      reactor_id: body.reactor_id,
+      display_order: body.display_order,
+      width: body.width,
+      height: body.height,
+      background: body.background,
+      items: body.items,
+      expected_updated_at: body.expected_updated_at ?? null,
+    });
+    if (!r.ok && 'conflict' in r && r.conflict) {
+      return res.status(409).json({ error: 'concurrent_update', current_updated_at: (r as any).current_updated_at });
+    }
+    if (!r.ok) return res.status(404).json({ error: 'view_not_found' });
+    const userId = getUserId(req);
+    const widgetCount = body.items ? Object.keys(body.items).length : Object.keys(old.items).length;
+    sqlite.writeAuditLog({
+      user_id: userId,
+      action: 'scada_view_save',
+      target_type: 'scada_view',
+      target_id: viewId,
+      old_value: JSON.stringify({ updated_at: old.updated_at }),
+      new_value: JSON.stringify({ updated_at: r.updated_at, widget_count: widgetCount }),
+      ip_address: getIp(req),
+    });
+    broadcast('scada:view:saved', {
+      view_id: viewId, project_id: old.project_id, updated_at: r.updated_at, updated_by: userId,
+    });
+    res.json({ success: true, updated_at: r.updated_at });
+  });
+
+  apiRouter.delete('/scada/views/:viewId', requireRole('admin', 'engineer'), (req, res) => {
+    const { viewId } = req.params;
+    const old = sqlite.getScadaView(viewId);
+    if (!old) return res.status(404).json({ error: 'view_not_found' });
+    sqlite.deleteScadaView(viewId);
+    const userId = getUserId(req);
+    sqlite.writeAuditLog({
+      user_id: userId,
+      action: 'scada_view_delete',
+      target_type: 'scada_view',
+      target_id: viewId,
+      old_value: JSON.stringify({ name: old.name }),
+      ip_address: getIp(req),
+    });
+    broadcast('scada:view:deleted', { view_id: viewId, project_id: old.project_id });
+    res.json({ success: true });
+  });
 }
