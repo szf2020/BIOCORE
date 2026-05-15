@@ -79,3 +79,51 @@ export async function submitWriteIntent(p: WriteIntentPayload): Promise<{ succes
   }
   return r.json();
 }
+
+export async function updateView(
+  viewId: string,
+  body: {
+    items?: Record<string, any>;
+    expected_updated_at?: string;
+    name?: string;
+    reactor_id?: string | null;
+    width?: number;
+    height?: number;
+    background?: string;
+  },
+): Promise<{ success: boolean; updated_at: string }> {
+  const r = await fetch(`${API}/api/v1/scada/views/${viewId}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ error: 'unknown' }));
+    throw new Error(err.error || `updateView ${r.status}`);
+  }
+  return r.json();
+}
+
+export async function createView(
+  projectId: string,
+  body: {
+    view_id: string;
+    name: string;
+    reactor_id?: string | null;
+    width?: number;
+    height?: number;
+    background?: string;
+    items?: Record<string, any>;
+  },
+): Promise<{ success: boolean; view_id: string }> {
+  const r = await fetch(`${API}/api/v1/scada/projects/${projectId}/views`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ error: 'unknown' }));
+    throw new Error(err.error || `createView ${r.status}`);
+  }
+  return r.json();
+}
