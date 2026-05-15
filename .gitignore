@@ -17,7 +17,12 @@ logs/
 .DS_Store
 **/.DS_Store
 backups/
+*.bak-*
+*.db.bak*
 fuxa/
 mosquitto/data/
 mosquitto/log/
 nginx/logs/
+nohup.out
+package-lock.json
+yarn.lock
