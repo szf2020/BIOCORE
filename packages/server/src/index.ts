@@ -3079,7 +3079,18 @@ function buildReactorConfig(reactorId: string): BatchControllerConfig {
       // 真实 PLC 读取 (待硬件就绪时通过 plc-driver 实现)
       throw new Error(`PLC 未连接, 无法读取 ${tag}. 请设置 MOCK_PLC=true 进行开发演示, 或配置真实 PLC 连接.`);
     },
-    plcWrite: async (_tag: string, _value: number) => {},
+    plcWrite: async (tag: string, value: number) => {
+      // Recipe-step driven writes; bypasses SCADA suggestion buffer (recipe is pre-approved).
+      // MOCK_PLC=true → MockPlcWriter (in-mem); real → S7/Modbus via createPlcWriter.
+      const mapping = varManager.getVariables().find((v) => v.tag_name === tag);
+      if (!mapping) throw new Error(`PLC 写失败: 标签 ${tag} 无 plc_variable_mappings 映射`);
+      const dir = String(mapping.direction).toUpperCase();
+      if (dir !== 'WRITE' && dir !== 'READWRITE') throw new Error(`PLC 写失败: 标签 ${tag} direction=${mapping.direction} (仅可读)`);
+      const conn = varManager.getConnections().find((c) => c.id === mapping.connection_id);
+      if (!conn) throw new Error(`PLC 写失败: 连接 ${mapping.connection_id} 不存在`);
+      const writer = createPlcWriter(conn.protocol);
+      await writer.write(conn as any, mapping as any, value);
+    },
     pollIntervalMs: 1000,
     getTemplateSteps: getTemplateStepsFromDB,
     getInterlockConfigs: () => getInterlockConfigsFromDB(reactorId),
