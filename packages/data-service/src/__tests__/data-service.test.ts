@@ -12,11 +12,31 @@ import { DataCollector } from '../collector';
 
 // ─── SQLite CRUD ──────────────────────────────────────────
 
+// Migrations needed for full CRUD coverage: baseline + recipe v2 + status + deprecation + audit trace + batch nodes
+const MIGRATIONS = [
+  '001-baseline-schema.sql',
+  '003-add-trace-fields.sql',
+  '004-extend-offline-samples.sql',
+  '007-add-recipe-v2-fields.sql',
+  '008-recipe-status-pending.sql',
+  '010-enhance-offline-samples.sql',
+  '013-recipe-deprecation.sql',
+  '023-batch-current-node.sql',
+];
+
+function makeMigratedDb(): SQLiteService {
+  const raw = new Database(':memory:');
+  for (const m of MIGRATIONS) {
+    raw.exec(readFileSync(resolve(__dirname, '../../../server/migrations', m), 'utf8'));
+  }
+  return new SQLiteService(raw);
+}
+
 describe('SQLiteService', () => {
   let db: SQLiteService;
 
   beforeEach(() => {
-    db = new SQLiteService(':memory:');
+    db = makeMigratedDb();
   });
 
   afterEach(() => {
