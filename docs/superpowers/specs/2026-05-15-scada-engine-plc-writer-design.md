@@ -1,7 +1,7 @@
 # SCADA Engine PLC 写下发设计 (子项目 7/7)
 
 **Branch:** `feat/scada-data-model`
-**Status:** Draft
+**Status:** Done
 **Scope:** 闭环 SCADA write-intent 路径最后一环 — operator accept 后,engine daemon 异步把 `suggested_value` 写到 PLC (S7 或 Modbus),失败可重试,审计每次下发。**仅本子项目完成后,SCADA widget 点击才真正影响生产。**
 
 ---
