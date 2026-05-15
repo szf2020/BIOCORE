@@ -293,6 +293,15 @@ export class SQLiteService {
     ).all();
   }
 
+  getPendingSuggestionsBySource(batchId?: string, sourceModule?: string): any[] {
+    const clauses: string[] = ["status = 'pending'"];
+    const params: any[] = [];
+    if (batchId) { clauses.push('batch_id = ?'); params.push(batchId); }
+    if (sourceModule) { clauses.push('source_module = ?'); params.push(sourceModule); }
+    const sql = `SELECT * FROM ai_suggestions WHERE ${clauses.join(' AND ')} ORDER BY created_at DESC LIMIT 100`;
+    return this.db.prepare(sql).all(...params);
+  }
+
   // ─── 配方 ─────────────────────────────────────────────────
 
   createRecipe(recipe: {
