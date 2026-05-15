@@ -180,3 +180,22 @@ export async function rejectSuggestion(id: number): Promise<{ success: boolean }
   }
   return unwrap<{ success: boolean }>(await r.json());
 }
+
+export async function retryDispatch(id: number): Promise<{ success: boolean }> {
+  const r = await fetch(`${API}/api/v1/ai/suggestions/${id}/retry-dispatch`, {
+    method: 'POST', headers: authHeaders(),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ error: 'unknown' }));
+    throw new Error(err.error || `retryDispatch ${r.status}`);
+  }
+  return unwrap<{ success: boolean }>(await r.json());
+}
+
+export async function fetchFailedDispatches(): Promise<ScadaSuggestion[]> {
+  // Server returns all 'accepted' suggestions; filter client-side to dispatch_status='failed'.
+  const r = await fetch(`${API}/api/v1/ai/suggestions?status=accepted&source_module=scada`, { headers: authHeaders() });
+  if (!r.ok) throw new Error(`fetchFailedDispatches ${r.status}`);
+  const list = unwrap<ScadaSuggestion[]>(await r.json());
+  return list.filter((s) => s.dispatch_status === 'failed');
+}

@@ -82,6 +82,28 @@ describe('SQLiteService dispatch methods', () => {
     expect(row.dispatch_error).toBeNull();
   });
 
+  it('retryFailedDispatch resets failed → pending_dispatch (retry_count=0, error=NULL); returns false if not failed', () => {
+    const { db, svc } = makeDb();
+    const id = svc.createSuggestion({
+      batch_id: 'b1', suggestion_type: 'widget_button', source_module: 'scada',
+      target_param: 'T1', suggested_value: 1, reasoning: '{}',
+    });
+    svc.setDispatchPending(id);
+    svc.claimPendingDispatches(10);
+    svc.incrementDispatchRetry(id);
+    svc.incrementDispatchRetry(id);
+    svc.markDispatchFailed(id, 'PLC timeout');
+
+    expect(svc.retryFailedDispatch(id)).toBe(true);
+    const row: any = db.prepare('SELECT * FROM ai_suggestions WHERE id=?').get(id);
+    expect(row.dispatch_status).toBe('pending_dispatch');
+    expect(row.dispatch_retry_count).toBe(0);
+    expect(row.dispatch_error).toBeNull();
+
+    // calling again when status != 'failed' returns false
+    expect(svc.retryFailedDispatch(id)).toBe(false);
+  });
+
   it('markDispatchFailed/incrementDispatchRetry/rollbackInProgressDispatches work as documented', () => {
     const { db, svc } = makeDb();
     const id = svc.createSuggestion({

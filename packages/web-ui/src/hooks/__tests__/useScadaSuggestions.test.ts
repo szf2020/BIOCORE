@@ -7,6 +7,8 @@ import * as api from '@/api/scada';
 beforeEach(() => {
   useRealtimeStore.setState({ aiSuggestions: [] } as any);
   vi.useFakeTimers({ shouldAdvanceTime: true });
+  // default mock so existing tests don't need to mock fetchFailedDispatches explicitly
+  vi.spyOn(api, 'fetchFailedDispatches').mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -75,5 +77,19 @@ describe('useScadaSuggestions', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     await act(async () => { vi.advanceTimersByTime(500); });
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
+  });
+
+  it('exposes failed list and retry(id) POSTs + removes', async () => {
+    vi.spyOn(api, 'fetchScadaSuggestions').mockResolvedValue([]);
+    vi.spyOn(api, 'fetchFailedDispatches').mockResolvedValue([
+      sample(11, { status: 'accepted', dispatch_status: 'failed', dispatch_error: 'PLC offline' }),
+    ]);
+    const retrySpy = vi.spyOn(api, 'retryDispatch').mockResolvedValue({ success: true });
+    const { result } = renderHook(() => useScadaSuggestions());
+    await waitFor(() => expect(result.current.failed.length).toBe(1));
+
+    await act(async () => { await result.current.retry(11); });
+    expect(retrySpy).toHaveBeenCalledWith(11);
+    expect(result.current.failed.length).toBe(0);
   });
 });

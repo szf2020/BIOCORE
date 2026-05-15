@@ -20,9 +20,11 @@ interface Props {
   suggestion: ScadaSuggestion;
   onAccept: (id: number) => void;
   onReject: (id: number) => void;
+  onRetry?: (id: number) => void;
 }
 
-export function SuggestionRow({ suggestion, onAccept, onReject }: Props) {
+export function SuggestionRow({ suggestion, onAccept, onReject, onRetry }: Props) {
+  const isFailedDispatch = suggestion.dispatch_status === 'failed';
   let meta: { reason?: string; view_id?: string; widget_id?: string; value?: unknown } = {};
   let isJson = false;
   if (suggestion.reasoning) {
@@ -71,20 +73,32 @@ export function SuggestionRow({ suggestion, onAccept, onReject }: Props) {
         </div>
       )}
       <div className="flex justify-end gap-2 pt-1">
-        <button
-          type="button"
-          onClick={() => onReject(suggestion.id)}
-          className="px-3 py-1 border rounded text-xs text-gray-700"
-        >
-          拒绝
-        </button>
-        <button
-          type="button"
-          onClick={() => onAccept(suggestion.id)}
-          className="px-3 py-1 bg-blue-600 text-white rounded text-xs"
-        >
-          接受
-        </button>
+        {isFailedDispatch && onRetry ? (
+          <button
+            type="button"
+            onClick={() => onRetry(suggestion.id)}
+            className="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
+          >
+            重新下发
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => onReject(suggestion.id)}
+              className="px-3 py-1 border rounded text-xs text-gray-700"
+            >
+              拒绝
+            </button>
+            <button
+              type="button"
+              onClick={() => onAccept(suggestion.id)}
+              className="px-3 py-1 bg-blue-600 text-white rounded text-xs"
+            >
+              接受
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

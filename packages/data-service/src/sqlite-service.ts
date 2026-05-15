@@ -458,6 +458,15 @@ export class SQLiteService {
     this.db.prepare(`UPDATE ai_suggestions SET dispatch_status='pending_dispatch' WHERE dispatch_status='dispatching'`).run();
   }
 
+  retryFailedDispatch(id: number): boolean {
+    const r = this.db.prepare(`
+      UPDATE ai_suggestions
+      SET dispatch_status='pending_dispatch', dispatch_retry_count=0, dispatch_error=NULL
+      WHERE id=? AND dispatch_status='failed'
+    `).run(id);
+    return r.changes > 0;
+  }
+
   getPendingSuggestionsBySource(batchId?: string, sourceModule?: string): any[] {
     const clauses: string[] = ["status = 'pending'"];
     const params: any[] = [];

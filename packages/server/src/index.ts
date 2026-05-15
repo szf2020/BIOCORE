@@ -2948,6 +2948,28 @@ apiRouter.post('/ai/suggestions/:id/reject', (req: any, res) => {
   }
 });
 
+// Manual retry for failed SCADA dispatches: resets dispatch_status='failed' → 'pending_dispatch'
+// (retry_count reset to 0) so dispatcher picks it up again on next tick.
+apiRouter.post('/ai/suggestions/:id/retry-dispatch', (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const ok = sqlite.retryFailedDispatch(id);
+    if (!ok) return res.status(409).json({ error: 'suggestion not in failed dispatch state' });
+    sqlite.writeAuditLog({
+      user_id: req.user?.user_id || 'admin-001',
+      action: 'ai_suggestion_dispatch_retry',
+      target_type: 'ai_suggestion',
+      target_id: req.params.id,
+      ip_address: req.ip || req.socket?.remoteAddress || null,
+      trace_id: req.trace_id,
+    });
+    broadcast('ai_suggestion', { id, action: 'dispatch_retry', source_module: 'scada' });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(400).json({ error: (e as Error).message });
+  }
+});
+
 // ── AI配置 API ──
 
 apiRouter.get('/settings/ai', (_req, res) => {

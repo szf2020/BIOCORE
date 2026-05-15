@@ -2,8 +2,10 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import {
   fetchScadaSuggestions,
+  fetchFailedDispatches,
   acceptSuggestion as apiAccept,
   rejectSuggestion as apiReject,
+  retryDispatch as apiRetry,
   type ScadaSuggestion,
 } from '@/api/scada';
 
@@ -11,6 +13,7 @@ const REFETCH_DEBOUNCE_MS = 500;
 
 export function useScadaSuggestions() {
   const [suggestions, setSuggestions] = useState<ScadaSuggestion[]>([]);
+  const [failed, setFailed] = useState<ScadaSuggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -21,8 +24,12 @@ export function useScadaSuggestions() {
     setLoading(true);
     setError(null);
     try {
-      const list = await fetchScadaSuggestions();
-      setSuggestions(list);
+      const [pending, failedList] = await Promise.all([
+        fetchScadaSuggestions(),
+        fetchFailedDispatches(),
+      ]);
+      setSuggestions(pending);
+      setFailed(failedList);
     } catch (e: any) {
       setError(e?.message || 'fetch_failed');
     } finally {
@@ -30,12 +37,10 @@ export function useScadaSuggestions() {
     }
   }, []);
 
-  // Fetch on mount
   useEffect(() => {
     refetch();
   }, [refetch]);
 
-  // Debounced refetch when store head changes to a scada suggestion
   useEffect(() => {
     if (!latest) return;
     const src = (latest as any).source_module;
@@ -57,5 +62,10 @@ export function useScadaSuggestions() {
     setSuggestions((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
-  return { suggestions, loading, error, refetch, accept, reject };
+  const retry = useCallback(async (id: number) => {
+    await apiRetry(id);
+    setFailed((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
+  return { suggestions, failed, loading, error, refetch, accept, reject, retry };
 }

@@ -1,6 +1,6 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { SuggestionRow } from '../SuggestionRow';
 
 const base: any = {
@@ -22,5 +22,21 @@ describe('SuggestionRow dispatch badge', () => {
     expect(screen.getByText('下发失败')).toBeTruthy();
     const badge = container.querySelector('[title="PLC timeout"]');
     expect(badge).toBeTruthy();
+  });
+
+  it('failed row with onRetry shows 重新下发 button (replaces accept/reject)', () => {
+    const onRetry = vi.fn();
+    render(
+      <SuggestionRow
+        suggestion={{ ...base, dispatch_status: 'failed', dispatch_error: 'PLC offline' }}
+        onAccept={() => {}}
+        onReject={() => {}}
+        onRetry={onRetry}
+      />
+    );
+    expect(screen.queryByText('接受')).toBeNull();
+    expect(screen.queryByText('拒绝')).toBeNull();
+    fireEvent.click(screen.getByText('重新下发'));
+    expect(onRetry).toHaveBeenCalledWith(base.id);
   });
 });
