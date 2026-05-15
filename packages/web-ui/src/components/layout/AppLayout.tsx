@@ -10,8 +10,8 @@ import {
   LayoutDashboard, LineChart, BookOpen, History,
   Database, Bot, Settings, Wifi, WifiOff, Blocks, ChevronDown,
   Gauge, Users, Bell, User, Activity, Droplets, LogOut, Key, FileText, FlaskConical,
-  ShieldCheck, Sigma, Shield, TrendingUp, Brain, Workflow, Building2, Sun, Moon, Monitor,
-  ChevronUp,
+  ShieldCheck, Sigma, Shield, TrendingUp, Brain, Workflow, Building2, Sun, Moon, Monitor, BarChart3,
+  ChevronUp, X,
 } from 'lucide-react';
 import { useTheme, type ThemeMode } from '@/hooks/useTheme';
 
@@ -31,7 +31,7 @@ const NAV_ITEMS = [
     { href: '/analysis/cusum-history', icon: TrendingUp, label: 'CUSUM 历史' },
     { href: '/explorer', icon: Database, label: '数据浏览' },
     { href: '/analysis/kpi', icon: Gauge, label: 'KPI 仪表盘' },
-    { href: '/analysis/spc', icon: TrendingUp, label: 'SPC 控制图' },
+    { href: '/analysis/spc', icon: BarChart3, label: 'SPC 控制图' },
     { href: '/analysis/audit-logs', icon: FileText, label: '审计追踪' },
     { href: '/analysis/soft-sensor', icon: Brain, label: '软测量模型' },
   ]},
