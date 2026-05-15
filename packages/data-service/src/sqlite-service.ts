@@ -152,6 +152,125 @@ export class SQLiteService {
     return this.db.prepare('SELECT * FROM alarms WHERE acknowledged_at IS NULL ORDER BY triggered_at DESC').all();
   }
 
+  private buildAlarmHistoryWhere(filter: {
+    batch_id?: string; severity?: string; ack?: 'all' | 'ack' | 'unack';
+    since?: string; until?: string; category?: 'all' | 'cusum' | 'operational';
+  }): { whereSql: string; params: any[] } {
+    const where: string[] = [];
+    const params: any[] = [];
+    if (filter.batch_id) { where.push('batch_id = ?'); params.push(filter.batch_id); }
+    if (filter.severity) { where.push('severity = ?'); params.push(filter.severity); }
+    if (filter.ack === 'ack') where.push('acknowledged_at IS NOT NULL');
+    if (filter.ack === 'unack') where.push('acknowledged_at IS NULL');
+    if (filter.since) { where.push('triggered_at >= ?'); params.push(filter.since); }
+    if (filter.until) { where.push('triggered_at <= ?'); params.push(filter.until); }
+    // CUSUM 分类: source='cusum_anomaly' OR source LIKE 'ai:%' OR alarm_code LIKE 'CUSUM_%'
+    const cusumClause = "(source = 'cusum_anomaly' OR source LIKE 'ai:%' OR alarm_code LIKE 'CUSUM_%')";
+    if (filter.category === 'cusum') where.push(cusumClause);
+    else if (filter.category === 'operational') where.push(`NOT ${cusumClause}`);
+    return { whereSql: where.length ? 'WHERE ' + where.join(' AND ') : '', params };
+  }
+
+  listAlarmHistory(filter: {
+    batch_id?: string; reactor_id?: string; severity?: string; ack?: 'all' | 'ack' | 'unack';
+    since?: string; until?: string; limit?: number; offset?: number;
+    category?: 'all' | 'cusum' | 'operational';
+  } = {}): any[] {
+    const { whereSql, params } = this.buildAlarmHistoryWhere(filter);
+    const limit = Math.min(filter.limit ?? 500, 2000);
+    const offset = filter.offset ?? 0;
+    // LEFT JOIN batches 取 reactor_id (alarms 自身无此列)
+    const reactorFilter = filter.reactor_id ? (whereSql ? ' AND b.reactor_id = ?' : 'WHERE b.reactor_id = ?') : '';
+    const allParams = filter.reactor_id ? [...params, filter.reactor_id] : params;
+    return this.db.prepare(`
+      SELECT a.*, b.reactor_id AS reactor_id
+      FROM alarms a
+      LEFT JOIN batches b ON b.batch_id = a.batch_id
+      ${whereSql.replace(/\b(batch_id|severity|source|alarm_code|acknowledged_at|triggered_at)\b/g, 'a.$1')}${reactorFilter}
+      ORDER BY a.triggered_at DESC LIMIT ? OFFSET ?
+    `).all(...allParams, limit, offset);
+  }
+
+  // ─── 报警定义 (alarm_definitions) — 用户可配置 ───────────
+  listAlarmDefinitions(filter: { owner?: string; severity?: string; enabled?: boolean } = {}): any[] {
+    const where: string[] = [];
+    const params: any[] = [];
+    if (filter.owner !== undefined) {
+      if (filter.owner === '' || filter.owner === null) { where.push('owner IS NULL'); }
+      else { where.push('owner = ?'); params.push(filter.owner); }
+    }
+    if (filter.severity) { where.push('severity = ?'); params.push(filter.severity); }
+    if (filter.enabled !== undefined) { where.push('enabled = ?'); params.push(filter.enabled ? 1 : 0); }
+    const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
+    return this.db.prepare(`SELECT * FROM alarm_definitions ${whereSql} ORDER BY severity DESC, code ASC`).all(...params);
+  }
+
+  getAlarmDefinition(id: number): any | null {
+    return this.db.prepare('SELECT * FROM alarm_definitions WHERE id = ?').get(id) || null;
+  }
+
+  createAlarmDefinition(d: {
+    code: string; name: string; owner?: string | null; severity: string;
+    message_template: string; channel?: string | null; enabled?: boolean;
+    threshold_high?: number | null; threshold_low?: number | null; hysteresis?: number | null;
+    ack_required?: boolean; category?: string | null; notes?: string | null;
+  }): number {
+    const r = this.db.prepare(`
+      INSERT INTO alarm_definitions
+        (code, name, owner, severity, message_template, channel, enabled, threshold_high, threshold_low, hysteresis, ack_required, category, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      d.code, d.name, d.owner ?? null, d.severity, d.message_template,
+      d.channel ?? null, d.enabled === false ? 0 : 1,
+      d.threshold_high ?? null, d.threshold_low ?? null, d.hysteresis ?? null,
+      d.ack_required === false ? 0 : 1, d.category ?? null, d.notes ?? null,
+    );
+    return r.lastInsertRowid as number;
+  }
+
+  updateAlarmDefinition(id: number, patch: Partial<{
+    code: string; name: string; owner: string | null; severity: string;
+    message_template: string; channel: string | null; enabled: boolean;
+    threshold_high: number | null; threshold_low: number | null; hysteresis: number | null;
+    ack_required: boolean; category: string | null; notes: string | null;
+  }>): boolean {
+    const allowed: (keyof typeof patch)[] = [
+      'code', 'name', 'owner', 'severity', 'message_template', 'channel',
+      'enabled', 'threshold_high', 'threshold_low', 'hysteresis',
+      'ack_required', 'category', 'notes',
+    ];
+    const sets: string[] = [];
+    const vals: any[] = [];
+    for (const k of allowed) {
+      if (k in patch) {
+        sets.push(`${k} = ?`);
+        const v = (patch as any)[k];
+        vals.push(typeof v === 'boolean' ? (v ? 1 : 0) : v);
+      }
+    }
+    if (sets.length === 0) return false;
+    sets.push("updated_at = datetime('now')");
+    vals.push(id);
+    const r = this.db.prepare(`UPDATE alarm_definitions SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
+    return r.changes > 0;
+  }
+
+  deleteAlarmDefinition(id: number): boolean {
+    return this.db.prepare('DELETE FROM alarm_definitions WHERE id = ?').run(id).changes > 0;
+  }
+
+  countAlarmHistory(filter: {
+    batch_id?: string; reactor_id?: string; severity?: string; ack?: 'all' | 'ack' | 'unack';
+    since?: string; until?: string; category?: 'all' | 'cusum' | 'operational';
+  } = {}): number {
+    const { whereSql, params } = this.buildAlarmHistoryWhere(filter);
+    const reactorFilter = filter.reactor_id ? (whereSql ? ' AND b.reactor_id = ?' : 'WHERE b.reactor_id = ?') : '';
+    const allParams = filter.reactor_id ? [...params, filter.reactor_id] : params;
+    const sql = `SELECT COUNT(*) AS n FROM alarms a LEFT JOIN batches b ON b.batch_id = a.batch_id ${whereSql.replace(/\b(batch_id|severity|source|alarm_code|acknowledged_at|triggered_at)\b/g, 'a.$1')}${reactorFilter}`;
+    const row = this.db.prepare(sql).get(...allParams) as any;
+    return row?.n ?? 0;
+  }
+
   // ─── Phase/Step 日志 ──────────────────────────────────────
 
   writePhaseLog(log: {

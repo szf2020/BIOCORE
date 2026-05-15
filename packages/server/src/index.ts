@@ -2173,8 +2173,87 @@ apiRouter.get('/alarms', (req, res) => {
   res.json(sqlite.getUnacknowledgedAlarms(req.query.batch_id as string | undefined));
 });
 
+// 报警历史: 默认仅操作性 (排除 CUSUM); category=cusum 切换到 CUSUM 提示历史
+apiRouter.get('/alarms/history', (req, res) => {
+  const q = req.query;
+  const filter = {
+    batch_id: (q.batch_id as string) || undefined,
+    reactor_id: (q.reactor_id as string) || undefined,
+    severity: (q.severity as string) || undefined,
+    ack: (q.ack as 'all' | 'ack' | 'unack') || 'all',
+    since: (q.since as string) || undefined,
+    until: (q.until as string) || undefined,
+    category: (q.category as 'all' | 'cusum' | 'operational') || 'operational',
+    limit: q.limit ? parseInt(q.limit as string) : 500,
+    offset: q.offset ? parseInt(q.offset as string) : 0,
+  };
+  const items = sqlite.listAlarmHistory(filter);
+  const total = sqlite.countAlarmHistory(filter);
+  res.json({ items, total, limit: filter.limit, offset: filter.offset });
+});
+
+// CUSUM 提示历史: source='cusum_anomaly' OR source LIKE 'ai:%' OR alarm_code LIKE 'CUSUM_%'
+apiRouter.get('/cusum/history', (req, res) => {
+  const q = req.query;
+  const filter = {
+    batch_id: (q.batch_id as string) || undefined,
+    reactor_id: (q.reactor_id as string) || undefined,
+    severity: (q.severity as string) || undefined,
+    ack: (q.ack as 'all' | 'ack' | 'unack') || 'all',
+    since: (q.since as string) || undefined,
+    until: (q.until as string) || undefined,
+    category: 'cusum' as const,
+    limit: q.limit ? parseInt(q.limit as string) : 500,
+    offset: q.offset ? parseInt(q.offset as string) : 0,
+  };
+  const items = sqlite.listAlarmHistory(filter);
+  const total = sqlite.countAlarmHistory(filter);
+  res.json({ items, total, limit: filter.limit, offset: filter.offset });
+});
+
 apiRouter.post('/alarms/:id/acknowledge', (req, res) => {
   sqlite.acknowledgeAlarm(parseInt(req.params.id), req.body.user_id || 'admin-001');
+  res.json({ success: true });
+});
+
+// ── 报警定义 (用户可配置: 归属/分级/内容/标签) ──
+apiRouter.get('/alarm-configs', (req, res) => {
+  const q = req.query;
+  const filter: any = {};
+  if ('owner' in q) filter.owner = (q.owner as string) || null;
+  if (q.severity) filter.severity = q.severity as string;
+  if ('enabled' in q) filter.enabled = q.enabled === 'true' || q.enabled === '1';
+  res.json({ items: sqlite.listAlarmDefinitions(filter) });
+});
+
+apiRouter.get('/alarm-configs/:id', (req, res) => {
+  const row = sqlite.getAlarmDefinition(parseInt(req.params.id));
+  if (!row) return res.status(404).json({ error: 'not found' });
+  res.json(row);
+});
+
+apiRouter.post('/alarm-configs', (req, res) => {
+  const b = req.body || {};
+  if (!b.code || !b.name || !b.severity || !b.message_template) {
+    return res.status(400).json({ error: '必填: code, name, severity, message_template' });
+  }
+  try {
+    const id = sqlite.createAlarmDefinition(b);
+    res.json({ success: true, id });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || String(e) });
+  }
+});
+
+apiRouter.put('/alarm-configs/:id', (req, res) => {
+  const ok = sqlite.updateAlarmDefinition(parseInt(req.params.id), req.body || {});
+  if (!ok) return res.status(404).json({ error: 'not found or no changes' });
+  res.json({ success: true });
+});
+
+apiRouter.delete('/alarm-configs/:id', (req, res) => {
+  const ok = sqlite.deleteAlarmDefinition(parseInt(req.params.id));
+  if (!ok) return res.status(404).json({ error: 'not found' });
   res.json({ success: true });
 });
 

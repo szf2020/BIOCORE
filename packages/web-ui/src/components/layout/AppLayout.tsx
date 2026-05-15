@@ -29,6 +29,8 @@ const NAV_ITEMS = [
   { href: '/analysis/raw-materials', icon: FlaskConical, label: '原料库' },
   { href: '/analysis', icon: LineChart, label: '数据分析', children: [
     { href: '/batches', icon: History, label: '批次历史' },
+    { href: '/analysis/alarm-history', icon: Bell, label: '报警历史' },
+    { href: '/analysis/cusum-history', icon: TrendingUp, label: 'CUSUM 历史' },
     { href: '/explorer', icon: Database, label: '数据浏览' },
     { href: '/analysis/kpi', icon: Gauge, label: 'KPI 仪表盘' },
     { href: '/analysis/spc', icon: TrendingUp, label: 'SPC 控制图' },
@@ -44,6 +46,7 @@ const NAV_ITEMS = [
     { href: '/settings/calibration', icon: Gauge, label: '传感器校准' },
     { href: '/settings/formula-config', icon: Activity, label: '公式配置' },
     { href: '/settings/interlock-config', icon: Shield, label: '连锁/故障配置' },
+    { href: '/settings/alarm-config', icon: Bell, label: '报警设置' },
     { href: '/settings/users', icon: Users, label: '用户管理' },
     { href: '/settings/permissions', icon: Shield, label: '权限管理' },
     { href: '/settings/api-keys', icon: Key, label: 'API 密钥' },
