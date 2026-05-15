@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "./button";
 import { Input } from "./input";
 import { Label } from "./label";
+import { apiFetch } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -45,7 +46,7 @@ export function AuditConfirmDialog({
 
     try {
       // 写入审计日志
-      const res = await fetch(`${API}/api/audit-logs`, {
+      const res = await apiFetch(`${API}/api/audit-logs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
