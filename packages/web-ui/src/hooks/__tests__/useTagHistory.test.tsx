@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import { useTagHistory } from '../useTagHistory';
@@ -68,12 +68,20 @@ function resetStore() {
 }
 
 describe('useTagHistory', () => {
+  const NOW = new Date('2026-05-15T12:00:00Z').getTime();
+
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
     resetStore();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('1. store 注 60 点, windowSec=60 → points.length = 60', () => {
-    const timestamps = makeTimestamps(60, 1);
+    const timestamps = makeTimestamps(60, 1, NOW - 60 * 1000);
     const temperature = Array.from({ length: 60 }, (_, i) => 37 + i * 0.01);
     seedTrend('F01', { timestamps, temperature });
     const { result } = renderHook(() => useTagHistory('F01.AI-0', { windowSec: 60 }));
@@ -82,7 +90,7 @@ describe('useTagHistory', () => {
   });
 
   it('2. windowSec huge → clamp 到现有点数', () => {
-    const timestamps = makeTimestamps(100, 1);
+    const timestamps = makeTimestamps(100, 1, NOW - 100 * 1000);
     const temperature = Array.from({ length: 100 }, (_, i) => i);
     seedTrend('F01', { timestamps, temperature });
     const { result } = renderHook(() => useTagHistory('F01.AI-0', { windowSec: 99999 }));
@@ -96,7 +104,7 @@ describe('useTagHistory', () => {
   });
 
   it('4. field 映射: AI-0→temperature, AI-2→pH; AI-1 不在 mapping → []', () => {
-    const timestamps = makeTimestamps(5, 1);
+    const timestamps = makeTimestamps(5, 1, NOW - 5 * 1000);
     seedTrend('F01', {
       timestamps,
       temperature: [10, 11, 12, 13, 14],
@@ -114,14 +122,14 @@ describe('useTagHistory', () => {
   });
 
   it('5. windowSec=0 → points=[]', () => {
-    const timestamps = makeTimestamps(10, 1);
+    const timestamps = makeTimestamps(10, 1, NOW - 10 * 1000);
     seedTrend('F01', { timestamps, temperature: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] });
     const { result } = renderHook(() => useTagHistory('F01.AI-0', { windowSec: 0 }));
     expect(result.current.points).toEqual([]);
   });
 
   it('6. points 按 t 升序', () => {
-    const timestamps = makeTimestamps(10, 1);
+    const timestamps = makeTimestamps(10, 1, NOW - 10 * 1000);
     seedTrend('F01', { timestamps, temperature: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19] });
     const { result } = renderHook(() => useTagHistory('F01.AI-0', { windowSec: 60 }));
     const pts = result.current.points;
