@@ -145,10 +145,14 @@ export interface ScadaSuggestion {
   decided_at: string | null;
 }
 
+function unwrap<T>(body: any): T {
+  return (body && typeof body === 'object' && 'data' in body ? body.data : body) as T;
+}
+
 export async function fetchScadaSuggestions(): Promise<ScadaSuggestion[]> {
   const r = await fetch(`${API}/api/v1/ai/suggestions?status=pending&source_module=scada`, { headers: authHeaders() });
   if (!r.ok) throw new Error(`fetchScadaSuggestions ${r.status}`);
-  return r.json();
+  return unwrap<ScadaSuggestion[]>(await r.json());
 }
 
 export async function acceptSuggestion(id: number): Promise<{ success: boolean }> {
@@ -159,7 +163,7 @@ export async function acceptSuggestion(id: number): Promise<{ success: boolean }
     const err = await r.json().catch(() => ({ error: 'unknown' }));
     throw new Error(err.error || `acceptSuggestion ${r.status}`);
   }
-  return r.json();
+  return unwrap<{ success: boolean }>(await r.json());
 }
 
 export async function rejectSuggestion(id: number): Promise<{ success: boolean }> {
@@ -170,5 +174,5 @@ export async function rejectSuggestion(id: number): Promise<{ success: boolean }
     const err = await r.json().catch(() => ({ error: 'unknown' }));
     throw new Error(err.error || `rejectSuggestion ${r.status}`);
   }
-  return r.json();
+  return unwrap<{ success: boolean }>(await r.json());
 }
