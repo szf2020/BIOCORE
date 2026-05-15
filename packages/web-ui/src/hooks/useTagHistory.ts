@@ -3,6 +3,7 @@ import { parseTagId } from './useTag';
 
 export interface UseTagHistoryOpts {
   windowSec?: number;
+  staleMs?: number;  // 同 useTag, age 超阈则 isStale=true; 默认 5000ms
 }
 
 export interface TagHistoryPoint {
@@ -16,6 +17,7 @@ export interface TagHistory {
 }
 
 const DEFAULT_WINDOW_SEC = 60;
+const DEFAULT_STALE_MS = 5000;
 
 const TREND_FIELD_MAP: Record<string, 'temperature' | 'pH' | 'DO' | 'rpm' | 'airflow'> = {
   'AI-0': 'temperature',
@@ -29,6 +31,7 @@ const EMPTY_HISTORY: TagHistory = Object.freeze({ points: [], isStale: true });
 
 export function useTagHistory(tagId: string, opts: UseTagHistoryOpts = {}): TagHistory {
   const windowSec = opts.windowSec ?? DEFAULT_WINDOW_SEC;
+  const staleMs = opts.staleMs ?? DEFAULT_STALE_MS;
   const wsConnected = useRealtimeStore((s) => s.wsConnected);
   const parsed = parseTagId(tagId);
   const reactorData = useRealtimeStore((s) =>
@@ -37,16 +40,21 @@ export function useTagHistory(tagId: string, opts: UseTagHistoryOpts = {}): TagH
 
   if (!parsed) return EMPTY_HISTORY;
   if (!reactorData) return EMPTY_HISTORY;
-  if (windowSec <= 0) return { points: [], isStale: !wsConnected };
+
+  const latestTs = reactorData.processValues?.timestamp;
+  const ageMs = latestTs ? Date.now() - new Date(latestTs).getTime() : Infinity;
+  const isStale = !wsConnected || ageMs > staleMs;
+
+  if (windowSec <= 0) return { points: [], isStale };
 
   const bufferKey = TREND_FIELD_MAP[parsed.field];
-  if (!bufferKey) return { points: [], isStale: !wsConnected };
+  if (!bufferKey) return { points: [], isStale };
 
   const trend = reactorData.trendBuffer;
   const timestamps = trend.timestamps;
   const values = trend[bufferKey];
   if (!timestamps.length || !values.length) {
-    return { points: [], isStale: !wsConnected };
+    return { points: [], isStale };
   }
 
   const n = Math.min(timestamps.length, values.length);
@@ -59,5 +67,5 @@ export function useTagHistory(tagId: string, opts: UseTagHistoryOpts = {}): TagH
     points.push({ t, v: values[i] });
   }
 
-  return { points, isStale: !wsConnected };
+  return { points, isStale };
 }

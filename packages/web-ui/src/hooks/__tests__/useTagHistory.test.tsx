@@ -137,4 +137,31 @@ describe('useTagHistory', () => {
       expect(pts[i].t).toBeGreaterThan(pts[i - 1].t);
     }
   });
+
+  it('7. 默认 staleMs=5000: 旧 processValues (60s 前) + windowSec=60 数据有, isStale=true', () => {
+    const timestamps = makeTimestamps(60, 1, NOW - 60 * 1000);
+    seedTrend('F01', { timestamps, temperature: Array.from({ length: 60 }, () => 37) });
+    useRealtimeStore.setState((s) => ({
+      reactorData: {
+        ...s.reactorData,
+        F01: { ...s.reactorData.F01, processValues: { ...(s.reactorData.F01?.processValues ?? {}), timestamp: new Date(NOW - 60_000).toISOString() } as any },
+      },
+    }));
+    const { result } = renderHook(() => useTagHistory('F01.AI-0', { windowSec: 60 }));
+    expect(result.current.points.length).toBeGreaterThan(0);
+    expect(result.current.isStale).toBe(true);  // age 60s > staleMs 5s
+  });
+
+  it('8. staleMs 自定义 70000: 60s 老数据 isStale=false', () => {
+    const timestamps = makeTimestamps(60, 1, NOW - 60 * 1000);
+    seedTrend('F01', { timestamps, temperature: Array.from({ length: 60 }, () => 37) });
+    useRealtimeStore.setState((s) => ({
+      reactorData: {
+        ...s.reactorData,
+        F01: { ...s.reactorData.F01, processValues: { ...(s.reactorData.F01?.processValues ?? {}), timestamp: new Date(NOW - 60_000).toISOString() } as any },
+      },
+    }));
+    const { result } = renderHook(() => useTagHistory('F01.AI-0', { windowSec: 60, staleMs: 70_000 }));
+    expect(result.current.isStale).toBe(false);
+  });
 });

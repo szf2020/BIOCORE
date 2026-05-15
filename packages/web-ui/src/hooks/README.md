@@ -20,11 +20,29 @@ const { value } = useTag('F01.AI-0', { staleMs: 10_000 });
 
 ```tsx
 const { points, isStale } = useTagHistory('F01.AI-0', { windowSec: 300 });
+const { points, isStale } = useTagHistory('F01.AI-0', { windowSec: 300, staleMs: 70_000 });
 ```
 
 返 `TagHistory`:
 - `points: Array<{ t: number; v: number }>` — 升序 by t (ms epoch), 仅返时间窗口内
-- `isStale: boolean` — 同 useTag, 主要反映 WS 状态
+- `isStale: boolean` — true 当 `!wsConnected` 或 `ageMs > staleMs` (默认 5000ms), ageMs 取自 `processValues.timestamp`
+
+Options:
+- `windowSec?: number` — 历史时间窗口, 默认 60s
+- `staleMs?: number` — 数据年龄阈值, 默认 5000ms; 超出则 isStale=true
+
+## ⚠️ 生产 staleMs 注意
+
+`DEFAULT_STALE_MS = 5000` 假设 `pv_realtime` 频率 ~1Hz。 但 BIOCore server 当前 `reactor-wiring.ts` 的 tick 间隔为 **60 秒**, 因此生产环境下 widget 用默认 staleMs 会一直显示 stale。
+
+**生产 widget 推荐**: 显式传 `{ staleMs: 70_000 }` (一个 tick + 10s 缓冲), 同时适用 useTag 和 useTagHistory。
+
+```tsx
+const { value, isStale } = useTag('F01.AI-0', { staleMs: 70_000 });
+const { points, isStale: histStale } = useTagHistory('F01.AI-0', { windowSec: 300, staleMs: 70_000 });
+```
+
+未来若 server tick 调到 1Hz, 默认值即可。
 
 ## Tag Namespace
 
