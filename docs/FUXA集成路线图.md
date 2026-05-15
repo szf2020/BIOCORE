@@ -1,7 +1,30 @@
 # FUXA 集成路线图
 
-> 状态：W1 完成 · W2 后端完成 (FUXA 端配置待手动) · W3 完成 · **M2 用户同步后端完成** · M4 统一 compose + 监控 ✅ (Loki 日志待加)
+> 状态：W1 完成 · W2 后端完成 (FUXA 端配置待手动) · W3 完成 · **M2 用户同步后端完成** · M4 统一 compose + 监控 ✅ (Loki 日志待加) · **方案 A (FUXA 去 docker)** ✅ 完成 2026-05-14
 > 日期：2026-05-14
+
+## 方案 A: FUXA 迁移到 monorepo (native Node)
+
+FUXA 从 docker 容器迁移到 monorepo 内 `packages/fuxa/` (pnpm workspace), 走 host node 进程, 不再依赖 docker image。
+
+### 启动
+```bash
+pnpm install                                  # 含 packages/fuxa/server/node_modules
+pnpm --filter @biocore/fuxa dev                # 单独起 FUXA on :1881
+pnpm dev                                      # 并行起所有服务 (含 FUXA)
+```
+
+### 数据持久化
+`packages/fuxa/server/_{appdata,db,images,logs}` → 软链接到 canonical `./fuxa/{appdata,db,images,logs}`。docker 时代的 bind 路径完全兼容, 切换无数据迁移。
+
+### nginx 反代
+upstream 已切到 `host.docker.internal:1881` (生产 profile)。容器内 nginx 跨边界访问宿主 FUXA。同步 `biocore_web/api` 也切到 `host.docker.internal:3001`。
+
+### 部署侧
+- 不需要 docker pull `frangoteam/fuxa:latest`
+- 需要: Node 20+, pnpm, sqlite (better-sqlite3 native)
+- docker 仅用于 mosquitto / nginx / influxdb (可选, 都能 native 替代)
+
 
 ## 总体路线
 

@@ -1,14 +1,14 @@
 # BIOCore × FUXA 统一 Compose (M4)
-# 单文件管理所有服务: biocore-server + influxdb (核心) + mosquitto + fuxa + nginx (HMI/生产)
+# 单文件管理所有服务: biocore-server + influxdb (核心) + mosquitto + nginx (生产)
+# FUXA 已迁移到 monorepo (packages/fuxa, native node), 不再走 docker.
 # 通过 profiles 控制启动范围:
 #   docker compose up -d                       # 仅核心 (biocore-server + influxdb)
-#   docker compose --profile hmi up -d         # 核心 + FUXA + mosquitto (开发期 HMI 直连 1881)
+#   docker compose --profile hmi up -d         # 核心 + mosquitto (开发期 MQTT 桥接)
 #   docker compose --profile production up -d  # 完整栈含 nginx 反代 (生产单入口 8080)
 #
 # 生命周期联动 (depends_on healthcheck):
 #   biocore-server ← influxdb (healthy)
-#   fuxa           ← mosquitto (healthy)
-#   nginx          ← fuxa (healthy) + biocore-server (healthy)
+#   nginx          ← biocore-server (healthy)
 #
 # 网络: 所有容器加入 user-defined bridge `biocore-net`, 通过容器名互访.
 # Hardened for 7×24 production runs (Sprint 4 Track A, T24)
@@ -120,40 +120,10 @@ services:
         max-file: "3"
 
   # ───── FUXA HMI (SCADA 可视化) ─────
-  fuxa:
-    image: frangoteam/fuxa:latest
-    container_name: biocore-fuxa
-    profiles: ["hmi", "production"]
-    restart: unless-stopped
-    networks:
-      - biocore-net
-    depends_on:
-      mosquitto:
-        condition: service_healthy
-    # hmi profile: 暴露 1881 供开发期浏览器直连
-    # production profile: 仍暴露 (nginx 通过容器名 biocore-fuxa:1881 反代, 端口可选关闭)
-    ports:
-      - "1881:1881"
-    volumes:
-      - ./fuxa/appdata:/usr/src/app/FUXA/server/_appdata
-      - ./fuxa/db:/usr/src/app/FUXA/server/_db
-      - ./fuxa/logs:/usr/src/app/FUXA/server/_logs
-      - ./fuxa/images:/usr/src/app/FUXA/server/_images
-    environment:
-      - NODE_ENV=production
-      # FUXA 内部用户系统禁用 (W3 改用 BIOCore JWT via nginx 转发)
-      # 临时: 允许匿名访问 editor/runtime, 上线前必须配 nginx 反代
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:1881/"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    logging:
-      driver: json-file
-      options:
-        max-size: "20m"
-        max-file: "5"
+  # 方案 A: FUXA 已迁移到 monorepo packages/fuxa, 通过 pnpm dev 启动 native node.
+  # Docker 服务移除. 端口仍 1881 (主机直接监听).
+  # 数据保留: ./fuxa/{appdata,db,images,logs} (软链接挂在 packages/fuxa/server/_*).
+  # 历史镜像: frangoteam/fuxa:1.3.2-2809.
 
   # ───── nginx 反代 + JWT SSO (生产单入口) ─────
   # 浏览器统一入口 http://localhost:8080
@@ -168,8 +138,7 @@ services:
     depends_on:
       biocore-server:
         condition: service_healthy
-      fuxa:
-        condition: service_healthy
+      # fuxa 已迁出 docker (方案 A), nginx 通过 host.docker.internal:1881 反代
     ports:
       - "8080:8080"
     volumes:
