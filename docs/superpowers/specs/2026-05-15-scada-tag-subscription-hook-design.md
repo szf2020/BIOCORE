@@ -205,12 +205,12 @@ const TREND_FIELD_MAP: Record<string, keyof TrendBuffer> = {
 10. tick 触发后 ageMs 自动涨 (vi.useFakeTimers + advance 2s)
 
 `useTagHistory.test.tsx` (6 用例):
-1. windowSec=60 → points 长度 ≈ 60 (1Hz 假定)
-2. windowSec > 3600 → clamp 到 store ring (≤ 3600 点)
-3. reactor 未连 → points=[], isStale=true
-4. field=AI-0 → 取 trendBuffer.temperature; field=AI-2 → pH (mapping 表覆盖)
+1. store 注入 trendBuffer 含 60 个点 (timestamps + temperature 平行数组), windowSec=60 → points 长度 = 60
+2. store 注入 4000 个点, windowSec 大于 ring → clamp 到 store ring (≤ 3600 点)
+3. reactor 未连 (`reactorData[rid]` undefined) → points=[], isStale=true
+4. store 注入 trendBuffer.temperature=[...10个数] + 平行 timestamps, field=AI-0 取该数组返 10 点; field=AI-2 取 pH 数组 (mapping 表覆盖); field=AI-1 不在 mapping → points=[]
 5. windowSec=0 → points=[]
-6. points 按 t 升序
+6. points 按 t 升序 (验 `points[i].t < points[i+1].t`)
 
 **Mock 策略**: `useRealtimeStore.setState({ reactorData: { F01: {...} }, wsConnected: true, _tick: Date.now() })`. 不真起 WS. `Date.now` mock 用 `vi.setSystemTime`.
 
