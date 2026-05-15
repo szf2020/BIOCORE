@@ -8,11 +8,16 @@ import Database from 'better-sqlite3';
 export class SQLiteService {
   private db: Database.Database;
 
+  /**
+   * Ownership semantics:
+   * - string path: SQLiteService creates, owns, and configures the Database instance.
+   * - Database instance: caller owns lifecycle; SQLiteService only enables foreign_keys = ON
+   *   for CASCADE delete semantics to work consistently in tests and production.
+   */
   constructor(dbOrPath: string | Database.Database = './data/biocore.db') {
     if (typeof dbOrPath === 'string') {
       this.db = new Database(dbOrPath);
       this.db.pragma('journal_mode = WAL');
-      this.db.pragma('foreign_keys = ON');
       this.db.pragma('busy_timeout = 5000');      // 多连接等锁 5s 重试, 避免 SQLITE_BUSY
       this.db.pragma('synchronous = NORMAL');     // WAL 下推荐, 比 FULL 快且仍崩溃安全
       this.db.pragma('cache_size = -64000');      // 64MB 页缓存 (负值=KB)
@@ -21,6 +26,8 @@ export class SQLiteService {
     } else {
       this.db = dbOrPath;
     }
+    // Enable foreign keys for CASCADE semantics (applies to both paths)
+    this.db.pragma('foreign_keys = ON');
     // 注: 不再调用 initSchema(). schema 创建/演化已由 packages/server/migrations/
     // 下的 .sql 文件管理, 由 packages/server/src/migrator.ts 在 server 启动时执行.
   }
@@ -869,7 +876,6 @@ export class SQLiteService {
 
   deleteScadaProject(projectId: string): { deleted_views: number } {
     const viewCount = (this.db.prepare('SELECT COUNT(*) AS n FROM scada_views WHERE project_id = ?').get(projectId) as { n: number }).n;
-    this.db.pragma('foreign_keys = ON');
     this.db.prepare('DELETE FROM scada_projects WHERE project_id = ?').run(projectId);
     return { deleted_views: viewCount };
   }
