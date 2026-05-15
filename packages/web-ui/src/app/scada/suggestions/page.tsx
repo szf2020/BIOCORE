@@ -1,0 +1,26 @@
+'use client';
+import React from 'react';
+import Link from 'next/link';
+import { useScadaSuggestions } from '@/hooks/useScadaSuggestions';
+import { SuggestionList } from '@/components/scada/suggestions/SuggestionList';
+
+export default function ScadaSuggestionsPage() {
+  const { suggestions, loading, error, refetch, accept, reject } = useScadaSuggestions();
+
+  return (
+    <div className="p-8 space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">SCADA 写意图审核</h1>
+        <div className="flex items-center gap-3 text-sm">
+          <button type="button" onClick={refetch} className="text-blue-600 hover:underline">刷新</button>
+          <Link href="/scada" className="text-blue-600 hover:underline">← SCADA 列表</Link>
+        </div>
+      </div>
+      <div className="text-sm text-gray-500">
+        {loading ? '加载中…' : `待处理: ${suggestions.length}`}
+      </div>
+      {error && <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded text-sm">{error}</div>}
+      <SuggestionList suggestions={suggestions} onAccept={accept} onReject={reject} />
+    </div>
+  );
+}

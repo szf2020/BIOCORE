@@ -43,6 +43,7 @@ export default function ScadaIndexPage() {
           >
             + 新建视图
           </button>
+          <Link href="/scada/suggestions" className="text-blue-600 hover:underline">审核队列</Link>
           <Link href="/dashboard" className="text-blue-600 hover:underline">← 返回 Dashboard</Link>
         </div>
       </div>
