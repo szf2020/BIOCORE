@@ -247,7 +247,8 @@ describe('SCADA REST API — audit + broadcast', () => {
 describe('POST /scada/write-intents', () => {
   function setupWithAiSuggestions() {
     const ctx = makeApp();
-    ctx.sqlite.getDatabase().exec(`
+    const db = ctx.sqlite.getDatabase();
+    db.exec(`
       CREATE TABLE IF NOT EXISTS ai_suggestions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         batch_id TEXT NOT NULL,
@@ -264,12 +265,37 @@ describe('POST /scada/write-intents', () => {
         decided_by TEXT,
         decided_at TEXT
       );
+      CREATE TABLE IF NOT EXISTS batches (
+        batch_id TEXT PRIMARY KEY,
+        recipe_id TEXT NOT NULL,
+        recipe_version TEXT NOT NULL,
+        reactor_id TEXT NOT NULL DEFAULT 'F01',
+        operator_id TEXT NOT NULL,
+        started_at TEXT,
+        current_state TEXT NOT NULL DEFAULT 'idle',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
     `);
+    // Seed: scada project + view with reactor_id F01 (so endpoint can look up batch)
+    ctx.sqlite.createScadaProject({ project_id: 'p_test', name: 'Test', description: null, created_by: 'u_test' });
+    ctx.sqlite.createScadaView({
+      view_id: 'v1', project_id: 'p_test', name: 'V', reactor_id: 'F01',
+      width: 800, height: 480, background: '#fff', display_order: 0, items: {},
+    });
     return ctx;
   }
 
-  it('operator role: valid payload → 200, inserts ai_suggestions row, writes audit, broadcasts', async () => {
-    const { app, sqlite, broadcasts } = setupWithAiSuggestions();
+  function seedActiveBatch(ctx: ReturnType<typeof setupWithAiSuggestions>, batchId: string, reactorId: string) {
+    ctx.sqlite.getDatabase().prepare(
+      `INSERT INTO batches (batch_id, recipe_id, recipe_version, reactor_id, operator_id, started_at, current_state)
+       VALUES (?, 'r1', 'v1', ?, 'op', datetime('now'), 'running')`
+    ).run(batchId, reactorId);
+  }
+
+  it('operator role: valid payload → 200, inserts ai_suggestions row with resolved batch_id, writes audit, broadcasts', async () => {
+    const ctx = setupWithAiSuggestions();
+    const { app, sqlite, broadcasts } = ctx;
+    seedActiveBatch(ctx, 'B-001', 'F01');
     const r = await request(app)
       .post('/api/v1/scada/write-intents')
       .set('X-Test-Role', 'operator')
@@ -284,6 +310,7 @@ describe('POST /scada/write-intents', () => {
     const row: any = sqlite.getDatabase()
       .prepare('SELECT * FROM ai_suggestions WHERE id = ?').get(r.body.suggestion_id);
     expect(row).toBeTruthy();
+    expect(row.batch_id).toBe('B-001');
     expect(row.source_module).toBe('scada');
     expect(row.suggestion_type).toBe('widget_button');
     expect(row.target_param).toBe('F01.SP-temp');
@@ -322,5 +349,39 @@ describe('POST /scada/write-intents', () => {
       .set('X-Test-Role', 'viewer')
       .send({ tag: 'F01.SP', reason: '尝试', view_id: 'v1', widget_id: 'b1' });
     expect(r.status).toBe(403);
+  });
+
+  it('view has reactor_id but no active batch → 409 no_active_batch', async () => {
+    const { app } = setupWithAiSuggestions();
+    // No seedActiveBatch — F01 has no running/held/paused batch
+    const r = await request(app)
+      .post('/api/v1/scada/write-intents')
+      .set('X-Test-Role', 'operator')
+      .send({ tag: 'F01.SP', reason: '尝试写入', view_id: 'v1', widget_id: 'b1' });
+    expect(r.status).toBe(409);
+    expect(r.body.error).toBe('no_active_batch');
+  });
+
+  it('explicit batch_id in body is used (no reactor lookup needed)', async () => {
+    const ctx = setupWithAiSuggestions();
+    const { app, sqlite } = ctx;
+    seedActiveBatch(ctx, 'B-EXPLICIT', 'F02'); // F02 ≠ view's F01
+    const r = await request(app)
+      .post('/api/v1/scada/write-intents')
+      .set('X-Test-Role', 'operator')
+      .send({ tag: 'F01.SP', value: 42, reason: '指定批次', view_id: 'v1', widget_id: 'b1', batch_id: 'B-EXPLICIT' });
+    expect(r.status).toBe(200);
+    const row: any = sqlite.getDatabase().prepare('SELECT batch_id FROM ai_suggestions WHERE id = ?').get(r.body.suggestion_id);
+    expect(row.batch_id).toBe('B-EXPLICIT');
+  });
+
+  it('unknown view_id → 404 view_not_found', async () => {
+    const { app } = setupWithAiSuggestions();
+    const r = await request(app)
+      .post('/api/v1/scada/write-intents')
+      .set('X-Test-Role', 'operator')
+      .send({ tag: 'F01.SP', reason: 'x' + 'y'.repeat(3), view_id: 'nonexistent', widget_id: 'b1' });
+    expect(r.status).toBe(404);
+    expect(r.body.error).toBe('view_not_found');
   });
 });

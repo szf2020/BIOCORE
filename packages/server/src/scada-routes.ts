@@ -259,8 +259,29 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
       return res.status(400).json({ error: 'invalid_value_type' });
     }
 
+    const view = sqlite.getScadaView(view_id);
+    if (!view) return res.status(404).json({ error: 'view_not_found' });
+
+    let effective_batch_id: string | undefined;
+    if (typeof batch_id === 'string' && batch_id.trim()) {
+      effective_batch_id = batch_id.trim();
+    } else if (view.reactor_id) {
+      const row: any = sqlite.getDatabase().prepare(
+        `SELECT batch_id FROM batches
+         WHERE reactor_id = ?
+           AND current_state IN ('running','held','paused')
+         ORDER BY COALESCE(started_at, created_at) DESC
+         LIMIT 1`
+      ).get(view.reactor_id);
+      effective_batch_id = row?.batch_id;
+    }
+
+    if (!effective_batch_id) {
+      return res.status(409).json({ error: 'no_active_batch' });
+    }
+
     const suggestion_id = sqlite.createSuggestion({
-      batch_id: (typeof batch_id === 'string' && batch_id) ? batch_id : 'manual',
+      batch_id: effective_batch_id,
       suggestion_type: 'widget_button',
       source_module: 'scada',
       target_param: tag,
