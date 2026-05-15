@@ -280,7 +280,7 @@ EditorCanvas 元素 (div)
 ```
 WidgetItem 元素 onMouseDown={e => {
   e.stopPropagation();
-  if (e.target as HTMLElement matches '[data-handle]') return; // resize, 让 handle 自己处理
+  if ((e.target as HTMLElement).closest('[data-handle]')) return; // resize, 让 handle 自己处理
   const startX = e.clientX, startY = e.clientY;
   const origX = widget.x, origY = widget.y;
   function onMove(ev: MouseEvent) {
@@ -388,6 +388,7 @@ Action: 每行 onChange → 合成 `Binding[]` 全集 → `dispatch({type:'setBi
 ```tsx
 function SaveBar({ state, viewId, dispatch }) {
   const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -396,19 +397,20 @@ function SaveBar({ state, viewId, dispatch }) {
         expected_updated_at: state.baselineUpdatedAt,
       });
       dispatch({ type: 'markSaved', updated_at: r.updated_at });
-      toast.success('已保存');
+      console.log('[scada-editor] saved', r.updated_at);
     } catch (e: any) {
       if (e.message === 'concurrent_update') {
         if (confirm('其他人改了视图. 重新加载会丢失本次编辑. 继续?')) {
           const fresh = await fetchView(viewId);
           dispatch({ type: 'loadFromServer', view: fresh });
         }
-      } else { toast.error(e.message); }
+      } else { setErr(e.message || 'save_failed'); }
     } finally { setSaving(false); }
   };
   return (
     <div className="flex items-center gap-2">
       <span className="text-xs text-gray-500">{state.dirty ? '● 未保存' : '✓ 已保存'}</span>
+      {err && <span className="text-xs text-red-600">{err}</span>}
       <button disabled={!state.dirty || saving} onClick={handleSave}>
         {saving ? '保存中…' : '保存'}
       </button>
