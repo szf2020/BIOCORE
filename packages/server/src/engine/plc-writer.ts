@@ -119,3 +119,11 @@ export class S7PlcWriter implements PlcWriter {
     }));
   }
 }
+
+// ─── ModbusPlcWriter ─────────────────────────────────────────────────────────
+
+export class ModbusPlcWriter implements PlcWriter {
+  async write(_conn: PLCConnectionConfig, _mapping: PLCVariableMapping, _value: number): Promise<void> {
+    throw new Error('NOT_IMPLEMENTED: Modbus writer pending hardware integration');
+  }
+}

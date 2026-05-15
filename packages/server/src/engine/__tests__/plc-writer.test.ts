@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { MockPlcWriter } from '../plc-writer';
 import { S7PlcWriter } from '../plc-writer';
+import { ModbusPlcWriter } from '../plc-writer';
 
 describe('MockPlcWriter', () => {
   it('writes value to in-mem store keyed by conn.id:plc_address', async () => {
@@ -40,5 +41,14 @@ describe('S7PlcWriter', () => {
     const conn = { id: 'c1', protocol: 's7', ip: '127.0.0.1', rack: 0, slot: 1, s7_db: 1 } as any;
     const mapping = { plc_address: 'DB1.DBD0', data_type: 'real', scaling_enabled: 0 } as any;
     await expect(w.write(conn, mapping, 42.5)).rejects.toThrow(/S7 WriteArea/);
+  });
+});
+
+describe('ModbusPlcWriter', () => {
+  it('throws NOT_IMPLEMENTED — skeleton awaiting hardware', async () => {
+    const w = new ModbusPlcWriter();
+    const conn = { id: 'c2', protocol: 'modbus', serial_port: '/dev/ttyUSB0' } as any;
+    const mapping = { plc_address: '40001', data_type: 'int' } as any;
+    await expect(w.write(conn, mapping, 1)).rejects.toThrow(/NOT_IMPLEMENTED/);
   });
 });
