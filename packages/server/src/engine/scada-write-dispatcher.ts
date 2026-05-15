@@ -45,6 +45,23 @@ export async function dispatchTick(deps: DispatcherDeps): Promise<void> {
   }
 }
 
+const DEFAULT_TICK_MS = 500;
+
+export interface DispatcherHandle { stop(): void; }
+
+export function startScadaWriteDispatcher(
+  deps: DispatcherDeps & { tickMs?: number }
+): DispatcherHandle {
+  deps.sqlite.rollbackInProgressDispatches();
+  const tickMs = deps.tickMs ?? DEFAULT_TICK_MS;
+  const timer = setInterval(() => {
+    dispatchTick(deps).catch((err) => {
+      console.error('[scada-dispatcher] tick error:', err);
+    });
+  }, tickMs);
+  return { stop: () => clearInterval(timer) };
+}
+
 async function dispatchOne(row: any, deps: DispatcherDeps): Promise<void> {
   try {
     const mapping = deps.mappingManager.getVariables().find((v) => v.tag_name === row.target_param);

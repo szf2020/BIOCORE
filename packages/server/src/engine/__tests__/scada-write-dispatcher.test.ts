@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SQLiteService } from '@biocore/data-service';
-import { dispatchTick, DispatchError } from '../scada-write-dispatcher';
+import { dispatchTick, DispatchError, startScadaWriteDispatcher } from '../scada-write-dispatcher';
 import { MockPlcWriter } from '../plc-writer';
 
 function setup() {
@@ -113,5 +113,25 @@ describe('scada-write-dispatcher', () => {
     expect(row.dispatch_status).toBe('failed');
     expect(row.dispatch_error).toMatch(/no mapping/);
     expect(row.dispatch_retry_count).toBe(0);
+  });
+});
+
+describe('startScadaWriteDispatcher lifecycle', () => {
+  it('on start, rolls back dispatching rows to pending_dispatch', () => {
+    const { db, sqlite, mappingManager, writerFactory, broadcast } = setup();
+    const id = sqlite.createSuggestion({
+      batch_id: 'b1', suggestion_type: 'widget_button', source_module: 'scada',
+      target_param: 'F01.SP-temp', suggested_value: 1, reasoning: '{}',
+    });
+    sqlite.setDispatchPending(id);
+    db.prepare("UPDATE ai_suggestions SET dispatch_status='dispatching' WHERE id=?").run(id);
+
+    const handle = startScadaWriteDispatcher({ sqlite, mappingManager, writerFactory, broadcast, tickMs: 60_000 });
+    try {
+      const row: any = db.prepare('SELECT dispatch_status FROM ai_suggestions WHERE id=?').get(id);
+      expect(row.dispatch_status).toBe('pending_dispatch');
+    } finally {
+      handle.stop();
+    }
   });
 });
