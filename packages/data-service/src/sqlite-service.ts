@@ -880,6 +880,92 @@ export class SQLiteService {
     return { deleted_views: viewCount };
   }
 
+  // ─── SCADA 视图 ───────────────────────────────────────────
+  listScadaViewsByProject(projectId: string): ScadaViewMeta[] {
+    return this.db.prepare(
+      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, updated_at
+       FROM scada_views WHERE project_id = ? ORDER BY display_order ASC, name ASC`
+    ).all(projectId) as ScadaViewMeta[];
+  }
+
+  listScadaViewsByReactor(reactorId: string): ScadaViewMeta[] {
+    return this.db.prepare(
+      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, updated_at
+       FROM scada_views WHERE reactor_id = ? OR reactor_id IS NULL ORDER BY display_order ASC, name ASC`
+    ).all(reactorId) as ScadaViewMeta[];
+  }
+
+  getScadaView(viewId: string): ScadaView | null {
+    const row = this.db.prepare(
+      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, items_json, updated_at
+       FROM scada_views WHERE view_id = ?`
+    ).get(viewId) as (ScadaViewMeta & { items_json: string }) | undefined;
+    if (!row) return null;
+    const { items_json, ...meta } = row;
+    let items: Record<string, any> = {};
+    try { items = JSON.parse(items_json); } catch { items = {}; }
+    return { ...meta, items };
+  }
+
+  createScadaView(v: {
+    view_id: string; project_id: string; name: string;
+    reactor_id?: string | null;
+    width?: number; height?: number; background?: string;
+    display_order?: number;
+    items?: Record<string, any>;
+  }): void {
+    this.db.prepare(
+      `INSERT INTO scada_views (view_id, project_id, name, reactor_id, display_order, width, height, background, items_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      v.view_id, v.project_id, v.name,
+      v.reactor_id ?? null,
+      v.display_order ?? 0,
+      v.width ?? 1280,
+      v.height ?? 720,
+      v.background ?? '#ffffff',
+      JSON.stringify(v.items ?? {}),
+    );
+  }
+
+  updateScadaView(viewId: string, patch: {
+    name?: string;
+    reactor_id?: string | null;
+    display_order?: number;
+    width?: number; height?: number; background?: string;
+    items?: Record<string, any>;
+    expected_updated_at?: string | null;
+  }):
+    | { ok: true; updated_at: string }
+    | { ok: false; conflict: true; current_updated_at: string }
+    | { ok: false; conflict: false; not_found: true }
+  {
+    const cur = this.db.prepare('SELECT updated_at FROM scada_views WHERE view_id = ?').get(viewId) as { updated_at: string } | undefined;
+    if (!cur) return { ok: false, conflict: false, not_found: true };
+    if (patch.expected_updated_at && patch.expected_updated_at !== cur.updated_at) {
+      return { ok: false, conflict: true, current_updated_at: cur.updated_at };
+    }
+    const sets: string[] = [];
+    const vals: any[] = [];
+    if (patch.name !== undefined)          { sets.push('name = ?');           vals.push(patch.name); }
+    if (patch.reactor_id !== undefined)    { sets.push('reactor_id = ?');     vals.push(patch.reactor_id); }
+    if (patch.display_order !== undefined) { sets.push('display_order = ?');  vals.push(patch.display_order); }
+    if (patch.width !== undefined)         { sets.push('width = ?');          vals.push(patch.width); }
+    if (patch.height !== undefined)        { sets.push('height = ?');         vals.push(patch.height); }
+    if (patch.background !== undefined)    { sets.push('background = ?');     vals.push(patch.background); }
+    if (patch.items !== undefined)         { sets.push('items_json = ?');     vals.push(JSON.stringify(patch.items)); }
+    sets.push("updated_at = datetime('now')");
+    vals.push(viewId);
+    this.db.prepare(`UPDATE scada_views SET ${sets.join(', ')} WHERE view_id = ?`).run(...vals);
+    const after = this.db.prepare('SELECT updated_at FROM scada_views WHERE view_id = ?').get(viewId) as { updated_at: string };
+    return { ok: true, updated_at: after.updated_at };
+  }
+
+  deleteScadaView(viewId: string): boolean {
+    const r = this.db.prepare('DELETE FROM scada_views WHERE view_id = ?').run(viewId);
+    return r.changes > 0;
+  }
+
   // ─── 工具 ─────────────────────────────────────────────────
 
   getDatabase(): Database.Database { return this.db; }

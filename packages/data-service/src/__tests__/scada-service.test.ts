@@ -58,3 +58,79 @@ describe('SCADA project CRUD', () => {
     expect(() => svc.createScadaProject({ project_id: 'dup', name: 'B' })).toThrow();
   });
 });
+
+describe('SCADA view CRUD', () => {
+  let svc: SQLiteService;
+  beforeEach(() => {
+    svc = makeDb();
+    svc.createScadaProject({ project_id: 'p1', name: 'P' });
+  });
+
+  it('createScadaView + getScadaView round-trip with items', () => {
+    const items = { w1: { type: 'tank', x: 10, y: 20, w: 100, h: 200, props: { color: 'blue' } } };
+    svc.createScadaView({ view_id: 'v1', project_id: 'p1', name: 'View 1', items });
+    const got = svc.getScadaView('v1');
+    expect(got).not.toBeNull();
+    expect(got!.name).toBe('View 1');
+    expect(got!.items).toEqual(items);
+  });
+
+  it('items_json round-trip preserves nested widget tree', () => {
+    const items = {
+      tank1: { type: 'tank', x: 0, y: 0, w: 100, h: 100, props: { fill: '#abc' }, bindings: [{ tag: 'F01.AI-0', prop: 'value' }] },
+      trend1: { type: 'trend', x: 100, y: 0, w: 400, h: 200, props: { series: ['F01.AI-0', 'F01.AI-1'], yMin: 0, yMax: 100 } },
+    };
+    svc.createScadaView({ view_id: 'v_nested', project_id: 'p1', name: 'Nested', items });
+    expect(svc.getScadaView('v_nested')!.items).toEqual(items);
+  });
+
+  it('listScadaViewsByProject returns project views', () => {
+    svc.createScadaView({ view_id: 'v1', project_id: 'p1', name: 'A' });
+    svc.createScadaView({ view_id: 'v2', project_id: 'p1', name: 'B' });
+    const list = svc.listScadaViewsByProject('p1');
+    expect(list).toHaveLength(2);
+    expect((list[0] as any).items).toBeUndefined();
+  });
+
+  it('listScadaViewsByReactor returns reactor-specific + generic (NULL) views', () => {
+    svc.createScadaView({ view_id: 'v_f01', project_id: 'p1', name: 'F01 view', reactor_id: 'F01' });
+    svc.createScadaView({ view_id: 'v_f02', project_id: 'p1', name: 'F02 view', reactor_id: 'F02' });
+    svc.createScadaView({ view_id: 'v_generic', project_id: 'p1', name: 'Generic' });
+    const list = svc.listScadaViewsByReactor('F01');
+    const ids = list.map(v => v.view_id).sort();
+    expect(ids).toEqual(['v_f01', 'v_generic']);
+  });
+
+  it('updateScadaView patches metadata + items', () => {
+    svc.createScadaView({ view_id: 'v1', project_id: 'p1', name: 'old' });
+    const r = svc.updateScadaView('v1', { name: 'new', items: { x: { type: 'btn', x: 0, y: 0, w: 50, h: 50, props: {} } } });
+    expect(r.ok).toBe(true);
+    const got = svc.getScadaView('v1')!;
+    expect(got.name).toBe('new');
+    expect(got.items.x.type).toBe('btn');
+  });
+
+  it('updateScadaView returns conflict when expected_updated_at mismatches', () => {
+    svc.createScadaView({ view_id: 'v1', project_id: 'p1', name: 'A' });
+    const r = svc.updateScadaView('v1', { name: 'B', expected_updated_at: '1970-01-01 00:00:00' });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect((r as any).conflict).toBe(true);
+      expect((r as any).current_updated_at).toBeTruthy();
+    }
+  });
+
+  it('updateScadaView accepts matching expected_updated_at', () => {
+    svc.createScadaView({ view_id: 'v1', project_id: 'p1', name: 'A' });
+    const cur = svc.getScadaView('v1')!.updated_at;
+    const r = svc.updateScadaView('v1', { name: 'B', expected_updated_at: cur });
+    expect(r.ok).toBe(true);
+  });
+
+  it('deleteScadaView returns true and removes row', () => {
+    svc.createScadaView({ view_id: 'v1', project_id: 'p1', name: 'X' });
+    expect(svc.deleteScadaView('v1')).toBe(true);
+    expect(svc.getScadaView('v1')).toBeNull();
+    expect(svc.deleteScadaView('v1')).toBe(false);
+  });
+});
