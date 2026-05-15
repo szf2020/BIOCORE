@@ -175,6 +175,45 @@ describe('SCADA REST API — view CRUD + conflict', () => {
     const { app } = makeApp();
     await request(app).get('/api/v1/scada/views/missing').expect(404);
   });
+
+  it('PUT view with empty body → 400 empty_patch', async () => {
+    const { app } = makeApp();
+    await request(app).post('/api/v1/scada/projects').set('X-Test-Role', 'engineer')
+      .send({ project_id: 'p1', name: 'P' }).expect(201);
+    await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: 'v1', name: 'V' }).expect(201);
+    const r = await request(app).put('/api/v1/scada/views/v1').set('X-Test-Role', 'engineer').send({});
+    expect(r.status).toBe(400);
+    expect(r.body.error).toBe('empty_patch');
+  });
+
+  it('PUT view with only expected_updated_at (no actual patch) → 400 empty_patch', async () => {
+    const { app } = makeApp();
+    await request(app).post('/api/v1/scada/projects').set('X-Test-Role', 'engineer')
+      .send({ project_id: 'p1', name: 'P' }).expect(201);
+    await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: 'v1', name: 'V' }).expect(201);
+    const cur = (await request(app).get('/api/v1/scada/views/v1').expect(200)).body.updated_at;
+    const r = await request(app).put('/api/v1/scada/views/v1').set('X-Test-Role', 'engineer')
+      .send({ expected_updated_at: cur });
+    expect(r.status).toBe(400);
+  });
+
+  it('POST project with whitespace-only name → 400', async () => {
+    const { app } = makeApp();
+    const r = await request(app).post('/api/v1/scada/projects').set('X-Test-Role', 'engineer')
+      .send({ project_id: 'p1', name: '   ' });
+    expect(r.status).toBe(400);
+  });
+
+  it('POST view with whitespace-only view_id → 400', async () => {
+    const { app } = makeApp();
+    await request(app).post('/api/v1/scada/projects').set('X-Test-Role', 'engineer')
+      .send({ project_id: 'p1', name: 'P' }).expect(201);
+    const r = await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: '  ', name: 'V' });
+    expect(r.status).toBe(400);
+  });
 });
 
 describe('SCADA REST API — audit + broadcast', () => {

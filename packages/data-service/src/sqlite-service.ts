@@ -875,9 +875,12 @@ export class SQLiteService {
   }
 
   deleteScadaProject(projectId: string): { deleted_views: number } {
-    const viewCount = (this.db.prepare('SELECT COUNT(*) AS n FROM scada_views WHERE project_id = ?').get(projectId) as { n: number }).n;
-    this.db.prepare('DELETE FROM scada_projects WHERE project_id = ?').run(projectId);
-    return { deleted_views: viewCount };
+    const tx = this.db.transaction(() => {
+      const viewCount = (this.db.prepare('SELECT COUNT(*) AS n FROM scada_views WHERE project_id = ?').get(projectId) as { n: number }).n;
+      this.db.prepare('DELETE FROM scada_projects WHERE project_id = ?').run(projectId);
+      return { deleted_views: viewCount };
+    });
+    return tx();
   }
 
   // ─── SCADA 视图 ───────────────────────────────────────────

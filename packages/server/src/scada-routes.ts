@@ -35,6 +35,10 @@ function getIp(req: Request): string | undefined {
   return (req.ip || req.socket.remoteAddress) ?? undefined;
 }
 
+function isBlankString(v: unknown): boolean {
+  return typeof v !== 'string' || v.trim().length === 0;
+}
+
 export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): void {
   const { sqlite, broadcast } = deps;
 
@@ -52,7 +56,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
 
   apiRouter.post('/scada/projects', requireRole('admin', 'engineer'), (req, res) => {
     const { project_id, name, description } = req.body ?? {};
-    if (!project_id || !name) return res.status(400).json({ error: 'project_id_and_name_required' });
+    if (isBlankString(project_id) || isBlankString(name)) return res.status(400).json({ error: 'project_id_and_name_required' });
     if (sqlite.getScadaProject(project_id)) {
       return res.status(409).json({ error: 'project_id_conflict' });
     }
@@ -82,7 +86,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
     const old = sqlite.getScadaProject(projectId);
     if (!old) return res.status(404).json({ error: 'project_not_found' });
     const patch: { name?: string; description?: string | null } = {};
-    if (typeof req.body?.name === 'string') patch.name = req.body.name;
+    if (typeof req.body?.name === 'string' && !isBlankString(req.body.name)) patch.name = req.body.name;
     if (req.body?.description !== undefined) patch.description = req.body.description ?? null;
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'empty_patch' });
     sqlite.updateScadaProject(projectId, patch);
@@ -142,7 +146,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
     const { projectId } = req.params;
     if (!sqlite.getScadaProject(projectId)) return res.status(404).json({ error: 'project_not_found' });
     const { view_id, name, reactor_id, width, height, background, display_order, items } = req.body ?? {};
-    if (!view_id || !name) return res.status(400).json({ error: 'view_id_and_name_required' });
+    if (isBlankString(view_id) || isBlankString(name)) return res.status(400).json({ error: 'view_id_and_name_required' });
     if (sqlite.getScadaView(view_id)) return res.status(409).json({ error: 'view_id_conflict' });
     if (items !== undefined) {
       const err = checkItemsSize(items);
@@ -185,6 +189,12 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
     if (body.items !== undefined) {
       const err = checkItemsSize(body.items);
       if (err) return res.status(400).json({ error: err });
+    }
+    const patchKeys = ['name', 'reactor_id', 'display_order', 'width', 'height', 'background', 'items'];
+    const hasUserPatch = patchKeys.some(k => body[k] !== undefined);
+    if (!hasUserPatch) return res.status(400).json({ error: 'empty_patch' });
+    if (body.name !== undefined && isBlankString(body.name)) {
+      return res.status(400).json({ error: 'blank_name' });
     }
     const r = sqlite.updateScadaView(viewId, {
       name: body.name,
