@@ -27,8 +27,6 @@ import http from 'http';
 import { createWsServer } from './ws-server';
 import { createMqttPublisher } from './mqtt-publisher';
 import { createMqttSubscriber } from './mqtt-subscriber';
-// M2 Level 3: BIOCore users → FUXA users 单向同步
-import { createFuxaUserSync, type FuxaUserSync } from './fuxa-user-sync';
 // node-snap7 动态加载: Node v24 可能缺少编译后的 native binding
 let S7Client: any;
 try {
@@ -644,7 +642,7 @@ const server = http.createServer(app);
 // live in ./ws-server. Keep the local `wss` / `broadcast` aliases so
 // downstream code (route handlers, wireReactorEvents, /status,
 // gracefulShutdown) keeps working unchanged.
-// MQTT Publisher (W2: BIOCore broadcast 镜像到 mosquitto, FUXA 订阅)
+// MQTT Publisher (W2: BIOCore broadcast 镜像到 mosquitto)
 // 环境变量:
 //   MQTT_BROKER_URL=mqtt://localhost:1883  (默认)
 //   MQTT_ENABLED=false                     可关闭
@@ -660,27 +658,13 @@ const { wss, broadcast } = createWsServer({
   mqttPublisher,
 });
 
-// M3 (Level 3): MQTT subscriber — FUXA/HMI 写意图 → 建议缓冲区
+// M3 (Level 3): MQTT subscriber — 外部 HMI 写意图 → 建议缓冲区
 // 订阅 biocore/commands/+ → 收到 write_intent → ai_suggestions 表 + audit + WS
 // CLAUDE.md 第 7 节硬约束: 绝不直写 PLC, 必经人工确认
 const mqttSubscriber = createMqttSubscriber({
   enabled: process.env.MQTT_ENABLED !== 'false',
   sqlite,
   broadcast,
-});
-
-// M2 Level 3: FUXA user sync (BIOCore 是 IAM 唯一真源)
-// 环境变量:
-//   FUXA_SYNC_ENABLED=false           可关 (默认开)
-//   FUXA_BASE_URL=http://localhost:1881
-//   FUXA_ADMIN_USER=admin
-//   FUXA_ADMIN_PASS=<FUXA admin 密码>  (未配置则跳过同步)
-const fuxaUserSync: FuxaUserSync = createFuxaUserSync({
-  enabled: process.env.FUXA_SYNC_ENABLED !== 'false',
-  fuxaBaseUrl: process.env.FUXA_BASE_URL,
-  adminUser: process.env.FUXA_ADMIN_USER,
-  adminPassword: process.env.FUXA_ADMIN_PASS,
-  sqlite,
 });
 
 // ─── 只读 S7 连接 (安全: 测试操作绝不写入PLC) ─────────────
@@ -3322,8 +3306,6 @@ async function gracefulShutdown(signal: string): Promise<void> {
     }
     // 5. 停止后台调度器 (AI 建议引擎等)
     stopSchedulers();
-    // 5b. 停 FUXA user sync reconcile timer
-    try { fuxaUserSync.close(); } catch { /* ignore */ }
     // 6. Flush + close InfluxDB
     if (influxWriteApi) {
       try { await influxWriteApi.close(); } catch { /* ignore */ }
@@ -3431,12 +3413,6 @@ async function start(): Promise<void> {
   } catch (e) {
     console.warn(`[BOOT] 自动注册扫描异常: ${(e as Error).message}`);
   }
-
-  // M2 Level 3: 启动后异步全量同步 BIOCore → FUXA users
-  // (失败仅 warn, 不阻塞; 后续每小时由 fuxaUserSync 内部 setInterval reconcile)
-  fuxaUserSync
-    .syncAllUsers()
-    .catch((e) => console.warn(`[FUXA-Sync] 启动同步异常: ${(e as Error).message}`));
 
   // 启动后台调度器 (AI 建议生成引擎等)
   startSchedulers({
