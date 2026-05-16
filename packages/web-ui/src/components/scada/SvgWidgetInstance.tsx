@@ -45,10 +45,7 @@ export function SvgWidgetInstance({ instance, reactorId: _reactorId }: Props) {
   }
 
   const Component = reg.component;
-  const mergedConfig =
-    Object.keys(animResult.configOverrides).length === 0
-      ? instance.props
-      : { ...(instance.props ?? {}), ...animResult.configOverrides };
+  const mergedConfig = { ...(instance.props ?? {}), ...animResult.configOverrides };
 
   return (
     <g transform={transform} opacity={animResult.opacity}>

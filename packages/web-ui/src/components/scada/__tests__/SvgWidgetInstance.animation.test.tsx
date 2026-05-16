@@ -115,4 +115,18 @@ describe('SvgWidgetInstance with animations', () => {
     expect(tx).toContain('rotate(30,30,30)');
     expect(tx).toContain('rotate(45,30,30)');
   });
+
+  it('applies opacity animation to outer g opacity attribute', () => {
+    const item: SvgWidgetItem = {
+      id: 'op1', type: 'svg-rect', x: 0, y: 0, w: 40, h: 40,
+      animations: [{
+        type: 'opacity',
+        tag: 'F01.AI-1',
+        rule: { kind: 'linearScale', inMin: 0, inMax: 100, outMin: 0, outMax: 1 },
+      }],
+    };
+    const { container } = renderInSvg(<SvgWidgetInstance instance={item} reactorId="F01" />);
+    const g = container.querySelector('g');
+    expect(g?.getAttribute('opacity')).toBe('0.5');
+  });
 });
