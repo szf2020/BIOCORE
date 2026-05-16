@@ -78,6 +78,24 @@ describe('ScadaToast', () => {
     expect(screen.getByText(/SCADA 下发失败 #20/)).toBeTruthy();
   });
 
+  it('skips toast for action=dispatched / dispatch_retry (silent refetch trigger)', () => {
+    render(<ScadaToast />);
+    act(() => {
+      useRealtimeStore.setState({
+        aiSuggestions: [{ id: 40, source_module: 'scada', action: 'dispatched', target_param: 'X', suggested_value: 1 } as any],
+      } as any);
+    });
+    expect(screen.queryByText(/SCADA 建议 #40/)).toBeNull();
+    expect(screen.queryByText(/SCADA 下发失败 #40/)).toBeNull();
+
+    act(() => {
+      useRealtimeStore.setState({
+        aiSuggestions: [{ id: 41, source_module: 'scada', action: 'dispatch_retry', target_param: 'Y', suggested_value: 2 } as any],
+      } as any);
+    });
+    expect(screen.queryByText(/SCADA 建议 #41/)).toBeNull();
+  });
+
   it('dispatch_failed toast auto-dismisses after 8 seconds', () => {
     render(<ScadaToast />);
     act(() => {

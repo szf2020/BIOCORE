@@ -32,7 +32,13 @@ export function ScadaToast() {
     const l = latest as any;
     if (l.source_module !== 'scada') return;
 
-    const isFailed = l.action === 'dispatch_failed';
+    // Only emit toast for 'created' (new write-intent) and 'dispatch_failed' (PLC error).
+    // Other actions (accepted/dispatched/dispatch_retry) drive refetch silently via the hook's debounce.
+    // Missing action defaults to 'created' for backward compat with pre-action broadcasts.
+    const action: string = l.action ?? 'created';
+    if (action !== 'created' && action !== 'dispatch_failed') return;
+
+    const isFailed = action === 'dispatch_failed';
     const seenRef = isFailed ? seenFailedRef : seenCreatedRef;
     if (seenRef.current.has(latest.id)) return;
     seenRef.current.add(latest.id);
