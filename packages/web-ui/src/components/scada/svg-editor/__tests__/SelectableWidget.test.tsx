@@ -10,23 +10,49 @@ function renderInSvg(node: React.ReactNode) {
   return render(<svg>{node}</svg>);
 }
 
-function firePointerDown(element: Element, options: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean } = {}) {
-  const event = new MouseEvent('pointerdown', {
+function firePointer(
+  element: Element,
+  type: 'pointerdown' | 'pointermove' | 'pointerup',
+  options: {
+    shiftKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    clientX?: number;
+    clientY?: number;
+  } = {},
+) {
+  const event = new MouseEvent(type, {
     bubbles: true,
     cancelable: true,
     shiftKey: options.shiftKey ?? false,
     ctrlKey: options.ctrlKey ?? false,
     metaKey: options.metaKey ?? false,
+    clientX: options.clientX ?? 0,
+    clientY: options.clientY ?? 0,
   }) as any;
-  event.pointerId = 1; // Add pointer-specific property
+  event.pointerId = 1;
   act(() => {
     element.dispatchEvent(event);
   });
 }
 
+function firePointerDown(
+  element: Element,
+  options: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; clientX?: number; clientY?: number } = {},
+) {
+  firePointer(element, 'pointerdown', options);
+}
+
 beforeEach(() => {
   ensureBuiltinSvgWidgetsRegistered();
   useEditorStore.getState().__resetForTests(createEmptyView());
+  if (!('setPointerCapture' in Element.prototype)) {
+    (Element.prototype as any).setPointerCapture = function () {};
+    (Element.prototype as any).releasePointerCapture = function () {};
+    (Element.prototype as any).hasPointerCapture = function () {
+      return false;
+    };
+  }
 });
 
 const baseItem: SvgWidgetItem = {
@@ -88,5 +114,59 @@ describe('SelectableWidget', () => {
     const wrap = container.querySelector('[data-widget-id="w1"]') as Element;
     firePointerDown(wrap);
     expect(onCanvasDown).not.toHaveBeenCalled();
+  });
+
+  describe('body-drag', () => {
+    it('pointer-move below threshold does NOT start a move gesture', () => {
+      const view = { width: 800, height: 600, items: [baseItem] };
+      useEditorStore.getState().__resetForTests(view);
+      const { container } = renderInSvg(<SelectableWidget instance={baseItem} reactorId="F01" />);
+      const wrap = container.querySelector('[data-widget-id="w1"]') as Element;
+      firePointerDown(wrap, { clientX: 0, clientY: 0 });
+      firePointer(wrap, 'pointermove', { clientX: 2, clientY: 0 });
+      expect(useEditorStore.getState().gesture).toBeNull();
+      expect(useEditorStore.getState().view.items[0]).toMatchObject({ x: baseItem.x, y: baseItem.y });
+    });
+
+    it('pointer-move above threshold starts a move gesture and translates the widget', () => {
+      const view = { width: 800, height: 600, items: [baseItem] };
+      useEditorStore.getState().__resetForTests(view);
+      const { container } = renderInSvg(<SelectableWidget instance={baseItem} reactorId="F01" />);
+      const wrap = container.querySelector('[data-widget-id="w1"]') as Element;
+      firePointerDown(wrap, { clientX: 0, clientY: 0 });
+      firePointer(wrap, 'pointermove', { clientX: 20, clientY: 0 });
+      const s = useEditorStore.getState();
+      expect(s.gesture).not.toBeNull();
+      expect(s.gesture?.type).toBe('move');
+      expect(s.view.items[0]).toMatchObject({ x: baseItem.x + 20, y: baseItem.y });
+    });
+
+    it('pointer-down then pointer-up without movement selects without moving', () => {
+      const view = { width: 800, height: 600, items: [baseItem] };
+      useEditorStore.getState().__resetForTests(view);
+      const { container } = renderInSvg(<SelectableWidget instance={baseItem} reactorId="F01" />);
+      const wrap = container.querySelector('[data-widget-id="w1"]') as Element;
+      firePointerDown(wrap, { clientX: 0, clientY: 0 });
+      firePointer(wrap, 'pointerup', { clientX: 0, clientY: 0 });
+      const s = useEditorStore.getState();
+      expect(s.gesture).toBeNull();
+      expect([...s.selectedIds]).toEqual(['w1']);
+      expect(s.view.items[0]).toMatchObject({ x: baseItem.x, y: baseItem.y });
+    });
+
+    it('drag on a pre-selected group moves all selected widgets', () => {
+      const itemA = baseItem;
+      const itemB: SvgWidgetItem = { id: 'w2', type: 'svg-rect', x: 200, y: 200, w: 50, h: 50 };
+      const view = { width: 800, height: 600, items: [itemA, itemB] };
+      useEditorStore.getState().__resetForTests(view);
+      useEditorStore.getState().select(['w1', 'w2'], 'replace');
+      const { container } = renderInSvg(<SelectableWidget instance={itemA} reactorId="F01" />);
+      const wrap = container.querySelector('[data-widget-id="w1"]') as Element;
+      firePointerDown(wrap, { clientX: 0, clientY: 0 });
+      firePointer(wrap, 'pointermove', { clientX: 30, clientY: 30 });
+      const s = useEditorStore.getState();
+      expect(s.view.items.find((i) => i.id === 'w1')).toMatchObject({ x: itemA.x + 30, y: itemA.y + 30 });
+      expect(s.view.items.find((i) => i.id === 'w2')).toMatchObject({ x: itemB.x + 30, y: itemB.y + 30 });
+    });
   });
 });
