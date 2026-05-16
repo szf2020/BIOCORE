@@ -28,6 +28,7 @@ export interface SvgWidgetProps {
   height: number;
   tagValue?: unknown;
   tagStale?: boolean;
+  tagName?: string;
   config?: Record<string, unknown>;
 }
 
