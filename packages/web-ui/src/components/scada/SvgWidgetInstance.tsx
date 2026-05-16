@@ -43,6 +43,7 @@ export function SvgWidgetInstance({ instance, reactorId: _reactorId }: Props) {
           height={instance.h}
           tagValue={hasBinding ? tagState.value : undefined}
           tagStale={hasBinding ? tagState.isStale : undefined}
+          tagName={instance.bindings?.tag}
           config={instance.props}
         />
       </SvgErrorBoundary>
