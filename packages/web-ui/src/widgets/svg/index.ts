@@ -84,3 +84,16 @@ export { SvgProbe } from './SvgProbe';
 export { SvgStirrer } from './SvgStirrer';
 export { SvgHeater } from './SvgHeater';
 export { SvgSensor } from './SvgSensor';
+
+export type {
+  SvgAnimation,
+  AnimationRule,
+  AnimationType,
+  ThresholdRange,
+  ApplyResult,
+} from './animation/types';
+export { AnimationSchema, AnimationRuleSchema } from './animation/types';
+export { evaluateAnimationRule } from './animation/rules';
+export { applyAnimations } from './animation/apply';
+export { useBlink } from './animation/useBlink';
+export { useAnimationTagStates } from './animation/useAnimationTagStates';
