@@ -66,6 +66,7 @@ import { registerAuthRoutes } from './auth-routes';
 import { registerScadaRoutes } from './scada-routes';
 import { startScadaWriteDispatcher } from './engine/scada-write-dispatcher';
 import { createPlcWriter } from './engine/plc-writer';
+import { executeRecipePlcWrite } from './engine/recipe-plc-write';
 import { registerAuditLogRoutes } from './audit-log-routes';
 import type { BatchControllerConfig } from '@biocore/batch-engine';
 import {
@@ -3082,14 +3083,7 @@ function buildReactorConfig(reactorId: string): BatchControllerConfig {
     plcWrite: async (tag: string, value: number) => {
       // Recipe-step driven writes; bypasses SCADA suggestion buffer (recipe is pre-approved).
       // MOCK_PLC=true → MockPlcWriter (in-mem); real → S7/Modbus via createPlcWriter.
-      const mapping = varManager.getVariables().find((v) => v.tag_name === tag);
-      if (!mapping) throw new Error(`PLC 写失败: 标签 ${tag} 无 plc_variable_mappings 映射`);
-      const dir = String(mapping.direction).toUpperCase();
-      if (dir !== 'WRITE' && dir !== 'READWRITE') throw new Error(`PLC 写失败: 标签 ${tag} direction=${mapping.direction} (仅可读)`);
-      const conn = varManager.getConnections().find((c) => c.id === mapping.connection_id);
-      if (!conn) throw new Error(`PLC 写失败: 连接 ${mapping.connection_id} 不存在`);
-      const writer = createPlcWriter(conn.protocol);
-      await writer.write(conn as any, mapping as any, value);
+      await executeRecipePlcWrite({ mappingManager: varManager, writerFactory: createPlcWriter }, tag, value);
     },
     pollIntervalMs: 1000,
     getTemplateSteps: getTemplateStepsFromDB,
