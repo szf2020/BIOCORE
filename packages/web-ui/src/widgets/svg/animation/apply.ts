@@ -2,6 +2,12 @@
 import type { ApplyResult, SvgAnimation } from './types';
 import { evaluateAnimationRule } from './rules';
 
+/**
+ * Apply animations to a widget instance, returning the visual overrides to splice into render output.
+ *
+ * `w` and `h` are the widget's width/height in viewport units. They are only used by `rotate`
+ * animations to compute the rotation centroid (`w/2, h/2`); other animation types ignore them.
+ */
 export function applyAnimations(
   animations: SvgAnimation[] | undefined,
   tagValues: unknown[],
@@ -68,6 +74,12 @@ export function applyAnimations(
           const key = anim.configKey ?? 'label';
           result.configOverrides[key] = String(raw);
         }
+        break;
+      }
+      default: {
+        // Exhaustiveness check: if a new AnimationType is added, TS will flag this assignment.
+        const _exhaustive: never = anim.type;
+        void _exhaustive;
         break;
       }
     }
