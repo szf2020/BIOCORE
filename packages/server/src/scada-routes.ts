@@ -142,12 +142,41 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
     res.json({ items: sqlite.listScadaViewsByReactor(req.params.reactorId) });
   });
 
+  apiRouter.get('/scada/projects/:projectId/templates', (req, res) => {
+    if (!sqlite.getScadaProject(req.params.projectId)) return res.status(404).json({ error: 'project_not_found' });
+    res.json({ items: sqlite.listScadaTemplates(req.params.projectId) });
+  });
+
   apiRouter.post('/scada/projects/:projectId/views', requireRole('admin', 'engineer'), (req, res) => {
     const { projectId } = req.params;
     if (!sqlite.getScadaProject(projectId)) return res.status(404).json({ error: 'project_not_found' });
-    const { view_id, name, reactor_id, width, height, background, display_order, items } = req.body ?? {};
+    const { view_id, name, reactor_id, width, height, background, display_order, items, is_template, clone_from } = req.body ?? {};
     if (isBlankString(view_id) || isBlankString(name)) return res.status(400).json({ error: 'view_id_and_name_required' });
     if (sqlite.getScadaView(view_id)) return res.status(409).json({ error: 'view_id_conflict' });
+    if (clone_from !== undefined && items !== undefined) {
+      return res.status(400).json({ error: 'clone_and_items_exclusive' });
+    }
+    if (clone_from !== undefined) {
+      if (typeof clone_from !== 'string' || isBlankString(clone_from)) {
+        return res.status(400).json({ error: 'clone_from_invalid' });
+      }
+      const src = sqlite.getScadaView(clone_from);
+      if (!src) return res.status(400).json({ error: 'template_not_found' });
+      try {
+        sqlite.cloneScadaView(clone_from, view_id, name, projectId);
+      } catch (e: any) {
+        if (e?.code === 'SQLITE_CONSTRAINT_PRIMARYKEY' || /UNIQUE/i.test(e?.message ?? '')) {
+          return res.status(409).json({ error: 'view_id_conflict' });
+        }
+        throw e;
+      }
+      const userId = getUserId(req);
+      sqlite.writeAuditLog({
+        user_id: userId, action: 'scada_view_clone', target_type: 'scada_view',
+        target_id: view_id, new_value: JSON.stringify({ clone_from }), ip_address: getIp(req),
+      });
+      return res.status(201).json({ success: true, view_id });
+    }
     if (items !== undefined) {
       const err = checkItemsSize(items);
       if (err) return res.status(400).json({ error: err });
@@ -158,6 +187,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
         reactor_id: reactor_id ?? null,
         width, height, background, display_order,
         items: items ?? {},
+        is_template: typeof is_template === 'number' ? is_template : 0,
       });
     } catch (e: any) {
       if (e?.code === 'SQLITE_CONSTRAINT_PRIMARYKEY' || /UNIQUE/i.test(e?.message ?? '')) {
@@ -172,7 +202,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
       action: 'scada_view_create',
       target_type: 'scada_view',
       target_id: view_id,
-      new_value: JSON.stringify({ name, reactor_id: reactor_id ?? null, project_id: projectId }),
+      new_value: JSON.stringify({ name, is_template: is_template ?? 0 }),
       ip_address: getIp(req),
     });
     broadcast('scada:view:saved', {
@@ -190,7 +220,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
       const err = checkItemsSize(body.items);
       if (err) return res.status(400).json({ error: err });
     }
-    const patchKeys = ['name', 'reactor_id', 'display_order', 'width', 'height', 'background', 'items'];
+    const patchKeys = ['name', 'reactor_id', 'display_order', 'width', 'height', 'background', 'items', 'is_template'];
     const hasUserPatch = patchKeys.some(k => body[k] !== undefined);
     if (!hasUserPatch) return res.status(400).json({ error: 'empty_patch' });
     if (body.name !== undefined && isBlankString(body.name)) {
@@ -204,6 +234,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
       height: body.height,
       background: body.background,
       items: body.items,
+      is_template: typeof body.is_template === 'number' ? body.is_template : undefined,
       expected_updated_at: body.expected_updated_at ?? null,
     });
     if (!r.ok && 'conflict' in r && r.conflict) {

@@ -13,6 +13,10 @@ function makeApp(): {
   const db = new Database(':memory:');
   const m028 = readFileSync(join(__dirname, '../../migrations/028-scada-schema.sql'), 'utf8');
   db.exec(m028);
+  const m030 = readFileSync(join(__dirname, '../../migrations/030-scada-view-svg-flag.sql'), 'utf8');
+  db.exec(m030);
+  const m031 = readFileSync(join(__dirname, '../../migrations/031-scada-view-template-flag.sql'), 'utf8');
+  db.exec(m031);
   db.exec(`
     CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -383,5 +387,77 @@ describe('POST /scada/write-intents', () => {
       .send({ tag: 'F01.SP', reason: 'x' + 'y'.repeat(3), view_id: 'nonexistent', widget_id: 'b1' });
     expect(r.status).toBe(404);
     expect(r.body.error).toBe('view_not_found');
+  });
+});
+
+describe('SCADA REST API — templates', () => {
+  async function setupProjectWithTemplate(): Promise<{ app: any; sqlite: any }> {
+    const { app, sqlite } = makeApp();
+    await request(app).post('/api/v1/scada/projects').set('X-Test-Role', 'engineer')
+      .send({ project_id: 'p1', name: 'P' }).expect(201);
+    await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: 't1', name: 'Template 1', is_template: 1, items: { width: 1280, height: 720, items: [{ id: 'a', type: 'svg-rect', x: 5, y: 5, w: 50, h: 50 }] } })
+      .expect(201);
+    return { app, sqlite };
+  }
+
+  it('GET /scada/projects/:projectId/templates returns is_template=1 views', async () => {
+    const { app } = await setupProjectWithTemplate();
+    await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: 'v1', name: 'V1' }).expect(201);
+    const r = await request(app).get('/api/v1/scada/projects/p1/templates').expect(200);
+    expect(r.body.items).toHaveLength(1);
+    expect(r.body.items[0].view_id).toBe('t1');
+  });
+
+  it('POST view with clone_from copies items + width + height + background', async () => {
+    const { app } = await setupProjectWithTemplate();
+    const r = await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: 'clone1', name: 'Clone', clone_from: 't1' });
+    expect(r.status).toBe(201);
+    const got = await request(app).get('/api/v1/scada/views/clone1').expect(200);
+    expect((got.body.items as any).items).toHaveLength(1);
+    expect((got.body.items as any).items[0].id).toBe('a');
+    expect(got.body.is_template).toBe(0);
+  });
+
+  it('POST clone_from with missing template → 400 template_not_found', async () => {
+    const { app } = await setupProjectWithTemplate();
+    const r = await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: 'cl2', name: 'X', clone_from: 'nope' });
+    expect(r.status).toBe(400);
+    expect(r.body.error).toBe('template_not_found');
+  });
+
+  it('POST with both clone_from and items → 400 clone_and_items_exclusive', async () => {
+    const { app } = await setupProjectWithTemplate();
+    const r = await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: 'cl3', name: 'X', clone_from: 't1', items: { width: 1, height: 1, items: [] } });
+    expect(r.status).toBe(400);
+    expect(r.body.error).toBe('clone_and_items_exclusive');
+  });
+
+  it('POST without clone_from or items still works (back-compat)', async () => {
+    const { app } = await setupProjectWithTemplate();
+    const r = await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: 'v9', name: 'V9' });
+    expect(r.status).toBe(201);
+  });
+
+  it('PUT /scada/views/:viewId with is_template=1 patches the flag', async () => {
+    const { app } = await setupProjectWithTemplate();
+    await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: 'v2', name: 'V2' }).expect(201);
+    await request(app).put('/api/v1/scada/views/v2').set('X-Test-Role', 'engineer')
+      .send({ is_template: 1 }).expect(200);
+    const got = await request(app).get('/api/v1/scada/views/v2').expect(200);
+    expect(got.body.is_template).toBe(1);
+  });
+
+  it('POST clone_from as operator (no engineer role) → 403', async () => {
+    const { app } = await setupProjectWithTemplate();
+    const r = await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'operator')
+      .send({ view_id: 'cl4', name: 'X', clone_from: 't1' });
+    expect(r.status).toBe(403);
   });
 });
