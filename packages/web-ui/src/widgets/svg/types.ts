@@ -1,6 +1,7 @@
 // packages/web-ui/src/widgets/svg/types.ts
 import { z } from 'zod';
 import type { FC } from 'react';
+import { AnimationSchema, type SvgAnimation } from './animation/types';
 
 export interface SvgViewJson {
   width: number;
@@ -21,6 +22,7 @@ export interface SvgWidgetItem {
   visible?: boolean;
   bindings?: { tag?: string };
   props?: Record<string, unknown>;
+  animations?: SvgAnimation[];
 }
 
 export interface SvgWidgetProps {
@@ -50,5 +52,6 @@ export const SvgViewJsonSchema = z.object({
     visible: z.boolean().optional(),
     bindings: z.object({ tag: z.string().optional() }).optional(),
     props: z.record(z.unknown()).optional(),
+    animations: z.array(AnimationSchema).optional(),
   })),
 });
