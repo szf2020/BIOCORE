@@ -89,5 +89,5 @@ export default function Page() {
       </div>
     );
   }
-  return <ScadaCanvas view={state.view} reactorId={reactorId} />;
+  return <ScadaCanvas view={state.view} reactorId={reactorId} viewId={viewId} />;
 }
