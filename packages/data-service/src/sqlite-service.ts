@@ -368,15 +368,16 @@ export class SQLiteService {
   createSuggestion(s: {
     batch_id: string; suggestion_type: string; source_module: string;
     target_param: string; current_value?: number; suggested_value?: number;
+    suggested_value_raw?: string | null;
     confidence?: number; reasoning?: string; expires_at?: string;
   }): number {
     const result = this.db.prepare(`
       INSERT INTO ai_suggestions (batch_id, suggestion_type, source_module, target_param,
-        current_value, suggested_value, confidence, reasoning, expires_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        current_value, suggested_value, suggested_value_raw, confidence, reasoning, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(s.batch_id, s.suggestion_type, s.source_module, s.target_param,
-      s.current_value ?? null, s.suggested_value ?? null, s.confidence ?? null,
-      s.reasoning || null, s.expires_at || null);
+      s.current_value ?? null, s.suggested_value ?? null, s.suggested_value_raw ?? null,
+      s.confidence ?? null, s.reasoning || null, s.expires_at || null);
     return result.lastInsertRowid as number;
   }
 

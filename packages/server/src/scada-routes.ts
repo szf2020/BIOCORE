@@ -340,12 +340,14 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
       return res.status(409).json({ error: 'no_active_batch' });
     }
 
+    const hasValue = value !== null && value !== undefined;
     const suggestion_id = sqlite.createSuggestion({
       batch_id: effective_batch_id,
       suggestion_type: 'widget_button',
       source_module: 'scada',
       target_param: tag,
       suggested_value: typeof value === 'number' ? value : undefined,
+      suggested_value_raw: hasValue ? JSON.stringify(value) : null,
       reasoning: JSON.stringify({ reason: reason.trim(), value, view_id, widget_id }),
     });
 
@@ -366,6 +368,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
       source_module: 'scada',
       target_param: tag,
       suggested_value: typeof value === 'number' ? value : null,
+      suggested_value_raw: hasValue ? value : null,
     });
     res.json({ success: true, suggestion_id });
   });

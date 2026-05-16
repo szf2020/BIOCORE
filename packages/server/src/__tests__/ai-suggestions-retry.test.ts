@@ -21,6 +21,7 @@ beforeAll(() => {
     '013-recipe-deprecation.sql',
     '023-batch-current-node.sql',
     '029-scada-dispatch.sql',
+    '032-ai-suggestion-suggested-value-raw.sql',
   ];
   for (const m of migrations) {
     db.exec(readFileSync(join(__dirname, '../../migrations', m), 'utf8'));

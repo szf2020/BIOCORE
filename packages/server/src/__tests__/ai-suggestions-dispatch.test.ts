@@ -22,6 +22,7 @@ beforeAll(() => {
   db.exec(readFileSync(join(migrationsDir, '013-recipe-deprecation.sql'), 'utf8'));
   db.exec(readFileSync(join(migrationsDir, '023-batch-current-node.sql'), 'utf8'));
   db.exec(readFileSync(join(migrationsDir, '029-scada-dispatch.sql'), 'utf8'));
+  db.exec(readFileSync(join(migrationsDir, '032-ai-suggestion-suggested-value-raw.sql'), 'utf8'));
 
   // Seed: recipe + batch required for FK on ai_suggestions (copied from dispatch-methods.test.ts)
   db.prepare(

@@ -13,6 +13,10 @@ function makeApp(): { app: express.Express; sqlite: SQLiteService } {
     'utf8'
   );
   db.exec(migrationSql);
+  db.exec(readFileSync(
+    join(__dirname, '../../migrations/032-ai-suggestion-suggested-value-raw.sql'),
+    'utf8'
+  ));
 
   const sqlite = new SQLiteService(db);
 

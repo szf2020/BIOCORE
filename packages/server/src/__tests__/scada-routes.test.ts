@@ -261,6 +261,7 @@ describe('POST /scada/write-intents', () => {
         target_param TEXT NOT NULL,
         current_value REAL,
         suggested_value REAL,
+        suggested_value_raw TEXT,
         confidence REAL,
         reasoning TEXT,
         status TEXT NOT NULL DEFAULT 'pending',
@@ -387,6 +388,72 @@ describe('POST /scada/write-intents', () => {
       .send({ tag: 'F01.SP', reason: 'x' + 'y'.repeat(3), view_id: 'nonexistent', widget_id: 'b1' });
     expect(r.status).toBe(404);
     expect(r.body.error).toBe('view_not_found');
+  });
+
+  it('numeric value populates both suggested_value and suggested_value_raw', async () => {
+    const ctx = setupWithAiSuggestions();
+    const { app, sqlite } = ctx;
+    seedActiveBatch(ctx, 'B-001', 'F01');
+    const r = await request(app)
+      .post('/api/v1/scada/write-intents')
+      .set('X-Test-Role', 'operator')
+      .send({ tag: 'F01.SP', value: 42, reason: '设定值', view_id: 'v1', widget_id: 'b1' });
+    expect(r.status).toBe(200);
+    const row: any = sqlite.getDatabase()
+      .prepare('SELECT suggested_value, suggested_value_raw FROM ai_suggestions WHERE id = ?')
+      .get(r.body.suggestion_id);
+    expect(row.suggested_value).toBe(42);
+    expect(JSON.parse(row.suggested_value_raw)).toBe(42);
+  });
+
+  it('boolean value persists to suggested_value_raw only (suggested_value stays null)', async () => {
+    const ctx = setupWithAiSuggestions();
+    const { app, sqlite, broadcasts } = ctx;
+    seedActiveBatch(ctx, 'B-001', 'F01');
+    const r = await request(app)
+      .post('/api/v1/scada/write-intents')
+      .set('X-Test-Role', 'operator')
+      .send({ tag: 'F01.PUMP-ON', value: true, reason: '启动泵', view_id: 'v1', widget_id: 'b1' });
+    expect(r.status).toBe(200);
+    const row: any = sqlite.getDatabase()
+      .prepare('SELECT suggested_value, suggested_value_raw FROM ai_suggestions WHERE id = ?')
+      .get(r.body.suggestion_id);
+    expect(row.suggested_value).toBeNull();
+    expect(JSON.parse(row.suggested_value_raw)).toBe(true);
+    const event = broadcasts.find(b => b.channel === 'ai_suggestion');
+    expect(event!.payload.suggested_value_raw).toBe(true);
+  });
+
+  it('string value persists to suggested_value_raw only', async () => {
+    const ctx = setupWithAiSuggestions();
+    const { app, sqlite } = ctx;
+    seedActiveBatch(ctx, 'B-001', 'F01');
+    const r = await request(app)
+      .post('/api/v1/scada/write-intents')
+      .set('X-Test-Role', 'operator')
+      .send({ tag: 'F01.MODE', value: 'AUTO', reason: '切自动', view_id: 'v1', widget_id: 'b1' });
+    expect(r.status).toBe(200);
+    const row: any = sqlite.getDatabase()
+      .prepare('SELECT suggested_value, suggested_value_raw FROM ai_suggestions WHERE id = ?')
+      .get(r.body.suggestion_id);
+    expect(row.suggested_value).toBeNull();
+    expect(JSON.parse(row.suggested_value_raw)).toBe('AUTO');
+  });
+
+  it('missing value omits both columns', async () => {
+    const ctx = setupWithAiSuggestions();
+    const { app, sqlite } = ctx;
+    seedActiveBatch(ctx, 'B-001', 'F01');
+    const r = await request(app)
+      .post('/api/v1/scada/write-intents')
+      .set('X-Test-Role', 'operator')
+      .send({ tag: 'F01.TRIG', reason: '触发动作', view_id: 'v1', widget_id: 'b1' });
+    expect(r.status).toBe(200);
+    const row: any = sqlite.getDatabase()
+      .prepare('SELECT suggested_value, suggested_value_raw FROM ai_suggestions WHERE id = ?')
+      .get(r.body.suggestion_id);
+    expect(row.suggested_value).toBeNull();
+    expect(row.suggested_value_raw).toBeNull();
   });
 });
 
