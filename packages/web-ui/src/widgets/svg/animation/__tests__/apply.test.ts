@@ -112,4 +112,25 @@ describe('applyAnimations', () => {
     const notBlinking = applyAnimations([anim], [0], false, 100, 100);
     expect(notBlinking.visible).toBe(true);
   });
+
+  it('text animation injects stringified value into configOverrides.label by default', () => {
+    const anim: SvgAnimation = {
+      type: 'text',
+      tag: 'F01.AI-0',
+      rule: { kind: 'discreteMap', map: { '1': 'RUNNING' }, default: 'STOPPED' },
+    };
+    const r = applyAnimations([anim], [1], true, 100, 100);
+    expect(r.configOverrides).toEqual({ label: 'RUNNING' });
+  });
+
+  it('text animation with configKey injects into that key', () => {
+    const anim: SvgAnimation = {
+      type: 'text',
+      tag: 'F01.AI-0',
+      rule: { kind: 'discreteMap', map: { '1': 'OK' }, default: 'ERR' },
+      configKey: 'placeholder',
+    };
+    const r = applyAnimations([anim], [1], true, 100, 100);
+    expect(r.configOverrides).toEqual({ placeholder: 'OK' });
+  });
 });
