@@ -1,15 +1,15 @@
-# BIOCore Observability Profile (T44 — Sprint 4 Track A · M4 加强 FUXA/MQTT/nginx)
-# 可选加强包：Prometheus 抓 biocore-server + FUXA/mosquitto/nginx 容器 + Grafana 看板
+# BIOCore Observability Profile (T44 — Sprint 4 Track A · MQTT/nginx)
+# 可选加强包：Prometheus 抓 biocore-server + mosquitto/nginx 容器 + Grafana 看板
 #
-# 启动 (与基础 compose + FUXA compose 合并):
-#   docker compose -f docker-compose.yml -f docker-compose.fuxa.yml \
-#     -f docker-compose.observability.yml --profile observability up -d
+# 启动 (与基础 compose 合并):
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml \
+#     --profile observability up -d
 #
 # Grafana 默认登录: admin / biocore_admin
 # Grafana URL:    http://localhost:3002
 # Prometheus URL: http://localhost:9090
 # cAdvisor URL:   http://localhost:8081
-# 端口避开 BIOCore (3001) / web-ui (3000) / InfluxDB (8086) / FUXA (1881) / nginx (8080)
+# 端口避开 BIOCore (3001) / web-ui (3000) / InfluxDB (8086) / nginx (8080)
 #
 # 监控目标 (M4):
 # - biocore-server   /api/v1/admin/metrics (prom-client 自定义指标)
@@ -60,7 +60,7 @@ services:
     restart: unless-stopped
 
   # ───── cAdvisor: 通用容器指标 (CPU/mem/net/io) ─────
-  # 覆盖所有容器, 含 biocore-fuxa / biocore-mosquitto / biocore-nginx
+  # 覆盖所有容器, 含 biocore-mosquitto / biocore-nginx
   # 端口 8081 (8080 已被 nginx 占用)
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.49.1
@@ -107,9 +107,9 @@ services:
       # 重置长期未更新的 metric, 防止 stale
       - MQTT_EXPIRE_METRICS_TIME=300
     restart: unless-stopped
-    # 注: mosquitto 在 docker-compose.fuxa.yml 中, 需与 fuxa stack 共网络
-    # 用默认 bridge 时 Docker 自动跨 compose 解析容器名 (前提: 同 compose project)
-    # 若 mosquitto 在自定义网络, 加 networks 字段对齐
+    # mosquitto 在 docker-compose.yml 的 hmi/production profile 中.
+    # 默认 bridge 时 Docker 自动跨 compose 解析容器名 (前提: 同 compose project).
+    # 若 mosquitto 在自定义网络, 加 networks 字段对齐.
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:9000/metrics"]
       interval: 30s

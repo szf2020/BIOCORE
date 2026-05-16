@@ -1,11 +1,11 @@
-# Prometheus scrape config for BIOCore (T44 — Sprint 4 Track A · M4 加强)
-# 与 docker-compose.observability.yml + docker-compose.fuxa.yml 配套使用：
-#   docker compose -f docker-compose.yml -f docker-compose.fuxa.yml \
-#     -f docker-compose.observability.yml --profile observability up -d
+# Prometheus scrape config for BIOCore (T44 — Sprint 4 Track A)
+# 与 docker-compose.observability.yml 配套使用：
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml \
+#     --profile observability up -d
 #
 # 抓取目标:
 #   - biocore-server  自定义业务指标 (heap/event-loop/PLC/WS)
-#   - cadvisor        所有容器 CPU/mem/net/io (含 FUXA + mosquitto + nginx)
+#   - cadvisor        所有容器 CPU/mem/net/io (mosquitto + nginx)
 #   - mqtt-exporter   mosquitto $SYS topic 翻译的 Prometheus 指标
 #   - nginx-exporter  nginx stub_status (active/accepted/handled/requests + reading/writing/waiting)
 
@@ -24,7 +24,7 @@ scrape_configs:
         labels:
           service: biocore-server
 
-  # cAdvisor: 通用容器指标 (CPU/mem/net/io), 含 FUXA/mosquitto/nginx
+  # cAdvisor: 通用容器指标 (CPU/mem/net/io), 含 mosquitto/nginx
   - job_name: cadvisor
     metrics_path: /metrics
     static_configs:
@@ -51,6 +51,4 @@ scrape_configs:
           service: nginx
           frontend: biocore-nginx
 
-  # 注: FUXA 官方镜像 frangoteam/fuxa 未暴露 /metrics endpoint (源码无 prom-client)
-  # FUXA 容器层指标由 cAdvisor 覆盖; 应用层指标待 W3 fork 时补
 

@@ -1,5 +1,11 @@
-# FUXA 集成路线图
+# FUXA 集成路线图  ⚠️ RETIRED 2026-05-16
 
+> **此文档已退役.** FUXA HMI 在 SP7.5 (FUXA decommission, branch `feat/scada-data-model`) 整体下线; 替代品是 BIOCore-native SCADA at `/scada2/`. 本文档保留作为历史记录, 不再维护. 切勿据此操作或新增配置.
+>
+> 退役提交 (SP7.5 T8/T9/T11): T8 删 frontend 旧 `/scada` tree + 旧 `WriteIntentDialog`; T9 删 `fuxa-user-sync.ts` + index.ts wiring; T11 删 nginx /fuxa/ 301 block + grafana FUXA dashboard + docker-compose/prometheus FUXA 注释. 详见 `docs/superpowers/plans/2026-05-16-fuxa-decommission.md`.
+>
+> ---
+>
 > 状态：W1 完成 · W2 后端完成 (FUXA 端配置待手动) · W3 完成 · **M2 用户同步后端完成** · M4 统一 compose + 监控 ✅ (Loki 日志待加) · **方案 A (FUXA 去 docker)** ✅ 完成 2026-05-14
 > 日期：2026-05-14
 
