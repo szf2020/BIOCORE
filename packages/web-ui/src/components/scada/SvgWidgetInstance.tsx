@@ -7,19 +7,15 @@ import { SvgErrorBoundary } from './SvgErrorBoundary';
 
 interface Props {
   instance: SvgWidgetItem;
+  // reactorId kept for future use (sub-project 2+ may default-namespace tags)
   reactorId: string;
 }
 
-// useTag in the SCADA context is called with (reactorId, tagName) separately.
-// The hook accepts this two-arg form for the SVG widget system.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const useTagTwoArg = useTag as unknown as (reactorId: string, tag: string) => { value: unknown; stale: boolean };
-
-export function SvgWidgetInstance({ instance, reactorId }: Props) {
+export function SvgWidgetInstance({ instance, reactorId: _reactorId }: Props) {
   const tagName = instance.bindings?.tag ?? '';
 
   // Hook called unconditionally (Rules of Hooks); empty tag = no binding.
-  const tagState = useTagTwoArg(reactorId, tagName);
+  const tagState = useTag(tagName);
   const hasBinding = !!instance.bindings?.tag;
 
   if (instance.visible === false) return null;
@@ -46,7 +42,7 @@ export function SvgWidgetInstance({ instance, reactorId }: Props) {
           width={instance.w}
           height={instance.h}
           tagValue={hasBinding ? tagState.value : undefined}
-          tagStale={hasBinding ? tagState.stale : undefined}
+          tagStale={hasBinding ? tagState.isStale : undefined}
           config={instance.props}
         />
       </SvgErrorBoundary>

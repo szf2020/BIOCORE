@@ -6,7 +6,7 @@ import { registerSvg, _resetSvgRegistryForTests } from '../../../widgets/svg/reg
 import type { SvgWidgetComponent } from '../../../widgets/svg/types';
 
 vi.mock('@/hooks/useTag', () => ({
-  useTag: vi.fn(() => ({ value: undefined, stale: false })),
+  useTag: vi.fn(() => ({ value: undefined, isStale: false })),
 }));
 
 import { useTag } from '@/hooks/useTag';
@@ -31,7 +31,7 @@ describe('SvgWidgetInstance', () => {
     registerSvg({ type: 'svg-boom', label: 'Boom', component: Boom });
     registerSvg({ type: 'svg-sib', label: 'Sib', component: Sibling });
     useTagMock.mockReset();
-    useTagMock.mockReturnValue({ value: undefined, stale: false });
+    useTagMock.mockReturnValue({ value: undefined, isStale: false });
   });
 
   afterEach(() => {
@@ -70,7 +70,7 @@ describe('SvgWidgetInstance', () => {
   });
 
   it('dispatches via registry to the matching component and forwards bound tag value', () => {
-    useTagMock.mockReturnValue({ value: 'hello', stale: false });
+    useTagMock.mockReturnValue({ value: 'hello', isStale: false });
     const { getByTestId } = renderInSvg(
       <SvgWidgetInstance
         instance={{
@@ -101,8 +101,8 @@ describe('SvgWidgetInstance', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('svg-nope'));
   });
 
-  it('calls useTag with reactorId and bindings.tag when binding present', () => {
-    useTagMock.mockReturnValue({ value: 42, stale: false });
+  it('calls useTag with bindings.tag when binding present', () => {
+    useTagMock.mockReturnValue({ value: 42, isStale: false });
     renderInSvg(
       <SvgWidgetInstance
         instance={{
@@ -114,7 +114,7 @@ describe('SvgWidgetInstance', () => {
         reactorId="F01"
       />,
     );
-    expect(useTagMock).toHaveBeenCalledWith('F01', 'F01.TEMP');
+    expect(useTagMock).toHaveBeenCalledWith('F01.TEMP');
   });
 
   it('calls useTag with empty tag and forwards tagValue=undefined when bindings missing', () => {
@@ -125,7 +125,7 @@ describe('SvgWidgetInstance', () => {
       />,
     );
     expect(getByTestId('lbl').textContent).toBe('—');
-    expect(useTagMock).toHaveBeenCalledWith('F01', '');
+    expect(useTagMock).toHaveBeenCalledWith('');
   });
 
   it('ErrorBoundary catches widget throw and does not crash siblings', () => {
