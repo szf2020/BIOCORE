@@ -106,7 +106,7 @@ export default function Page() {
       </div>
       <aside style={{ width: 260, borderLeft: '1px solid #eee', paddingLeft: 12 }}>
         <h4 style={{ margin: '0 0 8px 0' }}>选中的组件</h4>
-        <WidgetLinkPanel projectId={state.projectId} />
+        <WidgetLinkPanel projectId={state.projectId} currentViewId={viewId} />
       </aside>
     </div>
   );

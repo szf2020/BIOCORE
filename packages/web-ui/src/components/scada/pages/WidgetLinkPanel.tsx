@@ -5,9 +5,10 @@ import { useEditorStore } from '@/components/scada/svg-editor/useEditorStore';
 
 interface Props {
   projectId: string;
+  currentViewId?: string;
 }
 
-export function WidgetLinkPanel({ projectId }: Props) {
+export function WidgetLinkPanel({ projectId, currentViewId }: Props) {
   const { views } = useViewList(projectId);
   const selectedIds = useEditorStore((s) => s.selectedIds);
   const items = useEditorStore((s) => s.view.items);
@@ -38,7 +39,7 @@ export function WidgetLinkPanel({ projectId }: Props) {
         style={{ width: '100%' }}
       >
         <option value="">(无)</option>
-        {views.filter(v => v.view_id !== widget.id).map(v => (
+        {views.filter(v => v.view_id !== currentViewId).map(v => (
           <option key={v.view_id} value={v.view_id}>{v.name}</option>
         ))}
       </select>

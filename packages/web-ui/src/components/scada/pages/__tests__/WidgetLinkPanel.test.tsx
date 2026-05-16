@@ -35,6 +35,14 @@ describe('WidgetLinkPanel', () => {
     expect(item.link).toEqual({ viewId: 'v2' });
   });
 
+  it('excludes currentViewId from the dropdown options', () => {
+    useEditorStore.getState().select(['w1'], 'replace');
+    const { container } = render(<WidgetLinkPanel projectId="p1" currentViewId="v1" />);
+    const opts = Array.from(container.querySelectorAll('option')).map(o => (o as HTMLOptionElement).value);
+    expect(opts).not.toContain('v1');
+    expect(opts).toContain('v2');
+  });
+
   it('clearing the link writes link = undefined', async () => {
     useEditorStore.getState().__resetForTests({
       width: 800, height: 600,
