@@ -68,7 +68,7 @@ export function ScadaToast() {
             <div className={`text-xs ${v.headerText} font-semibold mb-1`}>{v.label} #{t.suggestionId}</div>
             <div className="text-gray-700">{t.msg}</div>
             <div className="text-right mt-1">
-              <a href="/scada/suggestions" className="text-xs text-blue-600 hover:underline">查看</a>
+              <a href="/scada2/suggestions" className="text-xs text-blue-600 hover:underline">查看</a>
             </div>
           </div>
         );

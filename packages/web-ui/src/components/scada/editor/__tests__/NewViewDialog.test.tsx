@@ -35,6 +35,6 @@ describe('NewViewDialog', () => {
     expect(scada.createView).toHaveBeenCalledWith('p1', expect.objectContaining({
       view_id: 'new_v', name: '新视图',
     }));
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/scada/new_v/edit'));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/scada2/edit/new_v'));
   });
 });

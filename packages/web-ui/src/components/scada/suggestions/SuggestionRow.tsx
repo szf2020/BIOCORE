@@ -68,7 +68,7 @@ export function SuggestionRow({ suggestion, onAccept, onReject, onRetry }: Props
       {meta.view_id && (
         <div className="text-xs text-gray-500">
           来源:{' '}
-          <a href={`/scada/${meta.view_id}`} className="text-blue-600 hover:underline">{meta.view_id}</a>
+          <a href={`/scada2/${meta.view_id}`} className="text-blue-600 hover:underline">{meta.view_id}</a>
           {meta.widget_id && <> · widget <span className="font-mono">{meta.widget_id}</span></>}
         </div>
       )}

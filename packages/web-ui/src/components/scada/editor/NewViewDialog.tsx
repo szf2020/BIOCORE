@@ -34,7 +34,7 @@ export function NewViewDialog({ open, projects, onClose }: NewViewDialogProps) {
         height: 480,
         items: {},
       });
-      router.push(`/scada/${r.view_id}/edit`);
+      router.push(`/scada2/edit/${r.view_id}`);
     } catch (e: any) {
       setErr(e?.message || 'create_failed');
       setSubmitting(false);

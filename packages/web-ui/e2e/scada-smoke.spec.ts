@@ -17,13 +17,13 @@ test.describe('SCADA smoke', () => {
   });
 
   test('lists SCADA views', async ({ page }) => {
-    await page.goto('/scada');
+    await page.goto('/scada2');
     await expect(page.getByRole('heading', { name: /SCADA/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /新建|create/i })).toBeVisible();
   });
 
   test('opens suggestions inbox', async ({ page }) => {
-    await page.goto('/scada/suggestions');
+    await page.goto('/scada2/suggestions');
     await expect(page.getByText(/建议|suggestion/i).first()).toBeVisible();
   });
 

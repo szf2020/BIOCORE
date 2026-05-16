@@ -30,7 +30,7 @@ describe('SuggestionRow', () => {
     expect(screen.getByText(/测试 reason/)).toBeTruthy();
     const link = screen.getByText('demo_v1') as HTMLAnchorElement;
     expect(link.tagName).toBe('A');
-    expect(link.getAttribute('href')).toBe('/scada/demo_v1');
+    expect(link.getAttribute('href')).toBe('/scada2/demo_v1');
     expect(screen.getByText(/btn-1/)).toBeTruthy();
 
     fireEvent.click(screen.getByText('接受'));
