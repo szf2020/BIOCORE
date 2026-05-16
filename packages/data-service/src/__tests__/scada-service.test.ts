@@ -8,6 +8,7 @@ function makeDb(): SQLiteService {
   const db = new Database(':memory:');
   db.exec(readFileSync(join(__dirname, '../../../server/migrations/028-scada-schema.sql'), 'utf8'));
   db.exec(readFileSync(join(__dirname, '../../../server/migrations/030-scada-view-svg-flag.sql'), 'utf8'));
+  db.exec(readFileSync(join(__dirname, '../../../server/migrations/031-scada-view-template-flag.sql'), 'utf8'));
   return new SQLiteService(db);
 }
 

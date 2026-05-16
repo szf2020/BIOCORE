@@ -975,21 +975,21 @@ export class SQLiteService {
   // ─── SCADA 视图 ───────────────────────────────────────────
   listScadaViewsByProject(projectId: string): ScadaViewMeta[] {
     return this.db.prepare(
-      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, updated_at
+      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at
        FROM scada_views WHERE project_id = ? ORDER BY display_order ASC, name ASC`
     ).all(projectId) as ScadaViewMeta[];
   }
 
   listScadaViewsByReactor(reactorId: string): ScadaViewMeta[] {
     return this.db.prepare(
-      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, updated_at
+      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at
        FROM scada_views WHERE reactor_id = ? OR reactor_id IS NULL ORDER BY display_order ASC, name ASC`
     ).all(reactorId) as ScadaViewMeta[];
   }
 
   getScadaView(viewId: string): ScadaView | null {
     const row = this.db.prepare(
-      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, items_json, updated_at
+      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, items_json, updated_at
        FROM scada_views WHERE view_id = ?`
     ).get(viewId) as (ScadaViewMeta & { items_json: string }) | undefined;
     if (!row) return null;
@@ -1005,10 +1005,11 @@ export class SQLiteService {
     width?: number; height?: number; background?: string;
     display_order?: number;
     items?: Record<string, any>;
+    is_template?: number;
   }): void {
     this.db.prepare(
-      `INSERT INTO scada_views (view_id, project_id, name, reactor_id, display_order, width, height, background, items_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO scada_views (view_id, project_id, name, reactor_id, display_order, width, height, background, items_json, is_template)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       v.view_id, v.project_id, v.name,
       v.reactor_id ?? null,
@@ -1017,6 +1018,7 @@ export class SQLiteService {
       v.height ?? 720,
       v.background ?? '#ffffff',
       JSON.stringify(v.items ?? {}),
+      v.is_template ?? 0,
     );
   }
 
@@ -1026,6 +1028,7 @@ export class SQLiteService {
     display_order?: number;
     width?: number; height?: number; background?: string;
     items?: Record<string, any>;
+    is_template?: number;
     expected_updated_at?: string | null;
   }):
     | { ok: true; updated_at: string }
@@ -1046,11 +1049,36 @@ export class SQLiteService {
     if (patch.height !== undefined)        { sets.push('height = ?');         vals.push(patch.height); }
     if (patch.background !== undefined)    { sets.push('background = ?');     vals.push(patch.background); }
     if (patch.items !== undefined)         { sets.push('items_json = ?');     vals.push(JSON.stringify(patch.items)); }
+    if (patch.is_template !== undefined)   { sets.push('is_template = ?');    vals.push(patch.is_template); }
     sets.push("updated_at = datetime('now')");
     vals.push(viewId);
     this.db.prepare(`UPDATE scada_views SET ${sets.join(', ')} WHERE view_id = ?`).run(...vals);
     const after = this.db.prepare('SELECT updated_at FROM scada_views WHERE view_id = ?').get(viewId) as { updated_at: string };
     return { ok: true, updated_at: after.updated_at };
+  }
+
+  listScadaTemplates(projectId: string): ScadaViewMeta[] {
+    return this.db.prepare(
+      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at
+       FROM scada_views WHERE project_id = ? AND is_template = 1
+       ORDER BY display_order ASC, name ASC`
+    ).all(projectId) as ScadaViewMeta[];
+  }
+
+  cloneScadaView(sourceViewId: string, newViewId: string, newName: string, projectId: string): void {
+    const src = this.getScadaView(sourceViewId);
+    if (!src) throw new Error('clone_source_not_found');
+    this.createScadaView({
+      view_id: newViewId,
+      project_id: projectId,
+      name: newName,
+      reactor_id: src.reactor_id,
+      width: src.width,
+      height: src.height,
+      background: src.background,
+      items: src.items,
+      is_template: 0,
+    });
   }
 
   deleteScadaView(viewId: string): boolean {
@@ -1299,6 +1327,7 @@ export interface ScadaViewMeta {
   height: number;
   background: string;
   is_svg: number;
+  is_template: number;
   updated_at: string;
 }
 
