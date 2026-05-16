@@ -26,3 +26,5 @@ nginx/logs/
 nohup.out
 package-lock.json
 yarn.lock
+.claude/settings.local.json
+.env.bak-*
