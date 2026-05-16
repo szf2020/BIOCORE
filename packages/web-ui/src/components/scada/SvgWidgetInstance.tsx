@@ -12,9 +12,10 @@ interface Props {
   instance: SvgWidgetItem;
   reactorId: string;
   editMode?: boolean;
+  onWriteIntent?: (widget: SvgWidgetItem) => void;
 }
 
-export function SvgWidgetInstance({ instance, reactorId: _reactorId, editMode = false }: Props) {
+export function SvgWidgetInstance({ instance, reactorId: _reactorId, editMode = false, onWriteIntent }: Props) {
   const tagName = instance.bindings?.tag ?? '';
   const tagState = useTag(tagName);
   const hasBinding = !!instance.bindings?.tag;
@@ -63,6 +64,18 @@ export function SvgWidgetInstance({ instance, reactorId: _reactorId, editMode = 
     );
   })();
 
+  // Priority: writeIntent > link. Both ignored in editMode.
+  if (!editMode && instance.writeIntent?.tag && onWriteIntent) {
+    return (
+      <g
+        data-write-intent="true"
+        style={{ cursor: 'pointer' }}
+        onClick={() => onWriteIntent(instance)}
+      >
+        {inner}
+      </g>
+    );
+  }
   if (!editMode && instance.link?.viewId) {
     return <a href={`/scada2/${instance.link.viewId}`}>{inner}</a>;
   }
