@@ -49,6 +49,7 @@ export interface EditorStore {
   setGridSnap(enabled: boolean): void;
   setPreviewAnimations(enabled: boolean): void;
 
+  loadView(view: SvgViewJson): void;
   __resetForTests(view: SvgViewJson): void;
 }
 
@@ -259,6 +260,16 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   setPreviewAnimations(enabled) {
     set({ previewAnimations: enabled });
+  },
+
+  loadView(view) {
+    set({
+      view: cloneView(view),
+      selectedIds: new Set(),
+      history: [],
+      future: [],
+      gesture: null,
+    });
   },
 
   __resetForTests(view) {

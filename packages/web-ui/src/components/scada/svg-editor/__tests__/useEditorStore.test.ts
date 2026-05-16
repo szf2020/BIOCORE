@@ -240,4 +240,37 @@ describe('useEditorStore', () => {
       expect(useEditorStore.getState().gesture).toBeNull();
     });
   });
+
+  describe('loadView', () => {
+    it('replaces view items and clears selection + history + gesture', () => {
+      const initial: SvgViewJson = { width: 800, height: 600, items: [mkItem('a')] };
+      useEditorStore.getState().__resetForTests(initial);
+      useEditorStore.getState().select(['a'], 'replace');
+      useEditorStore.getState().beginGesture({
+        type: 'move',
+        startPoint: { x: 0, y: 0 },
+        startBboxes: { a: { x: 0, y: 0, w: 50, h: 50 } },
+        startRotations: {},
+      });
+      const fresh: SvgViewJson = { width: 1024, height: 768, items: [mkItem('x'), mkItem('y')] };
+      useEditorStore.getState().loadView(fresh);
+      const s = useEditorStore.getState();
+      expect(s.view.items.map(i => i.id)).toEqual(['x', 'y']);
+      expect(s.view.width).toBe(1024);
+      expect(s.selectedIds.size).toBe(0);
+      expect(s.history).toHaveLength(0);
+      expect(s.future).toHaveLength(0);
+      expect(s.gesture).toBeNull();
+    });
+
+    it('preserves gridSnap and previewAnimations toolbar prefs (unlike __resetForTests)', () => {
+      useEditorStore.getState().__resetForTests({ width: 800, height: 600, items: [] });
+      useEditorStore.getState().setGridSnap(true);
+      useEditorStore.getState().setPreviewAnimations(true);
+      useEditorStore.getState().loadView({ width: 800, height: 600, items: [mkItem('a')] });
+      const s = useEditorStore.getState();
+      expect(s.gridSnap).toBe(true);
+      expect(s.previewAnimations).toBe(true);
+    });
+  });
 });

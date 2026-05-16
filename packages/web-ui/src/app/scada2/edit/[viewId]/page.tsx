@@ -24,7 +24,7 @@ export default function Page() {
 
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
   const [saving, setSaving] = useState(false);
-  const setView = useEditorStore((s) => s.__resetForTests);
+  const setView = useEditorStore((s) => s.loadView);
   const view = useEditorStore((s) => s.view);
   const gridSnap = useEditorStore((s) => s.gridSnap);
   const setGridSnap = useEditorStore((s) => s.setGridSnap);
