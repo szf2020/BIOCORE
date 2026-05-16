@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type MockInstance } from 'vitest';
 import { render } from '@testing-library/react';
 import { SvgErrorBoundary } from '../SvgErrorBoundary';
 
@@ -13,7 +13,7 @@ function renderInSvg(node: React.ReactNode) {
 }
 
 describe('SvgErrorBoundary', () => {
-  let errorSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: MockInstance<Parameters<Console['error']>, ReturnType<Console['error']>>;
 
   beforeEach(() => {
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
