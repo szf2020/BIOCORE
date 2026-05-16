@@ -26,6 +26,8 @@ export function SvgEditorCanvas({ reactorId }: Props) {
   const beginGesture = useEditorStore((s) => s.beginGesture);
   const endGesture = useEditorStore((s) => s.endGesture);
   const select = useEditorStore((s) => s.select);
+  const applyResize = useEditorStore((s) => s.applyResize);
+  const applyRotate = useEditorStore((s) => s.applyRotate);
   const items = view.items;
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -44,7 +46,21 @@ export function SvgEditorCanvas({ reactorId }: Props) {
 
   const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const g = useEditorStore.getState().gesture;
-    if (!g || g.type !== 'rubberband') return;
+    if (!g) return;
+    if (g.type === 'resize' && g.handle) {
+      const cur = safeSvgPoint(svgRef.current, e.clientX, e.clientY);
+      const dx = cur.x - g.startPoint.x;
+      const dy = cur.y - g.startPoint.y;
+      const mods = { aspect: e.shiftKey, centered: e.altKey };
+      applyResize(g.handle, dx, dy, mods);
+      return;
+    }
+    if (g.type === 'rotate') {
+      const cur = safeSvgPoint(svgRef.current, e.clientX, e.clientY);
+      applyRotate({ x: cur.x, y: cur.y }, { snap15: e.shiftKey });
+      return;
+    }
+    if (g.type !== 'rubberband') return;
     const cur = safeSvgPoint(svgRef.current, e.clientX, e.clientY);
     const rect: AABB = {
       x: Math.min(g.startPoint.x, cur.x),
@@ -57,7 +73,12 @@ export function SvgEditorCanvas({ reactorId }: Props) {
 
   const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
     const g = useEditorStore.getState().gesture;
-    if (!g || g.type !== 'rubberband' || !g.rubberRect) {
+    if (!g) { endGesture(); return; }
+    if (g.type === 'resize' || g.type === 'rotate') {
+      endGesture();
+      return;
+    }
+    if (g.type !== 'rubberband' || !g.rubberRect) {
       endGesture();
       return;
     }
