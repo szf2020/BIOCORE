@@ -1,5 +1,5 @@
 // packages/web-ui/src/widgets/svg/index.ts
-import { registerSvg } from './registry';
+import { registerSvg, _isBuiltinRegistered, _setBuiltinRegistered } from './registry';
 import { SvgLabel } from './SvgLabel';
 import { SvgRect } from './SvgRect';
 import { SvgLamp } from './SvgLamp';
@@ -25,9 +25,8 @@ import { SvgStirrer } from './SvgStirrer';
 import { SvgHeater } from './SvgHeater';
 import { SvgSensor } from './SvgSensor';
 
-let registered = false;
 export function ensureBuiltinSvgWidgetsRegistered(): void {
-  if (registered) return;
+  if (_isBuiltinRegistered()) return;
   // Sub-project 1 plumbing
   registerSvg({ type: 'svg-label', label: 'Label', component: SvgLabel, defaults: { w: 100, h: 20 } });
   registerSvg({ type: 'svg-rect', label: 'Rect', component: SvgRect, defaults: { w: 100, h: 60 } });
@@ -56,7 +55,7 @@ export function ensureBuiltinSvgWidgetsRegistered(): void {
   registerSvg({ type: 'svg-stirrer', label: 'Stirrer', component: SvgStirrer, defaults: { w: 60, h: 60 } });
   registerSvg({ type: 'svg-heater', label: 'Heater', component: SvgHeater, defaults: { w: 80, h: 40 } });
   registerSvg({ type: 'svg-sensor', label: 'Sensor', component: SvgSensor, defaults: { w: 60, h: 60 } });
-  registered = true;
+  _setBuiltinRegistered(true);
 }
 
 export * from './types';

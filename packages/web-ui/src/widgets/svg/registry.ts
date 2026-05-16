@@ -8,6 +8,7 @@ export interface SvgWidgetRegistration {
 }
 
 const registry = new Map<string, SvgWidgetRegistration>();
+let builtinRegistered = false;
 
 export function registerSvg(reg: SvgWidgetRegistration): void {
   if (registry.has(reg.type)) {
@@ -24,7 +25,16 @@ export function listSvgWidgets(): SvgWidgetRegistration[] {
   return Array.from(registry.values()).sort((a, b) => a.type.localeCompare(b.type));
 }
 
-// Test-only helper. Not exported from index barrel.
+// Test-only helpers. Not exported from index barrel.
 export function _resetSvgRegistryForTests(): void {
   registry.clear();
+  builtinRegistered = false;
+}
+
+export function _isBuiltinRegistered(): boolean {
+  return builtinRegistered;
+}
+
+export function _setBuiltinRegistered(value: boolean): void {
+  builtinRegistered = value;
 }
