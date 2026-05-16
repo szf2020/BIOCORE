@@ -3,24 +3,35 @@ import React from 'react';
 import { useTag } from '@/hooks/useTag';
 import { getSvgWidget } from '@/widgets/svg/registry';
 import type { SvgWidgetItem } from '@/widgets/svg/types';
+import { applyAnimations } from '@/widgets/svg/animation/apply';
+import { useAnimationTagStates } from '@/widgets/svg/animation/useAnimationTagStates';
+import { useBlink } from '@/widgets/svg/animation/useBlink';
 import { SvgErrorBoundary } from './SvgErrorBoundary';
 
 interface Props {
   instance: SvgWidgetItem;
-  // reactorId kept for future use (sub-project 2+ may default-namespace tags)
   reactorId: string;
 }
 
 export function SvgWidgetInstance({ instance, reactorId: _reactorId }: Props) {
   const tagName = instance.bindings?.tag ?? '';
-
-  // Hook called unconditionally (Rules of Hooks); empty tag = no binding.
   const tagState = useTag(tagName);
   const hasBinding = !!instance.bindings?.tag;
 
-  if (instance.visible === false) return null;
+  const animTagStates = useAnimationTagStates(instance.animations);
+  const blinkPhase = useBlink(instance.animations);
+  const animResult = applyAnimations(
+    instance.animations,
+    animTagStates.map((s) => s.value),
+    blinkPhase,
+    instance.w,
+    instance.h,
+  );
 
-  const transform = buildTransform(instance);
+  if (instance.visible === false) return null;
+  if (!animResult.visible) return null;
+
+  const transform = buildTransform(instance, animResult.transform);
   const reg = getSvgWidget(instance.type);
 
   if (!reg) {
@@ -34,9 +45,13 @@ export function SvgWidgetInstance({ instance, reactorId: _reactorId }: Props) {
   }
 
   const Component = reg.component;
+  const mergedConfig =
+    Object.keys(animResult.configOverrides).length === 0
+      ? instance.props
+      : { ...(instance.props ?? {}), ...animResult.configOverrides };
 
   return (
-    <g transform={transform}>
+    <g transform={transform} opacity={animResult.opacity}>
       <SvgErrorBoundary widgetId={instance.id} w={instance.w} h={instance.h}>
         <Component
           width={instance.w}
@@ -44,17 +59,20 @@ export function SvgWidgetInstance({ instance, reactorId: _reactorId }: Props) {
           tagValue={hasBinding ? tagState.value : undefined}
           tagStale={hasBinding ? tagState.isStale : undefined}
           tagName={instance.bindings?.tag}
-          config={instance.props}
+          config={mergedConfig}
         />
       </SvgErrorBoundary>
     </g>
   );
 }
 
-function buildTransform(instance: SvgWidgetItem): string {
+function buildTransform(instance: SvgWidgetItem, animationTransform: string): string {
   const parts: string[] = [`translate(${instance.x},${instance.y})`];
   if (instance.rotation != null && instance.rotation !== 0) {
     parts.push(`rotate(${instance.rotation},${instance.w / 2},${instance.h / 2})`);
+  }
+  if (animationTransform) {
+    parts.push(animationTransform);
   }
   return parts.join(' ');
 }
