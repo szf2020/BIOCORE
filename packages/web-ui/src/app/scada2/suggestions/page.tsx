@@ -13,7 +13,7 @@ export default function ScadaSuggestionsPage() {
         <h1 className="text-2xl font-bold">SCADA 写意图审核</h1>
         <div className="flex items-center gap-3 text-sm">
           <button type="button" onClick={refetch} className="text-blue-600 hover:underline">刷新</button>
-          <Link href="/scada" className="text-blue-600 hover:underline">← SCADA 列表</Link>
+          <Link href="/scada2" className="text-blue-600 hover:underline">← SCADA 列表</Link>
         </div>
       </div>
       <div className="text-sm text-gray-500">
