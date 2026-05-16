@@ -975,21 +975,21 @@ export class SQLiteService {
   // ─── SCADA 视图 ───────────────────────────────────────────
   listScadaViewsByProject(projectId: string): ScadaViewMeta[] {
     return this.db.prepare(
-      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, updated_at
+      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, updated_at
        FROM scada_views WHERE project_id = ? ORDER BY display_order ASC, name ASC`
     ).all(projectId) as ScadaViewMeta[];
   }
 
   listScadaViewsByReactor(reactorId: string): ScadaViewMeta[] {
     return this.db.prepare(
-      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, updated_at
+      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, updated_at
        FROM scada_views WHERE reactor_id = ? OR reactor_id IS NULL ORDER BY display_order ASC, name ASC`
     ).all(reactorId) as ScadaViewMeta[];
   }
 
   getScadaView(viewId: string): ScadaView | null {
     const row = this.db.prepare(
-      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, items_json, updated_at
+      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, items_json, updated_at
        FROM scada_views WHERE view_id = ?`
     ).get(viewId) as (ScadaViewMeta & { items_json: string }) | undefined;
     if (!row) return null;
@@ -1298,6 +1298,7 @@ export interface ScadaViewMeta {
   width: number;
   height: number;
   background: string;
+  is_svg: number;
   updated_at: string;
 }
 

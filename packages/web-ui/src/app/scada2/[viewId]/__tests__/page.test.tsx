@@ -16,10 +16,10 @@ const SVG_VIEW = {
   id: 'v1',
   name: 'Test',
   is_svg: 1,
-  widgets: { width: 800, height: 600, items: [] },
+  items: { width: 800, height: 600, items: [] },
 };
 
-const LEGACY_VIEW = { id: 'v1', name: 'Legacy', is_svg: 0, widgets: {} };
+const LEGACY_VIEW = { id: 'v1', name: 'Legacy', is_svg: 0, items: {} };
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {

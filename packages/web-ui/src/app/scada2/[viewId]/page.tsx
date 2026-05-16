@@ -40,9 +40,9 @@ export default function Page() {
         setState({ kind: 'error', status: r.status, message: '服务器错误' });
         return;
       }
-      const body = (await r.json()) as { is_svg?: number; widgets?: unknown };
+      const body = (await r.json()) as { is_svg?: number; items?: unknown };
       if (body.is_svg === 1) {
-        setState({ kind: 'svg', view: body.widgets as SvgViewJson });
+        setState({ kind: 'svg', view: body.items as SvgViewJson });
       } else {
         setState({ kind: 'legacy' });
       }

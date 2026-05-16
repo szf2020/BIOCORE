@@ -52,7 +52,7 @@ export function SvgWidgetInstance({ instance, reactorId: _reactorId }: Props) {
 
 function buildTransform(instance: SvgWidgetItem): string {
   const parts: string[] = [`translate(${instance.x},${instance.y})`];
-  if (instance.rotation) {
+  if (instance.rotation != null && instance.rotation !== 0) {
     parts.push(`rotate(${instance.rotation},${instance.w / 2},${instance.h / 2})`);
   }
   return parts.join(' ');
