@@ -51,12 +51,10 @@ export function useViewMutations(projectId: string): UseViewMutationsResult {
       await jsonFetch(`/api/v1/scada/views/${encodeURIComponent(viewId)}`, { method: 'DELETE' });
     },
     async reorder(orderedIds) {
-      for (let i = 0; i < orderedIds.length; i++) {
-        await jsonFetch(`/api/v1/scada/views/${encodeURIComponent(orderedIds[i]!)}`, {
-          method: 'PUT',
-          body: JSON.stringify({ display_order: i }),
-        });
-      }
+      await jsonFetch(`/api/v1/scada/projects/${encodeURIComponent(projectId)}/views/order`, {
+        method: 'PATCH',
+        body: JSON.stringify({ ordered_view_ids: orderedIds }),
+      });
     },
     async setTemplate(viewId, isTemplate) {
       await jsonFetch(`/api/v1/scada/views/${encodeURIComponent(viewId)}`, {

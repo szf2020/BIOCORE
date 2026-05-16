@@ -1057,6 +1057,28 @@ export class SQLiteService {
     return { ok: true, updated_at: after.updated_at };
   }
 
+  reorderScadaViews(projectId: string, orderedViewIds: string[]):
+    | { ok: true; count: number }
+    | { ok: false; code: 'project_not_found' | 'view_not_in_project' }
+  {
+    const project = this.db.prepare('SELECT 1 FROM scada_projects WHERE project_id = ?').get(projectId);
+    if (!project) return { ok: false, code: 'project_not_found' };
+    const checkStmt = this.db.prepare('SELECT 1 FROM scada_views WHERE view_id = ? AND project_id = ?');
+    for (const id of orderedViewIds) {
+      if (!checkStmt.get(id, projectId)) return { ok: false, code: 'view_not_in_project' };
+    }
+    const updateStmt = this.db.prepare(
+      "UPDATE scada_views SET display_order = ?, updated_at = datetime('now') WHERE view_id = ? AND project_id = ?"
+    );
+    const tx = this.db.transaction((ids: string[]) => {
+      for (let i = 0; i < ids.length; i++) {
+        updateStmt.run(i, ids[i], projectId);
+      }
+    });
+    tx(orderedViewIds);
+    return { ok: true, count: orderedViewIds.length };
+  }
+
   listScadaTemplates(projectId: string): ScadaViewMeta[] {
     return this.db.prepare(
       `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at

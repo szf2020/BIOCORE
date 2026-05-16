@@ -55,17 +55,14 @@ describe('useViewMutations', () => {
     );
   });
 
-  it('reorder PUTs display_order for each view sequentially', async () => {
-    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ updated_at: 'now' }) });
+  it('reorder sends a single PATCH with the ordered ids to the project endpoint', async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ success: true, count: 3 }) });
     const { result } = renderHook(() => useViewMutations('p1'));
     await act(async () => { await result.current.reorder(['v3', 'v1', 'v2']); });
-    expect(fetchMock).toHaveBeenCalledTimes(3);
-    const bodies = fetchMock.mock.calls.map((c: any) => JSON.parse(c[1].body));
-    expect(bodies[0]).toEqual({ display_order: 0 });
-    expect(bodies[1]).toEqual({ display_order: 1 });
-    expect(bodies[2]).toEqual({ display_order: 2 });
-    expect((fetchMock.mock.calls[0]![0] as string)).toContain('/scada/views/v3');
-    expect((fetchMock.mock.calls[1]![0] as string)).toContain('/scada/views/v1');
-    expect((fetchMock.mock.calls[2]![0] as string)).toContain('/scada/views/v2');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toContain('/api/v1/scada/projects/p1/views/order');
+    expect(init.method).toBe('PATCH');
+    expect(JSON.parse(init.body as string)).toEqual({ ordered_view_ids: ['v3', 'v1', 'v2'] });
   });
 });

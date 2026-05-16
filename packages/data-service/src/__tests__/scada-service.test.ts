@@ -135,3 +135,45 @@ describe('SCADA view CRUD', () => {
     expect(svc.deleteScadaView('v1')).toBe(false);
   });
 });
+
+describe('reorderScadaViews', () => {
+  let svc: SQLiteService;
+  beforeEach(() => {
+    svc = makeDb();
+    svc.createScadaProject({ project_id: 'p1', name: 'P' });
+    svc.createScadaView({ view_id: 'v1', project_id: 'p1', name: 'V1', display_order: 0 });
+    svc.createScadaView({ view_id: 'v2', project_id: 'p1', name: 'V2', display_order: 1 });
+    svc.createScadaView({ view_id: 'v3', project_id: 'p1', name: 'V3', display_order: 2 });
+  });
+
+  it('happy path: assigns display_order from input array index', () => {
+    const r = svc.reorderScadaViews('p1', ['v3', 'v1', 'v2']);
+    expect(r).toEqual({ ok: true, count: 3 });
+    const list = svc.listScadaViewsByProject('p1');
+    const byId = Object.fromEntries(list.map(v => [v.view_id, v.display_order]));
+    expect(byId).toEqual({ v3: 0, v1: 1, v2: 2 });
+  });
+
+  it('returns project_not_found when project_id has no rows', () => {
+    expect(svc.reorderScadaViews('missing', ['v1'])).toEqual({ ok: false, code: 'project_not_found' });
+  });
+
+  it('returns view_not_in_project when any id belongs to a different project', () => {
+    svc.createScadaProject({ project_id: 'p2', name: 'P2' });
+    svc.createScadaView({ view_id: 'foreign', project_id: 'p2', name: 'F' });
+    const r = svc.reorderScadaViews('p1', ['v1', 'foreign']);
+    expect(r).toEqual({ ok: false, code: 'view_not_in_project' });
+    expect(svc.listScadaViewsByProject('p1').find(v => v.view_id === 'v1')!.display_order).toBe(0);
+  });
+
+  it('returns view_not_in_project when an id does not exist at all', () => {
+    expect(svc.reorderScadaViews('p1', ['v1', 'ghost'])).toEqual({ ok: false, code: 'view_not_in_project' });
+  });
+
+  it('transaction is atomic: failure mid-batch leaves all rows unchanged', () => {
+    svc.reorderScadaViews('p1', ['v3', 'v_bad', 'v2']);
+    const list = svc.listScadaViewsByProject('p1');
+    const byId = Object.fromEntries(list.map(v => [v.view_id, v.display_order]));
+    expect(byId).toEqual({ v1: 0, v2: 1, v3: 2 });
+  });
+});

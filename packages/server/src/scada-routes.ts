@@ -276,6 +276,35 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
     res.json({ success: true });
   });
 
+  apiRouter.patch('/scada/projects/:projectId/views/order', requireRole('admin', 'engineer'), (req, res) => {
+    const { projectId } = req.params;
+    const ids = req.body?.ordered_view_ids;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ordered_view_ids_required' });
+    }
+    if (ids.some((id: unknown) => typeof id !== 'string' || isBlankString(id))) {
+      return res.status(400).json({ error: 'ordered_view_ids_must_be_strings' });
+    }
+    if (new Set(ids).size !== ids.length) {
+      return res.status(400).json({ error: 'duplicate_ids' });
+    }
+    const r = sqlite.reorderScadaViews(projectId, ids);
+    if (!r.ok) {
+      return res.status(404).json({ error: r.code });
+    }
+    const userId = getUserId(req);
+    sqlite.writeAuditLog({
+      user_id: userId,
+      action: 'scada_views_reorder',
+      target_type: 'scada_project',
+      target_id: projectId,
+      new_value: JSON.stringify({ ordered_view_ids: ids }),
+      ip_address: getIp(req),
+    });
+    broadcast('scada:project:reordered', { project_id: projectId, ordered_view_ids: ids, updated_by: userId });
+    res.json({ success: true, count: r.count });
+  });
+
   // ─── 写意图 (建议缓冲区入口, 永不直写 PLC) ──────────────────
   apiRouter.post('/scada/write-intents', requireRole('admin', 'engineer', 'operator'), (req, res) => {
     const { tag, value, reason, view_id, widget_id, batch_id } = req.body ?? {};

@@ -461,3 +461,96 @@ describe('SCADA REST API — templates', () => {
     expect(r.status).toBe(403);
   });
 });
+
+describe('SCADA REST API — batch reorder', () => {
+  async function seedThreeViews() {
+    const ctx = makeApp();
+    await request(ctx.app).post('/api/v1/scada/projects').set('X-Test-Role', 'engineer')
+      .send({ project_id: 'p1', name: 'P' });
+    await request(ctx.app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: 'v1', name: 'V1', display_order: 0 });
+    await request(ctx.app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: 'v2', name: 'V2', display_order: 1 });
+    await request(ctx.app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: 'v3', name: 'V3', display_order: 2 });
+    return ctx;
+  }
+
+  it('PATCH order reorders all listed views and returns count', async () => {
+    const { app, sqlite } = await seedThreeViews();
+    const r = await request(app).patch('/api/v1/scada/projects/p1/views/order')
+      .set('X-Test-Role', 'engineer')
+      .send({ ordered_view_ids: ['v3', 'v1', 'v2'] });
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ success: true, count: 3 });
+    const list = sqlite.listScadaViewsByProject('p1');
+    const byId = Object.fromEntries(list.map(v => [v.view_id, v.display_order]));
+    expect(byId).toEqual({ v3: 0, v1: 1, v2: 2 });
+  });
+
+  it('PATCH order as operator → 403', async () => {
+    const { app } = await seedThreeViews();
+    const r = await request(app).patch('/api/v1/scada/projects/p1/views/order')
+      .set('X-Test-Role', 'operator')
+      .send({ ordered_view_ids: ['v1', 'v2', 'v3'] });
+    expect(r.status).toBe(403);
+  });
+
+  it('PATCH order without role → 401', async () => {
+    const { app } = await seedThreeViews();
+    const r = await request(app).patch('/api/v1/scada/projects/p1/views/order')
+      .send({ ordered_view_ids: ['v1'] });
+    expect(r.status).toBe(401);
+  });
+
+  it('PATCH order unknown project → 404 project_not_found', async () => {
+    const { app } = await seedThreeViews();
+    const r = await request(app).patch('/api/v1/scada/projects/missing/views/order')
+      .set('X-Test-Role', 'engineer')
+      .send({ ordered_view_ids: ['v1'] });
+    expect(r.status).toBe(404);
+    expect(r.body.error).toBe('project_not_found');
+  });
+
+  it('PATCH order with id from foreign project → 404 view_not_in_project', async () => {
+    const { app } = await seedThreeViews();
+    await request(app).post('/api/v1/scada/projects').set('X-Test-Role', 'engineer')
+      .send({ project_id: 'p2', name: 'P2' });
+    await request(app).post('/api/v1/scada/projects/p2/views').set('X-Test-Role', 'engineer')
+      .send({ view_id: 'foreign', name: 'F' });
+    const r = await request(app).patch('/api/v1/scada/projects/p1/views/order')
+      .set('X-Test-Role', 'engineer')
+      .send({ ordered_view_ids: ['v1', 'foreign'] });
+    expect(r.status).toBe(404);
+    expect(r.body.error).toBe('view_not_in_project');
+  });
+
+  it('PATCH order with non-array body → 400', async () => {
+    const { app } = await seedThreeViews();
+    const r = await request(app).patch('/api/v1/scada/projects/p1/views/order')
+      .set('X-Test-Role', 'engineer')
+      .send({ ordered_view_ids: 'not-an-array' });
+    expect(r.status).toBe(400);
+  });
+
+  it('PATCH order with duplicate ids → 400', async () => {
+    const { app } = await seedThreeViews();
+    const r = await request(app).patch('/api/v1/scada/projects/p1/views/order')
+      .set('X-Test-Role', 'engineer')
+      .send({ ordered_view_ids: ['v1', 'v1', 'v2'] });
+    expect(r.status).toBe(400);
+    expect(r.body.error).toBe('duplicate_ids');
+  });
+
+  it('PATCH order broadcasts scada:project:reordered + writes audit log', async () => {
+    const { app, broadcasts } = await seedThreeViews();
+    const before = broadcasts.length;
+    await request(app).patch('/api/v1/scada/projects/p1/views/order')
+      .set('X-Test-Role', 'engineer')
+      .send({ ordered_view_ids: ['v3', 'v2', 'v1'] })
+      .expect(200);
+    const reorderEvent = broadcasts.slice(before).find(b => b.channel === 'scada:project:reordered');
+    expect(reorderEvent).toBeDefined();
+    expect(reorderEvent!.payload).toMatchObject({ project_id: 'p1', ordered_view_ids: ['v3', 'v2', 'v1'] });
+  });
+});
