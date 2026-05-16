@@ -1,5 +1,5 @@
 'use client';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useEditorStore } from '@/components/scada/svg-editor/useEditorStore';
 
 type ValueType = 'string' | 'number' | 'boolean';
@@ -24,8 +24,7 @@ export function WidgetWriteIntentPanel() {
     | { tag?: string; value?: number | string | boolean }
     | undefined;
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const currentType = useMemo<ValueType>(() => inferType(wi?.value), [wi?.value]);
+  const currentType: ValueType = inferType(wi?.value);
 
   function setTag(tag: string) {
     setWidget(widget!.id, { writeIntent: { ...(wi ?? {}), tag } } as any);
