@@ -182,4 +182,42 @@ describe('useEditorStore', () => {
       expect(it.y).toBe(30);
     });
   });
+
+  describe('cancelGesture', () => {
+    it('reverts in-progress move and pops the history entry pushed by beginGesture', () => {
+      const view: SvgViewJson = {
+        width: 800,
+        height: 600,
+        items: [mkItem('a', 10, 20, 50, 50), mkItem('b', 100, 100, 50, 50)],
+      };
+      useEditorStore.getState().__resetForTests(view);
+      useEditorStore.getState().select(['a'], 'replace');
+
+      const startBboxes = {
+        a: { x: 10, y: 20, w: 50, h: 50 },
+      };
+      useEditorStore.getState().beginGesture({
+        type: 'move',
+        startPoint: { x: 0, y: 0 },
+        startBboxes,
+        startRotations: {},
+      });
+      expect(useEditorStore.getState().history).toHaveLength(1);
+
+      useEditorStore.getState().applyMove(40, 60);
+      expect(useEditorStore.getState().view.items[0]).toMatchObject({ x: 50, y: 80 });
+
+      useEditorStore.getState().cancelGesture();
+
+      const s = useEditorStore.getState();
+      expect(s.gesture).toBeNull();
+      expect(s.view.items[0]).toMatchObject({ x: 10, y: 20, w: 50, h: 50 });
+      expect(s.history).toHaveLength(0);
+    });
+
+    it('is a no-op when no gesture is active', () => {
+      useEditorStore.getState().cancelGesture();
+      expect(useEditorStore.getState().gesture).toBeNull();
+    });
+  });
 });

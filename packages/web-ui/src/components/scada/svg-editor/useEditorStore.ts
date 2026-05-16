@@ -33,6 +33,7 @@ export interface EditorStore {
 
   beginGesture(g: EditorGesture): void;
   endGesture(): void;
+  cancelGesture(): void;
 
   applyMove(dx: number, dy: number): void;
   applyResize(handle: ResizeHandleId, dx: number, dy: number, mods: ResizeModifiers): void;
@@ -122,6 +123,32 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     } else {
       set({ gesture: null });
     }
+  },
+
+  cancelGesture() {
+    const state = get();
+    if (!state.gesture) return;
+    if (state.gesture.type === 'rubberband') {
+      set({ gesture: null });
+      return;
+    }
+    const startBboxes = state.gesture.startBboxes;
+    const startRotations = state.gesture.startRotations;
+    const items = state.view.items.map((it) => {
+      const start = startBboxes[it.id];
+      if (!start) return it;
+      const startRot = startRotations[it.id];
+      return {
+        ...it,
+        x: start.x,
+        y: start.y,
+        w: start.w,
+        h: start.h,
+        rotation: startRot ?? it.rotation,
+      };
+    });
+    const history = state.history.slice(0, -1);
+    set({ view: { ...state.view, items }, gesture: null, history });
   },
 
   applyMove(dx, dy) {
