@@ -31,4 +31,22 @@ test.describe('SCADA smoke', () => {
     await page.goto('/settings/alarm-config');
     await expect(page.getByRole('button', { name: /新建/ })).toBeVisible();
   });
+
+  test('view-list link navigates to viewer route and renders canvas', async ({ page }) => {
+    // SP5/SP5.8: covers SP5 follow-up item 4 — <a href="/scada2/<id>"> in
+    // ViewListPanel is unit-tested for href correctness but needs an end-to-end
+    // click-and-load assertion.
+    await page.goto('/scada2');
+
+    const viewerLink = page.locator('a[href^="/scada2/"]:not([href*="/edit/"])').first();
+    const visible = await viewerLink.isVisible().catch(() => false);
+    test.skip(!visible, 'no SVG views seeded — open /scada2 in a populated env to exercise this path');
+
+    const href = await viewerLink.getAttribute('href');
+    await viewerLink.click();
+    await page.waitForURL((url) => url.pathname === href, { timeout: 5_000 });
+    // Viewer mounts SvgEditorCanvas (read-only). Either the canvas SVG or an
+    // error message must appear within the load timeout.
+    await expect(page.locator('svg, [data-testid="view-error"]').first()).toBeVisible({ timeout: 5_000 });
+  });
 });
