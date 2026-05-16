@@ -97,4 +97,64 @@ describe('ViewListPanel', () => {
     render(<ViewListPanel projectId="p1" />);
     expect(screen.getByText(/加载中/)).toBeTruthy();
   });
+
+  describe('mutation error banner', () => {
+    it('rename failure shows dismissible banner with error message', async () => {
+      mocks.rename.mockRejectedValueOnce(new Error('HTTP 409 (name taken)'));
+      render(<ViewListPanel projectId="p1" />);
+      const row = screen.getByText('Plant Overview').closest('[data-testid="view-row"]')!;
+      await act(async () => { fireEvent.click(row.querySelector('[data-testid="rename-btn"]') as HTMLButtonElement); });
+      const input = row.querySelector('input[data-testid="rename-input"]') as HTMLInputElement;
+      await act(async () => {
+        fireEvent.change(input, { target: { value: 'Renamed' } });
+        fireEvent.keyDown(input, { key: 'Enter' });
+      });
+      const banner = await screen.findByTestId('mutation-error-banner');
+      expect(banner.textContent).toContain('HTTP 409');
+      const dismiss = banner.querySelector('[data-testid="dismiss-error-btn"]') as HTMLButtonElement;
+      await act(async () => { fireEvent.click(dismiss); });
+      expect(screen.queryByTestId('mutation-error-banner')).toBeNull();
+    });
+
+    it('delete failure shows banner and view remains listed', async () => {
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+      mocks.delete.mockRejectedValueOnce(new Error('HTTP 500'));
+      render(<ViewListPanel projectId="p1" />);
+      const row = screen.getByText('Reactor 3').closest('[data-testid="view-row"]')!;
+      await act(async () => { fireEvent.click(row.querySelector('[data-testid="delete-btn"]') as HTMLButtonElement); });
+      const banner = await screen.findByTestId('mutation-error-banner');
+      expect(banner.textContent).toContain('HTTP 500');
+      expect(screen.getByText('Reactor 3')).toBeTruthy();
+      confirmSpy.mockRestore();
+    });
+
+    it('reorder failure shows banner', async () => {
+      mocks.reorder.mockRejectedValueOnce(new Error('HTTP 503'));
+      render(<ViewListPanel projectId="p1" />);
+      const row = screen.getByText('Reactor 3').closest('[data-testid="view-row"]')!;
+      await act(async () => { fireEvent.click(row.querySelector('[data-testid="move-up-btn"]') as HTMLButtonElement); });
+      const banner = await screen.findByTestId('mutation-error-banner');
+      expect(banner.textContent).toContain('HTTP 503');
+    });
+
+    it('successful mutation after failure clears the banner', async () => {
+      mocks.rename.mockRejectedValueOnce(new Error('HTTP 409'));
+      render(<ViewListPanel projectId="p1" />);
+      const row = screen.getByText('Plant Overview').closest('[data-testid="view-row"]')!;
+      await act(async () => { fireEvent.click(row.querySelector('[data-testid="rename-btn"]') as HTMLButtonElement); });
+      let input = row.querySelector('input[data-testid="rename-input"]') as HTMLInputElement;
+      await act(async () => {
+        fireEvent.change(input, { target: { value: 'X' } });
+        fireEvent.keyDown(input, { key: 'Enter' });
+      });
+      expect(await screen.findByTestId('mutation-error-banner')).toBeTruthy();
+      await act(async () => { fireEvent.click(row.querySelector('[data-testid="rename-btn"]') as HTMLButtonElement); });
+      input = row.querySelector('input[data-testid="rename-input"]') as HTMLInputElement;
+      await act(async () => {
+        fireEvent.change(input, { target: { value: 'Y' } });
+        fireEvent.keyDown(input, { key: 'Enter' });
+      });
+      expect(screen.queryByTestId('mutation-error-banner')).toBeNull();
+    });
+  });
 });

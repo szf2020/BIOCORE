@@ -12,6 +12,7 @@ export function ViewListPanel({ projectId }: Props) {
   const { views, loading, error, refetch } = useViewList(projectId);
   const mut = useViewMutations(projectId);
   const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
   if (loading) return <div style={{ padding: 8 }}>加载中…</div>;
   if (error) return <div style={{ padding: 8, color: '#dc2626' }}>错误: {error.message}</div>;
@@ -21,15 +22,26 @@ export function ViewListPanel({ projectId }: Props) {
 
   async function handleRename(viewId: string, newName: string) {
     if (newName.trim().length === 0) { setRenamingId(null); return; }
-    await mut.rename(viewId, newName.trim());
-    setRenamingId(null);
-    await refetch();
+    try {
+      await mut.rename(viewId, newName.trim());
+      setMutationError(null);
+      setRenamingId(null);
+      await refetch();
+    } catch (err) {
+      setMutationError(err instanceof Error ? err.message : String(err));
+      setRenamingId(null);
+    }
   }
 
   async function handleDelete(view: ViewMeta) {
     if (!window.confirm(`确认删除画面 "${view.name}"?`)) return;
-    await mut.delete(view.view_id);
-    await refetch();
+    try {
+      await mut.delete(view.view_id);
+      setMutationError(null);
+      await refetch();
+    } catch (err) {
+      setMutationError(err instanceof Error ? err.message : String(err));
+    }
   }
 
   async function handleMove(viewId: string, direction: -1 | 1) {
@@ -38,12 +50,34 @@ export function ViewListPanel({ projectId }: Props) {
     if (newIdx < 0 || newIdx >= sorted.length) return;
     const swapped = [...sorted];
     [swapped[idx], swapped[newIdx]] = [swapped[newIdx], swapped[idx]];
-    await mut.reorder(swapped.map(v => v.view_id));
-    await refetch();
+    try {
+      await mut.reorder(swapped.map(v => v.view_id));
+      setMutationError(null);
+      await refetch();
+    } catch (err) {
+      setMutationError(err instanceof Error ? err.message : String(err));
+    }
   }
 
   return (
-    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+    <>
+      {mutationError && (
+        <div
+          data-testid="mutation-error-banner"
+          style={{ padding: 8, marginBottom: 4, background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', gap: 8 }}
+        >
+          <span style={{ flex: 1 }}>操作失败: {mutationError}</span>
+          <button
+            data-testid="dismiss-error-btn"
+            onClick={() => setMutationError(null)}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16, color: '#dc2626' }}
+            aria-label="关闭"
+          >
+            ×
+          </button>
+        </div>
+      )}
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
       {sorted.map((v, i) => (
         <li key={v.view_id} data-testid="view-row"
           style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 8, borderBottom: '1px solid #eee' }}>
@@ -64,6 +98,7 @@ export function ViewListPanel({ projectId }: Props) {
         </li>
       ))}
     </ul>
+    </>
   );
 }
 
