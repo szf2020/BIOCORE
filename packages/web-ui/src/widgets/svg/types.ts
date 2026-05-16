@@ -23,6 +23,7 @@ export interface SvgWidgetItem {
   bindings?: { tag?: string };
   props?: Record<string, unknown>;
   animations?: SvgAnimation[];
+  link?: { viewId: string };
 }
 
 export interface SvgWidgetProps {
@@ -53,5 +54,6 @@ export const SvgViewJsonSchema = z.object({
     bindings: z.object({ tag: z.string().optional() }).optional(),
     props: z.record(z.unknown()).optional(),
     animations: z.array(AnimationSchema).optional(),
+    link: z.object({ viewId: z.string().min(1) }).optional(),
   })),
 });
