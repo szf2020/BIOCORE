@@ -26,6 +26,8 @@ export default function Page() {
   const [saving, setSaving] = useState(false);
   const setView = useEditorStore((s) => s.__resetForTests);
   const view = useEditorStore((s) => s.view);
+  const gridSnap = useEditorStore((s) => s.gridSnap);
+  const setGridSnap = useEditorStore((s) => s.setGridSnap);
   useKeyboardShortcuts();
 
   const load = useCallback(async () => {
@@ -98,8 +100,12 @@ export default function Page() {
           <button onClick={onSave} disabled={saving}>{saving ? '保存中…' : '保存'}</button>
           <button onClick={() => useEditorStore.getState().undo()}>撤销</button>
           <button onClick={() => useEditorStore.getState().redo()}>重做</button>
-          <button onClick={() => useEditorStore.getState().setGridSnap(!useEditorStore.getState().gridSnap)}>
-            网格吸附
+          <button
+            data-testid="grid-snap-btn"
+            aria-pressed={gridSnap}
+            onClick={() => setGridSnap(!gridSnap)}
+          >
+            网格吸附: {gridSnap ? '开' : '关'}
           </button>
           <button onClick={toggleTemplate}>{state.isTemplate ? '取消模板' : '另存为模板'}</button>
         </div>

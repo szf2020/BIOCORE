@@ -115,9 +115,20 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     const state = get();
     if (!state.gesture) return;
     if (state.gridSnap && state.gesture.type !== 'rubberband') {
+      const snapSize = state.gridSize;
+      const isResize = state.gesture.type === 'resize';
       const items = state.view.items.map((it) => {
         if (!state.selectedIds.has(it.id)) return it;
-        return { ...it, x: snapToGrid(it.x, state.gridSize), y: snapToGrid(it.y, state.gridSize) };
+        const snapped: typeof it = {
+          ...it,
+          x: snapToGrid(it.x, snapSize),
+          y: snapToGrid(it.y, snapSize),
+        };
+        if (isResize) {
+          snapped.w = snapToGrid(it.w, snapSize);
+          snapped.h = snapToGrid(it.h, snapSize);
+        }
+        return snapped;
       });
       set({ view: { ...state.view, items }, gesture: null });
     } else {

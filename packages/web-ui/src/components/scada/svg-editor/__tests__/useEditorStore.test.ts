@@ -181,6 +181,26 @@ describe('useEditorStore', () => {
       expect(it.x).toBe(20);
       expect(it.y).toBe(30);
     });
+
+    it('endGesture snaps w/h to gridSize on resize gesture', () => {
+      const view: SvgViewJson = { width: 800, height: 600, items: [mkItem('a', 0, 0, 50, 50)] };
+      useEditorStore.getState().__resetForTests(view);
+      useEditorStore.getState().setGridSnap(true);
+      useEditorStore.getState().select(['a'], 'replace');
+      useEditorStore.getState().beginGesture({
+        type: 'resize',
+        handle: 'se',
+        startPoint: { x: 0, y: 0 },
+        startBboxes: { a: { x: 0, y: 0, w: 50, h: 50 } },
+        startRotations: { a: 0 },
+      });
+      useEditorStore.getState().applyResize('se', 13, 7, { aspect: false, centered: false });
+      // Pre-snap widget is 63 x 57
+      useEditorStore.getState().endGesture();
+      const it = useEditorStore.getState().view.items[0];
+      expect(it.w).toBe(60);
+      expect(it.h).toBe(60);
+    });
   });
 
   describe('cancelGesture', () => {
