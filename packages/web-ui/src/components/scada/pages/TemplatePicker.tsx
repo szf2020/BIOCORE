@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function TemplatePicker({ projectId, onPick, onCancel }: Props) {
-  const { templates, loading } = useTemplates(projectId);
+  const { templates, loading, error, refetch } = useTemplates(projectId);
 
   return (
     <div data-testid="template-picker" style={{
@@ -18,6 +18,19 @@ export function TemplatePicker({ projectId, onPick, onCancel }: Props) {
     }}>
       <div style={{ background: '#fff', padding: 16, minWidth: 320, borderRadius: 4 }}>
         <h3 style={{ margin: '0 0 8px 0' }}>选择模板</h3>
+        {error && (
+          <div
+            data-testid="templates-error-banner"
+            style={{ padding: 8, marginBottom: 8, background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', gap: 8 }}
+          >
+            <span style={{ flex: 1 }}>无法加载模板列表: {error.message}</span>
+            <button
+              data-testid="templates-retry-btn"
+              onClick={() => void refetch()}
+              style={{ padding: '2px 8px', cursor: 'pointer' }}
+            >重试</button>
+          </div>
+        )}
         {loading ? (
           <div>加载中…</div>
         ) : (
