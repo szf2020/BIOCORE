@@ -23,6 +23,8 @@ export interface WidgetEntry<P> {
   displayName: string;
   propsSchema: Record<string, PropSchema>;
   bindableProps: string[];
+  /** Discriminator: 'react' = legacy DOM widget renderer (default); 'svg' = SVG runtime (sub-project 1/8 onward). */
+  kind?: 'svg' | 'react';
 }
 
 export const WIDGET_REGISTRY = {
