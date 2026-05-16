@@ -41,9 +41,11 @@ describe('SvgChart', () => {
     expect(container.querySelectorAll('rect').length).toBe(4);
   });
 
-  it('renders no rects when history is empty', () => {
+  it('renders no rects but applies opacity-50 when history is empty and stale', () => {
     useTagHistoryMock.mockReturnValue({ points: [], isStale: true });
     const { container } = renderInSvg(<SvgChart width={200} height={100} tagName="F01.TEMP" />);
     expect(container.querySelectorAll('rect').length).toBe(0);
+    const g = container.querySelector('g');
+    expect(g?.getAttribute('class')).toContain('opacity-50');
   });
 });

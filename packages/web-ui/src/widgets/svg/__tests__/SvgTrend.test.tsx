@@ -33,10 +33,12 @@ describe('SvgTrend', () => {
     expect((poly?.getAttribute('points') ?? '').trim().split(/\s+/).length).toBe(3);
   });
 
-  it('renders empty polyline when history is empty', () => {
+  it('renders empty polyline with opacity-50 class when history is empty and stale', () => {
     useTagHistoryMock.mockReturnValue({ points: [], isStale: true });
     const { container } = renderInSvg(<SvgTrend width={100} height={50} tagName="F01.TEMP" />);
-    expect(container.querySelector('polyline')?.getAttribute('points')).toBe('');
+    const poly = container.querySelector('polyline');
+    expect(poly?.getAttribute('points')).toBe('');
+    expect(poly?.getAttribute('class')).toContain('opacity-50');
   });
 
   it('passes windowSec from config.windowSec', () => {
