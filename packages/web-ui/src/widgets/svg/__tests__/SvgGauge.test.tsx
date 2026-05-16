@@ -23,4 +23,10 @@ describe('SvgGauge', () => {
     const { container } = renderInSvg(<SvgGauge width={80} height={80} tagValue={42} />);
     expect(container.querySelector('text')?.textContent).toBe('42');
   });
+
+  it('omits the fill arc when tagValue is 0', () => {
+    const { container } = renderInSvg(<SvgGauge width={80} height={80} tagValue={0} />);
+    // Only the background arc should be present, not the value arc
+    expect(container.querySelectorAll('path').length).toBe(1);
+  });
 });

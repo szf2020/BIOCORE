@@ -32,7 +32,7 @@ export const SvgGauge: SvgWidgetComponent = ({ width, height, tagValue, tagStale
   return (
     <g className={tagStale ? 'opacity-50' : undefined}>
       <path d={arcPath(cx, cy, r, startDeg, fullEndDeg)} stroke={bgColor} strokeWidth={8} fill="none" />
-      <path d={arcPath(cx, cy, r, startDeg, endDeg)} stroke={fillColor} strokeWidth={8} fill="none" />
+      {pct > 0 && <path d={arcPath(cx, cy, r, startDeg, endDeg)} stroke={fillColor} strokeWidth={8} fill="none" />}
       <text x={cx} y={cy + r * 0.3} textAnchor="middle" dominantBaseline="central" fontSize={Math.min(width, height) / 5}>
         {String(Number.isFinite(raw) ? raw : '—')}
       </text>
