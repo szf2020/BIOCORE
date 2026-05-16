@@ -19,7 +19,8 @@ logs/
 backups/
 *.bak-*
 *.db.bak*
-fuxa/
+/fuxa/
+packages/fuxa/
 mosquitto/data/
 mosquitto/log/
 nginx/logs/

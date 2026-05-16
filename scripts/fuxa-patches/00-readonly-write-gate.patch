@@ -1,0 +1,18 @@
+--- a/packages/fuxa/server/runtime/devices/index.js
++++ b/packages/fuxa/server/runtime/devices/index.js
+@@ -432,6 +432,15 @@ function isWoking() {
+  * @param {*} value
+  */
+ async function setDeviceValue(deviceid, sigid, value, fnc) {
++    // BIOCore safety constraint: AI / HMI / external systems MUST NOT write to PLC directly.
++    // All writes must go through the BIOCore suggestion -> operator-approval -> engine pipeline.
++    // FUXA is used for rendering only; the write path is gated behind FUXA_READONLY env flag.
++    if (process.env.FUXA_READONLY !== 'false') {
++        if (runtime && runtime.logger) {
++            runtime.logger.warn(`FUXA write blocked (FUXA_READONLY): device=${deviceid} sig=${sigid} value=${value}`);
++        }
++        return;
++    }
+     if (activeDevices[deviceid]) {
+         await activeDevices[deviceid].setValue(sigid, value, fnc);
+     }
