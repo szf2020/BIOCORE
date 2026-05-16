@@ -6,6 +6,7 @@ import { SvgEditorCanvas } from '@/components/scada/svg-editor/SvgEditorCanvas';
 import { useEditorStore } from '@/components/scada/svg-editor/useEditorStore';
 import { useKeyboardShortcuts } from '@/components/scada/svg-editor/useKeyboardShortcuts';
 import { WidgetLinkPanel } from '@/components/scada/pages/WidgetLinkPanel';
+import { WidgetWriteIntentPanel } from '@/components/scada/pages/WidgetWriteIntentPanel';
 import type { SvgViewJson } from '@/widgets/svg/types';
 
 ensureBuiltinSvgWidgetsRegistered();
@@ -107,6 +108,7 @@ export default function Page() {
       <aside style={{ width: 260, borderLeft: '1px solid #eee', paddingLeft: 12 }}>
         <h4 style={{ margin: '0 0 8px 0' }}>选中的组件</h4>
         <WidgetLinkPanel projectId={state.projectId} currentViewId={viewId} />
+        <WidgetWriteIntentPanel />
       </aside>
     </div>
   );
