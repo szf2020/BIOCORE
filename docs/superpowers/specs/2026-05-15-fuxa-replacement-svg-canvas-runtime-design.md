@@ -93,11 +93,12 @@ The legacy widget view component (`WidgetView.tsx`) renders React/HTML elements.
 | `packages/web-ui/src/widgets/registry.ts` | Add `kind: 'svg' \| 'react'` discriminator field on registration shape (legacy entries default `'react'`) |
 | `packages/server/migrations/030-scada-view-svg-flag.sql` | `ALTER TABLE scada_views ADD COLUMN is_svg INTEGER NOT NULL DEFAULT 0` |
 
-### Helper (1)
+### Helpers (2)
 
 | Path | Responsibility |
 |------|----------------|
 | `packages/web-ui/src/components/scada/SvgErrorBoundary.tsx` | React ErrorBoundary that renders a red `<rect>` + `<text>` fallback for SVG context |
+| `packages/web-ui/src/components/scada/ViewErrorDisplay.tsx` | Renders zod validation issues as a list (used when `SvgViewJsonSchema.safeParse` fails) |
 
 ### Key interfaces
 
@@ -389,7 +390,7 @@ Editor interactions (sub-project 4), animation timing (3), multi-page navigation
 
 ### Estimated test count
 
-Unit 10 · Component 15 · Integration 6 = **31 tests total**.
+Unit 10 (registry 4 + SvgLabel 4 + SvgRect 2) · Component 17 (SvgWidgetInstance 8 + ScadaCanvas 6 + SvgErrorBoundary 3) · Integration 6 = **33 tests total**.
 
 ---
 
@@ -397,8 +398,8 @@ Unit 10 · Component 15 · Integration 6 = **31 tests total**.
 
 - Migration `030-scada-view-svg-flag.sql` adds `is_svg` column with default `0`. All existing views remain rendered by the legacy `/scada/[viewId]` route.
 - After sub-project 1 lands: new SVG views are created by inserting `is_svg = 1` rows manually (no editor yet — sub-project 4 ships the SVG editor).
-- Legacy `/scada/[viewId]` and `/dashboard/hmi` (FUXA iframe) remain operational throughout sub-projects 1–6.
-- Sub-project 7 deletes `/dashboard/hmi`, the FUXA fork (`packages/fuxa/`), and the legacy `/scada/[viewId]` route + `WidgetView.tsx` + the 9 legacy React widgets in `widgets/*.tsx`.
+- Legacy `/scada/[viewId]` (BIOCore React widget views) and `/dashboard/hmi` (FUXA iframe) both remain operational throughout sub-projects 1–6.
+- Sub-project 7 removes BOTH the FUXA UI (`/dashboard/hmi` + the FUXA fork `packages/fuxa/` + nginx `/fuxa/` proxy + `FUXA_READONLY` env) AND the legacy BIOCore React widget renderer (`/scada/[viewId]` + `WidgetView.tsx` + the 9 legacy widgets in `widgets/*.tsx`). Only the new SVG runtime at `/scada2/[viewId]` survives (sub-project 7 also renames `/scada2` back to `/scada` at the end).
 
 ## Done criteria
 
