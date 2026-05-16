@@ -32,6 +32,46 @@ test.describe('SCADA smoke', () => {
     await expect(page.getByRole('button', { name: /新建/ })).toBeVisible();
   });
 
+  test('write-intent click → reason fill → POST → suggestion created', async ({ page }) => {
+    // SP6/SP6.7: covers SP6 follow-up item 3 — the full click-through for a
+    // write-intent widget. Requires at least one SVG view in viewer mode that
+    // contains a widget with `writeIntent.tag` set, AND an active batch on the
+    // view's reactor (so the server returns 200 instead of no_active_batch).
+    await page.goto('/scada2');
+    const viewerLink = page.locator('a[href^="/scada2/"]:not([href*="/edit/"])').first();
+    const linkVisible = await viewerLink.isVisible().catch(() => false);
+    test.skip(!linkVisible, 'no SVG views seeded — seed a view with writeIntent widget to exercise this path');
+    await viewerLink.click();
+    await page.waitForLoadState('networkidle');
+
+    const writeBtn = page.locator('[data-write-intent="true"], [data-testid^="write-intent-trigger"]').first();
+    const btnVisible = await writeBtn.isVisible().catch(() => false);
+    test.skip(!btnVisible, 'view has no write-intent widget — add one with writeIntent.tag to exercise this path');
+
+    await writeBtn.click();
+    await expect(page.getByTestId('write-intent-dialog')).toBeVisible();
+    await page.getByTestId('write-intent-reason').fill('e2e smoke test reason');
+
+    // Intercept the POST so the test asserts the round-trip without depending
+    // on the suggestions inbox being routed to in this flow.
+    const postPromise = page.waitForResponse((r) =>
+      r.url().includes('/api/v1/scada/write-intents') && r.request().method() === 'POST',
+    );
+    await page.getByTestId('write-intent-submit').click();
+    const resp = await postPromise;
+    expect([200, 409]).toContain(resp.status());
+    if (resp.status() === 200) {
+      const body = await resp.json();
+      expect(body.success).toBe(true);
+      expect(typeof body.suggestion_id).toBe('number');
+    } else {
+      // 409 no_active_batch is the documented response when no batch is running;
+      // accept it so the test passes in environments without an active batch.
+      const body = await resp.json();
+      expect(body.error).toBe('no_active_batch');
+    }
+  });
+
   test('view-list link navigates to viewer route and renders canvas', async ({ page }) => {
     // SP5/SP5.8: covers SP5 follow-up item 4 — <a href="/scada2/<id>"> in
     // ViewListPanel is unit-tested for href correctness but needs an end-to-end
