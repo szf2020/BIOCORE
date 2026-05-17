@@ -485,3 +485,18 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
 
   setAlarms: (alarms) => set({ alarms: alarms.slice(0, 100) }),
 }));
+
+// SP-FX-2: minimal send hook for tag-binding writeTag. Keeps the WS singleton
+// invariant intact — callers do not hold their own WebSocket reference.
+export function sendWsMessage(msg: object): void {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    throw new Error('sendWsMessage: WebSocket not connected');
+  }
+  ws.send(JSON.stringify(msg));
+}
+
+// SP-FX-2: test-only hooks. Not used in production.
+export const __testHooks = {
+  __resetWsForTests(): void { ws = null; },
+  __bindWsForTests(fakeWs: WebSocket): void { ws = fakeWs; },
+};
