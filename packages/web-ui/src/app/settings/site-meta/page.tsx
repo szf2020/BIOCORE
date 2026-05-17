@@ -138,7 +138,7 @@ function Field({ label, value, onChange, placeholder, source, hint }: {
     <div>
       <div className="flex items-center justify-between mb-1">
         <label className="text-xs font-medium text-foreground">{label}</label>
-        <span className={`text-[9px] px-1.5 py-0.5 rounded ${SOURCE_COLOR[source] || ''}`}>
+        <span className={`text-[11px] px-1.5 py-0.5 rounded ${SOURCE_COLOR[source] || ''}`}>
           当前来源: {SOURCE_LABEL[source] || source}
         </span>
       </div>
@@ -148,7 +148,7 @@ function Field({ label, value, onChange, placeholder, source, hint }: {
         placeholder={placeholder}
         className="h-8 text-sm"
       />
-      <p className="text-[10px] text-muted-foreground mt-1">{hint}</p>
+      <p className="text-xs text-muted-foreground mt-1">{hint}</p>
     </div>
   );
 }

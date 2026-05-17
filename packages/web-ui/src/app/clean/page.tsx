@@ -104,7 +104,7 @@ export default function CleanPage() {
             <div className={`w-8 h-8 rounded-full ${color} flex items-center justify-center text-lg`}>{icon}</div>
             <span className="text-sm font-semibold text-foreground">{title}</span>
           </div>
-          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase border ${
+          <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase border ${
             isRunning ? stateColors.running :
             isCompleted ? stateColors.completed :
             stateColors.pending
@@ -138,7 +138,7 @@ export default function CleanPage() {
               <div key={ps.phase_index} className="bg-muted/20 border border-border/40 rounded p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">{phaseLabel(ps.phase_type || ps.phase_id)}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold border ${cfg}`}>
+                  <span className={`px-1.5 py-0.5 rounded text-[11px] font-semibold border ${cfg}`}>
                     {phaseStateLabel(ps.state)}
                   </span>
                 </div>
@@ -146,7 +146,7 @@ export default function CleanPage() {
                 {/* 步骤进度 */}
                 {(ps.state === 'running' || ps.state === 'held') && ps.total_steps > 0 && (
                   <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
+                    <div className="flex justify-between text-xs font-mono text-muted-foreground">
                       <span>Step {ps.step_number}/{ps.total_steps}: {ps.step_name || '...'}</span>
                       <span>{progress}%</span>
                     </div>
@@ -222,7 +222,7 @@ export default function CleanPage() {
       {/* 标题 */}
       <div className="px-4 py-3 border-b border-border bg-card/30">
         <h1 className="text-sm font-semibold text-foreground">设备清洗与灭菌 (CIP / SIP)</h1>
-        <p className="text-[10px] text-muted-foreground mt-0.5">
+        <p className="text-xs text-muted-foreground mt-0.5">
           独立状态机控制。安全互锁: 主发酵运行中禁止启动清洗/灭菌，CIP和SIP不能同时运行。
         </p>
       </div>

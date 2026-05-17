@@ -113,7 +113,7 @@ export default function PermissionsPage() {
                             <td key={role} className="text-center py-1.5 px-2">
                               <button
                                 onClick={() => toggle(role, resource, action)}
-                                className={`w-6 h-6 rounded border text-[10px] font-bold transition-colors ${
+                                className={`w-6 h-6 rounded border text-xs font-bold transition-colors ${
                                   on
                                     ? 'bg-green-500/20 border-green-500/50 text-emerald-600'
                                     : 'bg-muted/30 border-border text-muted-foreground/40 hover:border-muted-foreground/60'

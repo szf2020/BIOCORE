@@ -93,10 +93,10 @@ function renderTarget(
 ): React.ReactNode {
   if (target_id == null) return <span className="text-gray-400">—</span>;
   if (target_kind === 'node_id')
-    return <code className="font-mono text-[10px]">node:{target_id}</code>;
+    return <code className="font-mono text-xs">node:{target_id}</code>;
   if (target_kind === 'phase_index' || !target_kind)
     return <span>Phase {target_id}</span>;
-  return <code className="font-mono text-[10px]">{target_kind}:{target_id}</code>;
+  return <code className="font-mono text-xs">{target_kind}:{target_id}</code>;
 }
 
 export default function AuditLogsPage() {
@@ -185,19 +185,19 @@ export default function AuditLogsPage() {
       <Card>
         <CardContent className="p-3 grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <label className="text-[10px] text-muted-foreground">用户</label>
+            <label className="text-xs text-muted-foreground">用户</label>
             <Input value={filterUser} onChange={e => setFilterUser(e.target.value)} placeholder="admin / 操作员..." className="h-9 text-xs mt-0.5" />
           </div>
           <div>
-            <label className="text-[10px] text-muted-foreground">操作类型</label>
+            <label className="text-xs text-muted-foreground">操作类型</label>
             <Input value={filterAction} onChange={e => setFilterAction(e.target.value)} placeholder="user_create / batch_start..." className="h-9 text-xs mt-0.5" />
           </div>
           <div>
-            <label className="text-[10px] text-muted-foreground">批次 ID</label>
+            <label className="text-xs text-muted-foreground">批次 ID</label>
             <Input value={filterBatch} onChange={e => setFilterBatch(e.target.value)} placeholder="精确匹配 (后端过滤)" className="h-9 text-xs mt-0.5" />
           </div>
           <div>
-            <label className="text-[10px] text-muted-foreground">全文搜索</label>
+            <label className="text-xs text-muted-foreground">全文搜索</label>
             <div className="relative mt-0.5">
               <Search className="absolute left-2 top-2.5 w-3 h-3 text-muted-foreground" />
               <Input value={filterText} onChange={e => setFilterText(e.target.value)} placeholder="目标/原因/trace_id..." className="h-9 text-xs pl-7" />
@@ -242,22 +242,22 @@ export default function AuditLogsPage() {
                     <td className="px-3 py-2 font-mono whitespace-nowrap text-muted-foreground">{l.timestamp}</td>
                     <td className="px-3 py-2 font-medium">{l.user_id}</td>
                     <td className="px-3 py-2">
-                      <Badge className={`text-[10px] ${style.color}`}>{style.label}</Badge>
-                      <div className="text-[9px] text-muted-foreground mt-0.5 font-mono">{l.action}</div>
+                      <Badge className={`text-xs ${style.color}`}>{style.label}</Badge>
+                      <div className="text-[11px] text-muted-foreground mt-0.5 font-mono">{l.action}</div>
                     </td>
                     <td className="px-3 py-2">
                       <div className="text-muted-foreground">{l.target_type}</div>
                       {l.target_id && (
                         <div className="mt-0.5">{renderTarget(l.target_id, l.target_kind)}</div>
                       )}
-                      {l.batch_id && <div className="text-[10px] text-blue-600">batch: {l.batch_id}</div>}
+                      {l.batch_id && <div className="text-xs text-blue-600">batch: {l.batch_id}</div>}
                     </td>
                     <td className="px-3 py-2 max-w-xs">
                       {l.old_value && (
-                        <div className="text-red-600 line-through text-[10px] truncate" title={l.old_value}>{l.old_value}</div>
+                        <div className="text-red-600 line-through text-xs truncate" title={l.old_value}>{l.old_value}</div>
                       )}
                       {l.new_value && (
-                        <div className="text-emerald-600 text-[10px] truncate" title={l.new_value}>{l.new_value}</div>
+                        <div className="text-emerald-600 text-xs truncate" title={l.new_value}>{l.new_value}</div>
                       )}
                       {!l.old_value && !l.new_value && <span className="text-muted-foreground/50">—</span>}
                       {l.action === 'branch_evaluated' && l.details && (() => {
@@ -279,8 +279,8 @@ export default function AuditLogsPage() {
                     <td className="px-3 py-2 max-w-xs truncate text-muted-foreground" title={l.reason || ''}>
                       {l.reason || '—'}
                     </td>
-                    <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">{l.ip_address || '—'}</td>
-                    <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground" title={l.trace_id || ''}>
+                    <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{l.ip_address || '—'}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-muted-foreground" title={l.trace_id || ''}>
                       {l.trace_id ? l.trace_id.slice(0, 16) : '—'}
                     </td>
                   </tr>

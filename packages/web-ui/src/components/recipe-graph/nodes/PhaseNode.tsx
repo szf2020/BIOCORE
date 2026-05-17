@@ -27,13 +27,13 @@ export function PhaseNode({ data, selected }: NodeProps) {
         <Beaker className="w-3.5 h-3.5 text-primary flex-shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="text-xs font-semibold truncate">{d.label || d.phase_id}</div>
-          <div className="text-[10px] text-muted-foreground font-mono truncate">
+          <div className="text-xs text-muted-foreground font-mono truncate">
             {d.phase_type}
           </div>
         </div>
       </div>
       {paramCount > 0 && (
-        <div className="mt-1 pt-1 border-t border-border/40 text-[9px] text-muted-foreground">
+        <div className="mt-1 pt-1 border-t border-border/40 text-[11px] text-muted-foreground">
           {paramCount} 参数
         </div>
       )}

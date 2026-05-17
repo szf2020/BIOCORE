@@ -183,17 +183,17 @@ export default function RecipeEditV2Page() {
             placeholder="配方名称"
           />
         </div>
-        <div className="px-2 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300">
+        <div className="px-2 py-0.5 rounded text-xs bg-purple-500/20 text-purple-300">
           DAG schema v2
         </div>
         {/* M3.2: 配方状态徽章 */}
         {!isNew && recipeStatus === 'pending_approval' && (
-          <div className="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 flex items-center gap-1">
+          <div className="px-2 py-0.5 rounded text-xs bg-amber-500/20 text-amber-300 flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />等待审核
           </div>
         )}
         {!isNew && recipeStatus === 'approved' && (
-          <div className="px-2 py-0.5 rounded text-[10px] bg-green-500/20 text-green-300 flex items-center gap-1">
+          <div className="px-2 py-0.5 rounded text-xs bg-green-500/20 text-green-300 flex items-center gap-1">
             <CheckCircle className="w-3 h-3" />已批准
           </div>
         )}

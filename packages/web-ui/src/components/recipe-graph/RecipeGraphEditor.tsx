@@ -474,7 +474,7 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
       {/* 左侧: 模板库 + 操作 */}
       <div className="w-56 border-r border-border flex flex-col">
         <div className="p-2 border-b border-border space-y-1.5">
-          <div className="text-[10px] font-semibold text-muted-foreground uppercase">添加节点</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase">添加节点</div>
           <Button variant="outline" size="sm" className="w-full justify-start" onClick={addBranchNode}>
             <GitBranch className="w-3.5 h-3.5 mr-1.5" />IF/ELSE 分支
           </Button>
@@ -493,12 +493,12 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
 
         {/* Phase 模板库 (点击添加节点, 自动填充默认参数) */}
         <div className="flex-1 overflow-y-auto p-2">
-          <div className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">
+          <div className="text-xs font-semibold text-muted-foreground uppercase mb-2">
             Phase 模板库 <span className="text-muted-foreground/60">({apiTemplates.length})</span>
           </div>
           {templateGroups.map(group => (
             <div key={group.title} className="mb-3 space-y-1">
-              <div className="text-[9px] font-medium text-muted-foreground/70 uppercase tracking-wider px-1">
+              <div className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider px-1">
                 {group.title}
               </div>
               {group.items.map(tmpl => (
@@ -512,7 +512,7 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'var(--primary, #1677ff)' }} />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{phaseLabel(tmpl.type, tmpl.label)}</div>
-                    <div className="text-[9px] text-muted-foreground truncate">{tmpl.fixed_steps} steps</div>
+                    <div className="text-[11px] text-muted-foreground truncate">{tmpl.fixed_steps} steps</div>
                   </div>
                   <Plus className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0" />
                 </button>
@@ -520,12 +520,12 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
             </div>
           ))}
           {apiTemplates.length === 0 && !templatesError && (
-            <div className="text-[10px] text-muted-foreground italic px-1">
+            <div className="text-xs text-muted-foreground italic px-1">
               模板库为空 — 到"系统设置 → Phase 模板配置"添加
             </div>
           )}
           {templatesError && (
-            <div className="text-[10px] text-red-600 bg-red-500/10 border border-red-500/40 rounded px-2 py-1.5">
+            <div className="text-xs text-red-600 bg-red-500/10 border border-red-500/40 rounded px-2 py-1.5">
               {templatesError}
             </div>
           )}
@@ -545,7 +545,7 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
           <Button size="sm" className="w-full justify-start" onClick={handleSave} disabled={saving}>
             <SaveIcon className="w-3.5 h-3.5 mr-1.5" />{saving ? '保存中...' : '保存 DAG'}
           </Button>
-          <div className="text-[10px] text-muted-foreground space-y-0.5 pt-1">
+          <div className="text-xs text-muted-foreground space-y-0.5 pt-1">
             <div>节点: {nodes.length} · 边: {edges.length}</div>
           </div>
         </div>

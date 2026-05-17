@@ -47,7 +47,7 @@ function Row({ item, kind, onAck }: { item: Alarm; kind: 'alarm' | 'notice'; onA
     <div className="flex items-start gap-2 px-3 py-1.5">
       <Icon className={cn('w-3.5 h-3.5 mt-0.5 shrink-0', colorClass)} />
       <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2 text-[10px] text-muted-foreground font-mono">
+        <div className="flex items-baseline gap-2 text-xs text-muted-foreground font-mono">
           <span>{formatTime(item)}</span>
           {item.channel && <span>{item.channel}</span>}
         </div>
@@ -82,7 +82,7 @@ function Section({ title, icon: Icon, color, items, kind, onAck, emptyText }: {
           <Icon className="w-3.5 h-3.5" />
           {title}
           {items.length > 0 && (
-            <span className="ml-0.5 min-w-[16px] h-4 px-1 rounded-full bg-current text-white text-[10px] font-bold leading-4 text-center">
+            <span className="ml-0.5 min-w-[16px] h-4 px-1 rounded-full bg-current text-white text-xs font-bold leading-4 text-center">
               {items.length}
             </span>
           )}

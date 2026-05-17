@@ -30,7 +30,7 @@ function ParamCard({ label, channel, value, unit, sv, cv, cvLabel, deadband = 1,
     <Card className="p-3 space-y-1.5">
       <div className="flex justify-between items-center">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <span className="text-[10px] text-muted-foreground font-mono">{channel}</span>
+        <span className="text-xs text-muted-foreground font-mono">{channel}</span>
       </div>
       <div className="text-2xl font-bold font-mono">
         {value.toFixed(precision)}<span className="text-sm text-muted-foreground ml-1">{unit}</span>
@@ -51,7 +51,7 @@ function ParamCard({ label, channel, value, unit, sv, cv, cvLabel, deadband = 1,
             <div className={`h-full ${deviationColor} rounded-full transition-all`}
               style={{ width: `${deviationWidth}%` }} />
           </div>
-          <span className="text-[10px] text-muted-foreground w-12 text-right">
+          <span className="text-xs text-muted-foreground w-12 text-right">
             {deviation.toFixed(precision)} {unit}
           </span>
         </div>
@@ -68,7 +68,7 @@ export function ParamCardGrid({ pv }: { pv: ProcessValues | null }) {
       <div className="grid grid-cols-2 gap-2">
         {PARAM_LABELS.map((label, i) => (
           <Card key={i} className="p-3 space-y-1">
-            <span className="text-[10px] text-muted-foreground">{label}</span>
+            <span className="text-xs text-muted-foreground">{label}</span>
             <div className="text-xl font-bold font-mono text-muted-foreground/50">--</div>
           </Card>
         ))}

@@ -191,11 +191,11 @@ export default function FormulaConfigPage() {
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold">{f.name}</span>
                 <div className="flex items-center gap-1">
-                  {f.formula_type === 'expression' && <span className="text-[8px] bg-yellow-500/15 text-amber-600 px-1 rounded">自定义</span>}
-                  <span className="text-[9px] text-muted-foreground font-mono">{f.output_unit}</span>
+                  {f.formula_type === 'expression' && <span className="text-[10px] bg-yellow-500/15 text-amber-600 px-1 rounded">自定义</span>}
+                  <span className="text-[11px] text-muted-foreground font-mono">{f.output_unit}</span>
                 </div>
               </div>
-              <div className="text-[10px] text-muted-foreground font-mono mt-1 truncate">
+              <div className="text-xs text-muted-foreground font-mono mt-1 truncate">
                 {f.formula_type === 'expression' && f.expression ? f.expression : f.formula_display}
               </div>
             </button>
@@ -214,7 +214,7 @@ export default function FormulaConfigPage() {
                   <div className="mt-2 bg-muted/30 rounded p-3 font-mono text-sm text-primary">
                     {current.formula_display}
                   </div>
-                  <div className="flex gap-2 mt-2 text-[10px] text-muted-foreground">
+                  <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
                     <span>输出单位: {current.output_unit}</span>
                     <span>·</span>
                     <span>输入变量: {current.input_vars?.join(', ')}</span>
@@ -244,7 +244,7 @@ export default function FormulaConfigPage() {
                       <div className="grid gap-3 sm:grid-cols-2">
                         {Object.entries(editCoefs).map(([key, val]) => (
                           <div key={key}>
-                            <label className="text-[10px] text-muted-foreground">
+                            <label className="text-xs text-muted-foreground">
                               {COEF_LABELS[current.id]?.[key] || key}
                             </label>
                             <Input
@@ -262,7 +262,7 @@ export default function FormulaConfigPage() {
                   <div className="space-y-3">
                     <div>
                       <h3 className="text-xs font-semibold text-muted-foreground mb-1">自定义公式表达式</h3>
-                      <p className="text-[10px] text-muted-foreground mb-2">
+                      <p className="text-xs text-muted-foreground mb-2">
                         使用数学表达式定义计算公式。支持: +, -, *, /, ^ (幂), pow(), sqrt(), log(), ln(), exp(), abs(), min(), max()
                       </p>
                       <textarea
@@ -275,14 +275,14 @@ export default function FormulaConfigPage() {
 
                     {/* 可用变量列表 */}
                     <div>
-                      <span className="text-[10px] text-muted-foreground">可用变量: </span>
+                      <span className="text-xs text-muted-foreground">可用变量: </span>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {['rpm', 'airflow', 'DO', 'temperature', 'pH', 'pressure', 'weight',
                           'feed_P01', 'feed_P02', 'feed_P04',
                           'kLa', 'OUR', 'Vs', 'PV', 'mu', 'cumFeed', 'cumBase', 'cumAcid', 'Vliquid',
                         ].map(v => (
                           <button key={v} onClick={() => setEditExpr(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + v)}
-                            className="text-[10px] font-mono bg-muted/50 hover:bg-primary/15 hover:text-primary px-1.5 py-0.5 rounded cursor-pointer transition-colors">
+                            className="text-xs font-mono bg-muted/50 hover:bg-primary/15 hover:text-primary px-1.5 py-0.5 rounded cursor-pointer transition-colors">
                             {v}
                           </button>
                         ))}
@@ -314,9 +314,9 @@ export default function FormulaConfigPage() {
                     <RotateCcw className="w-3.5 h-3.5 mr-1" />恢复默认
                   </Button>
                   {current.formula_type === 'expression' && (
-                    <span className="text-[9px] bg-yellow-500/15 text-amber-600 px-2 py-0.5 rounded">自定义</span>
+                    <span className="text-[11px] bg-yellow-500/15 text-amber-600 px-2 py-0.5 rounded">自定义</span>
                   )}
-                  <span className="text-[9px] text-muted-foreground ml-auto">
+                  <span className="text-[11px] text-muted-foreground ml-auto">
                     更新: {current.updated_at?.slice(0, 16) || '—'}
                   </span>
                 </div>

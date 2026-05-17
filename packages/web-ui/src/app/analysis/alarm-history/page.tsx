@@ -209,7 +209,7 @@ export default function AlarmHistoryPage() {
                         <td className="px-2 py-1.5 font-mono text-muted-foreground">{r.id}</td>
                         <td className="px-2 py-1.5 font-mono whitespace-nowrap">{fmtTime(r.triggered_at)}</td>
                         <td className="px-2 py-1.5">
-                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${meta.color}`}>
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold border ${meta.color}`}>
                             <Icon className="w-3 h-3" /> {meta.label}
                           </span>
                         </td>
@@ -226,13 +226,13 @@ export default function AlarmHistoryPage() {
                         </td>
                         <td className="px-2 py-1.5">
                           {r.acknowledged_at ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600">
+                            <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
                               <Check className="w-3 h-3" />
                               <span className="font-mono">{fmtTime(r.acknowledged_at)}</span>
                               {r.acknowledged_by && <span className="text-muted-foreground">· {r.acknowledged_by}</span>}
                             </span>
                           ) : (
-                            <span className="text-[10px] text-red-600 font-semibold">未确认</span>
+                            <span className="text-xs text-red-600 font-semibold">未确认</span>
                           )}
                         </td>
                       </tr>

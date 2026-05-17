@@ -76,7 +76,7 @@ export function PhaseStepTracker({ state, phaseNames, currentPhaseId, currentPha
                       {isCompleted ? '●' : isCurrent ? '◉' : '○'}
                     </span>
                     <span className={cn(
-                      'text-[10px] max-w-[48px] truncate',
+                      'text-xs max-w-[48px] truncate',
                       isCurrent ? 'text-blue-600 font-medium' : 'text-muted-foreground',
                     )}>
                       {isCurrent && currentPhaseId ? currentPhaseId : name}
@@ -94,10 +94,10 @@ export function PhaseStepTracker({ state, phaseNames, currentPhaseId, currentPha
         {/* T19: 当前 phase_id + phase_type (DAG runtime label) */}
         {(currentPhaseId || currentPhaseType) && (
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground">当前:</span>
+            <span className="text-xs text-muted-foreground">当前:</span>
             <strong className="text-xs font-mono text-foreground">{currentPhaseId ?? '—'}</strong>
             {currentPhaseType && (
-              <span className="text-[10px] text-muted-foreground bg-muted/60 border border-border px-1.5 py-0.5 rounded">
+              <span className="text-xs text-muted-foreground bg-muted/60 border border-border px-1.5 py-0.5 rounded">
                 {currentPhaseType}
               </span>
             )}

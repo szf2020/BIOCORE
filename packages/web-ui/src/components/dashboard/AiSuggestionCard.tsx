@@ -63,10 +63,10 @@ export function AiSuggestionCard({ batchId }: { batchId?: string }) {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold text-amber-600 flex items-center gap-1.5">
                 <span className="text-base">💡</span> AI 建议
-                <span className="text-[10px] font-normal text-muted-foreground">({s.source_module})</span>
+                <span className="text-xs font-normal text-muted-foreground">({s.source_module})</span>
               </h3>
               {s.confidence != null && (
-                <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-blue-500/20 text-blue-600">
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-600">
                   置信度 {(s.confidence * 100).toFixed(0)}%
                 </span>
               )}
@@ -90,7 +90,7 @@ export function AiSuggestionCard({ batchId }: { batchId?: string }) {
 
             {/* 过期倒计时 */}
             {expiresIn != null && expiresIn > 0 && (
-              <p className="text-[10px] text-muted-foreground mb-2">过期时间: 还剩 {expiresIn} 分钟</p>
+              <p className="text-xs text-muted-foreground mb-2">过期时间: 还剩 {expiresIn} 分钟</p>
             )}
 
             {/* 操作按钮 */}

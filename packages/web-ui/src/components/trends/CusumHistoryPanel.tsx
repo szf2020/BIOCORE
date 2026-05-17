@@ -185,7 +185,7 @@ export function CusumHistoryPanel({ batchId }: { batchId: string }) {
         <h3 className="text-sm font-semibold text-foreground/90">
           CUSUM 统计过程监控 — {batchId}
         </h3>
-        <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span>h={data.h} k={data.k}</span>
           <span>S⁺: 上偏累积和</span>
           <span>S⁻: 下偏累积和</span>

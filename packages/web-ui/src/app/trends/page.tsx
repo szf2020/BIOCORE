@@ -349,7 +349,7 @@ export default function TrendsPage() {
                   >
                     {on ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
                     <span className="font-mono">{r.reactor_id}</span>
-                    <span className="text-[10px] opacity-70">{r.vessel_volume_L ? `${r.vessel_volume_L}L` : ''}</span>
+                    <span className="text-xs opacity-70">{r.vessel_volume_L ? `${r.vessel_volume_L}L` : ''}</span>
                   </button>
                 );
               })}
@@ -368,7 +368,7 @@ export default function TrendsPage() {
                   const current = selectedBatches.get(rid) || NO_BATCH;
                   return (
                     <div key={rid} className="flex items-center gap-1">
-                      <span className="text-[10px] text-muted-foreground font-mono">{rid}:</span>
+                      <span className="text-xs text-muted-foreground font-mono">{rid}:</span>
                       <select value={current}
                         onChange={e => setSelectedBatches(prev => {
                           const next = new Map(prev);
@@ -504,7 +504,7 @@ export default function TrendsPage() {
       })()}
 
       {/* 底部统计 */}
-      <div className="text-[10px] text-muted-foreground text-right">
+      <div className="text-xs text-muted-foreground text-right">
         共 {totalPoints} 个数据点 · {filteredResults.length} 个反应器 · {shouldAlign ? '按发酵经过时间对齐' : '绝对时间'} · {facetedMode ? '分面' : '叠加'} · 范围 {custom ? '自定义' : RANGES[ri].label}
       </div>
     </div>

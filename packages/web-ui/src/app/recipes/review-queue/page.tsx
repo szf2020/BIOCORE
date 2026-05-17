@@ -202,21 +202,21 @@ export default function ReviewQueuePage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-semibold text-sm">{r.name}</span>
-                      <span className="font-mono text-[10px] text-muted-foreground">
+                      <span className="font-mono text-xs text-muted-foreground">
                         {r.recipe_id} · v{r.version}
                       </span>
                       {r.dag_schema_version >= 2 && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300">
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-purple-500/20 text-purple-300">
                           DAG v2
                         </span>
                       )}
                       {/* 审核类型标签 */}
                       {isDeprecation ? (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-500/15 text-red-600 border border-red-500/30">
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-red-500/15 text-red-600 border border-red-500/30">
                           废弃申请
                         </span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-amber-500/15 text-amber-400 border border-amber-500/30">
                           新配方审批
                         </span>
                       )}

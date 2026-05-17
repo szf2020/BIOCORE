@@ -228,11 +228,11 @@ export default function DoeListPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold text-sm truncate">{s.name}</div>
-                      <div className="text-[10px] text-muted-foreground font-mono truncate">{s.study_id}</div>
+                      <div className="text-xs text-muted-foreground font-mono truncate">{s.study_id}</div>
                     </div>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${st.bg}`}>{st.label}</span>
+                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${st.bg}`}>{st.label}</span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 text-[10px]">
+                  <div className="flex flex-wrap gap-1.5 text-xs">
                     <span className="bg-muted/50 text-muted-foreground px-2 py-0.5 rounded">
                       {DESIGN_TYPE_LABEL[s.design_type] || s.design_type}
                     </span>
@@ -246,7 +246,7 @@ export default function DoeListPage() {
                   </div>
                   {s.run_count > 0 && (
                     <div className="space-y-0.5">
-                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                      <div className="flex justify-between text-xs text-muted-foreground">
                         <span>运行进度</span>
                         <span>{s.completed_count}/{s.run_count}</span>
                       </div>
@@ -329,7 +329,7 @@ export default function DoeListPage() {
                     </option>
                   ))}
                 </select>
-                <p className="text-[10px] text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   关联后可 materialize 生成每次运行对应的子配方 (双向对接)
                 </p>
               </div>
@@ -408,8 +408,8 @@ function DoStrategyTemplates({ onCreated }: { onCreated: () => void }) {
                 <span className="text-lg">{info.icon}</span>
                 <span className="text-xs font-semibold truncate flex-1">{t.name.replace('DO 策略', '').replace(': ', '')}</span>
               </div>
-              <div className="text-[10px] text-muted-foreground">{info.shortDesc}</div>
-              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <div className="text-xs text-muted-foreground">{info.shortDesc}</div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>{t.factor_count} 因素</span>
                 <span>·</span>
                 <span>{t.response_count} 响应</span>

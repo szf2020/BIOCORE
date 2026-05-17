@@ -186,7 +186,7 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
 
             {/* 模板说明 */}
             {template?.description && (
-              <div className="text-[10px] text-muted-foreground bg-muted/30 rounded p-2 border border-border/40">
+              <div className="text-xs text-muted-foreground bg-muted/30 rounded p-2 border border-border/40">
                 {template.description}
               </div>
             )}
@@ -199,8 +199,8 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                 </Label>
                 <div className="space-y-1">
                   {template.steps.map((step: any, si: number) => (
-                    <div key={si} className="flex items-center gap-1.5 text-[10px] bg-muted/40 rounded px-2 py-1">
-                      <span className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[9px] font-bold flex-shrink-0">
+                    <div key={si} className="flex items-center gap-1.5 text-xs bg-muted/40 rounded px-2 py-1">
+                      <span className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[11px] font-bold flex-shrink-0">
                         {step.step_number || si + 1}
                       </span>
                       <span className="font-medium truncate">{step.name || `Step ${si + 1}`}</span>
@@ -215,7 +215,7 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
               const params = collectParams();
               if (params.length === 0) {
                 return template ? null : (
-                  <div className="pt-2 border-t border-border/40 text-[10px] text-muted-foreground italic">
+                  <div className="pt-2 border-t border-border/40 text-xs text-muted-foreground italic">
                     此 Phase 类型没有可编辑的参数
                   </div>
                 );
@@ -226,12 +226,12 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                   <div className="space-y-2">
                     {params.map(p => (
                       <div key={p.key} className="space-y-0.5">
-                        <Label className="text-[10px] text-muted-foreground">
+                        <Label className="text-xs text-muted-foreground">
                           {p.label}
                           {p.unit && <span className="ml-1">({p.unit})</span>}
                         </Label>
                         {typeof p.value === 'object' && p.value !== null ? (
-                          <div className="text-[10px] font-mono bg-muted rounded px-2 py-1">
+                          <div className="text-xs font-mono bg-muted rounded px-2 py-1">
                             {JSON.stringify(p.value)}
                           </div>
                         ) : (
@@ -279,7 +279,7 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                 <option value="true">true</option>
                 <option value="false">false</option>
               </select>
-              <p className="mt-1 text-[10px] text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground">
                 当表达式所需的 PV 字段缺失时使用此分支
               </p>
             </div>
@@ -316,7 +316,7 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                   className="h-7 text-xs font-mono mt-1"
                 />
               )}
-              <p className="mt-1 text-[10px] text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Goto 节点跳到选定目标 (可用于循环回边或异常处理).
                 目标若需 ≥ 2 次重访, 须在 recipe.options.maxRevisits 中设置 &gt; 1.
               </p>
@@ -346,7 +346,7 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                   value={data.exitExpression || ''}
                   onChange={(expression) => updateData({ exitExpression: expression })}
                 />
-                <p className="mt-1 text-[10px] text-muted-foreground">
+                <p className="mt-1 text-xs text-muted-foreground">
                   repeat-until 语义: 表达式为 true 时退出循环 (PV 缺失时继续循环)
                 </p>
               </div>
@@ -369,7 +369,7 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                   placeholder="5"
                   className="h-7 text-xs font-mono mt-1"
                 />
-                <p className="mt-1 text-[10px] text-muted-foreground">
+                <p className="mt-1 text-xs text-muted-foreground">
                   fixed-N 硬上限 (1~10000). 与 exitExpression 任一先满足即退出.
                 </p>
               </div>
@@ -387,7 +387,7 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                   className="h-7 text-xs mt-1"
                 />
               </div>
-              <p className="text-[10px] text-muted-foreground pt-1">
+              <p className="text-xs text-muted-foreground pt-1">
                 提示: 从 body handle 拉一条边到循环体起点; 从 exit handle 拉一条边到循环外的下一步;
                 循环体必须有至少一条 back-edge 回到本 Loop 节点.
               </p>

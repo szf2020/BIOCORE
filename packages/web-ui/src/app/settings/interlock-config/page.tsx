@@ -207,22 +207,22 @@ export default function InterlockConfigPage() {
               <CardContent className="p-5 space-y-4">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono font-bold text-primary">{current.id}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${current.severity === 'critical' ? 'bg-red-500/15 text-red-600' : current.severity === 'warning' ? 'bg-yellow-500/15 text-amber-600' : 'bg-blue-500/15 text-blue-600'}`}>
+                  <span className={`px-1.5 py-0.5 rounded text-[11px] font-semibold ${current.severity === 'critical' ? 'bg-red-500/15 text-red-600' : current.severity === 'warning' ? 'bg-yellow-500/15 text-amber-600' : 'bg-blue-500/15 text-blue-600'}`}>
                     {current.severity === 'critical' ? '严重' : current.severity === 'warning' ? '警告' : '信息'}
                   </span>
-                  {!current.is_enabled && <span className="text-[9px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">已禁用</span>}
+                  {!current.is_enabled && <span className="text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">已禁用</span>}
                   {selectedReactor ? (
                     current.is_override ? (
-                      <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded flex items-center gap-1">
+                      <span className="text-[11px] bg-primary/15 text-primary px-1.5 py-0.5 rounded flex items-center gap-1">
                         <Wrench className="w-2.5 h-2.5" /> {selectedReactor} 覆盖
                       </span>
                     ) : (
-                      <span className="text-[9px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded flex items-center gap-1">
+                      <span className="text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded flex items-center gap-1">
                         <Globe className="w-2.5 h-2.5" /> 来自全局默认 — 保存即创建 {selectedReactor} 覆盖
                       </span>
                     )
                   ) : (
-                    <span className="text-[9px] bg-blue-500/15 text-blue-600 px-1.5 py-0.5 rounded flex items-center gap-1">
+                    <span className="text-[11px] bg-blue-500/15 text-blue-600 px-1.5 py-0.5 rounded flex items-center gap-1">
                       <Globe className="w-2.5 h-2.5" /> 全局默认
                     </span>
                   )}
@@ -230,11 +230,11 @@ export default function InterlockConfigPage() {
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="text-[10px] text-muted-foreground">显示名称</label>
+                    <label className="text-xs text-muted-foreground">显示名称</label>
                     <Input value={editName} onChange={e => setEditName(e.target.value)} className="mt-1 h-8 text-sm" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-muted-foreground">严重性</label>
+                    <label className="text-xs text-muted-foreground">严重性</label>
                     <select value={editSeverity} onChange={e => setEditSeverity(e.target.value)}
                       className="mt-1 w-full h-8 px-2 rounded bg-background border border-border text-sm">
                       <option value="critical">critical (自动Hold)</option>
@@ -243,27 +243,27 @@ export default function InterlockConfigPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] text-muted-foreground">Hold 动作</label>
+                    <label className="text-xs text-muted-foreground">Hold 动作</label>
                     <Input value={editHoldAction} onChange={e => setEditHoldAction(e.target.value)} className="mt-1 h-8 text-sm" placeholder="如: 搅拌急停, 补料泵停" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-muted-foreground">持续时间阈值 (秒, 0=立即)</label>
+                    <label className="text-xs text-muted-foreground">持续时间阈值 (秒, 0=立即)</label>
                     <Input type="number" value={editDuration} onChange={e => setEditDuration(Number(e.target.value))} className="mt-1 h-8 text-sm" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-muted-foreground">描述</label>
+                  <label className="text-xs text-muted-foreground">描述</label>
                   <Input value={editDesc} onChange={e => setEditDesc(e.target.value)} className="mt-1 h-8 text-sm" />
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-muted-foreground">PLC 变量 (逗号分隔)</label>
+                  <label className="text-xs text-muted-foreground">PLC 变量 (逗号分隔)</label>
                   <Input value={editPlcTags} onChange={e => setEditPlcTags(e.target.value)} className="mt-1 h-8 font-mono text-sm" placeholder="TEMP_PV, TEMP_SV" />
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-muted-foreground">检测条件 (JSON)</label>
+                  <label className="text-xs text-muted-foreground">检测条件 (JSON)</label>
                   <textarea value={editCondition} onChange={e => setEditCondition(e.target.value)}
                     className="mt-1 w-full h-24 px-3 py-2 rounded bg-background border border-border font-mono text-xs resize-none" />
                 </div>
@@ -286,7 +286,7 @@ export default function InterlockConfigPage() {
                       <Trash2 className="w-3.5 h-3.5 mr-1" />删除覆盖 (回退全局)
                     </Button>
                   ) : (!selectedReactor && current.is_system) ? (
-                    <span className="text-[9px] text-muted-foreground">系统内置 · 可修改阈值但不可删除</span>
+                    <span className="text-[11px] text-muted-foreground">系统内置 · 可修改阈值但不可删除</span>
                   ) : (!selectedReactor && !current.is_system) ? (
                     <Button size="sm" variant="outline" className="text-red-600" onClick={async () => {
                       const r = await apiFetch(`${API}/api/v1/interlock-configs/${current.id}`, { method: 'DELETE' });
@@ -326,11 +326,11 @@ function ConfigCard({ config, selected, onClick }: { config: InterlockConfig; se
         <span className="font-mono font-bold w-10 flex-shrink-0">{c.id}</span>
         <span className="flex-1 truncate">{c.display_name || c.name}</span>
         {c.is_override ? (
-          <span className="text-[8px] bg-primary/15 text-primary px-1 rounded shrink-0">覆盖</span>
+          <span className="text-[10px] bg-primary/15 text-primary px-1 rounded shrink-0">覆盖</span>
         ) : null}
         <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.severity === 'critical' ? 'bg-red-500' : c.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'}`} />
       </div>
-      {c.duration_sec > 0 && <span className="text-[9px] text-muted-foreground ml-12">持续 {c.duration_sec}s</span>}
+      {c.duration_sec > 0 && <span className="text-[11px] text-muted-foreground ml-12">持续 {c.duration_sec}s</span>}
     </button>
   );
 }

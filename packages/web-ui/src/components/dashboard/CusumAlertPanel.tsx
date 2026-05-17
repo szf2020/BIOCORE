@@ -195,7 +195,7 @@ export function CusumAlertPanel({ batchId, reactorId }: { batchId?: string; reac
       </div>
 
       {/* 图例说明 */}
-      <div className="mt-3 pt-2 border-t border-border/50 flex items-center gap-4 text-[10px] text-muted-foreground">
+      <div className="mt-3 pt-2 border-t border-border/50 flex items-center gap-4 text-xs text-muted-foreground">
         <span>S⁺: 上偏累积和</span>
         <span>S⁻: 下偏累积和</span>
         <span className="text-red-400">--- h: 报警阈值 ({H_THRESHOLD}σ)</span>

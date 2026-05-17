@@ -325,7 +325,7 @@ export default function DeviceConfigPage() {
                 <Input value={form.reactor_id} disabled={!!editing}
                   onChange={e => setForm({...form, reactor_id: e.target.value.replace(/[^A-Za-z0-9_-]/g, '')})}
                   placeholder="Reactor-1" className="font-mono" />
-                <p className="text-[10px] text-muted-foreground mt-1">仅限英文字母、数字、下划线、短横线</p>
+                <p className="text-xs text-muted-foreground mt-1">仅限英文字母、数字、下划线、短横线</p>
               </div>
               <div>
                 <Label>名称 *</Label>
@@ -371,11 +371,11 @@ export default function DeviceConfigPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-muted-foreground mt-1.5">
+              <p className="text-xs text-muted-foreground mt-1.5">
                 PLC连接在 <a href="/settings/plc-config" className="text-primary underline">PLC通讯配置</a> 中创建和管理
               </p>
               {plcConnections.length === 0 && (
-                <p className="text-[10px] text-yellow-500 mt-1">暂无PLC连接，请先到 PLC通讯配置 中添加</p>
+                <p className="text-xs text-yellow-500 mt-1">暂无PLC连接，请先到 PLC通讯配置 中添加</p>
               )}
             </div>
 

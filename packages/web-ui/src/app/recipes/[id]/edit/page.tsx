@@ -268,7 +268,7 @@ function SortablePhaseCard({ phase, index, total, executionMode, isSelected, onR
 
                       return (
                       <div key={si} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5">
-                        <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-medium flex-shrink-0">
+                        <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium flex-shrink-0">
                           {step.step_number || si + 1}
                         </span>
                         <span className="font-medium flex-shrink-0">{step.name || `Step ${si + 1}`}</span>
@@ -277,7 +277,7 @@ function SortablePhaseCard({ phase, index, total, executionMode, isSelected, onR
                           {condText || '—'}
                         </span>
                         {step.next_step && step.next_step !== 'next' && (
-                          <Badge variant="outline" className="text-[10px] h-4 flex-shrink-0">
+                          <Badge variant="outline" className="text-xs h-4 flex-shrink-0">
                             →{step.next_step === 'end' ? '结束' : `Step${step.next_step}`}
                           </Badge>
                         )}

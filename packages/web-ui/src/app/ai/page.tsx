@@ -197,7 +197,7 @@ export default function AiPage() {
                     msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
                   }`}>
                     <p className="whitespace-pre-wrap">{msg.content}</p>
-                    <span className="text-[10px] opacity-50 mt-1 block">{new Date(msg.timestamp).toLocaleTimeString('zh-CN')}</span>
+                    <span className="text-xs opacity-50 mt-1 block">{new Date(msg.timestamp).toLocaleTimeString('zh-CN')}</span>
                   </div>
                   {msg.role === 'user' && (
                     <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">

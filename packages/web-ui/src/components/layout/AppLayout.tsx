@@ -232,7 +232,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-[15px] font-bold tracking-tight text-foreground leading-none">BIOCore</h1>
-              <p className="text-[10px] text-muted-foreground mt-1 font-mono tracking-wider">v0.1.0 · MES</p>
+              <p className="text-xs text-muted-foreground mt-1 font-mono tracking-wider">v0.1.0 · MES</p>
             </div>
             <ThemeToggle />
           </div>
@@ -434,12 +434,12 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
         <div className="shrink-0 flex items-center gap-1.5 px-2.5 h-full rounded-md border border-border bg-muted">
           <Bell className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
           <span className="text-xs text-muted-foreground shrink-0">报警信息</span>
-          <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border border-muted-foreground/40 text-muted-foreground/70">0</span>
+          <span className="shrink-0 px-1.5 py-0.5 rounded text-xs font-bold border border-muted-foreground/40 text-muted-foreground/70">0</span>
         </div>
         {/* Message + nav strip */}
         <div className="flex-1 flex items-center gap-2 px-3 h-full rounded-md border border-border bg-muted min-w-0">
           <span className="flex-1 text-xs text-muted-foreground truncate">无未确认报警</span>
-          <span className="shrink-0 text-[10px] text-muted-foreground/60 font-mono tabular-nums">0/0</span>
+          <span className="shrink-0 text-xs text-muted-foreground/60 font-mono tabular-nums">0/0</span>
           <button disabled className="shrink-0 p-1 rounded text-muted-foreground/30 cursor-not-allowed" title="上一条">
             <ChevronUp className="w-3 h-3" />
           </button>
@@ -463,7 +463,7 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
       <div className="shrink-0 flex items-center gap-1.5 px-2.5 h-full rounded-md border border-red-500/40 bg-red-500/10 dark:bg-red-500/15">
         <Bell className="w-3.5 h-3.5 text-mes-red shrink-0" />
         <span className="text-xs font-medium text-red-700 dark:text-red-300 shrink-0">报警信息</span>
-        <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border ${sevColor}`}>
+        <span className={`shrink-0 px-1.5 py-0.5 rounded text-xs font-bold border ${sevColor}`}>
           {unack.length}
         </span>
       </div>
@@ -472,7 +472,7 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
         <span className="flex-1 text-xs font-medium text-red-700 dark:text-red-300 truncate" title={cur.message}>
           {cur.message || '(无消息)'}
         </span>
-        <span className="shrink-0 text-[10px] text-muted-foreground font-mono tabular-nums">
+        <span className="shrink-0 text-xs text-muted-foreground font-mono tabular-nums">
           {idx + 1}/{unack.length}
         </span>
         <button

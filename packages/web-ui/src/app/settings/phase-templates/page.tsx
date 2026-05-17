@@ -215,7 +215,7 @@ export default function PhaseTemplatesPage() {
                     <div className="mt-3 pt-3 border-t space-y-2" onClick={e => e.stopPropagation()}>
                       {t.steps?.length > 0 && t.steps.map((s, i) => (
                         <div key={i} className="text-xs flex items-center gap-1">
-                          <Badge variant="outline" className="w-5 h-5 flex items-center justify-center p-0 text-[10px]">{s.step_number}</Badge>
+                          <Badge variant="outline" className="w-5 h-5 flex items-center justify-center p-0 text-xs">{s.step_number}</Badge>
                           <span>{s.name}</span>
                           <span className="text-muted-foreground ml-auto">
                             → {s.next_step === 'end' ? '结束' : s.next_step === 'next' ? `Step${s.step_number + 1}` : `Step${s.next_step}`}

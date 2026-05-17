@@ -156,7 +156,7 @@ export default function KpiDashboardPage() {
             <h3 className="text-xs font-semibold text-muted-foreground mb-2">OEE 综合效率</h3>
             <EChartsWrapper option={oeeGaugeOption} style={{ height: 260 }} />
             {summary && (
-              <div className="flex justify-around text-[10px] text-muted-foreground mt-2">
+              <div className="flex justify-around text-xs text-muted-foreground mt-2">
                 <span>可用率 {summary.avg_oee != null ? round((summary.avg_oee || 0) * 100, 0) : '—'}%</span>
                 <span>性能率 100%</span>
                 <span>合格率 {summary.avg_oee != null ? '100' : '—'}%</span>
@@ -263,7 +263,7 @@ function SummaryCard({ icon, label, value, color }: { icon: React.ReactNode; lab
       <CardContent className="p-3 flex items-center gap-3">
         <div className={color}>{icon}</div>
         <div>
-          <div className="text-[10px] text-muted-foreground">{label}</div>
+          <div className="text-xs text-muted-foreground">{label}</div>
           <div className="text-sm font-bold">{value}</div>
         </div>
       </CardContent>

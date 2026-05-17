@@ -131,7 +131,7 @@ export default function SpcPage() {
       <div className="flex flex-wrap gap-3">
         <Card className="flex-1 min-w-[200px]">
           <CardContent className="p-3">
-            <label className="text-[10px] text-muted-foreground">SPC 参数</label>
+            <label className="text-xs text-muted-foreground">SPC 参数</label>
             <select value={selectedParam} onChange={e => setSelectedParam(e.target.value)}
               className="mt-1 w-full h-8 px-2 rounded bg-background border border-border text-sm">
               {parameters.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
@@ -140,7 +140,7 @@ export default function SpcPage() {
         </Card>
         <Card className="min-w-[180px]">
           <CardContent className="p-3">
-            <label className="text-[10px] text-muted-foreground">图表类型</label>
+            <label className="text-xs text-muted-foreground">图表类型</label>
             <select value={chartType} onChange={e => setChartType(e.target.value as ChartType)}
               className="mt-1 w-full h-8 px-2 rounded bg-background border border-border text-sm">
               {(parameters.find(p => p.key === selectedParam) as any)?.chartTypes?.map((ct: ChartType) => (
@@ -156,13 +156,13 @@ export default function SpcPage() {
         <CapabilityCard label="Cpk" value={capability?.cpk} grade={capability?.cpk_grade} />
         <Card className="min-w-[100px]">
           <CardContent className="p-3 text-center">
-            <div className="text-[10px] text-muted-foreground">σ</div>
+            <div className="text-xs text-muted-foreground">σ</div>
             <div className="text-lg font-bold font-mono">{capability?.sigma?.toFixed(3) ?? '—'}</div>
           </CardContent>
         </Card>
         <Card className="min-w-[100px]">
           <CardContent className="p-3 text-center">
-            <div className="text-[10px] text-muted-foreground">失控 / 总点数</div>
+            <div className="text-xs text-muted-foreground">失控 / 总点数</div>
             <div className={`text-lg font-bold ${oocCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
               {oocCount} / {totalPoints}
             </div>
@@ -191,7 +191,7 @@ export default function SpcPage() {
             <div className="flex flex-col items-center justify-center h-[360px] text-muted-foreground text-sm gap-2">
               <TrendingUp className="w-8 h-8 text-muted-foreground/30" />
               <p>暂无 SPC 数据</p>
-              <p className="text-[10px]">完成批次并点击"计算控制限"后自动生成</p>
+              <p className="text-xs">完成批次并点击"计算控制限"后自动生成</p>
             </div>
           )}
         </CardContent>
@@ -264,9 +264,9 @@ function CapabilityCard({ label, value, grade }: { label: string; value: number 
   return (
     <Card className="min-w-[100px]">
       <CardContent className="p-3 text-center">
-        <div className="text-[10px] text-muted-foreground">{label}</div>
+        <div className="text-xs text-muted-foreground">{label}</div>
         <div className={`text-lg font-bold font-mono ${color}`}>{value != null ? value.toFixed(2) : '—'}</div>
-        {grade && <div className={`text-[9px] ${color}`}>{grade === 'excellent' ? '优秀' : grade === 'acceptable' ? '合格' : '不足'}</div>}
+        {grade && <div className={`text-[11px] ${color}`}>{grade === 'excellent' ? '优秀' : grade === 'acceptable' ? '合格' : '不足'}</div>}
       </CardContent>
     </Card>
   );

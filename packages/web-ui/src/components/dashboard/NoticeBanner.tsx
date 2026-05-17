@@ -59,7 +59,7 @@ export function NoticeBanner({ notices, onAcknowledge }: NoticeBannerProps) {
                 {n.channel && (
                   <span className="text-xs text-muted-foreground font-mono">{n.channel}</span>
                 )}
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground">
                   {n.source}
                 </span>
               </div>

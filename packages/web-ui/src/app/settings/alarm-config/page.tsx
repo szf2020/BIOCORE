@@ -210,12 +210,12 @@ export default function AlarmConfigPage() {
                         <td className="px-2 py-1.5">{r.name}</td>
                         <td className="px-2 py-1.5 font-mono text-muted-foreground">{r.owner || '全局'}</td>
                         <td className="px-2 py-1.5">
-                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${meta?.color}`}>
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold border ${meta?.color}`}>
                             <Icon className="w-3 h-3" />{meta?.label || r.severity}
                           </span>
                         </td>
                         <td className="px-2 py-1.5 font-mono text-muted-foreground">{r.channel || '—'}</td>
-                        <td className="px-2 py-1.5 font-mono text-[10px] text-muted-foreground whitespace-nowrap">
+                        <td className="px-2 py-1.5 font-mono text-xs text-muted-foreground whitespace-nowrap">
                           {r.threshold_low != null ? r.threshold_low : '—'} / {r.threshold_high != null ? r.threshold_high : '—'}
                           {r.hysteresis != null && <> · ±{r.hysteresis}</>}
                         </td>

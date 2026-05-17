@@ -26,11 +26,11 @@ export function BranchNode({ data, selected }: NodeProps) {
         <GitBranch className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
         <div className="text-xs font-semibold text-amber-200">IF / ELSE</div>
       </div>
-      <div className="mt-1 pt-1 border-t border-amber-700/40 text-[10px] font-mono text-amber-100 truncate">
+      <div className="mt-1 pt-1 border-t border-amber-700/40 text-xs font-mono text-amber-100 truncate">
         {expr}
       </div>
       {d.valid === false && (
-        <div className="mt-0.5 text-[9px] text-red-600">表达式无效</div>
+        <div className="mt-0.5 text-[11px] text-red-600">表达式无效</div>
       )}
 
       {/* true edge (右上) */}

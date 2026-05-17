@@ -110,7 +110,7 @@
   }
 
   .mes-panel-title {
-    @apply text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground;
+    @apply text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground;
   }
 
   .mes-panel-body { @apply p-4; }

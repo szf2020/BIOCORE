@@ -280,7 +280,7 @@ export default function DoeDetailPage() {
             <FlaskConical className="w-4 h-4 text-primary" />
             {study.name}
           </h1>
-          <div className="text-[10px] font-mono text-muted-foreground">
+          <div className="text-xs font-mono text-muted-foreground">
             {study.study_id} · {study.design_type} · 状态: {study.status}
           </div>
         </div>
@@ -291,7 +291,7 @@ export default function DoeDetailPage() {
             <Wand2 className="w-3.5 h-3.5 mr-1" />物化配方 ({study.runs.length} 份)
           </Button>
         ) : (
-          <span className="text-[10px] text-muted-foreground font-mono">
+          <span className="text-xs text-muted-foreground font-mono">
             基础配方: {study.base_recipe_id} v{study.base_recipe_version}
           </span>
         )}
@@ -360,7 +360,7 @@ export default function DoeDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  <div className="grid grid-cols-12 gap-2 text-[10px] text-muted-foreground px-1">
+                  <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
                     <div className="col-span-2">名称</div>
                     <div className="col-span-4">配方参数路径 (phase_id.param_key)</div>
                     <div className="col-span-2">最小值</div>
@@ -407,7 +407,7 @@ export default function DoeDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  <div className="grid grid-cols-12 gap-2 text-[10px] text-muted-foreground px-1">
+                  <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
                     <div className="col-span-4">名称</div>
                     <div className="col-span-4">来源</div>
                     <div className="col-span-3">目标</div>
@@ -455,7 +455,7 @@ export default function DoeDetailPage() {
             </Button>
           </div>
 
-          <div className="text-[10px] text-muted-foreground">
+          <div className="text-xs text-muted-foreground">
             <div>• 全因子: 点数 = 水平^k · CCD: 点数 ≈ 2^k+2k+3 · LHS: 点数 = 上方指定的 N</div>
             <div>• 因子路径格式: <code className="font-mono">{'{phase_id 或 phase_type}.{参数 key}'}</code> · 支持嵌套 (用 . 分隔)</div>
           </div>
@@ -496,23 +496,23 @@ export default function DoeDetailPage() {
                     <CardContent className="p-3 space-y-2">
                       <div className="flex items-center gap-2 text-xs">
                         <span className="font-mono font-semibold w-8">#{run.run_index}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${st.bg}`}>{st.label}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${st.bg}`}>{st.label}</span>
                         {run.recipe_id && (
                           <button
                             onClick={() => router.push(`/recipes/${encodeURIComponent(run.recipe_id!)}/edit?version=${run.recipe_version}`)}
-                            className="text-[10px] text-primary hover:underline flex items-center gap-0.5 font-mono"
+                            className="text-xs text-primary hover:underline flex items-center gap-0.5 font-mono"
                           >
                             <BookOpen className="w-3 h-3" /> {run.recipe_id}
                           </button>
                         )}
                         {run.batch_id && (
-                          <span className="text-[10px] text-muted-foreground font-mono">批次: {run.batch_id}</span>
+                          <span className="text-xs text-muted-foreground font-mono">批次: {run.batch_id}</span>
                         )}
                       </div>
                       {/* 因子值 */}
                       <div className="flex flex-wrap gap-1.5">
                         {Object.entries(run.factor_values).map(([k, v]) => (
-                          <span key={k} className="text-[10px] bg-muted/50 px-2 py-0.5 rounded font-mono">
+                          <span key={k} className="text-xs bg-muted/50 px-2 py-0.5 rounded font-mono">
                             {k}={typeof v === 'number' ? v.toFixed(3) : String(v)}
                           </span>
                         ))}
@@ -522,7 +522,7 @@ export default function DoeDetailPage() {
                         <div className="flex items-center gap-2 pt-1">
                           {study.responses.map(resp => (
                             <div key={resp.name} className="flex items-center gap-1">
-                              <span className="text-[10px] text-muted-foreground">{resp.name}:</span>
+                              <span className="text-xs text-muted-foreground">{resp.name}:</span>
                               <Input
                                 type="number"
                                 className="h-6 w-20 text-[11px]"
@@ -543,7 +543,7 @@ export default function DoeDetailPage() {
                       {run.status === 'completed' && run.response_values && (
                         <div className="flex flex-wrap gap-1.5 pt-1">
                           {Object.entries(run.response_values).map(([k, v]) => (
-                            <span key={k} className="text-[10px] bg-green-500/15 text-emerald-600 px-2 py-0.5 rounded font-mono">
+                            <span key={k} className="text-xs bg-green-500/15 text-emerald-600 px-2 py-0.5 rounded font-mono">
                               {k}={typeof v === 'number' ? v.toFixed(3) : String(v)}
                             </span>
                           ))}
@@ -582,11 +582,11 @@ export default function DoeDetailPage() {
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-primary" />
                   <span className="text-sm font-semibold">{respResult.response}</span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     目标: {respResult.goal === 'max' ? '最大化' : respResult.goal === 'min' ? '最小化' : '目标值'}
                   </span>
                   {respResult.analysis_type && (
-                    <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded">
+                    <span className="text-[11px] bg-primary/15 text-primary px-1.5 py-0.5 rounded">
                       {respResult.analysis_type === 'orthogonal' ? '极差+ANOVA' : respResult.analysis_type === 'regression' ? '回归' : 'RSM'}
                     </span>
                   )}
@@ -626,7 +626,7 @@ export default function DoeDetailPage() {
                           </tbody>
                         </table>
                       </div>
-                      <div className="text-[10px] text-muted-foreground mt-1">
+                      <div className="text-xs text-muted-foreground mt-1">
                         排名: {respResult.rangeAnalysis?.ranking?.join(' > ')}
                       </div>
                     </div>
@@ -672,7 +672,7 @@ export default function DoeDetailPage() {
                           </table>
                         </div>
                         {respResult.anova.pooledFactors?.length > 0 && (
-                          <div className="text-[10px] text-muted-foreground mt-1">
+                          <div className="text-xs text-muted-foreground mt-1">
                             合并到误差项: {respResult.anova.pooledFactors.join(', ')}
                           </div>
                         )}
@@ -784,7 +784,7 @@ export default function DoeDetailPage() {
                         <div className="flex items-center gap-2">
                           <CheckCircle className="w-3.5 h-3.5 text-primary" />
                           <span className="text-xs font-semibold">推荐最优点</span>
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             预测: <strong>{respResult.optimum.predicted_response?.toFixed(4)}</strong>
                           </span>
                         </div>
@@ -903,13 +903,13 @@ function DoeStepper({ study, onAutoCollect, onCreateOptimal }: { study: DoeStudy
         <React.Fragment key={i}>
           {i > 0 && <div className={`w-6 h-px ${s.done || steps[i - 1].done ? 'bg-primary/60' : 'bg-border'}`} />}
           <div className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded ${s.done ? 'bg-primary/10' : 'bg-muted/30'}`}>
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${s.done ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${s.done ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
               {s.done ? '✓' : i + 1}
             </div>
-            <span className="text-[10px] font-semibold">{s.label}</span>
-            <span className="text-[9px] text-muted-foreground">{s.detail}</span>
+            <span className="text-xs font-semibold">{s.label}</span>
+            <span className="text-[11px] text-muted-foreground">{s.detail}</span>
             {s.action && (
-              <button onClick={(s as any).onAction || onAutoCollect} className="text-[9px] text-primary hover:underline mt-0.5">
+              <button onClick={(s as any).onAction || onAutoCollect} className="text-[11px] text-primary hover:underline mt-0.5">
                 {(s as any).actionLabel || '一键收集'}
               </button>
             )}
@@ -967,11 +967,11 @@ function ContourPlot({ studyId, factors, responses }: {
           <select value={selResp} onChange={e => setSelResp(e.target.value)} className="h-7 px-2 text-[11px] rounded bg-background border border-border">
             {responses.map(r => <option key={r.name} value={r.name}>{r.name}</option>)}
           </select>
-          <span className="text-[10px] text-muted-foreground">X:</span>
+          <span className="text-xs text-muted-foreground">X:</span>
           <select value={selX} onChange={e => setSelX(e.target.value)} className="h-7 px-2 text-[11px] rounded bg-background border border-border">
             {factors.map(f => <option key={f.name} value={f.name}>{f.name}</option>)}
           </select>
-          <span className="text-[10px] text-muted-foreground">Y:</span>
+          <span className="text-xs text-muted-foreground">Y:</span>
           <select value={selY} onChange={e => setSelY(e.target.value)} className="h-7 px-2 text-[11px] rounded bg-background border border-border">
             {factors.filter(f => f.name !== selX).map(f => <option key={f.name} value={f.name}>{f.name}</option>)}
           </select>

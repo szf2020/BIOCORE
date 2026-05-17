@@ -120,7 +120,7 @@ export function RecipeHistoryDrawer({ open, recipeId, onClose }: Props) {
             <div className="text-center text-muted-foreground py-10 text-sm">无历史版本</div>
           ) : (
             <div className="p-4 space-y-2">
-              <p className="text-[10px] text-muted-foreground mb-2">选择 2 个版本对比差异</p>
+              <p className="text-xs text-muted-foreground mb-2">选择 2 个版本对比差异</p>
               {versions.map(v => {
                 const isSelected = selected.includes(v.version);
                 return (
@@ -137,28 +137,28 @@ export function RecipeHistoryDrawer({ open, recipeId, onClose }: Props) {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-mono text-sm font-semibold">v{v.version}</span>
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] ${STATUS_COLORS[v.status] || 'bg-gray-500/20'}`}>
+                          <span className={`px-1.5 py-0.5 rounded text-xs ${STATUS_COLORS[v.status] || 'bg-gray-500/20'}`}>
                             {v.status}
                           </span>
                           {v.dag_schema_version >= 2 && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300">
+                            <span className="px-1.5 py-0.5 rounded text-xs bg-purple-500/20 text-purple-300">
                               DAG v2
                             </span>
                           )}
                         </div>
                         <div className="text-xs text-foreground">{v.name}</div>
-                        <div className="text-[10px] text-muted-foreground mt-1">
+                        <div className="text-xs text-muted-foreground mt-1">
                           {new Date(v.created_at).toLocaleString('zh-CN')} · {v.created_by}
                         </div>
                         {v.parent_version && (
-                          <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                             <GitBranch className="w-2.5 h-2.5" />
                             源自 v{v.parent_version}
                           </div>
                         )}
                       </div>
                       {isSelected && (
-                        <div className="text-[10px] text-primary font-semibold">
+                        <div className="text-xs text-primary font-semibold">
                           {selected.indexOf(v.version) === 0 ? 'A' : 'B'}
                         </div>
                       )}

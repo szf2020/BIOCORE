@@ -188,7 +188,7 @@ export default function ApiKeysPage() {
               <Input value={newKeyName} onChange={e => setNewKeyName(e.target.value)}
                 placeholder="例如: mes-prod / mes-dev / external-bi"
                 className="mt-1" autoFocus />
-              <p className="text-[10px] text-muted-foreground mt-1">用于识别此 key 的用途, 撤销时会显示</p>
+              <p className="text-xs text-muted-foreground mt-1">用于识别此 key 的用途, 撤销时会显示</p>
             </div>
           </div>
           <DialogFooter>
@@ -227,7 +227,7 @@ export default function ApiKeysPage() {
             </div>
             <div className="text-xs text-muted-foreground">
               使用示例:
-              <pre className="mt-1.5 bg-black/30 p-2 rounded font-mono text-[10px] overflow-x-auto">{`curl -H "X-API-Key: ${createdRawKey}" http://localhost:3001/api/v1/reactors`}</pre>
+              <pre className="mt-1.5 bg-black/30 p-2 rounded font-mono text-xs overflow-x-auto">{`curl -H "X-API-Key: ${createdRawKey}" http://localhost:3001/api/v1/reactors`}</pre>
             </div>
           </div>
           <DialogFooter>
