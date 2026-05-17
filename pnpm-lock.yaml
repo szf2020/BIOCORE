@@ -95,8 +95,6 @@ importers:
         specifier: ^1.2.0
         version: 1.6.1(@types/node@25.6.0)(jsdom@24.1.3)(terser@5.46.1)
 
-  packages/fuxa: {}
-
   packages/notifier:
     dependencies:
       zod:
