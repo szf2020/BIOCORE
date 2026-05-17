@@ -5,20 +5,30 @@
 
 import type { CanvasController } from './canvas-svg';
 import type { TransformHandles } from './transform-handles';
-import { clientToSvg, applyHandleDrag, snap, type HandleId, type Box, type Point } from './geometry';
-import { GRID_SIZE } from '../services/editor-store';
+import { clientToSvg, applyHandleDrag, snap, computeBbox, intersectsBox, type HandleId, type Box, type Point } from './geometry';
+import { useEditorStore } from '../services/editor-store';
 
 export type PointerState =
   | { kind: 'idle' }
-  | { kind: 'drag-body'; widgetId: string; startPt: Point; startBox: Box }
-  | { kind: 'drag-handle'; widgetId: string; handle: HandleId; startPt: Point; startBox: Box };
+  | { kind: 'drag-body'; widgetIds: string[]; startPt: Point; startBoxes: Map<string, Box> }
+  | { kind: 'drag-handle'; widgetId: string; handle: HandleId; startPt: Point; startBox: Box }
+  | { kind: 'box-select'; startPt: Point; currentPt: Point; shiftKey: boolean };
 
 export interface PointerToolsCallbacks {
   getWidgetAt: (pt: Point) => { id: string; box: Box } | null;
   onWidgetTransformed: (id: string, newBox: Box) => void;
-  onSelect: (id: string | null) => void;
+  onSelect: (id: string | null, additive: boolean) => void;
   getSnapEnabled: () => boolean;
+  getSelectedIds: () => string[];
+  getWidgetBoxes: (ids: string[]) => Map<string, Box>;
+  getAllWidgetBoxes: () => Map<string, Box>;
+  onBoxSelect: (idsInBox: string[], additive: boolean) => void;
+  onWidgetTransformedBatch: (entries: { id: string; newBox: Box }[]) => void;
+  onDragVisualUpdate: (box: Box | null) => void;
+  onBoxSelectMove: (rect: Box | null) => void;
 }
+
+const CLICK_DRAG_THRESHOLD = 3;
 
 export class PointerTools {
   state: PointerState = { kind: 'idle' };
@@ -66,49 +76,170 @@ export class PointerTools {
 
     const widgetHit = this.cb.getWidgetAt(pt);
     if (widgetHit) {
-      this.cb.onSelect(widgetHit.id);
-      this.state = { kind: 'drag-body', widgetId: widgetHit.id, startPt: pt, startBox: widgetHit.box };
-    } else {
-      this.cb.onSelect(null);
+      if (e.shiftKey) {
+        this.cb.onSelect(widgetHit.id, true);
+        return;
+      }
+      const selected = this.cb.getSelectedIds();
+      if (selected.includes(widgetHit.id) && selected.length >= 2) {
+        const startBoxes = this.cb.getWidgetBoxes(selected);
+        this.state = { kind: 'drag-body', widgetIds: selected, startPt: pt, startBoxes };
+      } else {
+        this.cb.onSelect(widgetHit.id, false);
+        const startBoxes = new Map<string, Box>([[widgetHit.id, widgetHit.box]]);
+        this.state = { kind: 'drag-body', widgetIds: [widgetHit.id], startPt: pt, startBoxes };
+      }
+      return;
     }
+
+    this.state = { kind: 'box-select', startPt: pt, currentPt: pt, shiftKey: e.shiftKey };
   }
 
   handleMouseMove(e: MouseEvent): void {
     if (this.destroyed) return;
     if (this.state.kind === 'idle') return;
     const pt = this.clientPt(e);
+
+    if (this.state.kind === 'box-select') {
+      this.state.currentPt = pt;
+      const rect: Box = {
+        x: Math.min(this.state.startPt.x, pt.x),
+        y: Math.min(this.state.startPt.y, pt.y),
+        w: Math.abs(pt.x - this.state.startPt.x),
+        h: Math.abs(pt.y - this.state.startPt.y),
+      };
+      this.cb.onBoxSelectMove(rect);
+      return;
+    }
+
     const dx = pt.x - this.state.startPt.x;
     const dy = pt.y - this.state.startPt.y;
-    let newBox = this.state.kind === 'drag-body'
-      ? { x: this.state.startBox.x + dx, y: this.state.startBox.y + dy, w: this.state.startBox.w, h: this.state.startBox.h }
-      : applyHandleDrag(this.state.startBox, this.state.handle, dx, dy);
-    if (this.cb.getSnapEnabled()) newBox = snap(newBox, GRID_SIZE);
-    this.canvas.upsertWidget({ id: this.state.widgetId, type: 'svg-ext-value' as any, property: {} as any, x: newBox.x, y: newBox.y, w: newBox.w, h: newBox.h });
-    this.handles.updateBox(newBox);
+    const gridSize = useEditorStore.getState().gridSize;
+    const snapOn = this.cb.getSnapEnabled();
+
+    if (this.state.kind === 'drag-handle') {
+      let newBox = applyHandleDrag(this.state.startBox, this.state.handle, dx, dy);
+      if (snapOn) newBox = snap(newBox, gridSize);
+      this.canvas.upsertWidget({ id: this.state.widgetId, type: 'svg-ext-value' as any, property: {} as any, x: newBox.x, y: newBox.y, w: newBox.w, h: newBox.h });
+      this.handles.updateBox(newBox);
+      this.cb.onDragVisualUpdate(newBox);
+      return;
+    }
+
+    // drag-body (single or multi)
+    const newBoxes: { id: string; newBox: Box }[] = [];
+    for (const id of this.state.widgetIds) {
+      const sb = this.state.startBoxes.get(id);
+      if (!sb) continue;
+      let nb: Box = { x: sb.x + dx, y: sb.y + dy, w: sb.w, h: sb.h };
+      if (snapOn) nb = snap(nb, gridSize);
+      newBoxes.push({ id, newBox: nb });
+      this.canvas.upsertWidget({ id, type: 'svg-ext-value' as any, property: {} as any, x: nb.x, y: nb.y, w: nb.w, h: nb.h });
+    }
+    if (newBoxes.length === 0) return;
+    if (newBoxes.length === 1) {
+      this.handles.updateBox(newBoxes[0].newBox);
+      this.cb.onDragVisualUpdate(newBoxes[0].newBox);
+    } else {
+      const bbox = computeBbox(newBoxes.map((e) => e.newBox));
+      this.handles.updateBox(bbox);
+      this.cb.onDragVisualUpdate(bbox);
+    }
   }
 
   handleMouseUp(e: MouseEvent): void {
     if (this.destroyed) return;
     if (this.state.kind === 'idle') return;
     const pt = this.clientPt(e);
+
+    if (this.state.kind === 'box-select') {
+      const distance = Math.max(Math.abs(pt.x - this.state.startPt.x), Math.abs(pt.y - this.state.startPt.y));
+      if (distance < CLICK_DRAG_THRESHOLD) {
+        this.cb.onSelect(null, this.state.shiftKey);
+      } else {
+        const finalBox: Box = {
+          x: Math.min(this.state.startPt.x, pt.x),
+          y: Math.min(this.state.startPt.y, pt.y),
+          w: Math.abs(pt.x - this.state.startPt.x),
+          h: Math.abs(pt.y - this.state.startPt.y),
+        };
+        const allBoxes = this.cb.getAllWidgetBoxes();
+        const idsInBox: string[] = [];
+        allBoxes.forEach((box, id) => {
+          if (intersectsBox(finalBox, box)) idsInBox.push(id);
+        });
+        this.cb.onBoxSelect(idsInBox, this.state.shiftKey);
+      }
+      this.state = { kind: 'idle' };
+      this.cb.onBoxSelectMove(null);
+      return;
+    }
+
     const dx = pt.x - this.state.startPt.x;
     const dy = pt.y - this.state.startPt.y;
-    let newBox = this.state.kind === 'drag-body'
-      ? { x: this.state.startBox.x + dx, y: this.state.startBox.y + dy, w: this.state.startBox.w, h: this.state.startBox.h }
-      : applyHandleDrag(this.state.startBox, this.state.handle, dx, dy);
-    if (this.cb.getSnapEnabled()) newBox = snap(newBox, GRID_SIZE);
-    this.cb.onWidgetTransformed(this.state.widgetId, newBox);
+    const gridSize = useEditorStore.getState().gridSize;
+    const snapOn = this.cb.getSnapEnabled();
+
+    if (this.state.kind === 'drag-handle') {
+      let newBox = applyHandleDrag(this.state.startBox, this.state.handle, dx, dy);
+      if (snapOn) newBox = snap(newBox, gridSize);
+      this.cb.onWidgetTransformed(this.state.widgetId, newBox);
+      this.state = { kind: 'idle' };
+      this.cb.onDragVisualUpdate(null);
+      return;
+    }
+
+    if (dx === 0 && dy === 0) {
+      this.state = { kind: 'idle' };
+      this.cb.onDragVisualUpdate(null);
+      return;
+    }
+
+    const newBoxes: { id: string; newBox: Box }[] = [];
+    for (const id of this.state.widgetIds) {
+      const sb = this.state.startBoxes.get(id);
+      if (!sb) continue;
+      let nb: Box = { x: sb.x + dx, y: sb.y + dy, w: sb.w, h: sb.h };
+      if (snapOn) nb = snap(nb, gridSize);
+      newBoxes.push({ id, newBox: nb });
+    }
+    if (newBoxes.length > 0) this.cb.onWidgetTransformedBatch(newBoxes);
     this.state = { kind: 'idle' };
+    this.cb.onDragVisualUpdate(null);
   }
 
   cancel(): void {
     if (this.destroyed) return;
     if (this.state.kind === 'idle') return;
-    const startBox = this.state.startBox;
-    const widgetId = this.state.widgetId;
-    this.canvas.upsertWidget({ id: widgetId, type: 'svg-ext-value' as any, property: {} as any, x: startBox.x, y: startBox.y, w: startBox.w, h: startBox.h });
-    this.handles.updateBox(startBox);
+
+    if (this.state.kind === 'drag-handle') {
+      const startBox = this.state.startBox;
+      const widgetId = this.state.widgetId;
+      this.canvas.upsertWidget({ id: widgetId, type: 'svg-ext-value' as any, property: {} as any, x: startBox.x, y: startBox.y, w: startBox.w, h: startBox.h });
+      this.handles.updateBox(startBox);
+      this.state = { kind: 'idle' };
+      this.cb.onDragVisualUpdate(null);
+      return;
+    }
+
+    if (this.state.kind === 'drag-body') {
+      const dragState = this.state;
+      dragState.widgetIds.forEach((id) => {
+        const sb = dragState.startBoxes.get(id);
+        if (!sb) return;
+        this.canvas.upsertWidget({ id, type: 'svg-ext-value' as any, property: {} as any, x: sb.x, y: sb.y, w: sb.w, h: sb.h });
+      });
+      const boxes = Array.from(dragState.startBoxes.values());
+      if (boxes.length === 1) this.handles.updateBox(boxes[0]);
+      else this.handles.updateBox(computeBbox(boxes));
+      this.state = { kind: 'idle' };
+      this.cb.onDragVisualUpdate(null);
+      return;
+    }
+
+    // box-select
     this.state = { kind: 'idle' };
+    this.cb.onBoxSelectMove(null);
   }
 
   destroy(): void {

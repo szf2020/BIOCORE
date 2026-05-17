@@ -11,6 +11,16 @@ let onSelect: ReturnType<typeof vi.fn>;
 let getWidgetAt: ReturnType<typeof vi.fn>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let getSnapEnabled: ReturnType<typeof vi.fn<any[], any>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let getSelectedIds: ReturnType<typeof vi.fn<any[], any>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let getWidgetBoxes: ReturnType<typeof vi.fn<any[], any>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let getAllWidgetBoxes: ReturnType<typeof vi.fn<any[], any>>;
+let onBoxSelect: ReturnType<typeof vi.fn>;
+let onWidgetTransformedBatch: ReturnType<typeof vi.fn>;
+let onDragVisualUpdate: ReturnType<typeof vi.fn>;
+let onBoxSelectMove: ReturnType<typeof vi.fn>;
 let tools: PointerTools;
 
 beforeEach(() => {
@@ -21,11 +31,25 @@ beforeEach(() => {
   onSelect = vi.fn();
   getWidgetAt = vi.fn();
   getSnapEnabled = vi.fn(() => false);
+  getSelectedIds = vi.fn(() => [] as string[]);
+  getWidgetBoxes = vi.fn(() => new Map<string, Box>());
+  getAllWidgetBoxes = vi.fn(() => new Map<string, Box>());
+  onBoxSelect = vi.fn();
+  onWidgetTransformedBatch = vi.fn();
+  onDragVisualUpdate = vi.fn();
+  onBoxSelectMove = vi.fn();
   tools = new PointerTools(canvas as any, handles as any, {
     getWidgetAt: (pt) => getWidgetAt(pt) as { id: string; box: Box } | null,
     onWidgetTransformed: (id, box) => onWidgetTransformed(id, box),
-    onSelect: (id) => onSelect(id),
+    onSelect: (id, additive) => onSelect(id, additive),
     getSnapEnabled: () => getSnapEnabled() as boolean,
+    getSelectedIds: () => getSelectedIds() as string[],
+    getWidgetBoxes: (ids) => getWidgetBoxes(ids) as Map<string, Box>,
+    getAllWidgetBoxes: () => getAllWidgetBoxes() as Map<string, Box>,
+    onBoxSelect: (ids, additive) => onBoxSelect(ids, additive),
+    onWidgetTransformedBatch: (entries) => onWidgetTransformedBatch(entries),
+    onDragVisualUpdate: (box) => onDragVisualUpdate(box),
+    onBoxSelectMove: (rect) => onBoxSelectMove(rect),
   });
 });
 
@@ -49,22 +73,22 @@ describe('PointerTools (SP-FX-3a)', () => {
     expect(tools.state.kind).toBe('idle');
   });
 
-  it('mousedown on empty area: onSelect(null), stays idle', () => {
+  it('mousedown on empty area transitions to box-select (onSelect deferred to mouseup)', () => {
     getWidgetAt.mockReturnValue(null);
     tools.handleMouseDown(md(50, 50));
-    expect(onSelect).toHaveBeenCalledWith(null);
-    expect(tools.state.kind).toBe('idle');
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(tools.state.kind).toBe('box-select');
   });
 
   it('mousedown on widget body: onSelect + transitions to drag-body', () => {
     const box: Box = { x: 10, y: 10, w: 50, h: 30 };
     getWidgetAt.mockReturnValue({ id: 'w1', box });
     tools.handleMouseDown(md(30, 25));
-    expect(onSelect).toHaveBeenCalledWith('w1');
+    expect(onSelect).toHaveBeenCalledWith('w1', false);
     expect(tools.state.kind).toBe('drag-body');
     if (tools.state.kind === 'drag-body') {
-      expect(tools.state.widgetId).toBe('w1');
-      expect(tools.state.startBox).toEqual(box);
+      expect(tools.state.widgetIds[0]).toBe('w1');
+      expect(tools.state.startBoxes.get('w1')).toEqual(box);
     }
   });
 
@@ -90,12 +114,14 @@ describe('PointerTools (SP-FX-3a)', () => {
     expect(handles.updateBox).toHaveBeenCalledWith({ x: 20, y: 15, w: 50, h: 30 });
   });
 
-  it('drag-body mouseup fires onWidgetTransformed and returns to idle', () => {
+  it('drag-body mouseup fires onWidgetTransformedBatch and returns to idle', () => {
     getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 10, y: 10, w: 50, h: 30 } });
     tools.handleMouseDown(md(20, 20));
     tools.handleMouseMove(mm(30, 25));
     tools.handleMouseUp(mu(30, 25));
-    expect(onWidgetTransformed).toHaveBeenCalledWith('w1', { x: 20, y: 15, w: 50, h: 30 });
+    expect(onWidgetTransformedBatch).toHaveBeenCalledWith([
+      { id: 'w1', newBox: { x: 20, y: 15, w: 50, h: 30 } },
+    ]);
     expect(tools.state.kind).toBe('idle');
   });
 
@@ -141,7 +167,7 @@ describe('PointerTools (SP-FX-3a)', () => {
     getWidgetAt.mockReturnValue({ id: 'w2', box: { x: 100, y: 100, w: 60, h: 40 } });
     tools.handleMouseDown(md(110, 110));
     expect(tools.state.kind).toBe('drag-body');
-    if (tools.state.kind === 'drag-body') expect(tools.state.widgetId).toBe('w2');
+    if (tools.state.kind === 'drag-body') expect(tools.state.widgetIds[0]).toBe('w2');
   });
 });
 
@@ -201,5 +227,100 @@ describe('PointerTools snap + cancel (SP-FX-3b.1)', () => {
     tools.cancel();
     expect(canvas.upsertWidget).not.toHaveBeenCalled();
     expect(handles.updateBox).not.toHaveBeenCalled();
+  });
+});
+
+describe('PointerTools multi-drag + box-select + threshold (SP-FX-3b.2.1)', () => {
+  it('drag-body single widget: widgetIds=[id], startBoxes 1 entry (regression)', () => {
+    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 10, y: 10, w: 50, h: 30 } });
+    tools.handleMouseDown(md(20, 20));
+    expect(tools.state.kind).toBe('drag-body');
+    if (tools.state.kind === 'drag-body') {
+      expect(tools.state.widgetIds).toEqual(['w1']);
+      expect(tools.state.startBoxes.size).toBe(1);
+    }
+  });
+
+  it('drag-body multi widget: mousemove updates N canvas calls; mouseup fires onWidgetTransformedBatch with N entries', () => {
+    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 10, y: 10, w: 50, h: 30 } });
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    getWidgetBoxes.mockReturnValue(new Map<string, Box>([
+      ['w1', { x: 10, y: 10, w: 50, h: 30 }],
+      ['w2', { x: 100, y: 100, w: 60, h: 40 }],
+    ]));
+    tools.handleMouseDown(md(20, 20));
+    expect(tools.state.kind).toBe('drag-body');
+    if (tools.state.kind === 'drag-body') expect(tools.state.widgetIds).toEqual(['w1', 'w2']);
+    tools.handleMouseMove(mm(30, 30));
+    expect(canvas.upsertWidget.mock.calls.length).toBeGreaterThanOrEqual(2);
+    tools.handleMouseUp(mu(30, 30));
+    expect(onWidgetTransformedBatch).toHaveBeenCalledTimes(1);
+    const entries = onWidgetTransformedBatch.mock.calls[0][0];
+    expect(entries.length).toBe(2);
+  });
+
+  it('drag-body multi cancel() restores all widgets, no batch fire', () => {
+    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 10, y: 10, w: 50, h: 30 } });
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    getWidgetBoxes.mockReturnValue(new Map<string, Box>([
+      ['w1', { x: 10, y: 10, w: 50, h: 30 }],
+      ['w2', { x: 100, y: 100, w: 60, h: 40 }],
+    ]));
+    tools.handleMouseDown(md(20, 20));
+    tools.handleMouseMove(mm(30, 30));
+    canvas.upsertWidget.mockClear();
+    tools.cancel();
+    expect(onWidgetTransformedBatch).not.toHaveBeenCalled();
+    expect(canvas.upsertWidget.mock.calls.length).toBe(2);
+    expect(tools.state.kind).toBe('idle');
+  });
+
+  it('Shift+click on widget body: onSelect(id, true), state stays idle', () => {
+    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 10, y: 10, w: 50, h: 30 } });
+    const shiftDown = new MouseEvent('mousedown', { clientX: 20, clientY: 20, shiftKey: true, bubbles: true });
+    tools.handleMouseDown(shiftDown);
+    expect(onSelect).toHaveBeenCalledWith('w1', true);
+    expect(tools.state.kind).toBe('idle');
+  });
+
+  it('mousedown empty area enters box-select; mousemove >= 3px fires onBoxSelectMove', () => {
+    getWidgetAt.mockReturnValue(null);
+    tools.handleMouseDown(md(50, 50));
+    expect(tools.state.kind).toBe('box-select');
+    tools.handleMouseMove(mm(60, 80));
+    expect(onBoxSelectMove).toHaveBeenCalled();
+    const rect = onBoxSelectMove.mock.calls[onBoxSelectMove.mock.calls.length - 1][0];
+    expect(rect).toEqual({ x: 50, y: 50, w: 10, h: 30 });
+  });
+
+  it('mousedown empty + mouseup within 3px: onSelect(null, false)', () => {
+    getWidgetAt.mockReturnValue(null);
+    tools.handleMouseDown(md(50, 50));
+    tools.handleMouseUp(mu(51, 50));
+    expect(onSelect).toHaveBeenCalledWith(null, false);
+    expect(onBoxSelect).not.toHaveBeenCalled();
+    expect(tools.state.kind).toBe('idle');
+  });
+
+  it('box-select Shift+drag: onBoxSelect(idsInBox, additive=true)', () => {
+    getWidgetAt.mockReturnValue(null);
+    getAllWidgetBoxes.mockReturnValue(new Map<string, Box>([
+      ['w1', { x: 60, y: 60, w: 30, h: 30 }],
+      ['w2', { x: 200, y: 200, w: 30, h: 30 }],
+    ]));
+    const shiftDown = new MouseEvent('mousedown', { clientX: 50, clientY: 50, shiftKey: true, bubbles: true });
+    tools.handleMouseDown(shiftDown);
+    tools.handleMouseMove(mm(100, 100));
+    tools.handleMouseUp(mu(100, 100));
+    expect(onBoxSelect).toHaveBeenCalledWith(['w1'], true);
+    expect(tools.state.kind).toBe('idle');
+  });
+
+  it('drag-body dx=dy=0 mouseup: short-circuit (no onWidgetTransformedBatch)', () => {
+    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 10, y: 10, w: 50, h: 30 } });
+    tools.handleMouseDown(md(20, 20));
+    tools.handleMouseUp(mu(20, 20));
+    expect(onWidgetTransformedBatch).not.toHaveBeenCalled();
+    expect(tools.state.kind).toBe('idle');
   });
 });
