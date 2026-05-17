@@ -112,8 +112,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const stateUpdate = useRealtimeStore(s => s.stateUpdate);
   const alarms = useRealtimeStore(s => s.alarms);
   const heartbeatStatus = useRealtimeStore(s => s.heartbeatStatus);
+  const heartbeatByReactor = useRealtimeStore(s => s.heartbeatByReactor);
   const [elapsed, setElapsed] = useState(0);
   const isLoginPage = pathname === '/login';
+
+  // Reactor list for per-reactor PLC indicators in the header breadcrumb.
+  const [reactorIds, setReactorIds] = useState<string[]>([]);
+  useEffect(() => {
+    if (isLoginPage || !user) return;
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    apiFetch(`${API_BASE}/api/v1/reactors`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        // /api/v1/* responses are wrapped: { success, data: [...] }; /api/* returns raw array.
+        const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+        const ids = list.map((r: any) => r.id).filter((id: any) => typeof id === 'string');
+        setReactorIds(ids);
+      })
+      .catch(() => { /* leave empty; chip section just renders nothing */ });
+  }, [isLoginPage, user]);
 
   // 侧栏折叠状态: key = 父菜单 href, value = 是否折叠
   // localStorage 持久化用户偏好
@@ -300,15 +317,33 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             );
           })}
         </div>
-        {/* Bottom connection status (原状: 只显 WS + PLC) */}
-        <div className="px-4 py-3 text-xs text-muted-foreground space-y-1.5">
+        {/* Bottom: theme + user + clock cluster (moved from header right) + WS indicator. */}
+        <div className="px-4 py-3 text-xs text-muted-foreground space-y-2 border-t border-border/30">
+          <div className="flex items-center justify-between gap-2">
+            <ThemeToggle />
+            <LiveClock />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <User className="w-3.5 h-3.5 text-primary" />
+            </div>
+            <span
+              title={`${user.username} (${user.role})`}
+              className="font-medium text-foreground truncate flex-1 min-w-0"
+            >
+              {user.display_name}
+            </span>
+            <button
+              onClick={logout}
+              title="退出登录"
+              className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             <div className={`status-led ${wsConnected ? 'status-led-running' : 'status-led-stopped'}`} />
             <span className="font-mono text-[11px]">WS {wsConnected ? '已连接' : '未连接'}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={`status-led ${heartbeatStatus?.alive ? 'status-led-running' : 'status-led-idle'}`} />
-            <span className="font-mono text-[11px]">PLC {heartbeatStatus?.alive ? '在线' : '离线'}</span>
           </div>
         </div>
       </nav>
@@ -327,6 +362,29 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               {siteMeta?.reactor_group_name || process.env.NEXT_PUBLIC_REACTOR_GROUP_NAME || '反应器组未配置'}
             </span>
 
+            {/* Per-reactor PLC indicators (1 chip per reactor; independent state). */}
+            {reactorIds.length > 0 && (
+              <div className="flex items-center gap-1.5 ml-2">
+                {reactorIds.map((rid) => {
+                  // Convention: PLC connection_id == reactor.id. Fall back to
+                  // the global heartbeat when the per-reactor entry is absent
+                  // (legacy single-PLC deployment or before first heartbeat).
+                  const hb = heartbeatByReactor[rid] ?? (reactorIds.length === 1 ? heartbeatStatus : null);
+                  const alive = hb?.alive === true;
+                  return (
+                    <span
+                      key={rid}
+                      title={`${rid} · PLC ${alive ? '在线' : '离线'}`}
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-border/40 text-[11px] font-mono"
+                    >
+                      <div className={`status-led ${alive ? 'status-led-running' : 'status-led-idle'}`} />
+                      <span className="text-muted-foreground">{rid}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+
             {stateUpdate && (
               <>
                 <span className="ml-3 text-muted-foreground/30">·</span>
@@ -342,27 +400,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          {/* Middle: 报警信息条 (撑满中部, 至 max-w-5xl) */}
+          {/* Middle: 报警信息条 (撑满中部, 至 max-w-5xl) — theme/user/clock moved to sidebar bottom. */}
           <TopBarAlarmStrip alarms={alarms} />
-
-          {/* Right: theme + user + clock */}
-          <div className="flex items-center gap-4 shrink-0">
-            <ThemeToggle />
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="w-3.5 h-3.5 text-primary" />
-              </div>
-              <span title={`${user.username} (${user.role})`} className="font-medium text-foreground">{user.display_name}</span>
-              <button
-                onClick={logout}
-                title="退出登录"
-                className="ml-1 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <LiveClock />
-          </div>
         </header>
 
         {/* Page Content — on surface-base (lightest layer) */}

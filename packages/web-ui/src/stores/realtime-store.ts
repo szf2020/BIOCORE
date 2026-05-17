@@ -17,6 +17,8 @@ import type {
 interface HeartbeatStatus {
   pc: number;
   alive: boolean;
+  /** Server stamps each heartbeat with its PLC connection id (== reactor.id by convention). */
+  connection_id?: string;
 }
 
 interface StepProgress {
@@ -106,6 +108,9 @@ interface RealtimeState {
 
   // 新增频道数据
   heartbeatStatus: HeartbeatStatus | null;
+  // Per-reactor heartbeat keyed by PLC connection_id (== reactor.id by convention).
+  // Falls back to heartbeatStatus when payload lacks connection_id (legacy server).
+  heartbeatByReactor: Record<string, HeartbeatStatus>;
   stepProgress: StepProgress | null;
   aiSuggestions: AiSuggestion[];
   softSensorData: SoftSensorData | null;
@@ -163,6 +168,7 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
   cusumAlerts: [],
   cusumHistory: {},
   heartbeatStatus: null,
+  heartbeatByReactor: {},
   stepProgress: null,
   aiSuggestions: [],
   softSensorData: null,
@@ -332,9 +338,16 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
           break;
         }
 
-        case 'heartbeat':
-          set({ heartbeatStatus: msg.payload as HeartbeatStatus });
+        case 'heartbeat': {
+          const hb = msg.payload as HeartbeatStatus;
+          set((s) => ({
+            heartbeatStatus: hb,
+            heartbeatByReactor: hb.connection_id
+              ? { ...s.heartbeatByReactor, [hb.connection_id]: hb }
+              : s.heartbeatByReactor,
+          }));
           break;
+        }
 
         case 'step_progress': {
           const payload = msg.payload as Record<string, any>;

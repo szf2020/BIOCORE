@@ -746,7 +746,9 @@ async function startHeartbeat(conn: PLCConnectionConfig): Promise<void> {
       else { state.errors = 0; state.lastOk = Date.now(); }
     });
     state.counter = (state.counter + 1) % 65536;
-    broadcast('heartbeat', { pc: state.counter, alive: state.errors === 0 });
+    // connection_id lets the UI route per-reactor heartbeat by convention
+    // (conn.id ↔ reactor.id 1:1); falls back to global on legacy clients.
+    broadcast('heartbeat', { pc: state.counter, alive: state.errors === 0, connection_id: conn.id });
   }, 1000);
 
   heartbeats.set(conn.id, state);
