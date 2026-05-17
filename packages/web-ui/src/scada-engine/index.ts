@@ -10,3 +10,6 @@ export * as fuxaViewsApi from './api/fuxa-views';
 // SP-FX-2 additions
 export * from './services';
 export * from './dialogs';
+
+// SP-FX-3a additions
+export * from './editor';
