@@ -144,3 +144,93 @@ describe('fuxa-views-routes POST (SP-FX-1)', () => {
     expect(res.body.field).toBe('type');
   });
 });
+
+describe('fuxa-views-routes PUT (SP-FX-1)', () => {
+  function seed(sqlite: SQLiteService) {
+    sqlite.createFuxaView({
+      id: 'edit-1', name: 'Old', type: 'svg',
+      payload: JSON.stringify({ schemaVersion: 1 }),
+      width: 800, height: 600,
+    });
+  }
+
+  const updateBody = () => ({
+    name: 'New name',
+    type: 'svg',
+    payload: {
+      id: 'edit-1', name: 'New name', type: 'svg', svgcontent: '<svg/>',
+      width: 800, height: 600, items: {}, schemaVersion: 1,
+    },
+    width: 800,
+    height: 600,
+  });
+
+  it('PUT /fuxa-views/:id with matching If-Match updates and bumps version', async () => {
+    const { app, sqlite } = makeApp();
+    seed(sqlite);
+    const res = await request(app)
+      .put('/api/v1/fuxa-views/edit-1')
+      .set('If-Match', '1')
+      .send(updateBody());
+    expect(res.status).toBe(200);
+    expect(res.body.version).toBe(2);
+    expect(sqlite.getFuxaView('edit-1')!.name).toBe('New name');
+  });
+
+  it('PUT with stale If-Match returns 409 + currentVersion', async () => {
+    const { app, sqlite } = makeApp();
+    seed(sqlite);
+    sqlite.updateFuxaView('edit-1', { expectedVersion: 1, name: 'mid', payload: '{}' }); // → v2
+    const res = await request(app)
+      .put('/api/v1/fuxa-views/edit-1')
+      .set('If-Match', '1')
+      .send(updateBody());
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/stale/i);
+    expect(res.body.currentVersion).toBe(2);
+    expect(sqlite.getFuxaView('edit-1')!.name).toBe('mid');
+  });
+
+  it('PUT without If-Match returns 428', async () => {
+    const { app, sqlite } = makeApp();
+    seed(sqlite);
+    const res = await request(app)
+      .put('/api/v1/fuxa-views/edit-1')
+      .send(updateBody());
+    expect(res.status).toBe(428);
+  });
+
+  it('PUT with force=true overrides stale version', async () => {
+    const { app, sqlite } = makeApp();
+    seed(sqlite);
+    sqlite.updateFuxaView('edit-1', { expectedVersion: 1, name: 'mid', payload: '{}' }); // → v2
+    const res = await request(app)
+      .put('/api/v1/fuxa-views/edit-1?force=true')
+      .set('If-Match', '1')
+      .send(updateBody());
+    expect(res.status).toBe(200);
+    expect(res.body.version).toBe(3);
+    expect(sqlite.getFuxaView('edit-1')!.name).toBe('New name');
+  });
+
+  it('PUT for missing id returns 404', async () => {
+    const { app } = makeApp();
+    const res = await request(app)
+      .put('/api/v1/fuxa-views/missing')
+      .set('If-Match', '1')
+      .send(updateBody());
+    expect(res.status).toBe(404);
+  });
+
+  it('PUT with bad zod body returns 400', async () => {
+    const { app, sqlite } = makeApp();
+    seed(sqlite);
+    const b = updateBody();
+    const res = await request(app)
+      .put('/api/v1/fuxa-views/edit-1')
+      .set('If-Match', '1')
+      .send({ ...b, width: -10 });
+    expect(res.status).toBe(400);
+    expect(res.body.field).toBe('width');
+  });
+});

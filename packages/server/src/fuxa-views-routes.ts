@@ -45,6 +45,16 @@ const CreateBodySchema = z.object({
   is_template: z.number().int().min(0).max(1).optional(),
 });
 
+const UpdateBodySchema = z.object({
+  name: z.string().min(1),
+  type: z.enum(['svg', 'cards', 'svg-shapes']),
+  payload: PayloadSchema,
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  parent_view_id: z.string().nullable().optional(),
+  is_template: z.number().int().min(0).max(1).optional(),
+});
+
 function zodFail(res: import('express').Response, err: z.ZodError) {
   const first = err.issues[0];
   const path = first?.path ?? [];
@@ -106,6 +116,40 @@ export function registerFuxaViewsRoutes(apiRouter: Router, deps: FuxaViewsRoutes
       console.error('fuxa-views create failed:', (e as Error).message);
       res.status(500).json({ error: 'create failed' });
     }
+  });
+  // ─── Update with optimistic lock ─────────────────────────
+  apiRouter.put('/fuxa-views/:id', (req, res) => {
+    const ifMatch = req.header('If-Match');
+    if (!ifMatch) {
+      return res.status(428).json({ error: 'If-Match header required' });
+    }
+    const expectedVersion = Number(ifMatch);
+    if (!Number.isInteger(expectedVersion) || expectedVersion < 1) {
+      return res.status(400).json({ error: 'If-Match must be a positive integer', field: 'If-Match' });
+    }
+    const parsed = UpdateBodySchema.safeParse(req.body);
+    if (!parsed.success) return zodFail(res, parsed.error);
+    const existing = sqlite.getFuxaView(req.params.id);
+    if (!existing) return res.status(404).json({ error: '视图不存在' });
+    const v = parsed.data;
+    const force = req.query.force === 'true';
+    const ok = sqlite.updateFuxaView(req.params.id, {
+      expectedVersion,
+      name: v.name,
+      type: v.type,
+      payload: JSON.stringify(v.payload),
+      width: v.width,
+      height: v.height,
+      parent_view_id: v.parent_view_id ?? null,
+      is_template: v.is_template,
+      updated_by: getUserId(req),
+      force,
+    });
+    if (!ok) {
+      const cur = sqlite.getFuxaView(req.params.id)!;
+      return res.status(409).json({ error: 'stale version', currentVersion: cur.version });
+    }
+    res.json(sqlite.getFuxaView(req.params.id));
   });
 }
 
