@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { FuxaView } from '../models/hmi';
@@ -30,6 +30,16 @@ export function ViewPropertyDialog({ open, view, onSave, onCancel }: ViewPropert
   const [width, setWidth] = useState(String(view.width));
   const [height, setHeight] = useState(String(view.height));
   const [bg, setBg] = useState((view as any).background_color ?? '');
+
+  // SP-FX-2: resync form state when parent swaps the view prop (e.g. user
+  // selects a different view while the dialog stays open). Keyed by view.id
+  // to avoid resetting on harmless re-renders.
+  useEffect(() => {
+    setName(view.name);
+    setWidth(String(view.width));
+    setHeight(String(view.height));
+    setBg((view as any).background_color ?? '');
+  }, [view.id, view.name, view.width, view.height, (view as any).background_color]);
 
   const candidate = {
     name,
