@@ -89,7 +89,7 @@ function Section({ title, icon: Icon, color, items, kind, onAck, emptyText }: {
         </div>
       </div>
       {items.length === 0 ? (
-        <div className="px-3 py-3 text-center text-[11px] text-muted-foreground">{emptyText}</div>
+        <div className="px-3 py-3 text-center text-[12px] text-muted-foreground">{emptyText}</div>
       ) : (
         <div className="max-h-32 overflow-y-auto mes-scroll divide-y divide-border">
           {items.map(item => <Row key={item.id} item={item} kind={kind} onAck={onAck} />)}

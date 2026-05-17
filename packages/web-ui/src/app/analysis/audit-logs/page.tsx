@@ -243,7 +243,7 @@ export default function AuditLogsPage() {
                     <td className="px-3 py-2 font-medium">{l.user_id}</td>
                     <td className="px-3 py-2">
                       <Badge className={`text-sm ${style.color}`}>{style.label}</Badge>
-                      <div className="text-[11px] text-muted-foreground mt-0.5 font-mono">{l.action}</div>
+                      <div className="text-[12px] text-muted-foreground mt-0.5 font-mono">{l.action}</div>
                     </td>
                     <td className="px-3 py-2">
                       <div className="text-muted-foreground">{l.target_type}</div>

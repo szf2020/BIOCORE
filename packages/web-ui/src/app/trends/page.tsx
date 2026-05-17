@@ -375,7 +375,7 @@ export default function TrendsPage() {
                           next.set(rid, e.target.value);
                           return next;
                         })}
-                        className="h-8 px-1.5 text-[11px] rounded border bg-card max-w-[160px]">
+                        className="h-8 px-1.5 text-[12px] rounded border bg-card max-w-[160px]">
                         <option value={NO_BATCH}>不限定批次</option>
                         {list.map(b => (
                           <option key={b.batch_id} value={b.batch_id}>

@@ -200,7 +200,7 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                 <div className="space-y-1">
                   {template.steps.map((step: any, si: number) => (
                     <div key={si} className="flex items-center gap-1.5 text-sm bg-muted/40 rounded px-2 py-1">
-                      <span className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[11px] font-bold flex-shrink-0">
+                      <span className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[12px] font-bold flex-shrink-0">
                         {step.step_number || si + 1}
                       </span>
                       <span className="font-medium truncate">{step.name || `Step ${si + 1}`}</span>
@@ -236,7 +236,7 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                           </div>
                         ) : (
                           <Input
-                            className="h-6 text-[11px]"
+                            className="h-6 text-[12px]"
                             value={p.value ?? ''}
                             type={p.type === 'number' || typeof p.value === 'number' ? 'number' : 'text'}
                             onChange={e => {
@@ -374,7 +374,7 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                 </p>
               </div>
               {bothEmpty && (
-                <div className="text-[11px] text-red-500 bg-red-500/10 border border-red-500/30 rounded px-2 py-1">
+                <div className="text-[12px] text-red-500 bg-red-500/10 border border-red-500/30 rounded px-2 py-1">
                   必须至少设置 exitExpression 或 maxIterations 之一
                 </div>
               )}

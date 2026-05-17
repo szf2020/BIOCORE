@@ -95,7 +95,7 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-6 pt-4 border-t border-border text-center">
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             默认账号: <span className="font-mono text-foreground">admin / admin123</span>
           </p>
         </div>

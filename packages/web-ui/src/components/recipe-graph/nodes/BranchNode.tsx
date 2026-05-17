@@ -30,7 +30,7 @@ export function BranchNode({ data, selected }: NodeProps) {
         {expr}
       </div>
       {d.valid === false && (
-        <div className="mt-0.5 text-[11px] text-red-600">表达式无效</div>
+        <div className="mt-0.5 text-[12px] text-red-600">表达式无效</div>
       )}
 
       {/* true edge (右上) */}

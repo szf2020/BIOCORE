@@ -525,7 +525,7 @@ export default function DoeDetailPage() {
                               <span className="text-sm text-muted-foreground">{resp.name}:</span>
                               <Input
                                 type="number"
-                                className="h-6 w-20 text-[11px]"
+                                className="h-6 w-20 text-[12px]"
                                 value={respInputs[run.run_index]?.[resp.name] || ''}
                                 onChange={e => setRespInputs(prev => ({
                                   ...prev,
@@ -586,7 +586,7 @@ export default function DoeDetailPage() {
                     目标: {respResult.goal === 'max' ? '最大化' : respResult.goal === 'min' ? '最小化' : '目标值'}
                   </span>
                   {respResult.analysis_type && (
-                    <span className="text-[11px] bg-primary/15 text-primary px-1.5 py-0.5 rounded">
+                    <span className="text-[12px] bg-primary/15 text-primary px-1.5 py-0.5 rounded">
                       {respResult.analysis_type === 'orthogonal' ? '极差+ANOVA' : respResult.analysis_type === 'regression' ? '回归' : 'RSM'}
                     </span>
                   )}
@@ -600,7 +600,7 @@ export default function DoeDetailPage() {
                     {/* ── 正交设计: 极差分析表 ── */}
                     <div>
                       <div className="text-sm font-semibold mb-1 text-muted-foreground">极差分析 (因素重要性排名)</div>
-                      <div className="text-[11px] font-mono overflow-x-auto">
+                      <div className="text-[12px] font-mono overflow-x-auto">
                         <table className="w-full">
                           <thead><tr className="border-b border-border text-muted-foreground">
                             <th className="text-left py-1 pr-2">因素</th>
@@ -635,7 +635,7 @@ export default function DoeDetailPage() {
                     {respResult.anova && (
                       <div>
                         <div className="text-sm font-semibold mb-1 text-muted-foreground">方差分析 (F 检验)</div>
-                        <div className="text-[11px] font-mono overflow-x-auto">
+                        <div className="text-[12px] font-mono overflow-x-auto">
                           <table className="w-full">
                             <thead><tr className="border-b border-border text-muted-foreground">
                               <th className="text-left py-1 pr-2">来源</th>
@@ -707,7 +707,7 @@ export default function DoeDetailPage() {
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {Object.entries(respResult.rangeAnalysis?.optimalCombination || {}).map(([k, v]: [string, any]) => (
-                          <span key={k} className="text-[11px] bg-primary/15 text-primary px-2 py-0.5 rounded font-mono">
+                          <span key={k} className="text-[12px] bg-primary/15 text-primary px-2 py-0.5 rounded font-mono">
                             {k} = {typeof v === 'number' ? v : String(v)}
                           </span>
                         ))}
@@ -717,16 +717,16 @@ export default function DoeDetailPage() {
                 ) : respResult.analysis_type === 'regression' ? (
                   <>
                     {/* ── 均匀设计: 回归分析 ── */}
-                    <div className="flex flex-wrap gap-3 text-[11px] bg-muted/30 rounded p-2">
+                    <div className="flex flex-wrap gap-3 text-[12px] bg-muted/30 rounded p-2">
                       <span>类型: {respResult.regression_type}</span>
                       <span>R² = <strong>{respResult.regression?.rSquared?.toFixed(4)}</strong></span>
                       <span>Adj R² = <strong>{respResult.regression?.adjustedRSquared?.toFixed(4)}</strong></span>
                       <span>F = {respResult.regression?.fStatistic?.toFixed(3)} {respResult.regression?.fSignificance}</span>
                     </div>
-                    <div className="text-[11px] font-mono bg-muted/20 p-2 rounded break-all">
+                    <div className="text-[12px] font-mono bg-muted/20 p-2 rounded break-all">
                       {respResult.regression?.equation}
                     </div>
-                    <div className="text-[11px] font-mono space-y-0.5">
+                    <div className="text-[12px] font-mono space-y-0.5">
                       {respResult.regression?.coefficients?.map((c: any, idx: number) => (
                         <div key={idx} className="flex gap-2">
                           <span className="w-24">{c.term}</span>
@@ -740,7 +740,7 @@ export default function DoeDetailPage() {
                 ) : (
                   <>
                     {/* ── RSM 分析 (原有) ── */}
-                    <div className="flex flex-wrap gap-3 text-[11px] bg-muted/30 rounded p-2">
+                    <div className="flex flex-wrap gap-3 text-[12px] bg-muted/30 rounded p-2">
                       <span>R² = <strong>{respResult.model?.r_squared?.toFixed(4)}</strong></span>
                       <span>Adj R² = <strong>{respResult.model?.adjusted_r_squared?.toFixed(4)}</strong></span>
                       <span>Residual SE = <strong>{respResult.model?.residual_std_error?.toFixed(4)}</strong></span>
@@ -748,7 +748,7 @@ export default function DoeDetailPage() {
                     </div>
                     <div>
                       <div className="text-sm font-semibold mb-1 text-muted-foreground">系数 (coded)</div>
-                      <div className="text-[11px] space-y-0.5 font-mono">
+                      <div className="text-[12px] space-y-0.5 font-mono">
                         {respResult.model?.terms?.map((t: any, idx: number) => (
                           <div key={idx} className="flex gap-2">
                             <span className="w-20">{t.term}</span>
@@ -767,7 +767,7 @@ export default function DoeDetailPage() {
                             const max = Math.max(...respResult.pareto.map((x: any) => x.abs_coefficient));
                             const pct = max > 0 ? (p.abs_coefficient / max) * 100 : 0;
                             return (
-                              <div key={idx} className="flex items-center gap-2 text-[11px]">
+                              <div key={idx} className="flex items-center gap-2 text-[12px]">
                                 <span className="w-20 font-mono">{p.term}</span>
                                 <div className="flex-1 h-4 bg-muted/40 rounded overflow-hidden">
                                   <div className={`h-full ${p.significant ? 'bg-primary' : 'bg-muted-foreground/40'}`} style={{ width: `${pct}%` }} />
@@ -790,7 +790,7 @@ export default function DoeDetailPage() {
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           {Object.entries(respResult.optimum.optimum_factor_values || {}).map(([k, v]: [string, any]) => (
-                            <span key={k} className="text-[11px] bg-primary/15 text-primary px-2 py-0.5 rounded font-mono">
+                            <span key={k} className="text-[12px] bg-primary/15 text-primary px-2 py-0.5 rounded font-mono">
                               {k} = {typeof v === 'number' ? v.toFixed(3) : String(v)}
                             </span>
                           ))}
@@ -907,9 +907,9 @@ function DoeStepper({ study, onAutoCollect, onCreateOptimal }: { study: DoeStudy
               {s.done ? '✓' : i + 1}
             </div>
             <span className="text-sm font-semibold">{s.label}</span>
-            <span className="text-[11px] text-muted-foreground">{s.detail}</span>
+            <span className="text-[12px] text-muted-foreground">{s.detail}</span>
             {s.action && (
-              <button onClick={(s as any).onAction || onAutoCollect} className="text-[11px] text-primary hover:underline mt-0.5">
+              <button onClick={(s as any).onAction || onAutoCollect} className="text-[12px] text-primary hover:underline mt-0.5">
                 {(s as any).actionLabel || '一键收集'}
               </button>
             )}
@@ -964,15 +964,15 @@ function ContourPlot({ studyId, factors, responses }: {
       <CardContent className="p-4 space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-semibold text-muted-foreground">等高线图 (Contour)</span>
-          <select value={selResp} onChange={e => setSelResp(e.target.value)} className="h-7 px-2 text-[11px] rounded bg-background border border-border">
+          <select value={selResp} onChange={e => setSelResp(e.target.value)} className="h-7 px-2 text-[12px] rounded bg-background border border-border">
             {responses.map(r => <option key={r.name} value={r.name}>{r.name}</option>)}
           </select>
           <span className="text-sm text-muted-foreground">X:</span>
-          <select value={selX} onChange={e => setSelX(e.target.value)} className="h-7 px-2 text-[11px] rounded bg-background border border-border">
+          <select value={selX} onChange={e => setSelX(e.target.value)} className="h-7 px-2 text-[12px] rounded bg-background border border-border">
             {factors.map(f => <option key={f.name} value={f.name}>{f.name}</option>)}
           </select>
           <span className="text-sm text-muted-foreground">Y:</span>
-          <select value={selY} onChange={e => setSelY(e.target.value)} className="h-7 px-2 text-[11px] rounded bg-background border border-border">
+          <select value={selY} onChange={e => setSelY(e.target.value)} className="h-7 px-2 text-[12px] rounded bg-background border border-border">
             {factors.filter(f => f.name !== selX).map(f => <option key={f.name} value={f.name}>{f.name}</option>)}
           </select>
           {loading && <Loader2 className="w-3 h-3 animate-spin" />}

@@ -231,7 +231,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <Activity className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-[15px] font-bold tracking-tight text-foreground leading-none">BIOCore</h1>
+              <h1 className="text-base font-bold tracking-tight text-foreground leading-none">BIOCore</h1>
               <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wider">v0.1.0 · MES</p>
             </div>
             <ThemeToggle />
@@ -303,7 +303,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <div className="mt-0.5 space-y-0.5">
                     {item.children!.map(child => (
                       <Link key={child.href} href={child.href}
-                        className={`flex items-center gap-2.5 pl-9 pr-3 py-1.5 text-[13px] rounded-md transition-colors ${
+                        className={`flex items-center gap-2.5 pl-9 pr-3 py-1.5 text-[12px] rounded-md transition-colors ${
                           pathname === child.href
                             ? 'bg-primary/10 text-primary font-medium'
                             : 'text-muted-foreground hover:bg-accent hover:text-foreground'
@@ -322,7 +322,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="px-4 py-3 text-sm text-muted-foreground space-y-2 border-t border-border/30">
           <div className="flex items-center gap-2">
             <div className={`status-led ${wsConnected ? 'status-led-running' : 'status-led-stopped'}`} />
-            <span className="font-mono text-[11px]">WS {wsConnected ? '已连接' : '未连接'}</span>
+            <span className="font-mono text-[12px]">WS {wsConnected ? '已连接' : '未连接'}</span>
             <div className="ml-auto"><LiveClock /></div>
           </div>
           <div className="flex items-center gap-2">
@@ -373,7 +373,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     <span
                       key={rid}
                       title={`${rid} · PLC ${alive ? '在线' : '离线'}`}
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-border/40 text-[11px] font-mono"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-border/40 text-[12px] font-mono"
                     >
                       <div className={`status-led ${alive ? 'status-led-running' : 'status-led-idle'}`} />
                       <span className="text-muted-foreground">{rid}</span>

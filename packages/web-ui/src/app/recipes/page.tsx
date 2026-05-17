@@ -556,8 +556,8 @@ export default function RecipeListPage() {
                 ${hasRecipe ? 'bg-green-500/10 border-green-500/30 text-emerald-600' : 'bg-muted/30 border-border text-muted-foreground'}`}>
                 <div className={`w-1.5 h-1.5 rounded-full ${hasRecipe ? 'bg-green-500' : 'bg-gray-600'}`} />
                 <span className="font-semibold">{id}</span>
-                {hasRecipe && <span className="text-[11px]">{st.recipe_name || st.recipe_id}</span>}
-                {!hasRecipe && <span className="text-[11px]">空</span>}
+                {hasRecipe && <span className="text-[12px]">{st.recipe_name || st.recipe_id}</span>}
+                {!hasRecipe && <span className="text-[12px]">空</span>}
               </div>
             );
           })}
@@ -617,7 +617,7 @@ export default function RecipeListPage() {
                               : 'border-border bg-muted/20 text-muted-foreground hover:border-muted-foreground/50'
                           }`}>
                         <span className="font-semibold">{id}</span>
-                        <span className="text-[11px]">{hasRecipe ? '已有配方' : '空闲'}</span>
+                        <span className="text-[12px]">{hasRecipe ? '已有配方' : '空闲'}</span>
                       </button>
                     );
                   })}

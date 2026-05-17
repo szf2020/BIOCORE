@@ -33,7 +33,7 @@ export function PhaseNode({ data, selected }: NodeProps) {
         </div>
       </div>
       {paramCount > 0 && (
-        <div className="mt-1 pt-1 border-t border-border/40 text-[11px] text-muted-foreground">
+        <div className="mt-1 pt-1 border-t border-border/40 text-[12px] text-muted-foreground">
           {paramCount} 参数
         </div>
       )}

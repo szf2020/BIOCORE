@@ -191,8 +191,8 @@ export default function FormulaConfigPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">{f.name}</span>
                 <div className="flex items-center gap-1">
-                  {f.formula_type === 'expression' && <span className="text-[10px] bg-yellow-500/15 text-amber-600 px-1 rounded">自定义</span>}
-                  <span className="text-[11px] text-muted-foreground font-mono">{f.output_unit}</span>
+                  {f.formula_type === 'expression' && <span className="text-[12px] bg-yellow-500/15 text-amber-600 px-1 rounded">自定义</span>}
+                  <span className="text-[12px] text-muted-foreground font-mono">{f.output_unit}</span>
                 </div>
               </div>
               <div className="text-sm text-muted-foreground font-mono mt-1 truncate">
@@ -314,9 +314,9 @@ export default function FormulaConfigPage() {
                     <RotateCcw className="w-3.5 h-3.5 mr-1" />恢复默认
                   </Button>
                   {current.formula_type === 'expression' && (
-                    <span className="text-[11px] bg-yellow-500/15 text-amber-600 px-2 py-0.5 rounded">自定义</span>
+                    <span className="text-[12px] bg-yellow-500/15 text-amber-600 px-2 py-0.5 rounded">自定义</span>
                   )}
-                  <span className="text-[11px] text-muted-foreground ml-auto">
+                  <span className="text-[12px] text-muted-foreground ml-auto">
                     更新: {current.updated_at?.slice(0, 16) || '—'}
                   </span>
                 </div>

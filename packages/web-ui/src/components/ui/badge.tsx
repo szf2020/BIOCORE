@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
   // Clinical pill: high-saturation text on 10% opacity tinted background
-  "inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-wide transition-colors",
+  "inline-flex items-center rounded-md px-2 py-0.5 text-[12px] font-semibold tracking-wide transition-colors",
   {
     variants: {
       variant: {

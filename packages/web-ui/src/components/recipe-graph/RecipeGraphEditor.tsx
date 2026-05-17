@@ -498,7 +498,7 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
           </div>
           {templateGroups.map(group => (
             <div key={group.title} className="mb-3 space-y-1">
-              <div className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider px-1">
+              <div className="text-[12px] font-medium text-muted-foreground/70 uppercase tracking-wider px-1">
                 {group.title}
               </div>
               {group.items.map(tmpl => (
@@ -506,13 +506,13 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
                   key={tmpl.type}
                   type="button"
                   onClick={() => addPhaseFromTemplate(tmpl)}
-                  className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded border border-transparent hover:border-border hover:bg-muted/50 text-left text-[11px] group"
+                  className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded border border-transparent hover:border-border hover:bg-muted/50 text-left text-[12px] group"
                   title={`添加 ${phaseLabel(tmpl.type, tmpl.label)} 节点 (含 ${tmpl.fixed_steps} 步默认参数)`}
                 >
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'var(--primary, #1677ff)' }} />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{phaseLabel(tmpl.type, tmpl.label)}</div>
-                    <div className="text-[11px] text-muted-foreground truncate">{tmpl.fixed_steps} steps</div>
+                    <div className="text-[12px] text-muted-foreground truncate">{tmpl.fixed_steps} steps</div>
                   </div>
                   <Plus className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0" />
                 </button>
@@ -554,7 +554,7 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
       {/* react-flow 画布 */}
       <div className="flex-1 relative">
         {validationErrors.length > 0 && (
-          <div className="absolute top-2 left-2 right-2 z-10 bg-red-500/15 border border-red-500/40 rounded-md p-2 text-[11px] text-red-600 max-h-32 overflow-y-auto">
+          <div className="absolute top-2 left-2 right-2 z-10 bg-red-500/15 border border-red-500/40 rounded-md p-2 text-[12px] text-red-600 max-h-32 overflow-y-auto">
             <div className="font-semibold mb-1 flex items-center justify-between">
               <span>DAG 校验未通过 ({validationErrors.length})</span>
               <button onClick={() => setValidationErrors([])} className="text-red-600/70 hover:text-red-600">✕</button>

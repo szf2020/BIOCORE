@@ -138,7 +138,7 @@ export default function CleanPage() {
               <div key={ps.phase_index} className="bg-muted/20 border border-border/40 rounded p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">{phaseLabel(ps.phase_type || ps.phase_id)}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[11px] font-semibold border ${cfg}`}>
+                  <span className={`px-1.5 py-0.5 rounded text-[12px] font-semibold border ${cfg}`}>
                     {phaseStateLabel(ps.state)}
                   </span>
                 </div>

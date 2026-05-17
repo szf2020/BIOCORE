@@ -170,7 +170,7 @@
 
   /* ─── Clinical Pill Badges (high-saturation text on tinted bg) */
   .mes-badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide;
+    @apply inline-flex items-center px-2 py-0.5 rounded text-[12px] font-semibold tracking-wide;
   }
 
   .mes-badge-idle { @apply bg-[#8c8c8c]/10 text-[#6b7280]; }

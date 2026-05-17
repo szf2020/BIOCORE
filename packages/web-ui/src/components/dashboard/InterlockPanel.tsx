@@ -104,25 +104,25 @@ export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] 
           {/* IL 失败计数 */}
           {ilFailedCount > 0 && (
             <button type="button" onClick={() => setDetailOpen(true)} title="查看 IL/RF 详情"
-              className="px-2.5 py-1 rounded text-[15px] font-semibold bg-red-500/15 text-red-600 border border-red-500/30 hover:bg-red-500/25 transition-colors cursor-pointer">
+              className="px-2.5 py-1 rounded text-base font-semibold bg-red-500/15 text-red-600 border border-red-500/30 hover:bg-red-500/25 transition-colors cursor-pointer">
               IL {ilFailedCount} 失败
             </button>
           )}
           {ilFailedCount === 0 && ilWarningCount === 0 && ilData?.checked && (
             <button type="button" onClick={() => setDetailOpen(true)} title="查看 IL/RF 详情"
-              className="px-2.5 py-1 rounded text-[15px] font-semibold bg-green-500/15 text-emerald-600 border border-green-500/30 hover:bg-green-500/25 transition-colors cursor-pointer">
+              className="px-2.5 py-1 rounded text-base font-semibold bg-green-500/15 text-emerald-600 border border-green-500/30 hover:bg-green-500/25 transition-colors cursor-pointer">
               IL 全通过
             </button>
           )}
           {/* 运行故障计数 */}
           {activeRfCount > 0 ? (
             <button type="button" onClick={() => setDetailOpen(true)} title="查看 IL/RF 详情"
-              className="px-2.5 py-1 rounded text-[15px] font-semibold bg-yellow-500/15 text-amber-600 border border-yellow-500/30 hover:bg-yellow-500/25 transition-colors cursor-pointer">
+              className="px-2.5 py-1 rounded text-base font-semibold bg-yellow-500/15 text-amber-600 border border-yellow-500/30 hover:bg-yellow-500/25 transition-colors cursor-pointer">
               RF {activeRfCount} 触发
             </button>
           ) : rfList.length > 0 ? (
             <button type="button" onClick={() => setDetailOpen(true)} title="查看 IL/RF 详情"
-              className="px-2.5 py-1 rounded text-[15px] font-semibold bg-green-500/15 text-emerald-600 border border-green-500/30 hover:bg-green-500/25 transition-colors cursor-pointer">
+              className="px-2.5 py-1 rounded text-base font-semibold bg-green-500/15 text-emerald-600 border border-green-500/30 hover:bg-green-500/25 transition-colors cursor-pointer">
               RF 全通过
             </button>
           ) : null}
@@ -170,7 +170,7 @@ export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] 
                     const warn = il.severity === 'warning';
                     return (
                       <div key={il.id}
-                        className={`flex items-start gap-2 text-[11px] px-2 py-1.5 rounded border
+                        className={`flex items-start gap-2 text-[12px] px-2 py-1.5 rounded border
                           ${passed
                             ? 'bg-green-500/5 border-green-500/20 text-emerald-600'
                             : warn
@@ -184,7 +184,7 @@ export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] 
                           <div className="text-sm opacity-75 mt-0.5">{il.description}</div>
                           <div className="font-mono text-sm opacity-90 mt-0.5">{il.detail}</div>
                         </div>
-                        <span className={`px-1 rounded text-[11px] flex-shrink-0 self-start ${
+                        <span className={`px-1 rounded text-[12px] flex-shrink-0 self-start ${
                           warn ? 'bg-yellow-500/15 text-amber-600' : passed ? 'bg-green-500/15 text-emerald-600' : 'bg-red-500/15 text-red-600'
                         }`}>
                           {passed ? '通过' : warn ? '警告' : '失败'}
@@ -211,7 +211,7 @@ export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] 
                     const warn = rf.severity === 'warning';
                     return (
                       <div key={rf.code}
-                        className={`flex items-start gap-2 text-[11px] px-2 py-1.5 rounded border
+                        className={`flex items-start gap-2 text-[12px] px-2 py-1.5 rounded border
                           ${active
                             ? 'bg-red-500/10 border-red-500/40 text-red-600'
                             : 'bg-muted/20 border-border text-muted-foreground'
@@ -225,7 +225,7 @@ export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] 
                             <div className="text-sm opacity-90 mt-0.5">动作: {rf.holdAction}</div>
                           )}
                         </div>
-                        <span className={`px-1 rounded text-[11px] flex-shrink-0 self-start ${
+                        <span className={`px-1 rounded text-[12px] flex-shrink-0 self-start ${
                           warn ? 'bg-yellow-500/15 text-amber-600' : 'bg-red-500/15 text-red-600'
                         }`}>
                           {active ? '触发' : warn ? '警告' : '严重'}

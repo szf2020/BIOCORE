@@ -198,7 +198,7 @@ export function RecipeHistoryDrawer({ open, recipeId, onClose }: Props) {
                     {diff.diff.map((d, i) => {
                       const k = KIND_LABELS[d.kind] || KIND_LABELS.E;
                       return (
-                        <div key={i} className="text-[11px] font-mono leading-tight">
+                        <div key={i} className="text-[12px] font-mono leading-tight">
                           <span className={`${k.color} font-semibold mr-1.5`}>{k.label}</span>
                           <span className="text-muted-foreground">{d.path?.join('.') || '(root)'}</span>
                           {d.kind === 'E' && (

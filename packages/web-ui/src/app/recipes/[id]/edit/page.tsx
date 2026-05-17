@@ -139,7 +139,7 @@ function PhaseTemplatePalette({ templates, onAdd }: { templates: APIPhaseTemplat
                 <div className={`w-2 h-2 rounded-full ${c.dot} flex-shrink-0`} />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{tmpl.label}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">{tmpl.fixed_steps} Steps</div>
+                  <div className="text-[12px] text-muted-foreground truncate">{tmpl.fixed_steps} Steps</div>
                 </div>
                 <Plus className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100" />
               </button>

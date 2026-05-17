@@ -316,11 +316,11 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
             <span className="text-sm font-semibold text-foreground">配方主控</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`px-3 py-1 rounded text-[15px] font-semibold border ${stateColors[realBatchState] || stateColors.idle}`}>
+            <span className={`px-3 py-1 rounded text-base font-semibold border ${stateColors[realBatchState] || stateColors.idle}`}>
               {STATE_LABELS[realBatchState] || realBatchState}
             </span>
             {(state?.batch_elapsed_sec ?? 0) > 0 && (
-              <span className="font-mono text-[15px] text-foreground">{formatTime(state?.batch_elapsed_sec ?? 0)}</span>
+              <span className="font-mono text-base text-foreground">{formatTime(state?.batch_elapsed_sec ?? 0)}</span>
             )}
           </div>
         </div>
@@ -360,7 +360,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
               </div>
               <div className="flex gap-1.5">
                 <select value={selectedRecipeId} onChange={e => setSelectedRecipeId(e.target.value)}
-                  className="flex-1 h-7 rounded bg-background border border-border text-[11px] text-foreground px-2 truncate">
+                  className="flex-1 h-7 rounded bg-background border border-border text-[12px] text-foreground px-2 truncate">
                   <option value="">-- 选择已锁定配方 --</option>
                   {approvedRecipes.map(r => (
                     <option key={`${r.recipe_id}::${r.version}`} value={`${r.recipe_id}::${r.version}`}>
@@ -369,7 +369,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                   ))}
                 </select>
                 <button onClick={downloadRecipeToReactor} disabled={!selectedRecipeId || downloading}
-                  className={`h-7 px-2.5 rounded text-[11px] font-semibold whitespace-nowrap ${
+                  className={`h-7 px-2.5 rounded text-[12px] font-semibold whitespace-nowrap ${
                     selectedRecipeId && !downloading ? 'bg-primary text-white hover:bg-primary/90' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}>
                   {downloading ? '...' : '下载'}
                 </button>
@@ -407,9 +407,9 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                     <div className="space-y-1 max-h-48 overflow-y-auto mes-scroll pr-1">
                       {prodPhases.map((p: any, i: number) => (
                         <div key={i} className="flex items-center gap-2 text-sm px-1.5 py-1 rounded bg-muted/20">
-                          <span className="w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[11px] font-bold flex-shrink-0">{i + 1}</span>
+                          <span className="w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[12px] font-bold flex-shrink-0">{i + 1}</span>
                           <span className="font-medium text-foreground">{phaseLabel(p.type)}</span>
-                          <span className="ml-auto px-1.5 py-0.5 rounded text-[11px] bg-gray-500/15 text-gray-400 border border-gray-500/20">待执行</span>
+                          <span className="ml-auto px-1.5 py-0.5 rounded text-[12px] bg-gray-500/15 text-gray-400 border border-gray-500/20">待执行</span>
                         </div>
                       ))}
                     </div>
@@ -511,7 +511,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                           {ps.phase_id || phaseLabel(ps.phase_type, phaseTemplateMap[ps.phase_type])}
                         </span>
                         {ps.phase_type && (
-                          <span className="text-[11px] text-muted-foreground bg-muted/40 border border-border/60 px-1 py-0.5 rounded flex-shrink-0 hidden sm:inline">
+                          <span className="text-[12px] text-muted-foreground bg-muted/40 border border-border/60 px-1 py-0.5 rounded flex-shrink-0 hidden sm:inline">
                             {ps.phase_type}
                           </span>
                         )}
@@ -521,7 +521,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                             {durationH ? formatCountdown(elapsed, durationH) : formatTime(elapsed)}
                           </span>
                         )}
-                        <span className={`px-1.5 py-0.5 rounded text-[11px] font-semibold border ${cfg.bg}`}>{cfg.label}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[12px] font-semibold border ${cfg.bg}`}>{cfg.label}</span>
                       </div>
 
                       {(ps.state === 'running' || ps.state === 'held') && ps.total_steps > 0 && (

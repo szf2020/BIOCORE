@@ -266,7 +266,7 @@ function CapabilityCard({ label, value, grade }: { label: string; value: number 
       <CardContent className="p-3 text-center">
         <div className="text-sm text-muted-foreground">{label}</div>
         <div className={`text-lg font-bold font-mono ${color}`}>{value != null ? value.toFixed(2) : '—'}</div>
-        {grade && <div className={`text-[11px] ${color}`}>{grade === 'excellent' ? '优秀' : grade === 'acceptable' ? '合格' : '不足'}</div>}
+        {grade && <div className={`text-[12px] ${color}`}>{grade === 'excellent' ? '优秀' : grade === 'acceptable' ? '合格' : '不足'}</div>}
       </CardContent>
     </Card>
   );
