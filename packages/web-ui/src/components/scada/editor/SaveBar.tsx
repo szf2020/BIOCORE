@@ -48,13 +48,13 @@ export function SaveBar({ state, viewId, dispatch }: SaveBarProps) {
       <div className="flex items-center gap-3 text-sm">
         <Link href={`/scada/${viewId}`} className="text-blue-600 hover:underline">← 退出编辑</Link>
         <span className="text-gray-400">/</span>
-        <span className="font-mono text-xs text-gray-600">{viewId}</span>
+        <span className="font-mono text-sm text-gray-600">{viewId}</span>
       </div>
       <div className="flex items-center gap-3">
-        <span className="text-xs text-gray-500">
+        <span className="text-sm text-gray-500">
           {state.dirty ? '● 未保存' : '✓ 已保存'}
         </span>
-        {err && <span className="text-xs text-red-600">{err}</span>}
+        {err && <span className="text-sm text-red-600">{err}</span>}
         <button
           type="button"
           onClick={handleSave}

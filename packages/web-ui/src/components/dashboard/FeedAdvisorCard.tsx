@@ -68,7 +68,7 @@ export function FeedAdvisorCard({ batchId }: { batchId?: string }) {
       <div className="flex items-center gap-2 mb-3">
         <Droplets size={16} className="text-blue-600" />
         <h3 className="text-sm font-semibold text-foreground/90">补料建议</h3>
-        <span className="ml-auto text-xs text-muted-foreground/70">基于 Monod 动力学</span>
+        <span className="ml-auto text-sm text-muted-foreground/70">基于 Monod 动力学</span>
       </div>
 
       <div className="flex items-baseline gap-4 mb-2">
@@ -79,12 +79,12 @@ export function FeedAdvisorCard({ batchId }: { batchId?: string }) {
         <span className={`text-sm font-medium ${actionInfo.color}`}>
           {actionInfo.text}
         </span>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-sm text-muted-foreground">
           置信度 {(recommendation.confidence * 100).toFixed(0)}%
         </span>
       </div>
 
-      <p className="text-xs text-muted-foreground leading-relaxed">
+      <p className="text-sm text-muted-foreground leading-relaxed">
         {recommendation.reason}
       </p>
     </div>

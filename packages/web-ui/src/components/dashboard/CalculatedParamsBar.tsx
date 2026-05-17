@@ -40,7 +40,7 @@ function Cell({ label, value, unit }: { label: string; value: string; unit: stri
       <span className={cn('font-mono font-medium', value === '--' && 'text-muted-foreground')}>
         {value}
       </span>
-      <span className="text-xs text-muted-foreground">{unit}</span>
+      <span className="text-sm text-muted-foreground">{unit}</span>
     </div>
   );
 }

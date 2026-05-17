@@ -164,17 +164,17 @@ export default function ReviewQueuePage() {
         </div>
         <div className="flex items-center gap-2">
           {approvalCount > 0 && (
-            <div className="px-3 py-1.5 rounded bg-amber-500/10 text-xs text-amber-400">
+            <div className="px-3 py-1.5 rounded bg-amber-500/10 text-sm text-amber-400">
               待批准 <span className="font-bold">{approvalCount}</span>
             </div>
           )}
           {deprecationCount > 0 && (
-            <div className="px-3 py-1.5 rounded bg-red-500/10 text-xs text-red-600">
+            <div className="px-3 py-1.5 rounded bg-red-500/10 text-sm text-red-600">
               待废弃 <span className="font-bold">{deprecationCount}</span>
             </div>
           )}
           {pending.length === 0 && !loading && (
-            <div className="px-3 py-1.5 rounded bg-muted text-xs">
+            <div className="px-3 py-1.5 rounded bg-muted text-sm">
               待审 <span className="font-bold text-primary">0</span>
             </div>
           )}
@@ -202,26 +202,26 @@ export default function ReviewQueuePage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-semibold text-sm">{r.name}</span>
-                      <span className="font-mono text-xs text-muted-foreground">
+                      <span className="font-mono text-sm text-muted-foreground">
                         {r.recipe_id} · v{r.version}
                       </span>
                       {r.dag_schema_version >= 2 && (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-purple-500/20 text-purple-300">
+                        <span className="px-1.5 py-0.5 rounded text-sm bg-purple-500/20 text-purple-300">
                           DAG v2
                         </span>
                       )}
                       {/* 审核类型标签 */}
                       {isDeprecation ? (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-red-500/15 text-red-600 border border-red-500/30">
+                        <span className="px-1.5 py-0.5 rounded text-sm bg-red-500/15 text-red-600 border border-red-500/30">
                           废弃申请
                         </span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                        <span className="px-1.5 py-0.5 rounded text-sm bg-amber-500/15 text-amber-400 border border-amber-500/30">
                           新配方审批
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-sm text-muted-foreground">
                       提交人: {r.created_by} · {new Date(r.created_at).toLocaleString('zh-CN')}
                       {r.parent_version && (
                         <span className="ml-2">· 源自 v{r.parent_version}</span>

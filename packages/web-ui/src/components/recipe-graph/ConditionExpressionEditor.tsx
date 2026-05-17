@@ -65,16 +65,16 @@ export function ConditionExpressionEditor({ value, onChange }: Props) {
   return (
     <div className="space-y-2">
       <div>
-        <label className="text-xs text-muted-foreground">条件表达式</label>
+        <label className="text-sm text-muted-foreground">条件表达式</label>
         <textarea
           value={draft}
           onChange={e => setDraft(e.target.value)}
           placeholder='例如: OD600 > 5 && temperature >= 37'
           rows={2}
-          className={`mt-1 w-full px-2 py-1.5 rounded bg-background border text-xs font-mono
+          className={`mt-1 w-full px-2 py-1.5 rounded bg-background border text-sm font-mono
             ${validity?.ok === false ? 'border-red-500/50' : validity?.ok ? 'border-green-500/50' : 'border-border'}`}
         />
-        <div className="mt-1 flex items-center gap-1 text-xs">
+        <div className="mt-1 flex items-center gap-1 text-sm">
           {debouncing ? (
             <span className="text-muted-foreground">校验中...</span>
           ) : validity?.ok ? (
@@ -88,11 +88,11 @@ export function ConditionExpressionEditor({ value, onChange }: Props) {
       </div>
 
       <div>
-        <div className="text-xs text-muted-foreground mb-1">快捷插入</div>
+        <div className="text-sm text-muted-foreground mb-1">快捷插入</div>
         <div className="flex flex-wrap gap-1 mb-1">
           {FIELDS.map(f => (
             <button key={f} type="button" onClick={() => insertToken(f)}
-              className="px-1.5 py-0.5 rounded text-xs font-mono bg-primary/10 text-primary hover:bg-primary/20">
+              className="px-1.5 py-0.5 rounded text-sm font-mono bg-primary/10 text-primary hover:bg-primary/20">
               {f}
             </button>
           ))}
@@ -100,7 +100,7 @@ export function ConditionExpressionEditor({ value, onChange }: Props) {
         <div className="flex flex-wrap gap-1 mb-1">
           {OPS.map(op => (
             <button key={op} type="button" onClick={() => insertToken(op)}
-              className="px-1.5 py-0.5 rounded text-xs font-mono bg-muted text-foreground hover:bg-muted/70">
+              className="px-1.5 py-0.5 rounded text-sm font-mono bg-muted text-foreground hover:bg-muted/70">
               {op}
             </button>
           ))}
@@ -108,7 +108,7 @@ export function ConditionExpressionEditor({ value, onChange }: Props) {
         <div className="flex flex-wrap gap-1">
           {['&&', '||'].map(l => (
             <button key={l} type="button" onClick={() => insertToken(l)}
-              className="px-1.5 py-0.5 rounded text-xs font-mono bg-amber-900/30 text-amber-300 hover:bg-amber-900/50">
+              className="px-1.5 py-0.5 rounded text-sm font-mono bg-amber-900/30 text-amber-300 hover:bg-amber-900/50">
               {l}
             </button>
           ))}

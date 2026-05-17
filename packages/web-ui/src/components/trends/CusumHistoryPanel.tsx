@@ -173,8 +173,8 @@ export function CusumHistoryPanel({ batchId }: { batchId: string }) {
     return opts;
   }, [data]);
 
-  if (loading) return <div className="text-xs text-muted-foreground p-3">加载 CUSUM 历史数据...</div>;
-  if (error) return <div className="text-xs text-red-400 p-3">CUSUM 数据加载失败: {error}</div>;
+  if (loading) return <div className="text-sm text-muted-foreground p-3">加载 CUSUM 历史数据...</div>;
+  if (error) return <div className="text-sm text-red-400 p-3">CUSUM 数据加载失败: {error}</div>;
   if (!data || Object.keys(data.channels || {}).length === 0) return null;
 
   const channels = Object.keys(chartOptions);
@@ -185,7 +185,7 @@ export function CusumHistoryPanel({ batchId }: { batchId: string }) {
         <h3 className="text-sm font-semibold text-foreground/90">
           CUSUM 统计过程监控 — {batchId}
         </h3>
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span>h={data.h} k={data.k}</span>
           <span>S⁺: 上偏累积和</span>
           <span>S⁻: 下偏累积和</span>
@@ -200,7 +200,7 @@ export function CusumHistoryPanel({ batchId }: { batchId: string }) {
           if (!s) return null;
           const hasAlarm = s.alarmCount > 0;
           return (
-            <div key={ch} className={`rounded border p-2 text-xs ${hasAlarm ? 'border-red-500/30 bg-red-500/5' : 'border-border bg-card'}`}>
+            <div key={ch} className={`rounded border p-2 text-sm ${hasAlarm ? 'border-red-500/30 bg-red-500/5' : 'border-border bg-card'}`}>
               <div className="flex items-center gap-1.5 mb-1">
                 <span className={`w-2 h-2 rounded-full ${hasAlarm ? 'bg-red-500' : 'bg-green-500'}`} />
                 <span className="font-medium" style={{ color: CHANNEL_COLORS[ch] }}>

@@ -123,7 +123,7 @@ export default function SoftSensorPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold text-foreground">{model.name || model.id}</h3>
-                  <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
+                  <div className="flex gap-4 mt-1 text-sm text-muted-foreground">
                     <span>目标: <span className="text-foreground/90">{model.target}</span></span>
                     <span>R²: <span className={model.r_squared > 0.8 ? 'text-emerald-600' : model.r_squared > 0.5 ? 'text-amber-600' : 'text-red-600'}>
                       {(model.r_squared ?? 0).toFixed(3)}
@@ -136,13 +136,13 @@ export default function SoftSensorPage() {
                   <button
                     onClick={() => handlePredict(model.id)}
                     disabled={predicting === model.id}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-muted hover:bg-accent text-foreground/90 rounded transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-muted hover:bg-accent text-foreground/90 rounded transition-colors"
                   >
                     <Play size={12} /> {predicting === model.id ? '推断中...' : '在线推断'}
                   </button>
                   <button
                     onClick={() => handleDelete(model.id)}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-muted hover:bg-red-900/50 text-muted-foreground hover:text-red-600 rounded transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-muted hover:bg-red-900/50 text-muted-foreground hover:text-red-600 rounded transition-colors"
                   >
                     <Trash2 size={12} /> 删除
                   </button>

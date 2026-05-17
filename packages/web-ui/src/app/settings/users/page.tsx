@@ -163,7 +163,7 @@ export default function UsersPage() {
                   <tr key={u.user_id} className="border-b border-white/5 hover:bg-white/5">
                     <td className="px-4 py-3 font-mono">{u.username}</td>
                     <td className="px-4 py-3">{u.display_name}</td>
-                    <td className="px-4 py-3"><Badge className={`text-xs ${r.color}`}>{r.label}</Badge></td>
+                    <td className="px-4 py-3"><Badge className={`text-sm ${r.color}`}>{r.label}</Badge></td>
                     <td className="px-4 py-3">
                       <button onClick={() => handleToggleActive(u)} className="cursor-pointer">
                         <Badge className={u.is_active ? 'bg-green-500/20 text-emerald-600' : 'bg-gray-500/20 text-gray-400'}>
@@ -171,7 +171,7 @@ export default function UsersPage() {
                         </Badge>
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{u.last_login_at || '从未'}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{u.last_login_at || '从未'}</td>
                     <td className="px-4 py-3 text-right space-x-1">
                       <Button variant="ghost" size="sm" onClick={() => {
                         setEditUser(u); setError('');

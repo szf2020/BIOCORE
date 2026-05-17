@@ -78,7 +78,7 @@ function LiveClock() {
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
   }, []);
-  return <span className="font-mono text-xs text-muted-foreground">{time}</span>;
+  return <span className="font-mono text-sm text-muted-foreground">{time}</span>;
 }
 
 function getStateBadgeClass(state: string): string {
@@ -212,7 +212,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-xs text-muted-foreground">{authLoading ? '加载中...' : '正在跳转登录页...'}</div>
+        <div className="text-sm text-muted-foreground">{authLoading ? '加载中...' : '正在跳转登录页...'}</div>
       </div>
     );
   }
@@ -232,7 +232,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-[15px] font-bold tracking-tight text-foreground leading-none">BIOCore</h1>
-              <p className="text-xs text-muted-foreground mt-1 font-mono tracking-wider">v0.1.0 · MES</p>
+              <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wider">v0.1.0 · MES</p>
             </div>
             <ThemeToggle />
           </div>
@@ -319,7 +319,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           })}
         </div>
         {/* Bottom: WS+clock row, user row. Theme toggle moved to brand header. */}
-        <div className="px-4 py-3 text-xs text-muted-foreground space-y-2 border-t border-border/30">
+        <div className="px-4 py-3 text-sm text-muted-foreground space-y-2 border-t border-border/30">
           <div className="flex items-center gap-2">
             <div className={`status-led ${wsConnected ? 'status-led-running' : 'status-led-stopped'}`} />
             <span className="font-mono text-[11px]">WS {wsConnected ? '已连接' : '未连接'}</span>
@@ -390,7 +390,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   {({ idle: '空闲', running: '运行中', held: '保持', paused: '暂停', stopped: '已停止', complete: '已完成' } as Record<string,string>)[currentState] || currentState}
                 </span>
                 {currentState !== 'idle' && (
-                  <span className="text-muted-foreground text-xs font-mono tabular-nums">
+                  <span className="text-muted-foreground text-sm font-mono tabular-nums">
                     {formatElapsed(elapsed)}
                   </span>
                 )}
@@ -433,13 +433,13 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
         {/* Label chip — separate box from the message strip */}
         <div className="shrink-0 flex items-center gap-1.5 px-2.5 h-full rounded-md border border-border bg-muted">
           <Bell className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
-          <span className="text-xs text-muted-foreground shrink-0">报警信息</span>
-          <span className="shrink-0 px-1.5 py-0.5 rounded text-xs font-bold border border-muted-foreground/40 text-muted-foreground/70">0</span>
+          <span className="text-sm text-muted-foreground shrink-0">报警信息</span>
+          <span className="shrink-0 px-1.5 py-0.5 rounded text-sm font-bold border border-muted-foreground/40 text-muted-foreground/70">0</span>
         </div>
         {/* Message + nav strip */}
         <div className="flex-1 flex items-center gap-2 px-3 h-full rounded-md border border-border bg-muted min-w-0">
-          <span className="flex-1 text-xs text-muted-foreground truncate">无未确认报警</span>
-          <span className="shrink-0 text-xs text-muted-foreground/60 font-mono tabular-nums">0/0</span>
+          <span className="flex-1 text-sm text-muted-foreground truncate">无未确认报警</span>
+          <span className="shrink-0 text-sm text-muted-foreground/60 font-mono tabular-nums">0/0</span>
           <button disabled className="shrink-0 p-1 rounded text-muted-foreground/30 cursor-not-allowed" title="上一条">
             <ChevronUp className="w-3 h-3" />
           </button>
@@ -462,17 +462,17 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
       {/* Label chip — separate box, mirrors empty-state layout */}
       <div className="shrink-0 flex items-center gap-1.5 px-2.5 h-full rounded-md border border-red-500/40 bg-red-500/10 dark:bg-red-500/15">
         <Bell className="w-3.5 h-3.5 text-mes-red shrink-0" />
-        <span className="text-xs font-medium text-red-700 dark:text-red-300 shrink-0">报警信息</span>
-        <span className={`shrink-0 px-1.5 py-0.5 rounded text-xs font-bold border ${sevColor}`}>
+        <span className="text-sm font-medium text-red-700 dark:text-red-300 shrink-0">报警信息</span>
+        <span className={`shrink-0 px-1.5 py-0.5 rounded text-sm font-bold border ${sevColor}`}>
           {unack.length}
         </span>
       </div>
       {/* Message + nav strip */}
       <div className="flex-1 flex items-center gap-2 px-3 h-full rounded-md border border-red-500/40 bg-red-500/10 dark:bg-red-500/15 min-w-0">
-        <span className="flex-1 text-xs font-medium text-red-700 dark:text-red-300 truncate" title={cur.message}>
+        <span className="flex-1 text-sm font-medium text-red-700 dark:text-red-300 truncate" title={cur.message}>
           {cur.message || '(无消息)'}
         </span>
-        <span className="shrink-0 text-xs text-muted-foreground font-mono tabular-nums">
+        <span className="shrink-0 text-sm text-muted-foreground font-mono tabular-nums">
           {idx + 1}/{unack.length}
         </span>
         <button

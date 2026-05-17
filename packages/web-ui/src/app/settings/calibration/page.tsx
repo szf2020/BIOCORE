@@ -88,7 +88,7 @@ export default function CalibrationPage() {
             </span>
             <Button onClick={save} disabled={saving}><Save className="w-4 h-4 mr-1" /> {saving ? '保存中...' : '保存校准'}</Button>
           </div>
-          {cal && <div className="col-span-2 text-xs text-muted-foreground">上次校准: {cal.calibrated_at}</div>}
+          {cal && <div className="col-span-2 text-sm text-muted-foreground">上次校准: {cal.calibrated_at}</div>}
         </CardContent>
       </Card>
       {/* 批量校准向导 */}

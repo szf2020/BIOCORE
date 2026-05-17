@@ -29,11 +29,11 @@ export function Indicator(props: IndicatorProps) {
       style={{ width, height }}
     >
       {label ? (
-        <div className="text-xs text-gray-600 truncate w-full text-center">{label}</div>
+        <div className="text-sm text-gray-600 truncate w-full text-center">{label}</div>
       ) : null}
       <div className="flex items-baseline gap-1" style={color ? { color } : undefined}>
         <span className="text-2xl font-semibold tabular-nums">{display}</span>
-        {unit ? <span className="text-xs text-gray-500">{unit}</span> : null}
+        {unit ? <span className="text-sm text-gray-500">{unit}</span> : null}
       </div>
     </div>
   );

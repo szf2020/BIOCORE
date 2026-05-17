@@ -26,8 +26,8 @@ export function PhaseNode({ data, selected }: NodeProps) {
       <div className="flex items-center gap-2">
         <Beaker className="w-3.5 h-3.5 text-primary flex-shrink-0" />
         <div className="min-w-0 flex-1">
-          <div className="text-xs font-semibold truncate">{d.label || d.phase_id}</div>
-          <div className="text-xs text-muted-foreground font-mono truncate">
+          <div className="text-sm font-semibold truncate">{d.label || d.phase_id}</div>
+          <div className="text-sm text-muted-foreground font-mono truncate">
             {d.phase_type}
           </div>
         </div>

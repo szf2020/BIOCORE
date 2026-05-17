@@ -76,7 +76,7 @@ export function PhaseStepTracker({ state, phaseNames, currentPhaseId, currentPha
                       {isCompleted ? '●' : isCurrent ? '◉' : '○'}
                     </span>
                     <span className={cn(
-                      'text-xs max-w-[48px] truncate',
+                      'text-sm max-w-[48px] truncate',
                       isCurrent ? 'text-blue-600 font-medium' : 'text-muted-foreground',
                     )}>
                       {isCurrent && currentPhaseId ? currentPhaseId : name}
@@ -94,10 +94,10 @@ export function PhaseStepTracker({ state, phaseNames, currentPhaseId, currentPha
         {/* T19: 当前 phase_id + phase_type (DAG runtime label) */}
         {(currentPhaseId || currentPhaseType) && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">当前:</span>
-            <strong className="text-xs font-mono text-foreground">{currentPhaseId ?? '—'}</strong>
+            <span className="text-sm text-muted-foreground">当前:</span>
+            <strong className="text-sm font-mono text-foreground">{currentPhaseId ?? '—'}</strong>
             {currentPhaseType && (
-              <span className="text-xs text-muted-foreground bg-muted/60 border border-border px-1.5 py-0.5 rounded">
+              <span className="text-sm text-muted-foreground bg-muted/60 border border-border px-1.5 py-0.5 rounded">
                 {currentPhaseType}
               </span>
             )}
@@ -110,7 +110,7 @@ export function PhaseStepTracker({ state, phaseNames, currentPhaseId, currentPha
             <span className="text-sm font-medium">
               步骤 {stepNumber}/{totalSteps}
             </span>
-            <span className="text-xs text-muted-foreground font-mono">
+            <span className="text-sm text-muted-foreground font-mono">
               {formatTime(stepElapsed)}
             </span>
           </div>
@@ -125,12 +125,12 @@ export function PhaseStepTracker({ state, phaseNames, currentPhaseId, currentPha
 
         {/* 下一步预览 */}
         {stepNumber < totalSteps && (
-          <div className="text-xs text-muted-foreground border-t pt-2">
+          <div className="text-sm text-muted-foreground border-t pt-2">
             下一步: 步骤 {stepNumber + 1}
           </div>
         )}
         {stepNumber >= totalSteps && totalSteps > 0 && (
-          <div className="text-xs text-green-600 border-t pt-2">
+          <div className="text-sm text-green-600 border-t pt-2">
             当前阶段即将完成
           </div>
         )}

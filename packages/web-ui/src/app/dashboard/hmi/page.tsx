@@ -104,7 +104,7 @@ export default function HmiPage() {
             >
               <div className={`status-led ${getReactorLedClass(reactor.state)}`} />
               <span className="font-mono font-semibold">{reactor.id}</span>
-              <span className={`text-xs ${isSelected ? 'text-primary/70' : 'text-muted-foreground/70'}`}>
+              <span className={`text-sm ${isSelected ? 'text-primary/70' : 'text-muted-foreground/70'}`}>
                 {getStateLabel(reactor.state)}
               </span>
             </button>
@@ -140,7 +140,7 @@ export default function HmiPage() {
         <button
           type="button"
           onClick={() => setShowHelp(v => !v)}
-          className="absolute bottom-3 right-3 px-3 py-1.5 bg-white border border-slate-300 rounded shadow-sm text-xs text-slate-700 hover:bg-slate-50"
+          className="absolute bottom-3 right-3 px-3 py-1.5 bg-white border border-slate-300 rounded shadow-sm text-sm text-slate-700 hover:bg-slate-50"
         >
           画面未加载?
         </button>
@@ -150,15 +150,15 @@ export default function HmiPage() {
               <div className="font-semibold text-slate-800">FUXA HMI 未启动</div>
               <button onClick={() => setShowHelp(false)} className="text-slate-400 hover:text-slate-700 text-lg leading-none">&times;</button>
             </div>
-            <div className="text-xs text-slate-600">iframe 连接 <code className="font-mono bg-slate-100 px-1 rounded">{FUXA_URL}</code></div>
-            <div className="text-xs text-slate-500">
+            <div className="text-sm text-slate-600">iframe 连接 <code className="font-mono bg-slate-100 px-1 rounded">{FUXA_URL}</code></div>
+            <div className="text-sm text-slate-500">
               启动 (monorepo 方案 A):
-              <pre className="bg-slate-900 text-slate-100 p-2 mt-1 rounded font-mono text-xs overflow-x-auto whitespace-pre">pnpm --filter @biocore/fuxa dev</pre>
+              <pre className="bg-slate-900 text-slate-100 p-2 mt-1 rounded font-mono text-sm overflow-x-auto whitespace-pre">pnpm --filter @biocore/fuxa dev</pre>
             </div>
             <button
               type="button"
               onClick={() => location.reload()}
-              className="w-full px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="w-full px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
             >
               FUXA 已启动 — 刷新页面
             </button>

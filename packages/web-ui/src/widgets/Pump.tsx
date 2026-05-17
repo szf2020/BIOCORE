@@ -28,7 +28,7 @@ export function Pump(props: PumpProps) {
   return (
     <div className="relative w-full h-full">
       {label ? (
-        <div className="absolute top-0 left-0 right-0 text-xs text-center text-gray-700 truncate">
+        <div className="absolute top-0 left-0 right-0 text-sm text-center text-gray-700 truncate">
           {label}
         </div>
       ) : null}
@@ -41,7 +41,7 @@ export function Pump(props: PumpProps) {
         </g>
       </svg>
       {rate !== undefined ? (
-        <div className="absolute bottom-0 left-0 right-0 text-xs text-center text-gray-700">
+        <div className="absolute bottom-0 left-0 right-0 text-sm text-center text-gray-700">
           {rate} {unit}
         </div>
       ) : null}

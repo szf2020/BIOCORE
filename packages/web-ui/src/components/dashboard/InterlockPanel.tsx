@@ -98,7 +98,7 @@ export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] 
           {loading && <Activity className="w-3 h-3 text-muted-foreground animate-pulse" />}
           <div className="w-1 h-4 bg-primary rounded" />
           <span className="text-sm font-semibold text-foreground">状态机连锁</span>
-          <span className="text-xs text-muted-foreground font-mono">IL·RF</span>
+          <span className="text-sm text-muted-foreground font-mono">IL·RF</span>
         </div>
         <div className="flex items-center gap-2">
           {/* IL 失败计数 */}
@@ -142,7 +142,7 @@ export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] 
               <div className="flex items-center gap-2">
                 <div className="w-1 h-4 bg-primary rounded" />
                 <span className="text-sm font-semibold">状态机连锁详情</span>
-                <span className="text-xs text-muted-foreground font-mono">IL · RF</span>
+                <span className="text-sm text-muted-foreground font-mono">IL · RF</span>
               </div>
               <button
                 type="button"
@@ -155,16 +155,16 @@ export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] 
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <div>
-                <div className="flex items-center gap-1.5 mb-1.5 text-xs font-semibold text-foreground">
+                <div className="flex items-center gap-1.5 mb-1.5 text-sm font-semibold text-foreground">
                   <ShieldCheck className="w-3.5 h-3.5 text-primary" />
                   启动前连锁 (IL-01 ~ IL-10)
                 </div>
-                <p className="text-xs text-muted-foreground mb-2">
+                <p className="text-sm text-muted-foreground mb-2">
                   必须全部 critical 项通过才能从 idle 进入 running. IL-10 为警告级不阻止启动.
                 </p>
                 <div className="space-y-1">
                   {ilItems.length === 0 ? (
-                    <div className="text-xs text-muted-foreground italic">无数据</div>
+                    <div className="text-sm text-muted-foreground italic">无数据</div>
                   ) : ilItems.map(il => {
                     const passed = il.passed;
                     const warn = il.severity === 'warning';
@@ -181,8 +181,8 @@ export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] 
                         <span className="font-mono font-semibold w-10 flex-shrink-0">{il.id}</span>
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold">{il.name}</div>
-                          <div className="text-xs opacity-75 mt-0.5">{il.description}</div>
-                          <div className="font-mono text-xs opacity-90 mt-0.5">{il.detail}</div>
+                          <div className="text-sm opacity-75 mt-0.5">{il.description}</div>
+                          <div className="font-mono text-sm opacity-90 mt-0.5">{il.detail}</div>
                         </div>
                         <span className={`px-1 rounded text-[11px] flex-shrink-0 self-start ${
                           warn ? 'bg-yellow-500/15 text-amber-600' : passed ? 'bg-green-500/15 text-emerald-600' : 'bg-red-500/15 text-red-600'
@@ -196,16 +196,16 @@ export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] 
               </div>
 
               <div>
-                <div className="flex items-center gap-1.5 mb-1.5 text-xs font-semibold text-foreground">
+                <div className="flex items-center gap-1.5 mb-1.5 text-sm font-semibold text-foreground">
                   <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
                   运行故障 (RF-01 ~ RF-11)
                 </div>
-                <p className="text-xs text-muted-foreground mb-2">
+                <p className="text-sm text-muted-foreground mb-2">
                   running 状态下每秒检测, critical 级故障自动切换到 held.
                 </p>
                 <div className="space-y-1">
                   {rfList.length === 0 ? (
-                    <div className="text-xs text-muted-foreground italic">无数据</div>
+                    <div className="text-sm text-muted-foreground italic">无数据</div>
                   ) : rfList.map(rf => {
                     const active = activeFaultSet.has(rf.code);
                     const warn = rf.severity === 'warning';
@@ -220,9 +220,9 @@ export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] 
                         <span className="font-mono font-semibold w-10 flex-shrink-0">{rf.code}</span>
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold">{rf.name}</div>
-                          <div className="text-xs opacity-75 mt-0.5">{rf.description}</div>
+                          <div className="text-sm opacity-75 mt-0.5">{rf.description}</div>
                           {rf.holdAction && (
-                            <div className="text-xs opacity-90 mt-0.5">动作: {rf.holdAction}</div>
+                            <div className="text-sm opacity-90 mt-0.5">动作: {rf.holdAction}</div>
                           )}
                         </div>
                         <span className={`px-1 rounded text-[11px] flex-shrink-0 self-start ${

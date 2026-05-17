@@ -63,10 +63,10 @@ export function AiSuggestionCard({ batchId }: { batchId?: string }) {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold text-amber-600 flex items-center gap-1.5">
                 <span className="text-base">💡</span> AI 建议
-                <span className="text-xs font-normal text-muted-foreground">({s.source_module})</span>
+                <span className="text-sm font-normal text-muted-foreground">({s.source_module})</span>
               </h3>
               {s.confidence != null && (
-                <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-600">
+                <span className="px-2 py-0.5 rounded text-sm font-medium bg-blue-500/20 text-blue-600">
                   置信度 {(s.confidence * 100).toFixed(0)}%
                 </span>
               )}
@@ -85,22 +85,22 @@ export function AiSuggestionCard({ batchId }: { batchId?: string }) {
               </div>
             )}
             {s.reasoning && (
-              <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{s.reasoning}</p>
+              <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{s.reasoning}</p>
             )}
 
             {/* 过期倒计时 */}
             {expiresIn != null && expiresIn > 0 && (
-              <p className="text-xs text-muted-foreground mb-2">过期时间: 还剩 {expiresIn} 分钟</p>
+              <p className="text-sm text-muted-foreground mb-2">过期时间: 还剩 {expiresIn} 分钟</p>
             )}
 
             {/* 操作按钮 */}
             <div className="flex gap-2">
               <button onClick={() => handleReject(s.id)}
-                className="flex-1 px-3 py-1.5 text-xs font-medium rounded border border-white/10 text-muted-foreground hover:bg-white/5">
+                className="flex-1 px-3 py-1.5 text-sm font-medium rounded border border-white/10 text-muted-foreground hover:bg-white/5">
                 拒绝
               </button>
               <button onClick={() => handleAccept(s.id)}
-                className="flex-1 px-3 py-1.5 text-xs font-medium rounded bg-[#1677ff] text-white hover:bg-[#1677ff]/80">
+                className="flex-1 px-3 py-1.5 text-sm font-medium rounded bg-[#1677ff] text-white hover:bg-[#1677ff]/80">
                 采纳 ✓
               </button>
             </div>

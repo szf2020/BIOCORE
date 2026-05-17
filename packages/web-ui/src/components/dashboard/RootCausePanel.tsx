@@ -85,7 +85,7 @@ export function RootCausePanel({ alarmId, alarmCode, onClose }: {
                       />
                     </div>
                     <div className="flex-[2] text-foreground">{cause.cause}</div>
-                    <span className="text-xs px-2 py-0.5 bg-muted rounded text-muted-foreground">{cause.category}</span>
+                    <span className="text-sm px-2 py-0.5 bg-muted rounded text-muted-foreground">{cause.category}</span>
                   </div>
                 ))}
               </div>

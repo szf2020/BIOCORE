@@ -141,17 +141,17 @@ export default function InterlockConfigPage() {
         <h1 className="text-xl font-bold flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-primary" /> 连锁/故障配置
         </h1>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           配置启动连锁 (IL) 和运行故障 (RF) 的变量、阈值、严重性和显示内容 — 全局默认或单罐覆盖
         </p>
       </div>
 
       {/* 反应器选择栏 */}
       <div className="flex items-center gap-2 px-3 py-2 border border-border rounded bg-card/50 overflow-x-auto">
-        <span className="text-xs text-muted-foreground shrink-0">作用对象:</span>
+        <span className="text-sm text-muted-foreground shrink-0">作用对象:</span>
         <button
           onClick={() => { setSelectedReactor(''); setSelected(''); }}
-          className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium shrink-0 transition-all ${
+          className={`flex items-center gap-1 px-3 py-1 rounded text-sm font-medium shrink-0 transition-all ${
             selectedReactor === ''
               ? 'bg-primary/15 text-primary border border-primary/40'
               : 'bg-muted/50 text-muted-foreground border border-transparent hover:bg-muted'
@@ -159,13 +159,13 @@ export default function InterlockConfigPage() {
           <Globe className="w-3 h-3" /> 全局默认
         </button>
         {reactorIds.length === 0 && (
-          <span className="text-xs text-muted-foreground">无反应器</span>
+          <span className="text-sm text-muted-foreground">无反应器</span>
         )}
         {reactorIds.map(id => (
           <button
             key={id}
             onClick={() => { setSelectedReactor(id); setSelected(''); }}
-            className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-mono font-semibold shrink-0 transition-all ${
+            className={`flex items-center gap-1 px-3 py-1 rounded text-sm font-mono font-semibold shrink-0 transition-all ${
               selectedReactor === id
                 ? 'bg-primary/15 text-primary border border-primary/40'
                 : 'bg-muted/50 text-muted-foreground border border-transparent hover:bg-muted'
@@ -179,7 +179,7 @@ export default function InterlockConfigPage() {
         {/* 左侧列表 */}
         <div className="space-y-3">
           <div>
-            <div className="flex items-center gap-1.5 mb-1.5 text-xs font-semibold">
+            <div className="flex items-center gap-1.5 mb-1.5 text-sm font-semibold">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> 启动连锁 IL ({ilConfigs.length})
             </div>
             <div className="space-y-1">
@@ -189,7 +189,7 @@ export default function InterlockConfigPage() {
             </div>
           </div>
           <div>
-            <div className="flex items-center gap-1.5 mb-1.5 text-xs font-semibold">
+            <div className="flex items-center gap-1.5 mb-1.5 text-sm font-semibold">
               <ShieldAlert className="w-3.5 h-3.5 text-amber-600" /> 运行故障 RF ({rfConfigs.length})
             </div>
             <div className="space-y-1">
@@ -230,11 +230,11 @@ export default function InterlockConfigPage() {
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="text-xs text-muted-foreground">显示名称</label>
+                    <label className="text-sm text-muted-foreground">显示名称</label>
                     <Input value={editName} onChange={e => setEditName(e.target.value)} className="mt-1 h-8 text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground">严重性</label>
+                    <label className="text-sm text-muted-foreground">严重性</label>
                     <select value={editSeverity} onChange={e => setEditSeverity(e.target.value)}
                       className="mt-1 w-full h-8 px-2 rounded bg-background border border-border text-sm">
                       <option value="critical">critical (自动Hold)</option>
@@ -243,33 +243,33 @@ export default function InterlockConfigPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground">Hold 动作</label>
+                    <label className="text-sm text-muted-foreground">Hold 动作</label>
                     <Input value={editHoldAction} onChange={e => setEditHoldAction(e.target.value)} className="mt-1 h-8 text-sm" placeholder="如: 搅拌急停, 补料泵停" />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground">持续时间阈值 (秒, 0=立即)</label>
+                    <label className="text-sm text-muted-foreground">持续时间阈值 (秒, 0=立即)</label>
                     <Input type="number" value={editDuration} onChange={e => setEditDuration(Number(e.target.value))} className="mt-1 h-8 text-sm" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs text-muted-foreground">描述</label>
+                  <label className="text-sm text-muted-foreground">描述</label>
                   <Input value={editDesc} onChange={e => setEditDesc(e.target.value)} className="mt-1 h-8 text-sm" />
                 </div>
 
                 <div>
-                  <label className="text-xs text-muted-foreground">PLC 变量 (逗号分隔)</label>
+                  <label className="text-sm text-muted-foreground">PLC 变量 (逗号分隔)</label>
                   <Input value={editPlcTags} onChange={e => setEditPlcTags(e.target.value)} className="mt-1 h-8 font-mono text-sm" placeholder="TEMP_PV, TEMP_SV" />
                 </div>
 
                 <div>
-                  <label className="text-xs text-muted-foreground">检测条件 (JSON)</label>
+                  <label className="text-sm text-muted-foreground">检测条件 (JSON)</label>
                   <textarea value={editCondition} onChange={e => setEditCondition(e.target.value)}
-                    className="mt-1 w-full h-24 px-3 py-2 rounded bg-background border border-border font-mono text-xs resize-none" />
+                    className="mt-1 w-full h-24 px-3 py-2 rounded bg-background border border-border font-mono text-sm resize-none" />
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="checkbox" checked={editEnabled} onChange={e => setEditEnabled(e.target.checked)}
                       className="rounded border-border" />
                     启用此检测项
@@ -321,7 +321,7 @@ function ConfigCard({ config, selected, onClick }: { config: InterlockConfig; se
   const severityColor = c.severity === 'critical' ? 'border-red-500/30' : c.severity === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30';
   return (
     <button onClick={onClick}
-      className={`w-full text-left rounded border p-2 transition-all text-xs ${selected ? 'border-primary bg-primary/5' : `${severityColor} hover:border-primary/40`} ${!c.is_enabled ? 'opacity-40' : ''}`}>
+      className={`w-full text-left rounded border p-2 transition-all text-sm ${selected ? 'border-primary bg-primary/5' : `${severityColor} hover:border-primary/40`} ${!c.is_enabled ? 'opacity-40' : ''}`}>
       <div className="flex items-center gap-2">
         <span className="font-mono font-bold w-10 flex-shrink-0">{c.id}</span>
         <span className="flex-1 truncate">{c.display_name || c.name}</span>

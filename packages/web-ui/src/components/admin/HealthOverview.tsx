@@ -55,7 +55,7 @@ export function HealthOverview({ snap }: { snap: HealthSnap }) {
         >
           <div className="text-sm text-muted-foreground">{i.label}</div>
           <div className={`text-2xl font-bold ${i.danger ? 'text-red-700' : ''}`}>{i.value}</div>
-          {i.sub && <div className="text-xs text-muted-foreground mt-1">{i.sub}</div>}
+          {i.sub && <div className="text-sm text-muted-foreground mt-1">{i.sub}</div>}
         </div>
       ))}
     </div>

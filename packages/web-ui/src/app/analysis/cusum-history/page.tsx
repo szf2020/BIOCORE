@@ -129,17 +129,17 @@ export default function CusumHistoryPage() {
       <Card>
         <CardContent className="p-3 grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <label className="text-xs text-muted-foreground">罐号</label>
-            <Input value={reactorId} onChange={e => setReactorId(e.target.value)} placeholder="F01" className="h-9 text-xs mt-0.5" />
+            <label className="text-sm text-muted-foreground">罐号</label>
+            <Input value={reactorId} onChange={e => setReactorId(e.target.value)} placeholder="F01" className="h-9 text-sm mt-0.5" />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">批次 ID</label>
-            <Input value={batchId} onChange={e => setBatchId(e.target.value)} placeholder="B-..." className="h-9 text-xs mt-0.5" />
+            <label className="text-sm text-muted-foreground">批次 ID</label>
+            <Input value={batchId} onChange={e => setBatchId(e.target.value)} placeholder="B-..." className="h-9 text-sm mt-0.5" />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">严重程度</label>
+            <label className="text-sm text-muted-foreground">严重程度</label>
             <select value={severity} onChange={e => setSeverity(e.target.value as any)}
-              className="w-full h-9 px-2 mt-0.5 rounded bg-background border border-border text-xs">
+              className="w-full h-9 px-2 mt-0.5 rounded bg-background border border-border text-sm">
               <option value="">全部</option>
               <option value="emergency">紧急</option>
               <option value="critical">严重</option>
@@ -148,34 +148,34 @@ export default function CusumHistoryPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">确认状态</label>
+            <label className="text-sm text-muted-foreground">确认状态</label>
             <select value={ack} onChange={e => setAck(e.target.value as any)}
-              className="w-full h-9 px-2 mt-0.5 rounded bg-background border border-border text-xs">
+              className="w-full h-9 px-2 mt-0.5 rounded bg-background border border-border text-sm">
               <option value="all">全部</option>
               <option value="unack">未确认</option>
               <option value="ack">已确认</option>
             </select>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">起始时间</label>
-            <Input type="datetime-local" value={since} onChange={e => setSince(e.target.value)} className="h-9 text-xs mt-0.5" />
+            <label className="text-sm text-muted-foreground">起始时间</label>
+            <Input type="datetime-local" value={since} onChange={e => setSince(e.target.value)} className="h-9 text-sm mt-0.5" />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">截止时间</label>
-            <Input type="datetime-local" value={until} onChange={e => setUntil(e.target.value)} className="h-9 text-xs mt-0.5" />
+            <label className="text-sm text-muted-foreground">截止时间</label>
+            <Input type="datetime-local" value={until} onChange={e => setUntil(e.target.value)} className="h-9 text-sm mt-0.5" />
           </div>
         </CardContent>
       </Card>
 
       {/* 统计 */}
-      <div className="text-xs text-muted-foreground">
+      <div className="text-sm text-muted-foreground">
         共 <span className="text-foreground font-semibold">{rows.length}</span> 条记录{total !== rows.length && ` (从 ${total} 条中过滤)`}
       </div>
 
       {/* 表格 */}
       <Card>
         <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/10 bg-white/5">
                 <th className="px-3 py-2 text-left whitespace-nowrap">触发时间</th>
@@ -202,7 +202,7 @@ export default function CusumHistoryPage() {
                   <tr key={r.id} className="border-b border-white/5 hover:bg-white/5 align-top">
                     <td className="px-3 py-2 font-mono whitespace-nowrap text-muted-foreground">{fmtTime(r.triggered_at)}</td>
                     <td className="px-3 py-2">
-                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold border ${meta.color}`}>
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm font-semibold border ${meta.color}`}>
                         <Icon className="w-3 h-3" /> {meta.label}
                       </span>
                     </td>
@@ -219,13 +219,13 @@ export default function CusumHistoryPage() {
                     </td>
                     <td className="px-3 py-2">
                       {r.acknowledged_at ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+                        <span className="inline-flex items-center gap-1 text-sm text-emerald-600">
                           <Check className="w-3 h-3" />
                           <span className="font-mono">{fmtTime(r.acknowledged_at)}</span>
                           {r.acknowledged_by && <span className="text-muted-foreground">· {r.acknowledged_by}</span>}
                         </span>
                       ) : (
-                        <span className="text-xs text-purple-600 font-semibold">未确认</span>
+                        <span className="text-sm text-purple-600 font-semibold">未确认</span>
                       )}
                     </td>
                   </tr>

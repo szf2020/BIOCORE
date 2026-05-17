@@ -140,22 +140,22 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
           <>
             {/* Phase 元信息 */}
             <div>
-              <Label className="text-xs">Phase ID *</Label>
+              <Label className="text-sm">Phase ID *</Label>
               <Input
                 value={data.phase_id || ''}
                 onChange={e => updateData({ phase_id: e.target.value.replace(/[^A-Za-z0-9_-]/g, '') })}
                 placeholder="PHASE_01"
-                className="h-7 text-xs font-mono mt-1"
+                className="h-7 text-sm font-mono mt-1"
               />
             </div>
 
             <div>
-              <Label className="text-xs">类型 *</Label>
+              <Label className="text-sm">类型 *</Label>
               {allTemplates && allTemplates.length > 0 ? (
                 <select
                   value={data.phase_type || ''}
                   onChange={e => changePhaseType(e.target.value)}
-                  className="h-7 w-full text-xs font-mono mt-1 rounded bg-background border border-border px-1"
+                  className="h-7 w-full text-sm font-mono mt-1 rounded bg-background border border-border px-1"
                 >
                   <option value="">-- 选择 Phase 类型 --</option>
                   {allTemplates.map(t => (
@@ -169,24 +169,24 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                   value={data.phase_type || ''}
                   onChange={e => updateData({ phase_type: e.target.value })}
                   placeholder="heating / fermentation / ..."
-                  className="h-7 text-xs font-mono mt-1"
+                  className="h-7 text-sm font-mono mt-1"
                 />
               )}
             </div>
 
             <div>
-              <Label className="text-xs">显示名</Label>
+              <Label className="text-sm">显示名</Label>
               <Input
                 value={data.label || ''}
                 onChange={e => updateData({ label: e.target.value })}
                 placeholder={template?.label || '节点显示名'}
-                className="h-7 text-xs mt-1"
+                className="h-7 text-sm mt-1"
               />
             </div>
 
             {/* 模板说明 */}
             {template?.description && (
-              <div className="text-xs text-muted-foreground bg-muted/30 rounded p-2 border border-border/40">
+              <div className="text-sm text-muted-foreground bg-muted/30 rounded p-2 border border-border/40">
                 {template.description}
               </div>
             )}
@@ -194,12 +194,12 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
             {/* 步骤序列预览 */}
             {template && template.steps && template.steps.length > 0 && (
               <div className="pt-2 border-t border-border/40">
-                <Label className="text-xs mb-1 block">
+                <Label className="text-sm mb-1 block">
                   步骤序列 ({template.steps.length})
                 </Label>
                 <div className="space-y-1">
                   {template.steps.map((step: any, si: number) => (
-                    <div key={si} className="flex items-center gap-1.5 text-xs bg-muted/40 rounded px-2 py-1">
+                    <div key={si} className="flex items-center gap-1.5 text-sm bg-muted/40 rounded px-2 py-1">
                       <span className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[11px] font-bold flex-shrink-0">
                         {step.step_number || si + 1}
                       </span>
@@ -215,23 +215,23 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
               const params = collectParams();
               if (params.length === 0) {
                 return template ? null : (
-                  <div className="pt-2 border-t border-border/40 text-xs text-muted-foreground italic">
+                  <div className="pt-2 border-t border-border/40 text-sm text-muted-foreground italic">
                     此 Phase 类型没有可编辑的参数
                   </div>
                 );
               }
               return (
                 <div className="pt-2 border-t border-border/40">
-                  <Label className="text-xs mb-1 block">参数设置</Label>
+                  <Label className="text-sm mb-1 block">参数设置</Label>
                   <div className="space-y-2">
                     {params.map(p => (
                       <div key={p.key} className="space-y-0.5">
-                        <Label className="text-xs text-muted-foreground">
+                        <Label className="text-sm text-muted-foreground">
                           {p.label}
                           {p.unit && <span className="ml-1">({p.unit})</span>}
                         </Label>
                         {typeof p.value === 'object' && p.value !== null ? (
-                          <div className="text-xs font-mono bg-muted rounded px-2 py-1">
+                          <div className="text-sm font-mono bg-muted rounded px-2 py-1">
                             {JSON.stringify(p.value)}
                           </div>
                         ) : (
@@ -264,9 +264,9 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
               onChange={(expression, valid) => updateData({ expression, valid })}
             />
             <div className="pt-2 border-t border-border/40">
-              <Label className="text-xs">默认分支（PV 缺失回退）</Label>
+              <Label className="text-sm">默认分支（PV 缺失回退）</Label>
               <select
-                className="h-7 w-full text-xs font-mono mt-1 rounded bg-background border border-border px-1"
+                className="h-7 w-full text-sm font-mono mt-1 rounded bg-background border border-border px-1"
                 value={data.default_branch ?? ''}
                 onChange={(e) => {
                   const v = e.target.value;
@@ -279,7 +279,7 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                 <option value="true">true</option>
                 <option value="false">false</option>
               </select>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-sm text-muted-foreground">
                 当表达式所需的 PV 字段缺失时使用此分支
               </p>
             </div>
@@ -289,10 +289,10 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
         {type === 'goto' && (
           <>
             <div>
-              <Label className="text-xs">跳转目标节点 *</Label>
+              <Label className="text-sm">跳转目标节点 *</Label>
               {allNodes && allNodes.length > 0 ? (
                 <select
-                  className="h-7 w-full text-xs font-mono mt-1 rounded bg-background border border-border px-1"
+                  className="h-7 w-full text-sm font-mono mt-1 rounded bg-background border border-border px-1"
                   value={data.target ?? ''}
                   onChange={(e) => updateData({ target: e.target.value || undefined })}
                 >
@@ -313,21 +313,21 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                   value={data.target ?? ''}
                   onChange={e => updateData({ target: e.target.value || undefined })}
                   placeholder="目标节点 id (如 n_2)"
-                  className="h-7 text-xs font-mono mt-1"
+                  className="h-7 text-sm font-mono mt-1"
                 />
               )}
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Goto 节点跳到选定目标 (可用于循环回边或异常处理).
                 目标若需 ≥ 2 次重访, 须在 recipe.options.maxRevisits 中设置 &gt; 1.
               </p>
             </div>
             <div className="pt-2 border-t border-border/40">
-              <Label className="text-xs">显示名 (可选)</Label>
+              <Label className="text-sm">显示名 (可选)</Label>
               <Input
                 value={data.label || ''}
                 onChange={e => updateData({ label: e.target.value })}
                 placeholder="跳转回 A"
-                className="h-7 text-xs mt-1"
+                className="h-7 text-sm mt-1"
               />
             </div>
           </>
@@ -341,17 +341,17 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
           return (
             <>
               <div>
-                <Label className="text-xs">退出条件 exitExpression</Label>
+                <Label className="text-sm">退出条件 exitExpression</Label>
                 <ConditionExpressionEditor
                   value={data.exitExpression || ''}
                   onChange={(expression) => updateData({ exitExpression: expression })}
                 />
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 text-sm text-muted-foreground">
                   repeat-until 语义: 表达式为 true 时退出循环 (PV 缺失时继续循环)
                 </p>
               </div>
               <div className="pt-2 border-t border-border/40">
-                <Label className="text-xs">最大迭代次数 maxIterations</Label>
+                <Label className="text-sm">最大迭代次数 maxIterations</Label>
                 <Input
                   type="number"
                   min={1}
@@ -367,9 +367,9 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                     }
                   }}
                   placeholder="5"
-                  className="h-7 text-xs font-mono mt-1"
+                  className="h-7 text-sm font-mono mt-1"
                 />
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 text-sm text-muted-foreground">
                   fixed-N 硬上限 (1~10000). 与 exitExpression 任一先满足即退出.
                 </p>
               </div>
@@ -379,15 +379,15 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                 </div>
               )}
               <div className="pt-2 border-t border-border/40">
-                <Label className="text-xs">显示名 (可选)</Label>
+                <Label className="text-sm">显示名 (可选)</Label>
                 <Input
                   value={data.label || ''}
                   onChange={(e) => updateData({ label: e.target.value })}
                   placeholder="OD 采样循环"
-                  className="h-7 text-xs mt-1"
+                  className="h-7 text-sm mt-1"
                 />
               </div>
-              <p className="text-xs text-muted-foreground pt-1">
+              <p className="text-sm text-muted-foreground pt-1">
                 提示: 从 body handle 拉一条边到循环体起点; 从 exit handle 拉一条边到循环外的下一步;
                 循环体必须有至少一条 back-edge 回到本 Loop 节点.
               </p>
@@ -396,7 +396,7 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
         })()}
 
         {(type === 'start' || type === 'end') && (
-          <div className="text-xs text-muted-foreground py-4 text-center">
+          <div className="text-sm text-muted-foreground py-4 text-center">
             {type === 'start' ? 'Start 节点是 DAG 的入口' : 'End 节点是 DAG 的出口'}, 无参数
           </div>
         )}

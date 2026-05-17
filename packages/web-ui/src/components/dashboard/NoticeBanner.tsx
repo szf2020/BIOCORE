@@ -32,7 +32,7 @@ export function NoticeBanner({ notices, onAcknowledge }: NoticeBannerProps) {
           <Sparkles className="w-5 h-5" />
           提示信息
           {unack.length > 0 && (
-            <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500 text-white text-xs font-bold">
+            <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500 text-white text-sm font-bold">
               {unack.length}
             </span>
           )}
@@ -57,9 +57,9 @@ export function NoticeBanner({ notices, onAcknowledge }: NoticeBannerProps) {
                   {formatTime(n.triggered_at || n.created_at)}
                 </span>
                 {n.channel && (
-                  <span className="text-xs text-muted-foreground font-mono">{n.channel}</span>
+                  <span className="text-sm text-muted-foreground font-mono">{n.channel}</span>
                 )}
-                <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                <span className="text-sm uppercase tracking-wider text-muted-foreground">
                   {n.source}
                 </span>
               </div>
@@ -70,7 +70,7 @@ export function NoticeBanner({ notices, onAcknowledge }: NoticeBannerProps) {
             <Button
               size="sm"
               variant="outline"
-              className="shrink-0 text-xs h-7 px-2 text-purple-700 dark:text-purple-400"
+              className="shrink-0 text-sm h-7 px-2 text-purple-700 dark:text-purple-400"
               onClick={() => onAcknowledge(n.id)}
             >
               已知悉

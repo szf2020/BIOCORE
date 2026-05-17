@@ -77,11 +77,11 @@ function BigParamCard({ label, value, unit, sv, precision = 1, color = 'text-for
       <div className="text-sm text-muted-foreground">{label}</div>
       <div className="flex items-baseline gap-1.5 mt-0.5">
         <span className={`text-3xl font-bold font-mono tracking-tight ${color}`}>{displayVal}</span>
-        <span className="text-xs text-muted-foreground">{unit}</span>
+        <span className="text-sm text-muted-foreground">{unit}</span>
       </div>
       {sv !== undefined && (
         <div className="mt-1">
-          <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-primary/15 text-primary">
+          <span className="text-sm font-mono font-semibold px-2 py-0.5 rounded bg-primary/15 text-primary">
             SP: {sv}
           </span>
         </div>
@@ -196,7 +196,7 @@ export default function DashboardPage() {
               }`}>
               <div className={`status-led ${getReactorLedClass(reactor.state)}`} />
               <span className="font-mono font-semibold">{reactor.id}</span>
-              <span className={`text-xs ${isSelected ? 'text-primary/70' : 'text-muted-foreground/70'}`}>
+              <span className={`text-sm ${isSelected ? 'text-primary/70' : 'text-muted-foreground/70'}`}>
                 {getStateLabel(reactor.state)}
               </span>
             </button>

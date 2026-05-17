@@ -183,7 +183,7 @@ export default function DoeListPage() {
           <h1 className="text-xl font-bold flex items-center gap-2">
             <FlaskConical className="w-5 h-5 text-primary" /> DoE 实验设计
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             因子筛选 · 响应面建模 · 最优点搜索 · 与配方编辑器双向对接
           </p>
         </div>
@@ -228,11 +228,11 @@ export default function DoeListPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold text-sm truncate">{s.name}</div>
-                      <div className="text-xs text-muted-foreground font-mono truncate">{s.study_id}</div>
+                      <div className="text-sm text-muted-foreground font-mono truncate">{s.study_id}</div>
                     </div>
-                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${st.bg}`}>{st.label}</span>
+                    <span className={`px-2 py-0.5 rounded text-sm font-semibold ${st.bg}`}>{st.label}</span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 text-xs">
+                  <div className="flex flex-wrap gap-1.5 text-sm">
                     <span className="bg-muted/50 text-muted-foreground px-2 py-0.5 rounded">
                       {DESIGN_TYPE_LABEL[s.design_type] || s.design_type}
                     </span>
@@ -246,7 +246,7 @@ export default function DoeListPage() {
                   </div>
                   {s.run_count > 0 && (
                     <div className="space-y-0.5">
-                      <div className="flex justify-between text-xs text-muted-foreground">
+                      <div className="flex justify-between text-sm text-muted-foreground">
                         <span>运行进度</span>
                         <span>{s.completed_count}/{s.run_count}</span>
                       </div>
@@ -286,15 +286,15 @@ export default function DoeListPage() {
             </div>
             <div className="p-4 space-y-3">
               <div>
-                <label className="text-xs text-muted-foreground">研究名称 *</label>
+                <label className="text-sm text-muted-foreground">研究名称 *</label>
                 <Input value={newName} onChange={e => setNewName(e.target.value)} className="mt-1 h-8" placeholder="例: E.coli 培养基优化" />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">说明</label>
+                <label className="text-sm text-muted-foreground">说明</label>
                 <Input value={newDescription} onChange={e => setNewDescription(e.target.value)} className="mt-1 h-8" placeholder="研究目的/假设" />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">设计类型</label>
+                <label className="text-sm text-muted-foreground">设计类型</label>
                 <select
                   value={newDesignType}
                   onChange={e => setNewDesignType(e.target.value)}
@@ -312,7 +312,7 @@ export default function DoeListPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">基础配方 (可选)</label>
+                <label className="text-sm text-muted-foreground">基础配方 (可选)</label>
                 <select
                   value={newBaseRecipeId ? `${newBaseRecipeId}::${newBaseVersion}` : ''}
                   onChange={e => {
@@ -329,7 +329,7 @@ export default function DoeListPage() {
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   关联后可 materialize 生成每次运行对应的子配方 (双向对接)
                 </p>
               </div>
@@ -393,7 +393,7 @@ function DoStrategyTemplates({ onCreated }: { onCreated: () => void }) {
 
   return (
     <div>
-      <div className="text-xs font-semibold text-muted-foreground mb-2">DO 控制策略 DOE 模板 — 一键创建 L9(3⁴) 正交设计</div>
+      <div className="text-sm font-semibold text-muted-foreground mb-2">DO 控制策略 DOE 模板 — 一键创建 L9(3⁴) 正交设计</div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {templates.map(t => {
           const info = DO_STRATEGY_INFO[t.key] || { icon: '🔬', color: '', shortDesc: '' };
@@ -406,10 +406,10 @@ function DoStrategyTemplates({ onCreated }: { onCreated: () => void }) {
             >
               <div className="flex items-center gap-2">
                 <span className="text-lg">{info.icon}</span>
-                <span className="text-xs font-semibold truncate flex-1">{t.name.replace('DO 策略', '').replace(': ', '')}</span>
+                <span className="text-sm font-semibold truncate flex-1">{t.name.replace('DO 策略', '').replace(': ', '')}</span>
               </div>
-              <div className="text-xs text-muted-foreground">{info.shortDesc}</div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="text-sm text-muted-foreground">{info.shortDesc}</div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>{t.factor_count} 因素</span>
                 <span>·</span>
                 <span>{t.response_count} 响应</span>

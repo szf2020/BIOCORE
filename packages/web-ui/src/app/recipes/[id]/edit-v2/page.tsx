@@ -166,14 +166,14 @@ export default function RecipeEditV2Page() {
             value={recipeId}
             onChange={e => setRecipeId(e.target.value.replace(/[^A-Za-z0-9_-]/g, ''))}
             disabled={!isNew}
-            className="h-8 w-40 text-xs font-mono"
+            className="h-8 w-40 text-sm font-mono"
             placeholder="recipe_id"
           />
           <Input
             value={recipeVersion}
             onChange={e => setRecipeVersion(e.target.value)}
             disabled={!isNew}
-            className="h-8 w-24 text-xs font-mono"
+            className="h-8 w-24 text-sm font-mono"
             placeholder="1.0.0"
           />
           <Input
@@ -183,23 +183,23 @@ export default function RecipeEditV2Page() {
             placeholder="配方名称"
           />
         </div>
-        <div className="px-2 py-0.5 rounded text-xs bg-purple-500/20 text-purple-300">
+        <div className="px-2 py-0.5 rounded text-sm bg-purple-500/20 text-purple-300">
           DAG schema v2
         </div>
         {/* M3.2: 配方状态徽章 */}
         {!isNew && recipeStatus === 'pending_approval' && (
-          <div className="px-2 py-0.5 rounded text-xs bg-amber-500/20 text-amber-300 flex items-center gap-1">
+          <div className="px-2 py-0.5 rounded text-sm bg-amber-500/20 text-amber-300 flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />等待审核
           </div>
         )}
         {!isNew && recipeStatus === 'approved' && (
-          <div className="px-2 py-0.5 rounded text-xs bg-green-500/20 text-green-300 flex items-center gap-1">
+          <div className="px-2 py-0.5 rounded text-sm bg-green-500/20 text-green-300 flex items-center gap-1">
             <CheckCircle className="w-3 h-3" />已批准
           </div>
         )}
         <div className="flex-1" />
         {saveMsg && (
-          <div className={`flex items-center gap-1 text-xs ${saveMsg.ok ? 'text-emerald-600' : 'text-red-600'}`}>
+          <div className={`flex items-center gap-1 text-sm ${saveMsg.ok ? 'text-emerald-600' : 'text-red-600'}`}>
             {saveMsg.ok ? <CheckCircle className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
             {saveMsg.text}
           </div>

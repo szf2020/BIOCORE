@@ -283,23 +283,23 @@ export default function BatchDetailPage() {
                       className="flex items-center gap-2 w-full text-left py-1.5 px-2 rounded hover:bg-muted text-sm"
                     >
                       {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                      <code className="text-xs text-gray-500 font-mono">{p.node_id}</code>
+                      <code className="text-sm text-gray-500 font-mono">{p.node_id}</code>
                       <span className="font-medium">{p.phase_id}</span>
-                      <span className="text-xs text-gray-500">{p.phase_type}</span>
-                      <Badge variant="outline" className="ml-auto text-xs">{p.status}</Badge>
+                      <span className="text-sm text-gray-500">{p.phase_type}</span>
+                      <Badge variant="outline" className="ml-auto text-sm">{p.status}</Badge>
                     </button>
                     {expanded && phaseSteps.length > 0 && (
                       <div className="ml-6 border-l pl-3 space-y-1 mb-2">
                         {phaseSteps.sort((a, b) => a.step_number - b.step_number).map(step => (
-                          <div key={step.id} className="flex items-center gap-2 text-xs py-1 text-muted-foreground">
+                          <div key={step.id} className="flex items-center gap-2 text-sm py-1 text-muted-foreground">
                             <span className="font-mono">Step {step.step_number}</span>
                             <span>{step.description ?? step.step_type ?? '-'}</span>
-                            <Badge variant="outline" className="ml-auto text-xs">{step.status ?? '-'}</Badge>
+                            <Badge variant="outline" className="ml-auto text-sm">{step.status ?? '-'}</Badge>
                           </div>
                         ))}
                       </div>
                     )}
-                    {expanded && phaseSteps.length === 0 && <p className="ml-8 text-xs text-muted-foreground py-1">无步骤</p>}
+                    {expanded && phaseSteps.length === 0 && <p className="ml-8 text-sm text-muted-foreground py-1">无步骤</p>}
                   </li>
                 );
               })}
@@ -316,11 +316,11 @@ export default function BatchDetailPage() {
             <div className="space-y-2">
               {transitions.map((t, i) => (
                 <div key={t.id ?? i} className="flex items-center gap-3 text-sm">
-                  <span className="text-xs text-muted-foreground w-40">{new Date(t.triggered_at).toLocaleString('zh-CN')}</span>
+                  <span className="text-sm text-muted-foreground w-40">{new Date(t.triggered_at).toLocaleString('zh-CN')}</span>
                   <Badge variant="outline">{t.from_state}</Badge>
                   <span className="text-muted-foreground">&rarr;</span>
                   <Badge>{t.to_state}</Badge>
-                  {t.trigger_reason && <span className="text-xs text-muted-foreground ml-2">{t.trigger_reason}</span>}
+                  {t.trigger_reason && <span className="text-sm text-muted-foreground ml-2">{t.trigger_reason}</span>}
                 </div>
               ))}
             </div>
@@ -361,8 +361,8 @@ export default function BatchDetailPage() {
                 <TableBody>
                   {samples.map((s, i) => (
                     <TableRow key={s.id ?? i}>
-                      <TableCell className="text-xs whitespace-nowrap">{new Date(s.sample_time).toLocaleString('zh-CN')}</TableCell>
-                      <TableCell className="text-xs">{s.sampled_by ?? '-'}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{new Date(s.sample_time).toLocaleString('zh-CN')}</TableCell>
+                      <TableCell className="text-sm">{s.sampled_by ?? '-'}</TableCell>
                       <TableCell>{s.od600 ?? '-'}</TableCell>
                       <TableCell>{s.dcw_g_L ?? '-'}</TableCell>
                       <TableCell>{s.biomass_g_L ?? '-'}</TableCell>
@@ -411,7 +411,7 @@ export default function BatchDetailPage() {
             {/* 高级字段 (M2.4) — 折叠 */}
             <button type="button"
               onClick={() => setShowAdvanced(v => !v)}
-              className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground self-start">
+              className="mt-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground self-start">
               {showAdvanced ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
               高级分析物字段 {showAdvanced ? '' : '(乳酸 / 湿重 / 活性 / 乙醇)'}
             </button>

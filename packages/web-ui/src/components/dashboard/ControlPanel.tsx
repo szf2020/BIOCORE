@@ -288,7 +288,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
             报警 ({unacknowledgedAlarms.length})
           </div>
           {unacknowledgedAlarms.slice(0, 3).map(a => (
-            <div key={a.id} className="flex items-center gap-2 text-xs">
+            <div key={a.id} className="flex items-center gap-2 text-sm">
               <span className="text-red-600 font-mono flex-shrink-0">
                 {a.triggered_at ? new Date(a.triggered_at).toLocaleTimeString('zh-CN', { hour12: false }) : '--'}
               </span>
@@ -299,7 +299,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                   body: JSON.stringify({ user_id: 'admin-001' }),
                 });
                 if (resp.ok) ackAlarmInStore(a.id);
-              }} className="text-xs px-1.5 py-0.5 rounded border border-red-500/30 text-red-600 hover:bg-red-500/10 flex-shrink-0">
+              }} className="text-sm px-1.5 py-0.5 rounded border border-red-500/30 text-red-600 hover:bg-red-500/10 flex-shrink-0">
                 确认
               </button>
             </div>
@@ -329,12 +329,12 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
           {/* T19: 当前 Phase (DAG runtime) — 仅批次运行时显示 */}
           {dagRuntime && (
             <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-primary/8 border border-primary/20">
-              <span className="text-xs text-muted-foreground flex-shrink-0">当前</span>
-              <strong className="text-xs font-mono text-foreground truncate flex-1">
+              <span className="text-sm text-muted-foreground flex-shrink-0">当前</span>
+              <strong className="text-sm font-mono text-foreground truncate flex-1">
                 {dagRuntime.phase_id || '—'}
               </strong>
               {dagRuntime.phase_type && (
-                <span className="text-xs text-muted-foreground bg-muted/60 border border-border px-1.5 py-0.5 rounded flex-shrink-0">
+                <span className="text-sm text-muted-foreground bg-muted/60 border border-border px-1.5 py-0.5 rounded flex-shrink-0">
                   {dagRuntime.phase_type}
                 </span>
               )}
@@ -343,18 +343,18 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
 
           {/* 罐号 + 批次号输入 (idle 时本地输入; 非 idle 时显示运行中 batch_id) */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground flex-shrink-0">{reactorId}</span>
+            <span className="text-sm text-muted-foreground flex-shrink-0">{reactorId}</span>
             <input value={realIsIdle ? batchIdInput : (currentBatchId || batchIdInput)}
               onChange={e => setBatchIdInput(e.target.value)}
               placeholder="输入批次号 (统计报表用)"
               disabled={!realIsIdle}
-              className="flex-1 h-7 px-2 rounded bg-background border border-border text-xs font-mono text-foreground placeholder:text-muted-foreground/50 disabled:opacity-50 disabled:text-foreground" />
+              className="flex-1 h-7 px-2 rounded bg-background border border-border text-sm font-mono text-foreground placeholder:text-muted-foreground/50 disabled:opacity-50 disabled:text-foreground" />
           </div>
 
           {/* 配方选择与下载 */}
           {realIsIdle && !recipeDownloaded && (
             <div className="space-y-2 bg-yellow-500/5 border border-yellow-500/20 rounded p-2.5">
-              <div className="flex items-center gap-1.5 text-xs text-amber-600">
+              <div className="flex items-center gap-1.5 text-sm text-amber-600">
                 <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="font-medium">请选择已锁定的配方并下载</span>
               </div>
@@ -379,11 +379,11 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
 
           {recipeDownloaded && (
             <>
-              <div className="flex items-center justify-between text-xs text-emerald-600 bg-green-500/5 border border-green-500/20 rounded px-2.5 py-2">
+              <div className="flex items-center justify-between text-sm text-emerald-600 bg-green-500/5 border border-green-500/20 rounded px-2.5 py-2">
                 <div className="flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5 flex-shrink-0" />
                   <span>{realIsIdle ? '配方已就绪' : '当前配方'}: <strong>{downloadedRecipeName}</strong></span>
-                  <span className={`ml-1 px-2 py-1 rounded text-[12px] font-semibold ${
+                  <span className={`ml-1 px-2 py-1 rounded text-[14px] font-semibold ${
                     downloadedExecutionMode === 'sequential' ? 'bg-primary/20 text-primary border border-primary/30'
                       : (downloadedExecutionMode as string) === 'dag' ? 'bg-blue-500/15 text-blue-600 border border-blue-500/30'
                       : 'bg-muted text-muted-foreground border border-border'
@@ -395,7 +395,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                 </div>
                 {realIsIdle && (
                   <button onClick={() => { setChangingRecipe(true); setReactorRecipe(reactorId, null); }}
-                    className="text-[12px] text-muted-foreground hover:text-foreground underline">更换</button>
+                    className="text-[14px] text-muted-foreground hover:text-foreground underline">更换</button>
                 )}
               </div>
               {realIsIdle && downloadedPhases.length > 0 && (() => {
@@ -403,10 +403,10 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                 if (prodPhases.length === 0) return null;
                 return (
                   <div className="border border-border rounded p-2 space-y-1">
-                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">生产 Phase ({prodPhases.length})</div>
+                    <div className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">生产 Phase ({prodPhases.length})</div>
                     <div className="space-y-1 max-h-48 overflow-y-auto mes-scroll pr-1">
                       {prodPhases.map((p: any, i: number) => (
-                        <div key={i} className="flex items-center gap-2 text-xs px-1.5 py-1 rounded bg-muted/20">
+                        <div key={i} className="flex items-center gap-2 text-sm px-1.5 py-1 rounded bg-muted/20">
                           <span className="w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[11px] font-bold flex-shrink-0">{i + 1}</span>
                           <span className="font-medium text-foreground">{phaseLabel(p.type)}</span>
                           <span className="ml-auto px-1.5 py-0.5 rounded text-[11px] bg-gray-500/15 text-gray-400 border border-gray-500/20">待执行</span>
@@ -421,7 +421,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
 
           {/* 批次号必填提示 (idle + 已下载配方 + 批次号未填) */}
           {realIsIdle && recipeDownloaded && !batchIdInput.trim() && (
-            <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-yellow-500/5 border border-yellow-500/20 rounded px-2 py-1">
+            <div className="flex items-center gap-1.5 text-sm text-amber-600 bg-yellow-500/5 border border-yellow-500/20 rounded px-2 py-1">
               <AlertTriangle className="w-3 h-3 flex-shrink-0" />
               请输入批次号后再启动
             </div>
@@ -478,7 +478,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
           {/* 复位 (stopped/complete 时，仅此一处) */}
           {realIsStopped && (
             <button onClick={() => { sendBatchCommand('cmd_reset'); setReactorRecipe(reactorId, null); setBatchIdInput(''); }}
-              className="w-full flex items-center justify-center gap-1.5 h-9 rounded text-xs font-semibold bg-primary/15 text-primary border border-primary/40 hover:bg-primary/25 transition-all">
+              className="w-full flex items-center justify-center gap-1.5 h-9 rounded text-sm font-semibold bg-primary/15 text-primary border border-primary/40 hover:bg-primary/25 transition-all">
               <RotateCcw className="w-3.5 h-3.5" /> 复位
             </button>
           )}
@@ -492,7 +492,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
             <div className="flex items-center gap-2">
               <div className="w-1 h-4 bg-primary rounded" />
               <span className="text-sm font-semibold text-foreground">Phase 控制列表</span>
-              <span className="text-xs text-muted-foreground font-mono">({realPhaseStatuses.length})</span>
+              <span className="text-sm text-muted-foreground font-mono">({realPhaseStatuses.length})</span>
             </div>
           </div>
           <div className="p-3 flex-1 min-h-0 flex flex-col">
@@ -506,8 +506,8 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                   return (
                     <div key={ps.phase_index} className="rounded bg-muted/20 border border-border/40 p-2 space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted-foreground w-3 text-right">{ps.phase_index + 1}</span>
-                        <span className="text-xs font-medium text-foreground flex-1 truncate">
+                        <span className="text-sm font-mono text-muted-foreground w-3 text-right">{ps.phase_index + 1}</span>
+                        <span className="text-sm font-medium text-foreground flex-1 truncate">
                           {ps.phase_id || phaseLabel(ps.phase_type, phaseTemplateMap[ps.phase_type])}
                         </span>
                         {ps.phase_type && (
@@ -517,7 +517,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                         )}
                         {/* 运行中: 倒计时或计时 */}
                         {ps.state === 'running' && (
-                          <span className="text-xs font-mono text-emerald-600 flex-shrink-0">
+                          <span className="text-sm font-mono text-emerald-600 flex-shrink-0">
                             {durationH ? formatCountdown(elapsed, durationH) : formatTime(elapsed)}
                           </span>
                         )}
@@ -526,7 +526,7 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
 
                       {(ps.state === 'running' || ps.state === 'held') && ps.total_steps > 0 && (
                         <div className="space-y-0.5">
-                          <div className="flex justify-between text-xs font-mono text-muted-foreground">
+                          <div className="flex justify-between text-sm font-mono text-muted-foreground">
                             <span>Step {ps.step_number}/{ps.total_steps}: {ps.step_name || '...'}</span>
                             <span>{progress}%</span>
                           </div>
@@ -539,23 +539,23 @@ export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
                       <div className="flex gap-1">
                         {(ps.state === 'pending' || ps.state === 'ready') && downloadedExecutionMode === 'free' && (
                           <>
-                            <button onClick={() => sendPhaseCmd(ps.phase_index, 'start')} className="h-5 px-1.5 rounded text-xs font-medium text-emerald-600 border border-green-500/30 hover:bg-green-500/10">▶ 启动</button>
-                            <button onClick={() => sendPhaseCmd(ps.phase_index, 'skip')} className="h-5 px-1.5 rounded text-xs font-medium text-muted-foreground border border-border hover:bg-muted">跳过</button>
+                            <button onClick={() => sendPhaseCmd(ps.phase_index, 'start')} className="h-5 px-1.5 rounded text-sm font-medium text-emerald-600 border border-green-500/30 hover:bg-green-500/10">▶ 启动</button>
+                            <button onClick={() => sendPhaseCmd(ps.phase_index, 'skip')} className="h-5 px-1.5 rounded text-sm font-medium text-muted-foreground border border-border hover:bg-muted">跳过</button>
                           </>
                         )}
                         {(ps.state === 'pending' || ps.state === 'ready') && downloadedExecutionMode === 'sequential' && (
-                          <span className="text-xs text-muted-foreground italic">自动</span>
+                          <span className="text-sm text-muted-foreground italic">自动</span>
                         )}
                         {ps.state === 'running' && (
                           <>
-                            <button onClick={() => sendPhaseCmd(ps.phase_index, 'hold')} className="h-5 px-1.5 rounded text-xs font-medium text-amber-600 border border-yellow-500/30 hover:bg-yellow-500/10">⏸ 保持</button>
-                            <button onClick={() => sendPhaseCmd(ps.phase_index, 'skip')} className="h-5 px-1.5 rounded text-xs font-medium text-red-600 border border-red-500/30 hover:bg-red-500/10">⏹ 停止</button>
+                            <button onClick={() => sendPhaseCmd(ps.phase_index, 'hold')} className="h-5 px-1.5 rounded text-sm font-medium text-amber-600 border border-yellow-500/30 hover:bg-yellow-500/10">⏸ 保持</button>
+                            <button onClick={() => sendPhaseCmd(ps.phase_index, 'skip')} className="h-5 px-1.5 rounded text-sm font-medium text-red-600 border border-red-500/30 hover:bg-red-500/10">⏹ 停止</button>
                           </>
                         )}
                         {ps.state === 'held' && (
                           <>
-                            <button onClick={() => sendPhaseCmd(ps.phase_index, 'restart')} className="h-5 px-1.5 rounded text-xs font-medium text-emerald-600 border border-green-500/30 hover:bg-green-500/10">▶ 恢复</button>
-                            <button onClick={() => sendPhaseCmd(ps.phase_index, 'skip')} className="h-5 px-1.5 rounded text-xs font-medium text-red-600 border border-red-500/30 hover:bg-red-500/10">⏹ 放弃</button>
+                            <button onClick={() => sendPhaseCmd(ps.phase_index, 'restart')} className="h-5 px-1.5 rounded text-sm font-medium text-emerald-600 border border-green-500/30 hover:bg-green-500/10">▶ 恢复</button>
+                            <button onClick={() => sendPhaseCmd(ps.phase_index, 'skip')} className="h-5 px-1.5 rounded text-sm font-medium text-red-600 border border-red-500/30 hover:bg-red-500/10">⏹ 放弃</button>
                           </>
                         )}
                         {ps.state === 'completed' && <Check className="w-3.5 h-3.5 text-blue-600" />}

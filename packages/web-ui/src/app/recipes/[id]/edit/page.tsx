@@ -125,10 +125,10 @@ function PhaseTemplatePalette({ templates, onAdd }: { templates: APIPhaseTemplat
   return (
     <div className="w-[240px] flex-shrink-0 border-r overflow-y-auto p-3 space-y-4">
       <div className="text-sm font-medium text-muted-foreground">Phase 模板库</div>
-      <p className="text-xs text-muted-foreground">点击添加到配方时间线</p>
+      <p className="text-sm text-muted-foreground">点击添加到配方时间线</p>
       {groups.map(group => (
         <div key={group.title} className="space-y-1.5">
-          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{group.title}</div>
+          <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{group.title}</div>
           {group.items.map(tmpl => {
             const type = tmpl.type;
             const c = getColor(tmpl.color);
@@ -156,7 +156,7 @@ function PhaseTemplatePalette({ templates, onAdd }: { templates: APIPhaseTemplat
 function ParamInput({ field, value, onChange }: { field: ParamField; value: any; onChange: (v: any) => void }) {
   return (
     <div className="space-y-1">
-      <Label className="text-xs">
+      <Label className="text-sm">
         {field.label}
         {field.unit && <span className="text-muted-foreground ml-1">({field.unit})</span>}
         {field.required && <span className="text-destructive ml-0.5">*</span>}
@@ -218,15 +218,15 @@ function SortablePhaseCard({ phase, index, total, executionMode, isSelected, onR
             onClick={(e) => e.stopPropagation()}>
             <GripVertical className="w-4 h-4 text-muted-foreground" />
           </div>
-          <Badge variant="outline" className="text-xs font-mono w-6 h-6 flex items-center justify-center p-0">
+          <Badge variant="outline" className="text-sm font-mono w-6 h-6 flex items-center justify-center p-0">
             {index + 1}
           </Badge>
-          <Badge className={`text-xs ${c.bg} ${c.text} ${c.border}`}>{phaseLabel(phase.type, tmpl?.label)}</Badge>
+          <Badge className={`text-sm ${c.bg} ${c.text} ${c.border}`}>{phaseLabel(phase.type, tmpl?.label)}</Badge>
           <Input value={phase.label} className="h-7 text-sm flex-1 bg-transparent border-transparent hover:border-border focus:border-primary"
             placeholder={`${phaseLabel(phase.type, tmpl?.label)} (自定义名称)`}
             onChange={(e) => { e.stopPropagation(); onLabelChange(e.target.value); }}
             onClick={(e) => e.stopPropagation()} />
-          <span className="text-xs text-muted-foreground whitespace-nowrap">{tmpl?.fixed_steps || 0} steps</span>
+          <span className="text-sm text-muted-foreground whitespace-nowrap">{tmpl?.fixed_steps || 0} steps</span>
           {phase.expanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
           {/* M3.4: 复制单个 phase 按钮 */}
           <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100"
@@ -244,7 +244,7 @@ function SortablePhaseCard({ phase, index, total, executionMode, isSelected, onR
             {/* 步骤序列 */}
             {(tmpl?.steps?.length || tmpl?.fixed_steps || 0) > 0 && (
               <div className="pt-3">
-                <div className="text-xs font-medium text-muted-foreground mb-2">步骤序列 ({tmpl?.steps?.length || tmpl?.fixed_steps || 0} 步)</div>
+                <div className="text-sm font-medium text-muted-foreground mb-2">步骤序列 ({tmpl?.steps?.length || tmpl?.fixed_steps || 0} 步)</div>
                 <div className="space-y-1">
                   {tmpl?.steps && tmpl.steps.length > 0 ? (
                     tmpl.steps.map((step: any, si: number) => {
@@ -267,8 +267,8 @@ function SortablePhaseCard({ phase, index, total, executionMode, isSelected, onR
                           : '';
 
                       return (
-                      <div key={si} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5">
-                        <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium flex-shrink-0">
+                      <div key={si} className="flex items-center gap-2 text-sm bg-muted/50 rounded px-2 py-1.5">
+                        <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium flex-shrink-0">
                           {step.step_number || si + 1}
                         </span>
                         <span className="font-medium flex-shrink-0">{step.name || `Step ${si + 1}`}</span>
@@ -277,7 +277,7 @@ function SortablePhaseCard({ phase, index, total, executionMode, isSelected, onR
                           {condText || '—'}
                         </span>
                         {step.next_step && step.next_step !== 'next' && (
-                          <Badge variant="outline" className="text-xs h-4 flex-shrink-0">
+                          <Badge variant="outline" className="text-sm h-4 flex-shrink-0">
                             →{step.next_step === 'end' ? '结束' : `Step${step.next_step}`}
                           </Badge>
                         )}
@@ -285,7 +285,7 @@ function SortablePhaseCard({ phase, index, total, executionMode, isSelected, onR
                       );
                     })
                   ) : (
-                    <div className="text-xs text-muted-foreground italic px-2">
+                    <div className="text-sm text-muted-foreground italic px-2">
                       {tmpl?.fixed_steps || 0} 个内置步骤 (在Phase模板配置中编辑)
                     </div>
                   )}
@@ -325,16 +325,16 @@ function SortablePhaseCard({ phase, index, total, executionMode, isSelected, onR
 
               return (
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground mb-2">参数设置</div>
+                  <div className="text-sm font-medium text-muted-foreground mb-2">参数设置</div>
                   <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
                     {allParams.map(p => (
                       <div key={p.key} className="space-y-0.5">
-                        <Label className="text-xs">
+                        <Label className="text-sm">
                           {p.label}
                           {p.unit && <span className="text-muted-foreground ml-1">({p.unit})</span>}
                         </Label>
                         {typeof p.value === 'object' && p.value !== null ? (
-                          <div className="text-xs font-mono bg-muted rounded px-2 py-1">{JSON.stringify(p.value)}</div>
+                          <div className="text-sm font-mono bg-muted rounded px-2 py-1">{JSON.stringify(p.value)}</div>
                         ) : (
                           <Input className="h-8 text-sm" value={p.value ?? ''}
                             type={typeof p.value === 'number' ? 'number' : 'text'}
@@ -354,7 +354,7 @@ function SortablePhaseCard({ phase, index, total, executionMode, isSelected, onR
 
             {/* 无步骤无参数时的提示 */}
             {(!tmpl?.steps?.length && !tmpl?.fixed_steps && !(tmpl?.param_schema?.length)) && (
-              <div className="pt-3 text-xs text-muted-foreground italic">
+              <div className="pt-3 text-sm text-muted-foreground italic">
                 此Phase模板尚未配置步骤和参数，请到 系统设置 → Phase模板配置 中编辑
               </div>
             )}
@@ -710,7 +710,7 @@ export default function RecipeEditorPage() {
         {/* 执行模式切换 */}
         <div className="flex items-center gap-1 bg-muted rounded-md p-0.5">
           <button onClick={() => setExecutionMode('free')}
-            className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+            className={`px-2.5 py-1 text-sm rounded font-medium transition-colors ${
               executionMode === 'free'
                 ? 'bg-primary text-white shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
@@ -718,7 +718,7 @@ export default function RecipeEditorPage() {
             自由模式
           </button>
           <button onClick={() => setExecutionMode('sequential')}
-            className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+            className={`px-2.5 py-1 text-sm rounded font-medium transition-colors ${
               executionMode === 'sequential'
                 ? 'bg-primary text-white shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
@@ -731,7 +731,7 @@ export default function RecipeEditorPage() {
 
         {/* M3.4: 剪贴板操作 */}
         {clipboardHint && (
-          <div className="text-xs text-primary flex items-center gap-1">
+          <div className="text-sm text-primary flex items-center gap-1">
             <CheckCircle className="w-3 h-3" />{clipboardHint}
           </div>
         )}
@@ -747,7 +747,7 @@ export default function RecipeEditorPage() {
         )}
 
         {saveMsg && (
-          <div className={`flex items-center gap-1 text-xs ${saveMsg.ok ? 'text-green-600' : 'text-destructive'}`}>
+          <div className={`flex items-center gap-1 text-sm ${saveMsg.ok ? 'text-green-600' : 'text-destructive'}`}>
             {saveMsg.ok ? <CheckCircle className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
             {saveMsg.text}
           </div>
@@ -765,12 +765,12 @@ export default function RecipeEditorPage() {
           </Button>
         )}
         {recipeStatus === 'pending_approval' && (
-          <div className="text-xs text-amber-400 flex items-center gap-1">
+          <div className="text-sm text-amber-400 flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />等待审核
           </div>
         )}
         {recipeStatus === 'approved' && (
-          <div className="text-xs text-emerald-600 flex items-center gap-1">
+          <div className="text-sm text-emerald-600 flex items-center gap-1">
             <CheckCircle className="w-3 h-3" />已批准
           </div>
         )}
@@ -778,7 +778,7 @@ export default function RecipeEditorPage() {
 
       {/* M3.2: 被拒提示横条 */}
       {rejectionReason && recipeStatus === 'draft' && (
-        <div className="mx-3 my-2 px-3 py-2 rounded border border-red-500/30 bg-red-500/10 text-xs text-red-600 flex items-start gap-2">
+        <div className="mx-3 my-2 px-3 py-2 rounded border border-red-500/30 bg-red-500/10 text-sm text-red-600 flex items-start gap-2">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <div>
             <div className="font-semibold mb-0.5">上次审核被拒</div>
@@ -795,7 +795,7 @@ export default function RecipeEditorPage() {
           {/* Timeline */}
           <div className="flex-1 overflow-y-auto p-4">
             {/* 模式说明横条 */}
-            <div className={`mb-3 px-3 py-2 rounded-md text-xs flex items-center gap-2 ${
+            <div className={`mb-3 px-3 py-2 rounded-md text-sm flex items-center gap-2 ${
               executionMode === 'sequential'
                 ? 'bg-primary/10 border border-primary/20 text-primary'
                 : 'bg-muted/50 border border-border text-muted-foreground'
@@ -822,7 +822,7 @@ export default function RecipeEditorPage() {
               <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg text-muted-foreground">
                 <Plus className="w-8 h-8 mb-3 opacity-50" />
                 <p className="text-sm font-medium">从左侧点击Phase模板添加到此处</p>
-                <p className="text-xs mt-1">添加后可拖拽排序、点击展开参数</p>
+                <p className="text-sm mt-1">添加后可拖拽排序、点击展开参数</p>
               </div>
             ) : (
               <DndContext sensors={sensors} collisionDetection={closestCenter}
@@ -853,7 +853,7 @@ export default function RecipeEditorPage() {
                     const c = getColor(t.color);
                     return (
                       <Card className="shadow-lg border-primary px-3 py-2">
-                        <Badge className={`text-xs ${c.bg} ${c.text}`}>{t.label}</Badge>
+                        <Badge className={`text-sm ${c.bg} ${c.text}`}>{t.label}</Badge>
                         <span className="ml-2 text-sm">{p.label}</span>
                       </Card>
                     );
@@ -870,11 +870,11 @@ export default function RecipeEditorPage() {
             </Button>
             <div className="flex-1" />
             {errors.length === 0 ? (
-              <span className="text-xs text-green-600 flex items-center gap-1">
+              <span className="text-sm text-green-600 flex items-center gap-1">
                 <CheckCircle className="w-3.5 h-3.5" /> 验证通过
               </span>
             ) : (
-              <span className="text-xs text-destructive flex items-center gap-1">
+              <span className="text-sm text-destructive flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" /> {errors.length} 个问题
               </span>
             )}
@@ -883,7 +883,7 @@ export default function RecipeEditorPage() {
           {/* JSON preview */}
           {showJson && (
             <div className="border-t max-h-[300px] overflow-auto bg-muted/30">
-              <pre className="p-4 text-xs font-mono whitespace-pre-wrap">{JSON.stringify(recipeObj, null, 2)}</pre>
+              <pre className="p-4 text-sm font-mono whitespace-pre-wrap">{JSON.stringify(recipeObj, null, 2)}</pre>
             </div>
           )}
         </div>

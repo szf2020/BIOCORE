@@ -115,7 +115,7 @@ export default function SpcPage() {
           <h1 className="text-xl font-bold flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-primary" /> SPC 控制图
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">统计过程控制 · 西电规则 · 过程能力 Cp/Cpk — 参考 DELMIA Apriso Quality</p>
+          <p className="text-sm text-muted-foreground mt-1">统计过程控制 · 西电规则 · 过程能力 Cp/Cpk — 参考 DELMIA Apriso Quality</p>
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => setCalcOpen(true)}>
@@ -131,7 +131,7 @@ export default function SpcPage() {
       <div className="flex flex-wrap gap-3">
         <Card className="flex-1 min-w-[200px]">
           <CardContent className="p-3">
-            <label className="text-xs text-muted-foreground">SPC 参数</label>
+            <label className="text-sm text-muted-foreground">SPC 参数</label>
             <select value={selectedParam} onChange={e => setSelectedParam(e.target.value)}
               className="mt-1 w-full h-8 px-2 rounded bg-background border border-border text-sm">
               {parameters.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
@@ -140,7 +140,7 @@ export default function SpcPage() {
         </Card>
         <Card className="min-w-[180px]">
           <CardContent className="p-3">
-            <label className="text-xs text-muted-foreground">图表类型</label>
+            <label className="text-sm text-muted-foreground">图表类型</label>
             <select value={chartType} onChange={e => setChartType(e.target.value as ChartType)}
               className="mt-1 w-full h-8 px-2 rounded bg-background border border-border text-sm">
               {(parameters.find(p => p.key === selectedParam) as any)?.chartTypes?.map((ct: ChartType) => (
@@ -156,13 +156,13 @@ export default function SpcPage() {
         <CapabilityCard label="Cpk" value={capability?.cpk} grade={capability?.cpk_grade} />
         <Card className="min-w-[100px]">
           <CardContent className="p-3 text-center">
-            <div className="text-xs text-muted-foreground">σ</div>
+            <div className="text-sm text-muted-foreground">σ</div>
             <div className="text-lg font-bold font-mono">{capability?.sigma?.toFixed(3) ?? '—'}</div>
           </CardContent>
         </Card>
         <Card className="min-w-[100px]">
           <CardContent className="p-3 text-center">
-            <div className="text-xs text-muted-foreground">失控 / 总点数</div>
+            <div className="text-sm text-muted-foreground">失控 / 总点数</div>
             <div className={`text-lg font-bold ${oocCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
               {oocCount} / {totalPoints}
             </div>
@@ -173,7 +173,7 @@ export default function SpcPage() {
       {/* 控制图 */}
       <Card>
         <CardContent className="p-4">
-          <h3 className="text-xs font-semibold text-muted-foreground mb-2">{paramLabel} — {CHART_TYPE_LABELS[chartType]} 控制图</h3>
+          <h3 className="text-sm font-semibold text-muted-foreground mb-2">{paramLabel} — {CHART_TYPE_LABELS[chartType]} 控制图</h3>
           {chartType === 'individual' && controlChartOption ? (
             <EChartsWrapper option={controlChartOption} style={{ height: 360 }} />
           ) : extChartData ? (
@@ -191,7 +191,7 @@ export default function SpcPage() {
             <div className="flex flex-col items-center justify-center h-[360px] text-muted-foreground text-sm gap-2">
               <TrendingUp className="w-8 h-8 text-muted-foreground/30" />
               <p>暂无 SPC 数据</p>
-              <p className="text-xs">完成批次并点击"计算控制限"后自动生成</p>
+              <p className="text-sm">完成批次并点击"计算控制限"后自动生成</p>
             </div>
           )}
         </CardContent>
@@ -201,9 +201,9 @@ export default function SpcPage() {
       {chartData && chartData.points.length > 0 && (
         <Card>
           <CardContent className="p-4">
-            <h3 className="text-xs font-semibold text-muted-foreground mb-3">数据点明细</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3">数据点明细</h3>
             <div className="overflow-x-auto max-h-[300px]">
-              <table className="w-full text-xs">
+              <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-card">
                   <tr className="border-b border-border text-muted-foreground">
                     <th className="text-left py-2 px-2">批次</th>
@@ -241,11 +241,11 @@ export default function SpcPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm" onClick={() => setCalcOpen(false)}>
           <div className="bg-card border border-border rounded-lg w-[420px] shadow-2xl p-5 space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-sm font-semibold">自动计算控制限</h3>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               从已完成批次的历史数据自动计算 <strong>{paramLabel}</strong> 的 UCL/CL/LCL (3σ 法)。
               至少需要 3 个批次数据。
             </p>
-            {calcMsg && <div className="text-xs bg-muted/50 rounded p-2">{calcMsg}</div>}
+            {calcMsg && <div className="text-sm bg-muted/50 rounded p-2">{calcMsg}</div>}
             <div className="flex justify-end gap-2">
               <Button size="sm" variant="outline" onClick={() => setCalcOpen(false)}>取消</Button>
               <Button size="sm" onClick={handleCalculateLimits}>计算并保存</Button>
@@ -264,7 +264,7 @@ function CapabilityCard({ label, value, grade }: { label: string; value: number 
   return (
     <Card className="min-w-[100px]">
       <CardContent className="p-3 text-center">
-        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="text-sm text-muted-foreground">{label}</div>
         <div className={`text-lg font-bold font-mono ${color}`}>{value != null ? value.toFixed(2) : '—'}</div>
         {grade && <div className={`text-[11px] ${color}`}>{grade === 'excellent' ? '优秀' : grade === 'acceptable' ? '合格' : '不足'}</div>}
       </CardContent>

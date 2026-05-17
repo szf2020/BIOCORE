@@ -124,11 +124,11 @@ export default function KpiDashboardPage() {
           <h1 className="text-xl font-bold flex items-center gap-2">
             <Gauge className="w-5 h-5 text-primary" /> KPI 仪表盘
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">OEE · 产量 · 周期时间 · 停机分析 — 参考 DELMIA Apriso MPI</p>
+          <p className="text-sm text-muted-foreground mt-1">OEE · 产量 · 周期时间 · 停机分析 — 参考 DELMIA Apriso MPI</p>
         </div>
         <div className="flex items-center gap-2">
           <select value={days} onChange={e => setDays(Number(e.target.value))}
-            className="h-8 px-2 rounded bg-card border border-border text-xs">
+            className="h-8 px-2 rounded bg-card border border-border text-sm">
             <option value={7}>近 7 天</option>
             <option value={30}>近 30 天</option>
             <option value={90}>近 90 天</option>
@@ -153,10 +153,10 @@ export default function KpiDashboardPage() {
       <div className="grid md:grid-cols-5 gap-3">
         <Card className="md:col-span-2">
           <CardContent className="p-4">
-            <h3 className="text-xs font-semibold text-muted-foreground mb-2">OEE 综合效率</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground mb-2">OEE 综合效率</h3>
             <EChartsWrapper option={oeeGaugeOption} style={{ height: 260 }} />
             {summary && (
-              <div className="flex justify-around text-xs text-muted-foreground mt-2">
+              <div className="flex justify-around text-sm text-muted-foreground mt-2">
                 <span>可用率 {summary.avg_oee != null ? round((summary.avg_oee || 0) * 100, 0) : '—'}%</span>
                 <span>性能率 100%</span>
                 <span>合格率 {summary.avg_oee != null ? '100' : '—'}%</span>
@@ -166,7 +166,7 @@ export default function KpiDashboardPage() {
         </Card>
         <Card className="md:col-span-3">
           <CardContent className="p-4">
-            <h3 className="text-xs font-semibold text-muted-foreground mb-2">KPI 趋势</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground mb-2">KPI 趋势</h3>
             {trends.length > 0 ? (
               <EChartsWrapper option={trendOption} style={{ height: 280 }} />
             ) : (
@@ -182,7 +182,7 @@ export default function KpiDashboardPage() {
       {pareto.length > 0 && (
         <Card>
           <CardContent className="p-4">
-            <h3 className="text-xs font-semibold text-muted-foreground mb-2">损失帕累托分析 — 近 {days} 天</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground mb-2">损失帕累托分析 — 近 {days} 天</h3>
             <EChartsWrapper option={{
               tooltip: { trigger: 'axis' as const },
               legend: { data: ['损失时间 (min)', '累计 %'], textStyle: { color: '#888', fontSize: 10 } },
@@ -210,12 +210,12 @@ export default function KpiDashboardPage() {
       {/* 批次 KPI 表 */}
       <Card>
         <CardContent className="p-4">
-          <h3 className="text-xs font-semibold text-muted-foreground mb-3">批次 KPI 明细</h3>
+          <h3 className="text-sm font-semibold text-muted-foreground mb-3">批次 KPI 明细</h3>
           {batches.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">暂无 KPI 数据</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-muted-foreground">
                     <th className="text-left py-2 px-2">批次</th>
@@ -263,7 +263,7 @@ function SummaryCard({ icon, label, value, color }: { icon: React.ReactNode; lab
       <CardContent className="p-3 flex items-center gap-3">
         <div className={color}>{icon}</div>
         <div>
-          <div className="text-xs text-muted-foreground">{label}</div>
+          <div className="text-sm text-muted-foreground">{label}</div>
           <div className="text-sm font-bold">{value}</div>
         </div>
       </CardContent>

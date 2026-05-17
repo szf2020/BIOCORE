@@ -116,7 +116,7 @@ export function EnvelopeChart({ batchId, field = 'temperature' }: { batchId: str
           <button
             key={f}
             onClick={() => setSelectedField(f)}
-            className={`px-3 py-1 text-xs rounded-full transition-colors ${
+            className={`px-3 py-1 text-sm rounded-full transition-colors ${
               selectedField === f
                 ? 'bg-blue-600 text-white'
                 : 'bg-muted text-muted-foreground hover:text-foreground'
@@ -128,7 +128,7 @@ export function EnvelopeChart({ batchId, field = 'temperature' }: { batchId: str
       </div>
 
       {data.currentBatch && !data.currentBatch.inBand && (
-        <div className="text-xs text-amber-600 bg-yellow-400/10 px-3 py-1.5 rounded">
+        <div className="text-sm text-amber-600 bg-yellow-400/10 px-3 py-1.5 rounded">
           当前批次轨迹偏离历史包络线范围
         </div>
       )}

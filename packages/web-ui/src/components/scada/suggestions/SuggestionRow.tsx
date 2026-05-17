@@ -50,23 +50,23 @@ export function SuggestionRow({ suggestion, onAccept, onReject, onRetry }: Props
           {suggestion.dispatch_status && DISPATCH_LABELS[suggestion.dispatch_status] && (
             <span
               title={suggestion.dispatch_error ?? undefined}
-              className={`text-xs px-2 py-0.5 rounded ${DISPATCH_COLORS[suggestion.dispatch_status]}`}
+              className={`text-sm px-2 py-0.5 rounded ${DISPATCH_COLORS[suggestion.dispatch_status]}`}
             >
               {DISPATCH_LABELS[suggestion.dispatch_status]}
             </span>
           )}
-          <span className="text-xs text-gray-400">#{suggestion.id} · {suggestion.created_at}</span>
+          <span className="text-sm text-gray-400">#{suggestion.id} · {suggestion.created_at}</span>
         </div>
       </div>
       <div className="text-sm">
         <span className="text-gray-500">建议值: </span>
         <span className="font-mono">{String(valueDisplay)}</span>
       </div>
-      <div className="text-xs text-gray-600">
+      <div className="text-sm text-gray-600">
         理由: {reasonDisplay}
       </div>
       {meta.view_id && (
-        <div className="text-xs text-gray-500">
+        <div className="text-sm text-gray-500">
           来源:{' '}
           <a href={`/scada2/${meta.view_id}`} className="text-blue-600 hover:underline">{meta.view_id}</a>
           {meta.widget_id && <> · widget <span className="font-mono">{meta.widget_id}</span></>}
@@ -77,7 +77,7 @@ export function SuggestionRow({ suggestion, onAccept, onReject, onRetry }: Props
           <button
             type="button"
             onClick={() => onRetry(suggestion.id)}
-            className="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
+            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
           >
             重新下发
           </button>
@@ -86,14 +86,14 @@ export function SuggestionRow({ suggestion, onAccept, onReject, onRetry }: Props
             <button
               type="button"
               onClick={() => onReject(suggestion.id)}
-              className="px-3 py-1 border rounded text-xs text-gray-700"
+              className="px-3 py-1 border rounded text-sm text-gray-700"
             >
               拒绝
             </button>
             <button
               type="button"
               onClick={() => onAccept(suggestion.id)}
-              className="px-3 py-1 bg-blue-600 text-white rounded text-xs"
+              className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
             >
               接受
             </button>

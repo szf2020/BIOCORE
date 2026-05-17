@@ -110,7 +110,7 @@
   }
 
   .mes-panel-title {
-    @apply text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground;
+    @apply text-sm font-semibold uppercase tracking-[0.1em] text-muted-foreground;
   }
 
   .mes-panel-body { @apply p-4; }
@@ -127,10 +127,10 @@
     letter-spacing: -0.02em;
   }
   .metric-card .label {
-    @apply text-xs uppercase tracking-wider text-muted-foreground;
+    @apply text-sm uppercase tracking-wider text-muted-foreground;
   }
   .metric-card .unit {
-    @apply text-xs font-mono text-muted-foreground ml-1;
+    @apply text-sm font-mono text-muted-foreground ml-1;
   }
 
   /* ─── Phase Strip — horizontal fermentation progress ───── */
@@ -230,7 +230,7 @@
     border-spacing: 0;
   }
   .clinical-table thead th {
-    @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2 text-left;
+    @apply text-sm font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2 text-left;
     background: hsl(var(--muted) / 0.5);
   }
   .clinical-table tbody tr {

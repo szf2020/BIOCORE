@@ -24,7 +24,7 @@ export function Tank(props: TankProps) {
   return (
     <div className="relative w-full h-full">
       {label ? (
-        <div className="absolute top-0 left-0 right-0 text-xs text-center text-gray-700 truncate">
+        <div className="absolute top-0 left-0 right-0 text-sm text-center text-gray-700 truncate">
           {label}
         </div>
       ) : null}
@@ -51,7 +51,7 @@ export function Tank(props: TankProps) {
         />
       </svg>
       {max !== undefined && unit ? (
-        <div className="absolute bottom-0 left-0 right-0 text-xs text-center text-gray-500">
+        <div className="absolute bottom-0 left-0 right-0 text-sm text-center text-gray-500">
           max {max} {unit}
         </div>
       ) : null}

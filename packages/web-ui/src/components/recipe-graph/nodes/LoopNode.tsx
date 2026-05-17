@@ -27,9 +27,9 @@ export function LoopNode({ data, selected }: NodeProps) {
       <Handle type="target" position={Position.Left} className="!w-2 !h-2 !bg-teal-400" />
       <div className="flex items-center gap-2">
         <Repeat className="w-3.5 h-3.5 text-teal-300 flex-shrink-0" />
-        <div className="text-xs font-semibold text-teal-100">↻ Loop</div>
+        <div className="text-sm font-semibold text-teal-100">↻ Loop</div>
       </div>
-      <div className="mt-1 pt-1 border-t border-teal-700/40 text-xs font-mono text-teal-100 truncate">
+      <div className="mt-1 pt-1 border-t border-teal-700/40 text-sm font-mono text-teal-100 truncate">
         <div>until: <span className="text-teal-300">{exitExpr}</span></div>
         <div>max: <span className="text-teal-300">{maxIter}</span></div>
       </div>

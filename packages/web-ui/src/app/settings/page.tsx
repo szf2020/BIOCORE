@@ -34,7 +34,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <h2 className="text-sm font-semibold">{section.label}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">{section.description}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">{section.description}</p>
             </div>
           </Link>
         ))}

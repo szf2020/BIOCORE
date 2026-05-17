@@ -171,7 +171,7 @@ export default function FormulaConfigPage() {
         <h1 className="text-xl font-bold flex items-center gap-2">
           <Calculator className="w-5 h-5 text-primary" /> 计算参数公式配置
         </h1>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           配置发酵过程中 OUR、kLa、μ、F₀ 等计算参数的系数。修改后实时生效。
         </p>
       </div>
@@ -189,13 +189,13 @@ export default function FormulaConfigPage() {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold">{f.name}</span>
+                <span className="text-sm font-semibold">{f.name}</span>
                 <div className="flex items-center gap-1">
                   {f.formula_type === 'expression' && <span className="text-[10px] bg-yellow-500/15 text-amber-600 px-1 rounded">自定义</span>}
                   <span className="text-[11px] text-muted-foreground font-mono">{f.output_unit}</span>
                 </div>
               </div>
-              <div className="text-xs text-muted-foreground font-mono mt-1 truncate">
+              <div className="text-sm text-muted-foreground font-mono mt-1 truncate">
                 {f.formula_type === 'expression' && f.expression ? f.expression : f.formula_display}
               </div>
             </button>
@@ -210,11 +210,11 @@ export default function FormulaConfigPage() {
                 {/* 公式展示 */}
                 <div>
                   <h2 className="text-sm font-bold">{current.name}</h2>
-                  <p className="text-xs text-muted-foreground mt-1">{current.description}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{current.description}</p>
                   <div className="mt-2 bg-muted/30 rounded p-3 font-mono text-sm text-primary">
                     {current.formula_display}
                   </div>
-                  <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
+                  <div className="flex gap-2 mt-2 text-sm text-muted-foreground">
                     <span>输出单位: {current.output_unit}</span>
                     <span>·</span>
                     <span>输入变量: {current.input_vars?.join(', ')}</span>
@@ -223,13 +223,13 @@ export default function FormulaConfigPage() {
 
                 {/* 模式切换: 参数化 / 自定义表达式 */}
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">模式:</span>
+                  <span className="text-sm text-muted-foreground">模式:</span>
                   <button onClick={() => setEditMode('parametric')}
-                    className={`px-3 py-1 rounded text-xs font-semibold border transition-all ${editMode === 'parametric' ? 'bg-primary/15 text-primary border-primary/40' : 'bg-muted/30 text-muted-foreground border-border'}`}>
+                    className={`px-3 py-1 rounded text-sm font-semibold border transition-all ${editMode === 'parametric' ? 'bg-primary/15 text-primary border-primary/40' : 'bg-muted/30 text-muted-foreground border-border'}`}>
                     参数化 (系数可调)
                   </button>
                   <button onClick={() => setEditMode('expression')}
-                    className={`px-3 py-1 rounded text-xs font-semibold border transition-all ${editMode === 'expression' ? 'bg-primary/15 text-primary border-primary/40' : 'bg-muted/30 text-muted-foreground border-border'}`}>
+                    className={`px-3 py-1 rounded text-sm font-semibold border transition-all ${editMode === 'expression' ? 'bg-primary/15 text-primary border-primary/40' : 'bg-muted/30 text-muted-foreground border-border'}`}>
                     自定义表达式
                   </button>
                 </div>
@@ -237,14 +237,14 @@ export default function FormulaConfigPage() {
                 {editMode === 'parametric' ? (
                   /* 参数化模式: 系数编辑 */
                   <div>
-                    <h3 className="text-xs font-semibold text-muted-foreground mb-2">可调系数</h3>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">可调系数</h3>
                     {Object.keys(editCoefs).length === 0 ? (
-                      <p className="text-xs text-muted-foreground">此公式无可调系数</p>
+                      <p className="text-sm text-muted-foreground">此公式无可调系数</p>
                     ) : (
                       <div className="grid gap-3 sm:grid-cols-2">
                         {Object.entries(editCoefs).map(([key, val]) => (
                           <div key={key}>
-                            <label className="text-xs text-muted-foreground">
+                            <label className="text-sm text-muted-foreground">
                               {COEF_LABELS[current.id]?.[key] || key}
                             </label>
                             <Input
@@ -261,8 +261,8 @@ export default function FormulaConfigPage() {
                   /* 自定义表达式模式 */
                   <div className="space-y-3">
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground mb-1">自定义公式表达式</h3>
-                      <p className="text-xs text-muted-foreground mb-2">
+                      <h3 className="text-sm font-semibold text-muted-foreground mb-1">自定义公式表达式</h3>
+                      <p className="text-sm text-muted-foreground mb-2">
                         使用数学表达式定义计算公式。支持: +, -, *, /, ^ (幂), pow(), sqrt(), log(), ln(), exp(), abs(), min(), max()
                       </p>
                       <textarea
@@ -275,14 +275,14 @@ export default function FormulaConfigPage() {
 
                     {/* 可用变量列表 */}
                     <div>
-                      <span className="text-xs text-muted-foreground">可用变量: </span>
+                      <span className="text-sm text-muted-foreground">可用变量: </span>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {['rpm', 'airflow', 'DO', 'temperature', 'pH', 'pressure', 'weight',
                           'feed_P01', 'feed_P02', 'feed_P04',
                           'kLa', 'OUR', 'Vs', 'PV', 'mu', 'cumFeed', 'cumBase', 'cumAcid', 'Vliquid',
                         ].map(v => (
                           <button key={v} onClick={() => setEditExpr(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + v)}
-                            className="text-xs font-mono bg-muted/50 hover:bg-primary/15 hover:text-primary px-1.5 py-0.5 rounded cursor-pointer transition-colors">
+                            className="text-sm font-mono bg-muted/50 hover:bg-primary/15 hover:text-primary px-1.5 py-0.5 rounded cursor-pointer transition-colors">
                             {v}
                           </button>
                         ))}
@@ -295,7 +295,7 @@ export default function FormulaConfigPage() {
                         <Check className="w-3.5 h-3.5 mr-1" />验证语法
                       </Button>
                       {validateResult && (
-                        <span className={`text-xs flex items-center gap-1 ${validateResult.valid ? 'text-emerald-600' : 'text-red-600'}`}>
+                        <span className={`text-sm flex items-center gap-1 ${validateResult.valid ? 'text-emerald-600' : 'text-red-600'}`}>
                           {validateResult.valid
                             ? <><Check className="w-3 h-3" />语法正确</>
                             : <><AlertCircle className="w-3 h-3" />{validateResult.error}</>}

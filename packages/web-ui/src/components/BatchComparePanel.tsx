@@ -185,18 +185,18 @@ export function BatchComparePanel() {
                     onChange={() => toggleBatch(bid)}
                     className="accent-primary"
                   />
-                  <span className="font-mono text-xs">{bid}</span>
+                  <span className="font-mono text-sm">{bid}</span>
                   {b.recipe_name && (
-                    <span className="text-xs text-muted-foreground truncate">{b.recipe_name}</span>
+                    <span className="text-sm text-muted-foreground truncate">{b.recipe_name}</span>
                   )}
                   {b.state && (
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-muted/50 ml-auto">{b.state}</span>
+                    <span className="text-sm px-1.5 py-0.5 rounded bg-muted/50 ml-auto">{b.state}</span>
                   )}
                 </label>
               );
             })}
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-sm text-muted-foreground">
             已选 {selectedBatchIds.size}/{MAX_BATCHES} 个批次
           </div>
 
@@ -211,7 +211,7 @@ export function BatchComparePanel() {
                 return (
                   <label
                     key={field}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs cursor-pointer border transition-colors
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm cursor-pointer border transition-colors
                       ${checked
                         ? 'bg-primary/15 text-primary border-primary/40'
                         : 'bg-muted/30 text-muted-foreground border-border hover:bg-muted/50'}`}
@@ -263,7 +263,7 @@ export function BatchComparePanel() {
               option={chartOption}
               style={{ height: chartHeight }}
             />
-            <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
+            <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block w-3 h-3 rounded-sm bg-[#1677ff]" />
                 箱线图 (Q1-Q3, 须线: min-max)

@@ -48,7 +48,7 @@ export function AlarmBanner({ alarms, onAcknowledge, onViewAll }: AlarmBannerPro
             <Bell className="w-5 h-5" />
             报警信息
             {unacknowledged.length > 0 && (
-              <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold">
+              <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-sm font-bold">
                 {unacknowledged.length}
               </span>
             )}
@@ -80,7 +80,7 @@ export function AlarmBanner({ alarms, onAcknowledge, onViewAll }: AlarmBannerPro
                     {formatTime(alarm.created_at)}
                   </span>
                   {alarm.channel && (
-                    <span className="text-xs text-muted-foreground font-mono">
+                    <span className="text-sm text-muted-foreground font-mono">
                       {alarm.channel}
                     </span>
                   )}
@@ -92,7 +92,7 @@ export function AlarmBanner({ alarms, onAcknowledge, onViewAll }: AlarmBannerPro
               <Button
                 size="sm"
                 variant="outline"
-                className={cn('shrink-0 text-xs h-7 px-2', config.text)}
+                className={cn('shrink-0 text-sm h-7 px-2', config.text)}
                 onClick={() => onAcknowledge(alarm.id)}
               >
                 确认
@@ -104,7 +104,7 @@ export function AlarmBanner({ alarms, onAcknowledge, onViewAll }: AlarmBannerPro
         {onViewAll && (
           <button
             onClick={onViewAll}
-            className="w-full text-center text-xs text-muted-foreground hover:text-foreground py-1 transition-colors"
+            className="w-full text-center text-sm text-muted-foreground hover:text-foreground py-1 transition-colors"
           >
             查看全部报警 &rarr;
           </button>

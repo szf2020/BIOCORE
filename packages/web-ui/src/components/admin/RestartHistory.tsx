@@ -25,14 +25,14 @@ export function RestartHistory({ snap }: { snap: RestartSnap }) {
           累计重启：<strong>{snap?.restarts?.since_install ?? 0}</strong>
         </p>
         <p>
-          最近原因：<code className="text-xs">{snap?.restarts?.last_reason ?? '—'}</code>
+          最近原因：<code className="text-sm">{snap?.restarts?.last_reason ?? '—'}</code>
         </p>
       </div>
       <details className="mt-3">
         <summary className="cursor-pointer text-sm text-muted-foreground">
           诊断包列表（{snap?.crashes?.total ?? 0}）
         </summary>
-        <ul className="text-xs font-mono mt-2 space-y-1">
+        <ul className="text-sm font-mono mt-2 space-y-1">
           {files.map((f) => (
             <li key={f.name}>
               <a

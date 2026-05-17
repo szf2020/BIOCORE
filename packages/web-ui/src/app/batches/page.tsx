@@ -127,7 +127,7 @@ export default function BatchesPage() {
                     <TableCell>
                       <Badge className={STATE_STYLES[b.state] ?? STATE_STYLES.idle}>{b.state ?? 'unknown'}</Badge>
                     </TableCell>
-                    <TableCell className="text-xs">{b.started_at ? new Date(b.started_at).toLocaleString('zh-CN') : '-'}</TableCell>
+                    <TableCell className="text-sm">{b.started_at ? new Date(b.started_at).toLocaleString('zh-CN') : '-'}</TableCell>
                     <TableCell>{formatDuration(b.started_at, b.ended_at, b.duration_h)}</TableCell>
                     <TableCell>{b.outcome ?? '-'}</TableCell>
                   </TableRow>

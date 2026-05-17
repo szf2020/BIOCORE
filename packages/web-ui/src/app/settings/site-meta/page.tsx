@@ -80,7 +80,7 @@ export default function SiteMetaPage() {
         <h1 className="text-xl font-bold flex items-center gap-2">
           <Building2 className="w-5 h-5 text-primary" /> 站点元数据
         </h1>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           页面顶部面包屑显示的厂区/产线/反应器组名称. 留空 = 自动推导或使用 env 默认.
         </p>
       </div>
@@ -114,7 +114,7 @@ export default function SiteMetaPage() {
               <Save className="w-3.5 h-3.5 mr-1" />{saving ? '保存中...' : '保存'}
             </Button>
             {msg && (
-              <span className={`text-xs ${msg.ok ? 'text-emerald-600' : 'text-red-600'}`}>{msg.text}</span>
+              <span className={`text-sm ${msg.ok ? 'text-emerald-600' : 'text-red-600'}`}>{msg.text}</span>
             )}
           </div>
         </CardContent>
@@ -137,7 +137,7 @@ function Field({ label, value, onChange, placeholder, source, hint }: {
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <label className="text-xs font-medium text-foreground">{label}</label>
+        <label className="text-sm font-medium text-foreground">{label}</label>
         <span className={`text-[11px] px-1.5 py-0.5 rounded ${SOURCE_COLOR[source] || ''}`}>
           当前来源: {SOURCE_LABEL[source] || source}
         </span>
@@ -148,7 +148,7 @@ function Field({ label, value, onChange, placeholder, source, hint }: {
         placeholder={placeholder}
         className="h-8 text-sm"
       />
-      <p className="text-xs text-muted-foreground mt-1">{hint}</p>
+      <p className="text-sm text-muted-foreground mt-1">{hint}</p>
     </div>
   );
 }

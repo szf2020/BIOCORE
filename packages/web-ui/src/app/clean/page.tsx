@@ -104,7 +104,7 @@ export default function CleanPage() {
             <div className={`w-8 h-8 rounded-full ${color} flex items-center justify-center text-lg`}>{icon}</div>
             <span className="text-sm font-semibold text-foreground">{title}</span>
           </div>
-          <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase border ${
+          <span className={`px-2 py-0.5 rounded text-sm font-semibold uppercase border ${
             isRunning ? stateColors.running :
             isCompleted ? stateColors.completed :
             stateColors.pending
@@ -118,7 +118,7 @@ export default function CleanPage() {
           {prodRunning && (
             <div className="flex items-center gap-2 px-3 py-2 rounded bg-red-500/10 border border-red-500/20">
               <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
-              <span className="text-xs text-red-600">互锁: 主发酵运行中，禁止启动清洗/灭菌</span>
+              <span className="text-sm text-red-600">互锁: 主发酵运行中，禁止启动清洗/灭菌</span>
             </div>
           )}
 
@@ -146,7 +146,7 @@ export default function CleanPage() {
                 {/* 步骤进度 */}
                 {(ps.state === 'running' || ps.state === 'held') && ps.total_steps > 0 && (
                   <div className="space-y-1">
-                    <div className="flex justify-between text-xs font-mono text-muted-foreground">
+                    <div className="flex justify-between text-sm font-mono text-muted-foreground">
                       <span>Step {ps.step_number}/{ps.total_steps}: {ps.step_name || '...'}</span>
                       <span>{progress}%</span>
                     </div>
@@ -161,7 +161,7 @@ export default function CleanPage() {
                 <div className="flex gap-2">
                   {(ps.state === 'pending' || ps.state === 'ready') && (
                     <button onClick={() => sendPhaseCmd(ps.phase_index, 'start')} disabled={prodRunning}
-                      className={`flex items-center gap-1 h-7 px-3 rounded text-xs font-medium border transition-all
+                      className={`flex items-center gap-1 h-7 px-3 rounded text-sm font-medium border transition-all
                         ${prodRunning
                           ? 'bg-muted/30 text-muted-foreground/40 border-border cursor-not-allowed'
                           : 'bg-green-500/15 text-emerald-600 border-green-500/30 hover:bg-green-500/25'}`}>
@@ -171,11 +171,11 @@ export default function CleanPage() {
                   {ps.state === 'running' && (
                     <>
                       <button onClick={() => sendPhaseCmd(ps.phase_index, 'hold')}
-                        className="flex items-center gap-1 h-7 px-3 rounded text-xs font-medium bg-yellow-500/15 text-amber-600 border border-yellow-500/30 hover:bg-yellow-500/25">
+                        className="flex items-center gap-1 h-7 px-3 rounded text-sm font-medium bg-yellow-500/15 text-amber-600 border border-yellow-500/30 hover:bg-yellow-500/25">
                         <Pause className="w-3 h-3" /> 暂停
                       </button>
                       <button onClick={() => sendPhaseCmd(ps.phase_index, 'skip')}
-                        className="flex items-center gap-1 h-7 px-3 rounded text-xs font-medium bg-red-500/15 text-red-600 border border-red-500/30 hover:bg-red-500/25">
+                        className="flex items-center gap-1 h-7 px-3 rounded text-sm font-medium bg-red-500/15 text-red-600 border border-red-500/30 hover:bg-red-500/25">
                         <Square className="w-3 h-3" /> 终止
                       </button>
                     </>
@@ -183,11 +183,11 @@ export default function CleanPage() {
                   {ps.state === 'held' && (
                     <>
                       <button onClick={() => sendPhaseCmd(ps.phase_index, 'restart')}
-                        className="flex items-center gap-1 h-7 px-3 rounded text-xs font-medium bg-green-500/15 text-emerald-600 border border-green-500/30 hover:bg-green-500/25">
+                        className="flex items-center gap-1 h-7 px-3 rounded text-sm font-medium bg-green-500/15 text-emerald-600 border border-green-500/30 hover:bg-green-500/25">
                         <RotateCcw className="w-3 h-3" /> 恢复
                       </button>
                       <button onClick={() => sendPhaseCmd(ps.phase_index, 'skip')}
-                        className="flex items-center gap-1 h-7 px-3 rounded text-xs font-medium bg-red-500/15 text-red-600 border border-red-500/30 hover:bg-red-500/25">
+                        className="flex items-center gap-1 h-7 px-3 rounded text-sm font-medium bg-red-500/15 text-red-600 border border-red-500/30 hover:bg-red-500/25">
                         <Square className="w-3 h-3" /> 终止
                       </button>
                     </>
@@ -206,11 +206,11 @@ export default function CleanPage() {
       {/* 罐选择 */}
       <div className="flex items-center gap-1 px-3 py-2 border-b border-border bg-card/50 overflow-x-auto">
         {reactorIds.length === 0 && (
-          <span className="text-xs text-muted-foreground px-2">无可用反应器</span>
+          <span className="text-sm text-muted-foreground px-2">无可用反应器</span>
         )}
         {reactorIds.map(id => (
           <button key={id} onClick={() => setSelectedReactor(id)}
-            className={`px-3 py-1.5 rounded text-xs font-medium transition-all shrink-0
+            className={`px-3 py-1.5 rounded text-sm font-medium transition-all shrink-0
               ${selectedReactor === id
                 ? 'bg-primary/15 text-primary border border-primary/40'
                 : 'bg-muted/50 text-muted-foreground border border-transparent hover:bg-muted'}`}>
@@ -222,7 +222,7 @@ export default function CleanPage() {
       {/* 标题 */}
       <div className="px-4 py-3 border-b border-border bg-card/30">
         <h1 className="text-sm font-semibold text-foreground">设备清洗与灭菌 (CIP / SIP)</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="text-sm text-muted-foreground mt-0.5">
           独立状态机控制。安全互锁: 主发酵运行中禁止启动清洗/灭菌，CIP和SIP不能同时运行。
         </p>
       </div>

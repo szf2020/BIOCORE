@@ -99,14 +99,14 @@ export function ReportPreview({ sessionId, report, onRefine, refining }: ReportP
             <button
               onClick={() => handleExport('pdf')}
               disabled={exporting === 'pdf'}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors disabled:opacity-50"
+              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors disabled:opacity-50"
             >
               <Download size={12} /> {exporting === 'pdf' ? '生成中...' : 'PDF'}
             </button>
             <button
               onClick={() => handleExport('docx')}
               disabled={exporting === 'docx'}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600 hover:bg-green-500 text-white rounded transition-colors disabled:opacity-50"
+              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-600 hover:bg-green-500 text-white rounded transition-colors disabled:opacity-50"
             >
               <Download size={12} /> {exporting === 'docx' ? '生成中...' : 'Word'}
             </button>
@@ -114,13 +114,13 @@ export function ReportPreview({ sessionId, report, onRefine, refining }: ReportP
               href={`${API}/api/ai/report/${sessionId}/html`}
               target="_blank"
               rel="noopener"
-              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-accent hover:bg-zinc-600 text-foreground rounded transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-accent hover:bg-zinc-600 text-foreground rounded transition-colors"
             >
               HTML预览
             </a>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           生成于 {new Date(report.created_at).toLocaleString('zh-CN')}
           {report.updated_at !== report.created_at && ` | 更新于 ${new Date(report.updated_at).toLocaleString('zh-CN')}`}
         </p>
@@ -132,7 +132,7 @@ export function ReportPreview({ sessionId, report, onRefine, refining }: ReportP
           <button
             key={ch.id}
             onClick={() => setActiveChapter(i)}
-            className={`px-4 py-2.5 text-xs whitespace-nowrap transition-colors ${
+            className={`px-4 py-2.5 text-sm whitespace-nowrap transition-colors ${
               i === activeChapter
                 ? 'text-blue-600 border-b-2 border-blue-400 bg-muted/50'
                 : 'text-muted-foreground hover:text-foreground/90'

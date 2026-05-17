@@ -37,7 +37,7 @@ export function Lamp(props: LampProps) {
         />
       </svg>
       {label ? (
-        <div className="absolute bottom-0 left-0 right-0 text-xs text-center text-gray-700 truncate">
+        <div className="absolute bottom-0 left-0 right-0 text-sm text-center text-gray-700 truncate">
           {label}
         </div>
       ) : null}

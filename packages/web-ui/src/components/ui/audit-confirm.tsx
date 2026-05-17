@@ -92,7 +92,7 @@ export function AuditConfirmDialog({
             </div>
           )}
           {oldValue && newValue && (
-            <div className="text-xs text-muted-foreground flex items-center gap-2">
+            <div className="text-sm text-muted-foreground flex items-center gap-2">
               <span className="font-mono">{oldValue}</span>
               <span className="text-primary">→</span>
               <span className="font-mono font-semibold text-foreground">{newValue}</span>

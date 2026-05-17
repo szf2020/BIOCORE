@@ -144,10 +144,10 @@ export default function ApiKeysPage() {
               {keys.map(k => (
                 <tr key={k.key_id} className="border-b border-white/5 hover:bg-white/5">
                   <td className="px-4 py-3 font-medium">{k.name}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{k.key_id}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{k.scopes}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{k.created_at}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{k.last_used_at || '—'}</td>
+                  <td className="px-4 py-3 font-mono text-sm text-muted-foreground">{k.key_id}</td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">{k.scopes}</td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">{k.created_at}</td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">{k.last_used_at || '—'}</td>
                   <td className="px-4 py-3">
                     <Badge className={k.revoked ? 'bg-gray-500/20 text-gray-400' : 'bg-green-500/20 text-emerald-600'}>
                       {k.revoked ? '已撤销' : '启用'}
@@ -188,7 +188,7 @@ export default function ApiKeysPage() {
               <Input value={newKeyName} onChange={e => setNewKeyName(e.target.value)}
                 placeholder="例如: mes-prod / mes-dev / external-bi"
                 className="mt-1" autoFocus />
-              <p className="text-xs text-muted-foreground mt-1">用于识别此 key 的用途, 撤销时会显示</p>
+              <p className="text-sm text-muted-foreground mt-1">用于识别此 key 的用途, 撤销时会显示</p>
             </div>
           </div>
           <DialogFooter>
@@ -218,16 +218,16 @@ export default function ApiKeysPage() {
               <Label>Raw API Key</Label>
               <div className="flex items-center gap-2 mt-1.5">
                 <Input value={createdRawKey || ''} readOnly
-                  className="font-mono text-xs"
+                  className="font-mono text-sm"
                   onClick={(e) => (e.target as HTMLInputElement).select()} />
                 <Button onClick={copyKey} variant={copied ? 'default' : 'outline'} size="sm">
                   {copied ? <><Check className="w-3.5 h-3.5 mr-1" /> 已复制</> : <><Copy className="w-3.5 h-3.5 mr-1" /> 复制</>}
                 </Button>
               </div>
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-sm text-muted-foreground">
               使用示例:
-              <pre className="mt-1.5 bg-black/30 p-2 rounded font-mono text-xs overflow-x-auto">{`curl -H "X-API-Key: ${createdRawKey}" http://localhost:3001/api/v1/reactors`}</pre>
+              <pre className="mt-1.5 bg-black/30 p-2 rounded font-mono text-sm overflow-x-auto">{`curl -H "X-API-Key: ${createdRawKey}" http://localhost:3001/api/v1/reactors`}</pre>
             </div>
           </div>
           <DialogFooter>

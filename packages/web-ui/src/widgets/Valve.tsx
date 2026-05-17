@@ -38,12 +38,12 @@ export function Valve(props: ValveProps) {
         />
       </svg>
       {pctText ? (
-        <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center text-sm font-semibold pointer-events-none">
           {pctText}
         </div>
       ) : null}
       {label ? (
-        <div className="absolute -right-1 top-1/2 -translate-y-1/2 translate-x-full text-xs text-gray-700 whitespace-nowrap">
+        <div className="absolute -right-1 top-1/2 -translate-y-1/2 translate-x-full text-sm text-gray-700 whitespace-nowrap">
           {label}
         </div>
       ) : null}

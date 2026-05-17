@@ -137,15 +137,15 @@ export default function AlarmConfigPage() {
         <div className="flex items-center gap-2">
           <Bell className="w-5 h-5 text-primary" />
           <h1 className="text-lg font-semibold">报警设置</h1>
-          <span className="text-xs text-muted-foreground font-mono">{rows.length} 条</span>
+          <span className="text-sm text-muted-foreground font-mono">{rows.length} 条</span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={load} disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border border-border hover:bg-muted transition-colors">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm border border-border hover:bg-muted transition-colors">
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> 刷新
           </button>
           <button onClick={() => setEditing({ ...EMPTY })}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
             <Plus className="w-3.5 h-3.5" /> 新建
           </button>
         </div>
@@ -154,19 +154,19 @@ export default function AlarmConfigPage() {
       <Card className="sticky top-14 z-10">
         <CardContent className="p-3">
           <div className="flex items-end gap-2 flex-wrap">
-            <label className="text-xs space-y-1">
+            <label className="text-sm space-y-1">
               <div className="text-muted-foreground">归属</div>
               <select value={filterOwner} onChange={e => setFilterOwner(e.target.value)}
-                className="h-8 px-2 rounded bg-background border border-border text-xs">
+                className="h-8 px-2 rounded bg-background border border-border text-sm">
                 <option value="all">全部</option>
                 <option value="global">全局</option>
                 {reactors.map(r => <option key={r.reactor_id} value={r.reactor_id}>{r.reactor_id}</option>)}
               </select>
             </label>
-            <label className="text-xs space-y-1">
+            <label className="text-sm space-y-1">
               <div className="text-muted-foreground">严重程度</div>
               <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value)}
-                className="h-8 px-2 rounded bg-background border border-border text-xs">
+                className="h-8 px-2 rounded bg-background border border-border text-sm">
                 <option value="">全部</option>
                 <option value="emergency">紧急</option>
                 <option value="critical">严重</option>
@@ -181,12 +181,12 @@ export default function AlarmConfigPage() {
       <Card>
         <CardContent className="p-0">
           {rows.length === 0 ? (
-            <div className="text-center text-xs text-muted-foreground py-12">
+            <div className="text-center text-sm text-muted-foreground py-12">
               {loading ? '加载中...' : '无报警定义. 点击右上"新建"添加.'}
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-sm">
                 <thead className="bg-muted/30 text-muted-foreground border-b border-border">
                   <tr>
                     <th className="px-2 py-2 text-left font-medium">代码</th>
@@ -210,12 +210,12 @@ export default function AlarmConfigPage() {
                         <td className="px-2 py-1.5">{r.name}</td>
                         <td className="px-2 py-1.5 font-mono text-muted-foreground">{r.owner || '全局'}</td>
                         <td className="px-2 py-1.5">
-                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold border ${meta?.color}`}>
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm font-semibold border ${meta?.color}`}>
                             <Icon className="w-3 h-3" />{meta?.label || r.severity}
                           </span>
                         </td>
                         <td className="px-2 py-1.5 font-mono text-muted-foreground">{r.channel || '—'}</td>
-                        <td className="px-2 py-1.5 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                        <td className="px-2 py-1.5 font-mono text-sm text-muted-foreground whitespace-nowrap">
                           {r.threshold_low != null ? r.threshold_low : '—'} / {r.threshold_high != null ? r.threshold_high : '—'}
                           {r.hysteresis != null && <> · ±{r.hysteresis}</>}
                         </td>
@@ -258,91 +258,91 @@ export default function AlarmConfigPage() {
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <label className="text-xs space-y-1">
+                <label className="text-sm space-y-1">
                   <div className="text-muted-foreground">代码 (唯一) *</div>
                   <input value={editing.code || ''} onChange={e => setEditing({ ...editing, code: e.target.value })}
-                    placeholder="TEMP_HIGH" className="w-full h-8 px-2 rounded bg-background border border-border text-xs font-mono" />
+                    placeholder="TEMP_HIGH" className="w-full h-8 px-2 rounded bg-background border border-border text-sm font-mono" />
                 </label>
-                <label className="text-xs space-y-1">
+                <label className="text-sm space-y-1">
                   <div className="text-muted-foreground">名称 *</div>
                   <input value={editing.name || ''} onChange={e => setEditing({ ...editing, name: e.target.value })}
-                    placeholder="温度超限" className="w-full h-8 px-2 rounded bg-background border border-border text-xs" />
+                    placeholder="温度超限" className="w-full h-8 px-2 rounded bg-background border border-border text-sm" />
                 </label>
-                <label className="text-xs space-y-1">
+                <label className="text-sm space-y-1">
                   <div className="text-muted-foreground">归属</div>
                   <select value={editing.owner || ''} onChange={e => setEditing({ ...editing, owner: e.target.value })}
-                    className="w-full h-8 px-2 rounded bg-background border border-border text-xs">
+                    className="w-full h-8 px-2 rounded bg-background border border-border text-sm">
                     <option value="">全局 (所有罐子)</option>
                     {reactors.map(r => <option key={r.reactor_id} value={r.reactor_id}>{r.reactor_id} {r.name || ''}</option>)}
                   </select>
                 </label>
-                <label className="text-xs space-y-1">
+                <label className="text-sm space-y-1">
                   <div className="text-muted-foreground">严重程度 *</div>
                   <select value={editing.severity || 'warning'} onChange={e => setEditing({ ...editing, severity: e.target.value as any })}
-                    className="w-full h-8 px-2 rounded bg-background border border-border text-xs">
+                    className="w-full h-8 px-2 rounded bg-background border border-border text-sm">
                     <option value="emergency">紧急</option>
                     <option value="critical">严重</option>
                     <option value="warning">警告</option>
                     <option value="info">提示</option>
                   </select>
                 </label>
-                <label className="text-xs space-y-1">
+                <label className="text-sm space-y-1">
                   <div className="text-muted-foreground">关联标签 (PLC 通道)</div>
                   <input value={editing.channel || ''} onChange={e => setEditing({ ...editing, channel: e.target.value })}
-                    placeholder="AI-0 / P02 / V-01" className="w-full h-8 px-2 rounded bg-background border border-border text-xs font-mono" />
+                    placeholder="AI-0 / P02 / V-01" className="w-full h-8 px-2 rounded bg-background border border-border text-sm font-mono" />
                 </label>
-                <label className="text-xs space-y-1">
+                <label className="text-sm space-y-1">
                   <div className="text-muted-foreground">分类</div>
                   <input value={editing.category || ''} onChange={e => setEditing({ ...editing, category: e.target.value })}
-                    placeholder="温度 / 压力 / 泵..." className="w-full h-8 px-2 rounded bg-background border border-border text-xs" />
+                    placeholder="温度 / 压力 / 泵..." className="w-full h-8 px-2 rounded bg-background border border-border text-sm" />
                 </label>
-                <label className="text-xs space-y-1">
+                <label className="text-sm space-y-1">
                   <div className="text-muted-foreground">下限阈值</div>
                   <input type="number" step="any" value={editing.threshold_low ?? ''}
                     onChange={e => setEditing({ ...editing, threshold_low: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                    className="w-full h-8 px-2 rounded bg-background border border-border text-xs font-mono" />
+                    className="w-full h-8 px-2 rounded bg-background border border-border text-sm font-mono" />
                 </label>
-                <label className="text-xs space-y-1">
+                <label className="text-sm space-y-1">
                   <div className="text-muted-foreground">上限阈值</div>
                   <input type="number" step="any" value={editing.threshold_high ?? ''}
                     onChange={e => setEditing({ ...editing, threshold_high: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                    className="w-full h-8 px-2 rounded bg-background border border-border text-xs font-mono" />
+                    className="w-full h-8 px-2 rounded bg-background border border-border text-sm font-mono" />
                 </label>
-                <label className="text-xs space-y-1">
+                <label className="text-sm space-y-1">
                   <div className="text-muted-foreground">滞回</div>
                   <input type="number" step="any" value={editing.hysteresis ?? ''}
                     onChange={e => setEditing({ ...editing, hysteresis: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                    className="w-full h-8 px-2 rounded bg-background border border-border text-xs font-mono" />
+                    className="w-full h-8 px-2 rounded bg-background border border-border text-sm font-mono" />
                 </label>
                 <div className="flex items-end gap-3">
-                  <label className="flex items-center gap-2 text-xs">
+                  <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" checked={!!editing.enabled}
                       onChange={e => setEditing({ ...editing, enabled: e.target.checked ? 1 : 0 })} />
                     启用
                   </label>
-                  <label className="flex items-center gap-2 text-xs">
+                  <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" checked={!!editing.ack_required}
                       onChange={e => setEditing({ ...editing, ack_required: e.target.checked ? 1 : 0 })} />
                     需要确认
                   </label>
                 </div>
               </div>
-              <label className="text-xs space-y-1 block">
+              <label className="text-sm space-y-1 block">
                 <div className="text-muted-foreground">内容模板 * (占位符: {'{pv}'} / {'{sv}'} / {'{channel}'})</div>
                 <textarea value={editing.message_template || ''} onChange={e => setEditing({ ...editing, message_template: e.target.value })}
                   rows={2} placeholder="温度超限: 实际 {pv}°C 超过上限 {sv}°C"
-                  className="w-full px-2 py-1.5 rounded bg-background border border-border text-xs" />
+                  className="w-full px-2 py-1.5 rounded bg-background border border-border text-sm" />
               </label>
-              <label className="text-xs space-y-1 block">
+              <label className="text-sm space-y-1 block">
                 <div className="text-muted-foreground">备注</div>
                 <textarea value={editing.notes || ''} onChange={e => setEditing({ ...editing, notes: e.target.value })}
-                  rows={2} className="w-full px-2 py-1.5 rounded bg-background border border-border text-xs" />
+                  rows={2} className="w-full px-2 py-1.5 rounded bg-background border border-border text-sm" />
               </label>
             </div>
             <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border">
-              <button onClick={() => setEditing(null)} className="px-3 py-1.5 rounded text-xs border border-border hover:bg-muted">取消</button>
+              <button onClick={() => setEditing(null)} className="px-3 py-1.5 rounded text-sm border border-border hover:bg-muted">取消</button>
               <button onClick={onSave} disabled={saving}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
                 <Save className="w-3.5 h-3.5" /> {saving ? '保存中...' : '保存'}
               </button>
             </div>

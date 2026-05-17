@@ -319,15 +319,15 @@ export default function RecipeListPage() {
           <h1 className="text-xl font-bold tracking-tight flex items-center gap-2 text-foreground">
             <BookOpen className="w-5 h-5 text-primary" /> 配方管理
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">创建和管理发酵配方</p>
+          <p className="text-sm text-muted-foreground mt-1">创建和管理发酵配方</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => router.push('/recipes/new/edit-v2')}
-            className="flex items-center gap-1.5 h-8 px-3 rounded text-xs font-medium bg-purple-600 text-white hover:bg-purple-700">
+            className="flex items-center gap-1.5 h-8 px-3 rounded text-sm font-medium bg-purple-600 text-white hover:bg-purple-700">
             <Plus className="w-3.5 h-3.5" /> 新建 DAG 配方
           </button>
           <button onClick={() => router.push('/recipes/new/edit')}
-            className="flex items-center gap-1.5 h-8 px-3 rounded text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90">
+            className="flex items-center gap-1.5 h-8 px-3 rounded text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90">
             <Plus className="w-3.5 h-3.5" /> 新建配方
           </button>
         </div>
@@ -337,7 +337,7 @@ export default function RecipeListPage() {
       <div className="flex items-center gap-1 border-b border-border">
         <button
           onClick={() => setTab('recipes')}
-          className={`h-8 px-4 text-xs font-medium flex items-center gap-1.5 border-b-2 -mb-px ${
+          className={`h-8 px-4 text-sm font-medium flex items-center gap-1.5 border-b-2 -mb-px ${
             tab === 'recipes'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -347,7 +347,7 @@ export default function RecipeListPage() {
         </button>
         <button
           onClick={() => setTab('templates')}
-          className={`h-8 px-4 text-xs font-medium flex items-center gap-1.5 border-b-2 -mb-px ${
+          className={`h-8 px-4 text-sm font-medium flex items-center gap-1.5 border-b-2 -mb-px ${
             tab === 'templates'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -357,7 +357,7 @@ export default function RecipeListPage() {
         </button>
         <button
           onClick={() => setTab('deprecated')}
-          className={`h-8 px-4 text-xs font-medium flex items-center gap-1.5 border-b-2 -mb-px ${
+          className={`h-8 px-4 text-sm font-medium flex items-center gap-1.5 border-b-2 -mb-px ${
             tab === 'deprecated'
               ? 'border-red-500 text-red-500'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -407,13 +407,13 @@ export default function RecipeListPage() {
                   <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold text-sm text-foreground truncate">{recipe.name}</div>
-                      <div className="text-xs text-muted-foreground font-mono mt-0.5 truncate">{recipe.recipe_id}</div>
+                      <div className="text-sm text-muted-foreground font-mono mt-0.5 truncate">{recipe.recipe_id}</div>
                     </div>
-                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${st.bg}`}>{st.label}</span>
+                    <span className={`px-2 py-0.5 rounded text-sm font-semibold ${st.bg}`}>{st.label}</span>
                   </div>
 
                   {/* 标签 */}
-                  <div className="flex flex-wrap gap-1.5 text-xs">
+                  <div className="flex flex-wrap gap-1.5 text-sm">
                     <span className="bg-muted/50 text-muted-foreground px-2 py-0.5 rounded">v{recipe.version}</span>
                     {(recipe.dag_schema_version ?? 1) >= 2 && (
                       <span className="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded">DAG v2</span>
@@ -422,7 +422,7 @@ export default function RecipeListPage() {
                     {recipe.target_organism && <span className="bg-muted/50 text-muted-foreground px-2 py-0.5 rounded">{recipe.target_organism}</span>}
                   </div>
 
-                  {recipe.author && <div className="text-xs text-muted-foreground">作者: {recipe.author}</div>}
+                  {recipe.author && <div className="text-sm text-muted-foreground">作者: {recipe.author}</div>}
 
                   {/* 操作按钮 */}
                   <div className="flex justify-end gap-1.5 pt-1 flex-wrap">
@@ -430,25 +430,25 @@ export default function RecipeListPage() {
                       // 模板卡片: 应用 + 删除
                       <>
                         <button onClick={e => { e.stopPropagation(); applyTemplate(recipe); }}
-                          className="flex items-center gap-1 h-6 px-2 rounded text-xs font-medium border border-primary/40 text-primary hover:bg-primary/10">
+                          className="flex items-center gap-1 h-6 px-2 rounded text-sm font-medium border border-primary/40 text-primary hover:bg-primary/10">
                           <Sparkles className="w-3 h-3" /> 应用此模板
                         </button>
                         <button onClick={e => { e.stopPropagation(); deleteRecipe(recipe); }}
-                          className="flex items-center h-6 px-1.5 rounded text-xs border border-border text-red-600 hover:bg-red-500/10">
+                          className="flex items-center h-6 px-1.5 rounded text-sm border border-border text-red-600 hover:bg-red-500/10">
                           <Trash2 className="w-3 h-3" />
                         </button>
                       </>
                     ) : tab === 'deprecated' ? (
                       // 废弃 tab: 只显示恢复按钮
                       <button onClick={e => { e.stopPropagation(); restoreRecipe(recipe); }}
-                        className="flex items-center gap-1 h-6 px-2 rounded text-xs font-medium border border-primary/40 text-primary hover:bg-primary/10">
+                        className="flex items-center gap-1 h-6 px-2 rounded text-sm font-medium border border-primary/40 text-primary hover:bg-primary/10">
                         <RotateCcw className="w-3 h-3" /> 恢复到草稿
                       </button>
                     ) : (
                       <>
                         {isLocked && (
                           <button onClick={e => { e.stopPropagation(); setShowDownload(recipe); }}
-                            className="flex items-center gap-1 h-6 px-2 rounded text-xs font-medium border border-primary/40 text-primary hover:bg-primary/10">
+                            className="flex items-center gap-1 h-6 px-2 rounded text-sm font-medium border border-primary/40 text-primary hover:bg-primary/10">
                             <Download className="w-3 h-3" /> 下载到罐
                           </button>
                         )}
@@ -458,17 +458,17 @@ export default function RecipeListPage() {
                               e.stopPropagation();
                               router.push(`/doe?new=1&baseRecipe=${encodeURIComponent(recipe.recipe_id)}&baseVersion=${recipe.version}`);
                             }}
-                            className="flex items-center gap-1 h-6 px-2 rounded text-xs font-medium border border-primary/40 text-primary hover:bg-primary/10"
+                            className="flex items-center gap-1 h-6 px-2 rounded text-sm font-medium border border-primary/40 text-primary hover:bg-primary/10"
                             title="基于此配方创建 DoE 实验设计研究">
                             <Sigma className="w-3 h-3" /> 创建 DoE
                           </button>
                         )}
                         <button onClick={e => { e.stopPropagation(); setHistoryOpenFor(recipe.recipe_id); }}
-                          className="flex items-center gap-1 h-6 px-2 rounded text-xs font-medium border border-border text-muted-foreground hover:bg-muted">
+                          className="flex items-center gap-1 h-6 px-2 rounded text-sm font-medium border border-border text-muted-foreground hover:bg-muted">
                           <History className="w-3 h-3" /> 历史
                         </button>
                         <button onClick={e => { e.stopPropagation(); saveAsTemplate(recipe); }}
-                          className="flex items-center gap-1 h-6 px-2 rounded text-xs font-medium border border-border text-muted-foreground hover:bg-muted"
+                          className="flex items-center gap-1 h-6 px-2 rounded text-sm font-medium border border-border text-muted-foreground hover:bg-muted"
                           title="另存为模板">
                           <BookmarkPlus className="w-3 h-3" />
                         </button>
@@ -477,28 +477,28 @@ export default function RecipeListPage() {
                     {/* 状态感知按钮 */}
                     {tab === 'recipes' && isDraft && (
                       <button onClick={e => { e.stopPropagation(); submitForReview(recipe); }}
-                        className="flex items-center gap-1 h-6 px-2 rounded text-xs font-medium border border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                        className="flex items-center gap-1 h-6 px-2 rounded text-sm font-medium border border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
                         title="提交配方到审核队列">
                         <Send className="w-3 h-3" /> 提交审核
                       </button>
                     )}
                     {tab === 'recipes' && isPending && (
                       <button onClick={e => { e.stopPropagation(); router.push('/recipes/review-queue'); }}
-                        className="flex items-center gap-1 h-6 px-2 rounded text-xs font-medium border border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                        className="flex items-center gap-1 h-6 px-2 rounded text-sm font-medium border border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
                         title="配方在审核队列中等待批准">
                         <ShieldCheck className="w-3 h-3" /> 待审核
                       </button>
                     )}
                     {tab === 'recipes' && isPendingDeprecation && (
                       <button onClick={e => { e.stopPropagation(); router.push('/recipes/review-queue'); }}
-                        className="flex items-center gap-1 h-6 px-2 rounded text-xs font-medium border border-red-500/40 text-red-600 hover:bg-red-500/10"
+                        className="flex items-center gap-1 h-6 px-2 rounded text-sm font-medium border border-red-500/40 text-red-600 hover:bg-red-500/10"
                         title="配方在审核队列中等待废弃审批">
                         <Ban className="w-3 h-3" /> 待废弃
                       </button>
                     )}
                     {tab === 'recipes' && isLocked && (
                       <button onClick={e => { e.stopPropagation(); unlockRecipe(recipe); }}
-                        className="flex items-center gap-1 h-6 px-2 rounded text-xs font-medium border border-border text-muted-foreground hover:bg-muted"
+                        className="flex items-center gap-1 h-6 px-2 rounded text-sm font-medium border border-border text-muted-foreground hover:bg-muted"
                         title="解锁配方 (回到草稿状态, 允许再次编辑)">
                         <Unlock className="w-3 h-3" /> 解锁
                       </button>
@@ -506,21 +506,21 @@ export default function RecipeListPage() {
                     {/* 废弃按钮: draft 和 approved 可用 */}
                     {tab === 'recipes' && (isDraft || isLocked) && (
                       <button onClick={e => { e.stopPropagation(); submitForDeprecation(recipe); }}
-                        className="flex items-center gap-1 h-6 px-2 rounded text-xs font-medium border border-red-500/30 text-red-600 hover:bg-red-500/10"
+                        className="flex items-center gap-1 h-6 px-2 rounded text-sm font-medium border border-red-500/30 text-red-600 hover:bg-red-500/10"
                         title="申请废弃此配方">
                         <Ban className="w-3 h-3" /> 废弃
                       </button>
                     )}
                     {tab !== 'templates' && tab !== 'deprecated' && isLocked && (
                       <button onClick={e => { e.stopPropagation(); router.push(editUrlFor(recipe)); }}
-                        className="flex items-center gap-1 h-6 px-2 rounded text-xs font-medium border border-border text-muted-foreground hover:bg-muted">
+                        className="flex items-center gap-1 h-6 px-2 rounded text-sm font-medium border border-border text-muted-foreground hover:bg-muted">
                         <FileText className="w-3 h-3" /> 查看
                       </button>
                     )}
                     {tab !== 'templates' && tab !== 'deprecated' && !isLocked && (
                       <button onClick={e => { e.stopPropagation(); router.push(editUrlFor(recipe)); }}
                         disabled={isPending || isPendingDeprecation}
-                        className={`flex items-center gap-1 h-6 px-2 rounded text-xs font-medium border border-border
+                        className={`flex items-center gap-1 h-6 px-2 rounded text-sm font-medium border border-border
                           ${isPending || isPendingDeprecation ? 'text-muted-foreground/40 cursor-not-allowed' : 'text-muted-foreground hover:bg-muted'}`}>
                         <Edit className="w-3 h-3" /> 编辑
                       </button>
@@ -528,7 +528,7 @@ export default function RecipeListPage() {
                     {tab !== 'templates' && tab !== 'deprecated' && (
                       <button onClick={e => { e.stopPropagation(); deleteRecipe(recipe); }}
                         disabled={isReadOnly}
-                        className={`flex items-center h-6 px-1.5 rounded text-xs border border-border
+                        className={`flex items-center h-6 px-1.5 rounded text-sm border border-border
                           ${isReadOnly ? 'text-muted-foreground/40 cursor-not-allowed' : 'text-red-600 hover:bg-red-500/10'}`}>
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -543,16 +543,16 @@ export default function RecipeListPage() {
 
       {/* 罐子配方状态栏 */}
       <div className="bg-card border border-border rounded-md p-3">
-        <div className="text-xs font-semibold text-foreground mb-2">罐子配方状态</div>
+        <div className="text-sm font-semibold text-foreground mb-2">罐子配方状态</div>
         <div className="flex flex-wrap gap-2">
           {reactorIds.length === 0 && (
-            <span className="text-xs text-muted-foreground">无可用反应器</span>
+            <span className="text-sm text-muted-foreground">无可用反应器</span>
           )}
           {reactorIds.map(id => {
             const st = reactorStatuses[id];
             const hasRecipe = st?.downloaded;
             return (
-              <div key={id} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-mono border
+              <div key={id} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-sm font-mono border
                 ${hasRecipe ? 'bg-green-500/10 border-green-500/30 text-emerald-600' : 'bg-muted/30 border-border text-muted-foreground'}`}>
                 <div className={`w-1.5 h-1.5 rounded-full ${hasRecipe ? 'bg-green-500' : 'bg-gray-600'}`} />
                 <span className="font-semibold">{id}</span>
@@ -590,18 +590,18 @@ export default function RecipeListPage() {
             <div className="p-4 space-y-4">
               {/* 配方信息 */}
               <div className="bg-muted/30 border border-border rounded p-3 space-y-1">
-                <div className="text-xs text-muted-foreground">选中配方</div>
+                <div className="text-sm text-muted-foreground">选中配方</div>
                 <div className="text-sm font-semibold text-foreground">{showDownload.name}</div>
-                <div className="text-xs font-mono text-muted-foreground">{showDownload.recipe_id} v{showDownload.version}</div>
-                {showDownload.phases && <div className="text-xs text-muted-foreground">{showDownload.phases.length} 个Phase</div>}
+                <div className="text-sm font-mono text-muted-foreground">{showDownload.recipe_id} v{showDownload.version}</div>
+                {showDownload.phases && <div className="text-sm text-muted-foreground">{showDownload.phases.length} 个Phase</div>}
               </div>
 
               {/* 选择目标罐 */}
               <div>
-                <div className="text-xs font-medium text-foreground mb-2">选择目标罐</div>
+                <div className="text-sm font-medium text-foreground mb-2">选择目标罐</div>
                 <div className="grid grid-cols-4 gap-2">
                   {reactorIds.length === 0 && (
-                    <span className="col-span-4 text-xs text-muted-foreground text-center py-4">无可用反应器</span>
+                    <span className="col-span-4 text-sm text-muted-foreground text-center py-4">无可用反应器</span>
                   )}
                   {reactorIds.map(id => {
                     const st = reactorStatuses[id];
@@ -609,7 +609,7 @@ export default function RecipeListPage() {
                     const selected = downloadReactor === id;
                     return (
                       <button key={id} onClick={() => setDownloadReactor(id)}
-                        className={`flex flex-col items-center gap-0.5 p-2 rounded border text-xs font-mono transition-all
+                        className={`flex flex-col items-center gap-0.5 p-2 rounded border text-sm font-mono transition-all
                           ${selected
                             ? 'border-primary bg-primary/10 text-primary'
                             : hasRecipe
@@ -623,7 +623,7 @@ export default function RecipeListPage() {
                   })}
                 </div>
                 {reactorStatuses[downloadReactor]?.downloaded && (
-                  <div className="flex items-center gap-1 mt-2 text-xs text-amber-600">
+                  <div className="flex items-center gap-1 mt-2 text-sm text-amber-600">
                     <span>⚠ {downloadReactor} 已有配方 ({reactorStatuses[downloadReactor]?.recipe_name})，下载将覆盖</span>
                   </div>
                 )}
@@ -631,7 +631,7 @@ export default function RecipeListPage() {
 
               {/* 结果提示 */}
               {downloadResult && (
-                <div className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded border
+                <div className={`flex items-center gap-1.5 text-sm px-3 py-2 rounded border
                   ${downloadResult.ok
                     ? 'bg-green-500/10 border-green-500/30 text-emerald-600'
                     : 'bg-red-500/10 border-red-500/30 text-red-600'}`}>
@@ -643,11 +643,11 @@ export default function RecipeListPage() {
               {/* 按钮 */}
               <div className="flex gap-2">
                 <button onClick={() => !downloading && setShowDownload(null)}
-                  className="flex-1 h-9 rounded text-xs font-medium border border-border text-muted-foreground hover:bg-muted">
+                  className="flex-1 h-9 rounded text-sm font-medium border border-border text-muted-foreground hover:bg-muted">
                   取消
                 </button>
                 <button onClick={doDownload} disabled={downloading}
-                  className={`flex-1 flex items-center justify-center gap-1.5 h-9 rounded text-xs font-semibold transition-all
+                  className={`flex-1 flex items-center justify-center gap-1.5 h-9 rounded text-sm font-semibold transition-all
                     ${downloading
                       ? 'bg-primary/50 text-primary-foreground cursor-wait'
                       : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}>

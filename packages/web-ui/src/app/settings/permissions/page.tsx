@@ -75,7 +75,7 @@ export default function PermissionsPage() {
         <h1 className="text-xl font-bold flex items-center gap-2">
           <Shield className="w-5 h-5 text-primary" /> 权限管理
         </h1>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           按角色/资源/操作分配权限 · admin 角色拥有全部权限 (不可编辑)
         </p>
       </div>
@@ -90,7 +90,7 @@ export default function PermissionsPage() {
             <CardContent className="p-4">
               <div className="text-sm font-semibold mb-3 font-mono">{resource}</div>
               <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
                       <th className="text-left py-1 px-2 text-muted-foreground w-24">操作</th>
@@ -113,7 +113,7 @@ export default function PermissionsPage() {
                             <td key={role} className="text-center py-1.5 px-2">
                               <button
                                 onClick={() => toggle(role, resource, action)}
-                                className={`w-6 h-6 rounded border text-xs font-bold transition-colors ${
+                                className={`w-6 h-6 rounded border text-sm font-bold transition-colors ${
                                   on
                                     ? 'bg-green-500/20 border-green-500/50 text-emerald-600'
                                     : 'bg-muted/30 border-border text-muted-foreground/40 hover:border-muted-foreground/60'

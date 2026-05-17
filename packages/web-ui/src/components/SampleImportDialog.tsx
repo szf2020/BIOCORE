@@ -169,7 +169,7 @@ export function SampleImportDialog({
 
           {/* CSV 格式提示 */}
           {!fileName && (
-            <div className="text-xs text-muted-foreground bg-muted/30 rounded p-3 border border-border">
+            <div className="text-sm text-muted-foreground bg-muted/30 rounded p-3 border border-border">
               CSV 格式要求: 首行为列名, 必须包含 <code className="text-primary">sample_time</code> 列 (ISO 格式)。
               可选列: od600, dcw_g_L, glucose_g_L, acetate_g_L, product_titer, cell_viability_pct, note
             </div>
@@ -182,7 +182,7 @@ export function SampleImportDialog({
                 预览 (共 {rows.length} 行, 显示前 {previewRows.length} 行)
               </div>
               <div className="overflow-x-auto border border-border rounded-md">
-                <table className="w-full text-xs">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-muted/50">
                       {headers.map(h => (

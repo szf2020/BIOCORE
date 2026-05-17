@@ -197,7 +197,7 @@ export default function AiPage() {
                     msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
                   }`}>
                     <p className="whitespace-pre-wrap">{msg.content}</p>
-                    <span className="text-xs opacity-50 mt-1 block">{new Date(msg.timestamp).toLocaleTimeString('zh-CN')}</span>
+                    <span className="text-sm opacity-50 mt-1 block">{new Date(msg.timestamp).toLocaleTimeString('zh-CN')}</span>
                   </div>
                   {msg.role === 'user' && (
                     <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
@@ -220,7 +220,7 @@ export default function AiPage() {
               <div className="px-4 pb-2 flex gap-2 flex-wrap">
                 {QUICK_QUESTIONS.map(q => (
                   <button key={q} onClick={() => sendMessage(q)} disabled={sending}
-                    className="text-xs px-2.5 py-1 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground transition-colors disabled:opacity-50">
+                    className="text-sm px-2.5 py-1 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground transition-colors disabled:opacity-50">
                     {q}
                   </button>
                 ))}
@@ -277,14 +277,14 @@ export default function AiPage() {
               <button
                 onClick={() => sendMessage('帮我生成 BATCH-20260413-001 的批次报告')}
                 disabled={sending}
-                className="w-full text-left text-xs px-3 py-2 rounded bg-muted hover:bg-muted/80 transition-colors disabled:opacity-50"
+                className="w-full text-left text-sm px-3 py-2 rounded bg-muted hover:bg-muted/80 transition-colors disabled:opacity-50"
               >
                 "帮我生成 BATCH-xxx 的批次报告"
               </button>
               <button
                 onClick={() => sendMessage('帮我生成 BATCH-20260413-001 的批次报告, 重点分析DO偏低原因')}
                 disabled={sending}
-                className="w-full text-left text-xs px-3 py-2 rounded bg-muted hover:bg-muted/80 transition-colors disabled:opacity-50"
+                className="w-full text-left text-sm px-3 py-2 rounded bg-muted hover:bg-muted/80 transition-colors disabled:opacity-50"
               >
                 "...重点分析DO偏低原因"
               </button>

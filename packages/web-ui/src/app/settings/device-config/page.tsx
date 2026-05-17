@@ -202,25 +202,25 @@ export default function DeviceConfigPage() {
         <Card className="border-white/10 bg-white/5">
           <CardContent className="p-4 text-center">
             <div className="text-3xl font-bold text-primary">{reactors.length}</div>
-            <div className="text-xs text-muted-foreground mt-1">配置总数</div>
+            <div className="text-sm text-muted-foreground mt-1">配置总数</div>
           </CardContent>
         </Card>
         <Card className="border-white/10 bg-white/5">
           <CardContent className="p-4 text-center">
             <div className="text-3xl font-bold text-emerald-600">{reactors.filter(r => r.enabled).length}</div>
-            <div className="text-xs text-muted-foreground mt-1">已启用</div>
+            <div className="text-sm text-muted-foreground mt-1">已启用</div>
           </CardContent>
         </Card>
         <Card className="border-white/10 bg-white/5">
           <CardContent className="p-4 text-center">
             <div className="text-3xl font-bold text-gray-400">{reactors.filter(r => !r.enabled).length}</div>
-            <div className="text-xs text-muted-foreground mt-1">已禁用</div>
+            <div className="text-sm text-muted-foreground mt-1">已禁用</div>
           </CardContent>
         </Card>
         <Card className="border-white/10 bg-white/5">
           <CardContent className="p-4 text-center">
             <div className="text-3xl font-bold text-muted-foreground">8</div>
-            <div className="text-xs text-muted-foreground mt-1">单PC上限</div>
+            <div className="text-sm text-muted-foreground mt-1">单PC上限</div>
           </CardContent>
         </Card>
       </div>
@@ -250,7 +250,7 @@ export default function DeviceConfigPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium truncate">{r.name}</div>
-                      <div className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+                      <div className="text-sm text-muted-foreground truncate flex items-center gap-1.5">
                         <span>{r.vessel_volume_L}L</span>
                         <span className="text-muted-foreground/30">|</span>
                         {plc ? (
@@ -264,7 +264,7 @@ export default function DeviceConfigPage() {
                         {r.description && <><span className="text-muted-foreground/30">|</span>{r.description}</>}
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-sm">
                       {CATEGORY_LABEL[r.category || 'fermenter'] || r.category || '发酵罐'}
                     </Badge>
                     <Badge className={r.enabled ? 'bg-green-500/20 text-emerald-600' : 'bg-gray-500/20 text-gray-400'}>
@@ -289,7 +289,7 @@ export default function DeviceConfigPage() {
                   {/* 展开详情 */}
                   {isExpanded && (
                     <div className="px-4 pb-4 pt-1 border-t border-white/5">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div><span className="text-muted-foreground">罐体容积</span><div className="font-mono mt-0.5">{r.vessel_volume_L} L</div></div>
                         <div>
                           <span className="text-muted-foreground">关联PLC</span>
@@ -325,7 +325,7 @@ export default function DeviceConfigPage() {
                 <Input value={form.reactor_id} disabled={!!editing}
                   onChange={e => setForm({...form, reactor_id: e.target.value.replace(/[^A-Za-z0-9_-]/g, '')})}
                   placeholder="Reactor-1" className="font-mono" />
-                <p className="text-xs text-muted-foreground mt-1">仅限英文字母、数字、下划线、短横线</p>
+                <p className="text-sm text-muted-foreground mt-1">仅限英文字母、数字、下划线、短横线</p>
               </div>
               <div>
                 <Label>名称 *</Label>
@@ -371,11 +371,11 @@ export default function DeviceConfigPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground mt-1.5">
+              <p className="text-sm text-muted-foreground mt-1.5">
                 PLC连接在 <a href="/settings/plc-config" className="text-primary underline">PLC通讯配置</a> 中创建和管理
               </p>
               {plcConnections.length === 0 && (
-                <p className="text-xs text-yellow-500 mt-1">暂无PLC连接，请先到 PLC通讯配置 中添加</p>
+                <p className="text-sm text-yellow-500 mt-1">暂无PLC连接，请先到 PLC通讯配置 中添加</p>
               )}
             </div>
 

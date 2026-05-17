@@ -542,7 +542,7 @@ export default function PLCConfigPage() {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="text-muted-foreground">协议</div>
                     <div>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-sm">
                         {conn.protocol === 's7' ? 'S7' : conn.protocol === 'modbus_tcp' ? 'Modbus TCP' : 'Modbus RTU'}
                       </Badge>
                     </div>
@@ -559,7 +559,7 @@ export default function PLCConfigPage() {
                       </>
                     )}
                     <div className="text-muted-foreground">心跳(写/读)</div>
-                    <div className="font-mono text-xs">{conn.heartbeat_write_address}/{conn.heartbeat_read_address}</div>
+                    <div className="font-mono text-sm">{conn.heartbeat_write_address}/{conn.heartbeat_read_address}</div>
                     <div className="text-muted-foreground">超时/重连</div>
                     <div>{conn.heartbeat_timeout_ms}ms / {conn.reconnect_interval_ms}ms</div>
                   </div>
@@ -579,7 +579,7 @@ export default function PLCConfigPage() {
                           </span>
                         </div>
                         {hb.errors > 0 && (
-                          <div className="text-xs text-orange-600 mt-1">写入错误: {hb.errors}次</div>
+                          <div className="text-sm text-orange-600 mt-1">写入错误: {hb.errors}次</div>
                         )}
                       </div>
                     );
@@ -700,9 +700,9 @@ export default function PLCConfigPage() {
                       <TableCell className="font-mono text-sm font-medium">{v.tag_name}</TableCell>
                       <TableCell className="text-sm">{v.description}</TableCell>
                       <TableCell className="font-mono text-sm">{v.plc_address}</TableCell>
-                      <TableCell><Badge variant="outline" className="text-xs">{v.data_type}</Badge></TableCell>
+                      <TableCell><Badge variant="outline" className="text-sm">{v.data_type}</Badge></TableCell>
                       <TableCell>
-                        <Badge variant={v.direction === 'READ' ? 'secondary' : v.direction === 'WRITE' ? 'default' : 'outline'} className="text-xs">
+                        <Badge variant={v.direction === 'READ' ? 'secondary' : v.direction === 'WRITE' ? 'default' : 'outline'} className="text-sm">
                           {v.direction}
                         </Badge>
                       </TableCell>
@@ -727,7 +727,7 @@ export default function PLCConfigPage() {
                         }
                       </TableCell>
                       <TableCell>
-                        <Badge className={`text-xs ${GROUP_COLORS[v.group as PLCVariableGroup] || ''}`}>
+                        <Badge className={`text-sm ${GROUP_COLORS[v.group as PLCVariableGroup] || ''}`}>
                           {v.group}
                         </Badge>
                       </TableCell>
@@ -872,7 +872,7 @@ function ConnectionDialog({ open, onClose, onSave, initial }: {
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">DB号</Label>
                 <Input className="col-span-3" type="number" value={form.s7_db} onChange={e => setForm({ ...form, s7_db: parseInt(e.target.value) })} />
-                <span className="col-span-4 text-xs text-muted-foreground pl-[calc(25%+1rem)]">
+                <span className="col-span-4 text-sm text-muted-foreground pl-[calc(25%+1rem)]">
                   S7-200 SMART V区通常映射为DB1, 通讯数据块可能在DB2
                 </span>
               </div>
@@ -1041,8 +1041,8 @@ function VariableDialog({ open, onClose, onSave, initial, connections, selectedC
               <Input className={`font-mono ${addrError ? 'border-red-500' : ''}`} value={form.plc_address}
                 onChange={e => setForm({ ...form, plc_address: e.target.value.trim() })}
                 placeholder="DB2.DBW4 或 VW100" />
-              {addrError && <p className="text-xs text-red-500">{addrError}</p>}
-              {!addrError && form.plc_address && <p className="text-xs text-green-600">地址有效</p>}
+              {addrError && <p className="text-sm text-red-500">{addrError}</p>}
+              {!addrError && form.plc_address && <p className="text-sm text-green-600">地址有效</p>}
             </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-3">

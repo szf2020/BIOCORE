@@ -15,7 +15,7 @@ export function PropertyEditor({ schema, values, onChange }: PropertyEditorProps
         const v = values?.[key];
         return (
           <div key={key} className="space-y-1">
-            <label className="block text-xs text-gray-600">{sch.label}</label>
+            <label className="block text-sm text-gray-600">{sch.label}</label>
             {renderInput(key, sch, v, (val) => onChange({ [key]: val }))}
           </div>
         );

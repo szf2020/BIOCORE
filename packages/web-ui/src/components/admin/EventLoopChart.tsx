@@ -43,7 +43,7 @@ export function EventLoopChart({ series }: { series: EventLoopSample[] }) {
       <h2 className="font-semibold mb-2 text-sm">事件循环延迟（24h）</h2>
       <div style={{ height: 240 }}>
         {series.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-xs text-muted-foreground">暂无样本</div>
+          <div className="h-full flex items-center justify-center text-sm text-muted-foreground">暂无样本</div>
         ) : (
           <EChartsWrapper option={option} style={{ height: 240 }} />
         )}

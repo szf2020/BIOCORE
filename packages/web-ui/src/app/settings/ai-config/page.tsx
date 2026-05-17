@@ -77,10 +77,10 @@ export default function AiConfigPage() {
           <span className="text-sm font-medium">Ollama 状态: {ollamaStatus?.available ? '在线' : '离线'}</span>
         </div>
         {ollamaStatus?.available && ollamaStatus.models.length > 0 && (
-          <p className="text-xs text-muted-foreground ml-4.5">可用模型: {ollamaStatus.models.join(', ')}</p>
+          <p className="text-sm text-muted-foreground ml-4.5">可用模型: {ollamaStatus.models.join(', ')}</p>
         )}
         {ollamaStatus && !ollamaStatus.available && (
-          <p className="text-xs text-red-600 ml-4.5">请运行: <code className="bg-white/10 px-1 rounded">ollama serve</code></p>
+          <p className="text-sm text-red-600 ml-4.5">请运行: <code className="bg-white/10 px-1 rounded">ollama serve</code></p>
         )}
       </div>
 
@@ -101,7 +101,7 @@ export default function AiConfigPage() {
               <option key={m} value={m}>{m} (已安装)</option>
             )}
           </select>
-          <p className="text-xs text-muted-foreground">推荐 gemma4 (Google Gemma 4, 多语言, 8B参数)</p>
+          <p className="text-sm text-muted-foreground">推荐 gemma4 (Google Gemma 4, 多语言, 8B参数)</p>
         </div>
 
         <hr className="border-white/10" />
@@ -119,7 +119,7 @@ export default function AiConfigPage() {
           <input type="password" value={config.cloud_api_key}
             onChange={e => setConfig({ ...config, cloud_api_key: e.target.value })}
             className="w-full px-3 py-2 text-sm rounded-md border border-white/10 bg-white/5" placeholder="sk-..." />
-          <p className="text-xs text-muted-foreground">本地Ollama不可用时自动回退到云端 (需网络)</p>
+          <p className="text-sm text-muted-foreground">本地Ollama不可用时自动回退到云端 (需网络)</p>
         </div>
 
         <div className="flex items-center gap-3">

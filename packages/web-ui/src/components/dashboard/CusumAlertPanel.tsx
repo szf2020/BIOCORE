@@ -144,7 +144,7 @@ export function CusumAlertPanel({ batchId, reactorId }: { batchId?: string; reac
         <h3 className="text-sm font-semibold text-foreground/90">CUSUM 统计过程监控</h3>
         <button
           onClick={() => handleReset()}
-          className="text-xs text-muted-foreground hover:text-foreground/90 transition-colors"
+          className="text-sm text-muted-foreground hover:text-foreground/90 transition-colors"
         >
           全部重置
         </button>
@@ -166,14 +166,14 @@ export function CusumAlertPanel({ batchId, reactorId }: { batchId?: string; reac
                 }`}>
                   {alert.deviation >= 0 ? '+' : ''}{alert.deviation.toFixed(1)}σ
                 </span>
-                <span className="text-xs text-muted-foreground font-mono">
+                <span className="text-sm text-muted-foreground font-mono">
                   S⁺={alert.cumPos.toFixed(1)} S⁻={alert.cumNeg.toFixed(1)}
                 </span>
                 <div className="flex-1" />
                 {alert.alarming && (
                   <button
                     onClick={() => handleReset(alert.channel)}
-                    className="text-xs text-muted-foreground hover:text-foreground/90"
+                    className="text-sm text-muted-foreground hover:text-foreground/90"
                   >
                     重置
                   </button>
@@ -195,7 +195,7 @@ export function CusumAlertPanel({ batchId, reactorId }: { batchId?: string; reac
       </div>
 
       {/* 图例说明 */}
-      <div className="mt-3 pt-2 border-t border-border/50 flex items-center gap-4 text-xs text-muted-foreground">
+      <div className="mt-3 pt-2 border-t border-border/50 flex items-center gap-4 text-sm text-muted-foreground">
         <span>S⁺: 上偏累积和</span>
         <span>S⁻: 下偏累积和</span>
         <span className="text-red-400">--- h: 报警阈值 ({H_THRESHOLD}σ)</span>

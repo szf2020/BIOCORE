@@ -114,15 +114,15 @@ export default function AlarmHistoryPage() {
         <div className="flex items-center gap-2">
           <Bell className="w-5 h-5 text-primary" />
           <h1 className="text-lg font-semibold">报警历史</h1>
-          <span className="text-xs text-muted-foreground font-mono">总计 {total} 条</span>
+          <span className="text-sm text-muted-foreground font-mono">总计 {total} 条</span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={load} disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border border-border hover:bg-muted transition-colors">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm border border-border hover:bg-muted transition-colors">
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> 刷新
           </button>
           <button onClick={exportCsv}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border border-border hover:bg-muted transition-colors">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm border border-border hover:bg-muted transition-colors">
             <Download className="w-3.5 h-3.5" /> 导出 CSV
           </button>
         </div>
@@ -132,20 +132,20 @@ export default function AlarmHistoryPage() {
       <Card className="sticky top-14 z-10">
         <CardContent className="p-3">
           <div className="grid grid-cols-2 md:grid-cols-6 gap-2 items-end">
-            <label className="text-xs space-y-1">
+            <label className="text-sm space-y-1">
               <div className="text-muted-foreground flex items-center gap-1"><Search className="w-3 h-3" /> 罐号</div>
               <input value={reactorId} onChange={e => setReactorId(e.target.value)} placeholder="F01"
-                className="w-full h-8 px-2 rounded bg-background border border-border text-xs font-mono" />
+                className="w-full h-8 px-2 rounded bg-background border border-border text-sm font-mono" />
             </label>
-            <label className="text-xs space-y-1">
+            <label className="text-sm space-y-1">
               <div className="text-muted-foreground flex items-center gap-1"><Search className="w-3 h-3" /> 批次号</div>
               <input value={batchId} onChange={e => setBatchId(e.target.value)} placeholder="B-..."
-                className="w-full h-8 px-2 rounded bg-background border border-border text-xs font-mono" />
+                className="w-full h-8 px-2 rounded bg-background border border-border text-sm font-mono" />
             </label>
-            <label className="text-xs space-y-1">
+            <label className="text-sm space-y-1">
               <div className="text-muted-foreground">严重程度</div>
               <select value={severity} onChange={e => setSeverity(e.target.value as any)}
-                className="w-full h-8 px-2 rounded bg-background border border-border text-xs">
+                className="w-full h-8 px-2 rounded bg-background border border-border text-sm">
                 <option value="">全部</option>
                 <option value="emergency">紧急</option>
                 <option value="critical">严重</option>
@@ -153,24 +153,24 @@ export default function AlarmHistoryPage() {
                 <option value="info">提示</option>
               </select>
             </label>
-            <label className="text-xs space-y-1">
+            <label className="text-sm space-y-1">
               <div className="text-muted-foreground">确认状态</div>
               <select value={ack} onChange={e => setAck(e.target.value as any)}
-                className="w-full h-8 px-2 rounded bg-background border border-border text-xs">
+                className="w-full h-8 px-2 rounded bg-background border border-border text-sm">
                 <option value="all">全部</option>
                 <option value="unack">未确认</option>
                 <option value="ack">已确认</option>
               </select>
             </label>
-            <label className="text-xs space-y-1">
+            <label className="text-sm space-y-1">
               <div className="text-muted-foreground">起始时间</div>
               <input type="datetime-local" value={since} onChange={e => setSince(e.target.value)}
-                className="w-full h-8 px-2 rounded bg-background border border-border text-xs" />
+                className="w-full h-8 px-2 rounded bg-background border border-border text-sm" />
             </label>
-            <label className="text-xs space-y-1">
+            <label className="text-sm space-y-1">
               <div className="text-muted-foreground">截止时间</div>
               <input type="datetime-local" value={until} onChange={e => setUntil(e.target.value)}
-                className="w-full h-8 px-2 rounded bg-background border border-border text-xs" />
+                className="w-full h-8 px-2 rounded bg-background border border-border text-sm" />
             </label>
           </div>
         </CardContent>
@@ -180,12 +180,12 @@ export default function AlarmHistoryPage() {
       <Card>
         <CardContent className="p-0">
           {rows.length === 0 ? (
-            <div className="text-center text-xs text-muted-foreground py-12">
+            <div className="text-center text-sm text-muted-foreground py-12">
               {loading ? '加载中...' : '无匹配记录'}
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-sm">
                 <thead className="bg-muted/30 text-muted-foreground border-b border-border">
                   <tr>
                     <th className="px-2 py-2 text-left font-medium w-10">ID</th>
@@ -209,7 +209,7 @@ export default function AlarmHistoryPage() {
                         <td className="px-2 py-1.5 font-mono text-muted-foreground">{r.id}</td>
                         <td className="px-2 py-1.5 font-mono whitespace-nowrap">{fmtTime(r.triggered_at)}</td>
                         <td className="px-2 py-1.5">
-                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold border ${meta.color}`}>
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm font-semibold border ${meta.color}`}>
                             <Icon className="w-3 h-3" /> {meta.label}
                           </span>
                         </td>
@@ -226,13 +226,13 @@ export default function AlarmHistoryPage() {
                         </td>
                         <td className="px-2 py-1.5">
                           {r.acknowledged_at ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+                            <span className="inline-flex items-center gap-1 text-sm text-emerald-600">
                               <Check className="w-3 h-3" />
                               <span className="font-mono">{fmtTime(r.acknowledged_at)}</span>
                               {r.acknowledged_by && <span className="text-muted-foreground">· {r.acknowledged_by}</span>}
                             </span>
                           ) : (
-                            <span className="text-xs text-red-600 font-semibold">未确认</span>
+                            <span className="text-sm text-red-600 font-semibold">未确认</span>
                           )}
                         </td>
                       </tr>

@@ -114,12 +114,12 @@ export default function DataMaintenancePage() {
         {/* 手动备份 */}
         <div className="rounded-lg border border-white/10 bg-white/5 p-4">
           <h2 className="text-sm font-semibold mb-2">手动备份</h2>
-          <p className="text-xs text-muted-foreground mb-3">创建SQLite数据库完整备份到 data/backups/</p>
+          <p className="text-sm text-muted-foreground mb-3">创建SQLite数据库完整备份到 data/backups/</p>
           <button onClick={handleBackupNow} disabled={backingUp}
             className="px-4 py-2 text-sm font-medium rounded-md bg-[#1677ff] text-white hover:bg-[#1677ff]/80 disabled:opacity-50">
             {backingUp ? '备份中...' : '立即备份'}
           </button>
-          {backupResult && <p className={`text-xs mt-2 ${backupResult.includes('成功') ? 'text-emerald-600' : 'text-red-600'}`}>{backupResult}</p>}
+          {backupResult && <p className={`text-sm mt-2 ${backupResult.includes('成功') ? 'text-emerald-600' : 'text-red-600'}`}>{backupResult}</p>}
         </div>
 
         {/* 自动备份 */}
@@ -131,7 +131,7 @@ export default function DataMaintenancePage() {
           </div>
           {config.auto_backup && (
             <div className="ml-6 space-y-2">
-              <label className="text-xs text-muted-foreground">备份间隔 (小时)</label>
+              <label className="text-sm text-muted-foreground">备份间隔 (小时)</label>
               <input type="number" min={1} max={168} value={config.backup_interval_h}
                 onChange={e => setConfig({ ...config, backup_interval_h: Number(e.target.value) })}
                 className="w-32 px-3 py-2 text-sm rounded-md border border-white/10 bg-white/5" />
@@ -145,7 +145,7 @@ export default function DataMaintenancePage() {
           <input type="number" min={30} max={3650} value={config.retention_days}
             onChange={e => setConfig({ ...config, retention_days: Number(e.target.value) })}
             className="w-32 px-3 py-2 text-sm rounded-md border border-white/10 bg-white/5" />
-          <p className="text-xs text-muted-foreground">1分钟分辨率数据的保留期，过期后自动降采样归档</p>
+          <p className="text-sm text-muted-foreground">1分钟分辨率数据的保留期，过期后自动降采样归档</p>
         </div>
 
         {/* 日志清理 */}
@@ -154,12 +154,12 @@ export default function DataMaintenancePage() {
           <input type="number" min={7} max={365} value={config.log_cleanup_days}
             onChange={e => setConfig({ ...config, log_cleanup_days: Number(e.target.value) })}
             className="w-32 px-3 py-2 text-sm rounded-md border border-white/10 bg-white/5" />
-          <p className="text-xs text-muted-foreground">清理已完成批次的state_transitions和step_logs (audit_logs不受影响)</p>
+          <p className="text-sm text-muted-foreground">清理已完成批次的state_transitions和step_logs (audit_logs不受影响)</p>
           <button onClick={handleCleanup} disabled={cleaning}
-            className="px-3 py-1.5 text-xs font-medium rounded-md border border-red-500/30 text-red-600 hover:bg-red-500/10 disabled:opacity-50">
+            className="px-3 py-1.5 text-sm font-medium rounded-md border border-red-500/30 text-red-600 hover:bg-red-500/10 disabled:opacity-50">
             {cleaning ? '清理中...' : `清理 ${config.log_cleanup_days} 天前的日志`}
           </button>
-          {cleanResult && <p className={`text-xs ${cleanResult.includes('完成') ? 'text-emerald-600' : 'text-red-600'}`}>{cleanResult}</p>}
+          {cleanResult && <p className={`text-sm ${cleanResult.includes('完成') ? 'text-emerald-600' : 'text-red-600'}`}>{cleanResult}</p>}
         </div>
 
         {/* 保存 */}

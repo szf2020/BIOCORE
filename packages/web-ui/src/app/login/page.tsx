@@ -47,20 +47,20 @@ export default function LoginPage() {
           <Activity className="w-7 h-7 text-primary" />
           <h1 className="text-2xl font-bold tracking-tight text-foreground">BIOCore</h1>
         </div>
-        <p className="text-center text-xs text-muted-foreground mb-6 font-mono">
+        <p className="text-center text-sm text-muted-foreground mb-6 font-mono">
           v0.1.0 | 发酵控制平台
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="flex items-center gap-2 text-xs text-red-600 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">用户名</label>
+            <label className="text-sm font-medium text-muted-foreground mb-1.5 block">用户名</label>
             <input
               type="text"
               value={username}
@@ -73,7 +73,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">密码</label>
+            <label className="text-sm font-medium text-muted-foreground mb-1.5 block">密码</label>
             <input
               type="password"
               value={password}

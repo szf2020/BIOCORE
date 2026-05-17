@@ -59,7 +59,7 @@ export default function SimilarBatchesPage() {
             <button
               key={f}
               onClick={() => setField(f)}
-              className={`px-3 py-1 text-xs rounded-full transition-colors ${
+              className={`px-3 py-1 text-sm rounded-full transition-colors ${
                 field === f ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground hover:text-foreground'
               }`}
             >

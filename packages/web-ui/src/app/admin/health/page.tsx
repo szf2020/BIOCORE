@@ -69,7 +69,7 @@ export default function AdminHealthPage() {
     <div className="p-6 space-y-4">
       <div className="flex items-baseline justify-between">
         <h1 className="text-2xl font-bold">系统健康度</h1>
-        {error && <span className="text-xs text-red-600">刷新失败：{error}</span>}
+        {error && <span className="text-sm text-red-600">刷新失败：{error}</span>}
       </div>
       <p className="text-sm text-muted-foreground">实时运行时数据，每 10 秒自动刷新。</p>
 

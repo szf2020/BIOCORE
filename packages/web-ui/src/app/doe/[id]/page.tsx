@@ -280,7 +280,7 @@ export default function DoeDetailPage() {
             <FlaskConical className="w-4 h-4 text-primary" />
             {study.name}
           </h1>
-          <div className="text-xs font-mono text-muted-foreground">
+          <div className="text-sm font-mono text-muted-foreground">
             {study.study_id} · {study.design_type} · 状态: {study.status}
           </div>
         </div>
@@ -291,7 +291,7 @@ export default function DoeDetailPage() {
             <Wand2 className="w-3.5 h-3.5 mr-1" />物化配方 ({study.runs.length} 份)
           </Button>
         ) : (
-          <span className="text-xs text-muted-foreground font-mono">
+          <span className="text-sm text-muted-foreground font-mono">
             基础配方: {study.base_recipe_id} v{study.base_recipe_version}
           </span>
         )}
@@ -331,7 +331,7 @@ export default function DoeDetailPage() {
           <button
             key={t.k}
             onClick={() => setTab(t.k as Tab)}
-            className={`h-9 px-4 text-xs font-medium border-b-2 -mb-px ${
+            className={`h-9 px-4 text-sm font-medium border-b-2 -mb-px ${
               tab === t.k
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -355,12 +355,12 @@ export default function DoeDetailPage() {
                 </Button>
               </div>
               {localFactors.length === 0 ? (
-                <div className="text-xs text-muted-foreground italic py-4 text-center border border-dashed border-border rounded">
+                <div className="text-sm text-muted-foreground italic py-4 text-center border border-dashed border-border rounded">
                   未定义因子 — 添加要研究的变量 (如 温度/pH/初始搅拌), 指定范围和对应的配方参数路径
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
+                  <div className="grid grid-cols-12 gap-2 text-sm text-muted-foreground px-1">
                     <div className="col-span-2">名称</div>
                     <div className="col-span-4">配方参数路径 (phase_id.param_key)</div>
                     <div className="col-span-2">最小值</div>
@@ -370,16 +370,16 @@ export default function DoeDetailPage() {
                   </div>
                   {localFactors.map((f, i) => (
                     <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                      <Input className="col-span-2 h-7 text-xs" value={f.name}
+                      <Input className="col-span-2 h-7 text-sm" value={f.name}
                         onChange={e => updateFactor(i, { name: e.target.value })} placeholder="A" />
-                      <Input className="col-span-4 h-7 text-xs font-mono" value={f.path}
+                      <Input className="col-span-4 h-7 text-sm font-mono" value={f.path}
                         onChange={e => updateFactor(i, { path: e.target.value })}
                         placeholder="HEAT_01.target_temp_C" />
-                      <Input className="col-span-2 h-7 text-xs" type="number" value={f.min}
+                      <Input className="col-span-2 h-7 text-sm" type="number" value={f.min}
                         onChange={e => updateFactor(i, { min: parseFloat(e.target.value) || 0 })} />
-                      <Input className="col-span-2 h-7 text-xs" type="number" value={f.max}
+                      <Input className="col-span-2 h-7 text-sm" type="number" value={f.max}
                         onChange={e => updateFactor(i, { max: parseFloat(e.target.value) || 0 })} />
-                      <Input className="col-span-1 h-7 text-xs" type="number" value={f.levels || ''}
+                      <Input className="col-span-1 h-7 text-sm" type="number" value={f.levels || ''}
                         onChange={e => updateFactor(i, { levels: parseInt(e.target.value) || undefined })}
                         placeholder="2" />
                       <button onClick={() => removeFactor(i)} className="col-span-1 text-red-600 hover:bg-red-500/10 rounded p-1 justify-self-end">
@@ -402,12 +402,12 @@ export default function DoeDetailPage() {
                 </Button>
               </div>
               {localResponses.length === 0 ? (
-                <div className="text-xs text-muted-foreground italic py-4 text-center border border-dashed border-border rounded">
+                <div className="text-sm text-muted-foreground italic py-4 text-center border border-dashed border-border rounded">
                   未定义响应 — 添加要优化的目标 (如 OD600 / 产物浓度 / 产率)
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
+                  <div className="grid grid-cols-12 gap-2 text-sm text-muted-foreground px-1">
                     <div className="col-span-4">名称</div>
                     <div className="col-span-4">来源</div>
                     <div className="col-span-3">目标</div>
@@ -415,12 +415,12 @@ export default function DoeDetailPage() {
                   </div>
                   {localResponses.map((r, i) => (
                     <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                      <Input className="col-span-4 h-7 text-xs" value={r.name}
+                      <Input className="col-span-4 h-7 text-sm" value={r.name}
                         onChange={e => updateResponse(i, { name: e.target.value })} placeholder="OD600" />
-                      <Input className="col-span-4 h-7 text-xs" value={r.source || ''}
+                      <Input className="col-span-4 h-7 text-sm" value={r.source || ''}
                         onChange={e => updateResponse(i, { source: e.target.value })}
                         placeholder="manual / AI-0 / batch_summary" />
-                      <select className="col-span-3 h-7 text-xs rounded bg-background border border-border px-1"
+                      <select className="col-span-3 h-7 text-sm rounded bg-background border border-border px-1"
                         value={r.goal}
                         onChange={e => updateResponse(i, { goal: e.target.value as any })}>
                         <option value="max">最大化</option>
@@ -443,7 +443,7 @@ export default function DoeDetailPage() {
               <Save className="w-3.5 h-3.5 mr-1" />{saving ? '保存中...' : '保存定义'}
             </Button>
             {study.design_type === 'latin_hypercube' && (
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">LHS 运行数:</span>
                 <Input type="number" value={lhsN} onChange={e => setLhsN(parseInt(e.target.value) || 10)}
                   className="w-20 h-8" min={2} max={200} />
@@ -455,7 +455,7 @@ export default function DoeDetailPage() {
             </Button>
           </div>
 
-          <div className="text-xs text-muted-foreground">
+          <div className="text-sm text-muted-foreground">
             <div>• 全因子: 点数 = 水平^k · CCD: 点数 ≈ 2^k+2k+3 · LHS: 点数 = 上方指定的 N</div>
             <div>• 因子路径格式: <code className="font-mono">{'{phase_id 或 phase_type}.{参数 key}'}</code> · 支持嵌套 (用 . 分隔)</div>
           </div>
@@ -477,7 +477,7 @@ export default function DoeDetailPage() {
                 <BookOpen className="w-3.5 h-3.5 mr-1" />生成子配方
               </Button>
             )}
-            <div className="text-xs text-muted-foreground">
+            <div className="text-sm text-muted-foreground">
               {study.runs.filter(r => r.status === 'completed').length}/{study.runs.length} 已完成
             </div>
           </div>
@@ -494,25 +494,25 @@ export default function DoeDetailPage() {
                 return (
                   <Card key={run.run_id}>
                     <CardContent className="p-3 space-y-2">
-                      <div className="flex items-center gap-2 text-xs">
+                      <div className="flex items-center gap-2 text-sm">
                         <span className="font-mono font-semibold w-8">#{run.run_index}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${st.bg}`}>{st.label}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-sm font-semibold ${st.bg}`}>{st.label}</span>
                         {run.recipe_id && (
                           <button
                             onClick={() => router.push(`/recipes/${encodeURIComponent(run.recipe_id!)}/edit?version=${run.recipe_version}`)}
-                            className="text-xs text-primary hover:underline flex items-center gap-0.5 font-mono"
+                            className="text-sm text-primary hover:underline flex items-center gap-0.5 font-mono"
                           >
                             <BookOpen className="w-3 h-3" /> {run.recipe_id}
                           </button>
                         )}
                         {run.batch_id && (
-                          <span className="text-xs text-muted-foreground font-mono">批次: {run.batch_id}</span>
+                          <span className="text-sm text-muted-foreground font-mono">批次: {run.batch_id}</span>
                         )}
                       </div>
                       {/* 因子值 */}
                       <div className="flex flex-wrap gap-1.5">
                         {Object.entries(run.factor_values).map(([k, v]) => (
-                          <span key={k} className="text-xs bg-muted/50 px-2 py-0.5 rounded font-mono">
+                          <span key={k} className="text-sm bg-muted/50 px-2 py-0.5 rounded font-mono">
                             {k}={typeof v === 'number' ? v.toFixed(3) : String(v)}
                           </span>
                         ))}
@@ -522,7 +522,7 @@ export default function DoeDetailPage() {
                         <div className="flex items-center gap-2 pt-1">
                           {study.responses.map(resp => (
                             <div key={resp.name} className="flex items-center gap-1">
-                              <span className="text-xs text-muted-foreground">{resp.name}:</span>
+                              <span className="text-sm text-muted-foreground">{resp.name}:</span>
                               <Input
                                 type="number"
                                 className="h-6 w-20 text-[11px]"
@@ -543,7 +543,7 @@ export default function DoeDetailPage() {
                       {run.status === 'completed' && run.response_values && (
                         <div className="flex flex-wrap gap-1.5 pt-1">
                           {Object.entries(run.response_values).map(([k, v]) => (
-                            <span key={k} className="text-xs bg-green-500/15 text-emerald-600 px-2 py-0.5 rounded font-mono">
+                            <span key={k} className="text-sm bg-green-500/15 text-emerald-600 px-2 py-0.5 rounded font-mono">
                               {k}={typeof v === 'number' ? v.toFixed(3) : String(v)}
                             </span>
                           ))}
@@ -565,7 +565,7 @@ export default function DoeDetailPage() {
             <Button size="sm" variant="outline" onClick={fitModel} disabled={modelLoading}>
               <TrendingUp className="w-3.5 h-3.5 mr-1" />{modelLoading ? '拟合中...' : '重新拟合'}
             </Button>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-sm text-muted-foreground">
               仅对已完成运行的响应值建模 · 默认二次模型 (RSM)
             </span>
           </div>
@@ -582,7 +582,7 @@ export default function DoeDetailPage() {
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-primary" />
                   <span className="text-sm font-semibold">{respResult.response}</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-sm text-muted-foreground">
                     目标: {respResult.goal === 'max' ? '最大化' : respResult.goal === 'min' ? '最小化' : '目标值'}
                   </span>
                   {respResult.analysis_type && (
@@ -592,14 +592,14 @@ export default function DoeDetailPage() {
                   )}
                 </div>
                 {respResult.error ? (
-                  <div className="text-xs text-red-600 flex items-center gap-1">
+                  <div className="text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />{respResult.error}
                   </div>
                 ) : respResult.analysis_type === 'orthogonal' ? (
                   <>
                     {/* ── 正交设计: 极差分析表 ── */}
                     <div>
-                      <div className="text-xs font-semibold mb-1 text-muted-foreground">极差分析 (因素重要性排名)</div>
+                      <div className="text-sm font-semibold mb-1 text-muted-foreground">极差分析 (因素重要性排名)</div>
                       <div className="text-[11px] font-mono overflow-x-auto">
                         <table className="w-full">
                           <thead><tr className="border-b border-border text-muted-foreground">
@@ -626,7 +626,7 @@ export default function DoeDetailPage() {
                           </tbody>
                         </table>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
+                      <div className="text-sm text-muted-foreground mt-1">
                         排名: {respResult.rangeAnalysis?.ranking?.join(' > ')}
                       </div>
                     </div>
@@ -634,7 +634,7 @@ export default function DoeDetailPage() {
                     {/* ANOVA 表 */}
                     {respResult.anova && (
                       <div>
-                        <div className="text-xs font-semibold mb-1 text-muted-foreground">方差分析 (F 检验)</div>
+                        <div className="text-sm font-semibold mb-1 text-muted-foreground">方差分析 (F 检验)</div>
                         <div className="text-[11px] font-mono overflow-x-auto">
                           <table className="w-full">
                             <thead><tr className="border-b border-border text-muted-foreground">
@@ -672,7 +672,7 @@ export default function DoeDetailPage() {
                           </table>
                         </div>
                         {respResult.anova.pooledFactors?.length > 0 && (
-                          <div className="text-xs text-muted-foreground mt-1">
+                          <div className="text-sm text-muted-foreground mt-1">
                             合并到误差项: {respResult.anova.pooledFactors.join(', ')}
                           </div>
                         )}
@@ -682,7 +682,7 @@ export default function DoeDetailPage() {
                     {/* 主效应图 (参考 Minitab) */}
                     {respResult.rangeAnalysis?.factors?.length > 0 && (
                       <div>
-                        <div className="text-xs font-semibold mb-1 text-muted-foreground">主效应图 (各因素水平均值)</div>
+                        <div className="text-sm font-semibold mb-1 text-muted-foreground">主效应图 (各因素水平均值)</div>
                         <EChartsWrapper option={{
                           tooltip: { trigger: 'axis' as const },
                           legend: { data: respResult.rangeAnalysis.factors.map((f: any) => f.name), textStyle: { color: '#888', fontSize: 10 } },
@@ -703,7 +703,7 @@ export default function DoeDetailPage() {
                     <div className="bg-primary/5 border border-primary/30 rounded p-3 space-y-2">
                       <div className="flex items-center gap-2">
                         <CheckCircle className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-xs font-semibold">最优水平组合</span>
+                        <span className="text-sm font-semibold">最优水平组合</span>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {Object.entries(respResult.rangeAnalysis?.optimalCombination || {}).map(([k, v]: [string, any]) => (
@@ -747,7 +747,7 @@ export default function DoeDetailPage() {
                       <span>N = {respResult.model?.n_observations} obs / {respResult.model?.n_terms} terms</span>
                     </div>
                     <div>
-                      <div className="text-xs font-semibold mb-1 text-muted-foreground">系数 (coded)</div>
+                      <div className="text-sm font-semibold mb-1 text-muted-foreground">系数 (coded)</div>
                       <div className="text-[11px] space-y-0.5 font-mono">
                         {respResult.model?.terms?.map((t: any, idx: number) => (
                           <div key={idx} className="flex gap-2">
@@ -761,7 +761,7 @@ export default function DoeDetailPage() {
                     </div>
                     {respResult.pareto && (
                       <div>
-                        <div className="text-xs font-semibold mb-1 text-muted-foreground">效应 Pareto 图</div>
+                        <div className="text-sm font-semibold mb-1 text-muted-foreground">效应 Pareto 图</div>
                         <div className="space-y-1">
                           {respResult.pareto.map((p: any, idx: number) => {
                             const max = Math.max(...respResult.pareto.map((x: any) => x.abs_coefficient));
@@ -783,8 +783,8 @@ export default function DoeDetailPage() {
                       <div className="bg-primary/5 border border-primary/30 rounded p-3 space-y-2">
                         <div className="flex items-center gap-2">
                           <CheckCircle className="w-3.5 h-3.5 text-primary" />
-                          <span className="text-xs font-semibold">推荐最优点</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-sm font-semibold">推荐最优点</span>
+                          <span className="text-sm text-muted-foreground">
                             预测: <strong>{respResult.optimum.predicted_response?.toFixed(4)}</strong>
                           </span>
                         </div>
@@ -854,7 +854,7 @@ function BindBaseRecipe({ studyId, onBound }: { studyId: string; onBound: () => 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm" onClick={() => setOpen(false)}>
           <div className="bg-card border border-border rounded-lg w-[400px] p-4 space-y-3" onClick={e => e.stopPropagation()}>
             <h3 className="text-sm font-semibold">绑定基础配方</h3>
-            <p className="text-xs text-muted-foreground">物化（Materialize）需要一个已批准的基础配方，DOE 会克隆该配方并注入因素值。</p>
+            <p className="text-sm text-muted-foreground">物化（Materialize）需要一个已批准的基础配方，DOE 会克隆该配方并注入因素值。</p>
             <select value={selected} onChange={e => setSelected(e.target.value)}
               className="w-full h-8 px-2 rounded bg-background border border-border text-sm">
               <option value="">-- 选择已批准配方 --</option>
@@ -903,10 +903,10 @@ function DoeStepper({ study, onAutoCollect, onCreateOptimal }: { study: DoeStudy
         <React.Fragment key={i}>
           {i > 0 && <div className={`w-6 h-px ${s.done || steps[i - 1].done ? 'bg-primary/60' : 'bg-border'}`} />}
           <div className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded ${s.done ? 'bg-primary/10' : 'bg-muted/30'}`}>
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${s.done ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-sm font-bold ${s.done ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
               {s.done ? '✓' : i + 1}
             </div>
-            <span className="text-xs font-semibold">{s.label}</span>
+            <span className="text-sm font-semibold">{s.label}</span>
             <span className="text-[11px] text-muted-foreground">{s.detail}</span>
             {s.action && (
               <button onClick={(s as any).onAction || onAutoCollect} className="text-[11px] text-primary hover:underline mt-0.5">
@@ -963,15 +963,15 @@ function ContourPlot({ studyId, factors, responses }: {
     <Card>
       <CardContent className="p-4 space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-muted-foreground">等高线图 (Contour)</span>
+          <span className="text-sm font-semibold text-muted-foreground">等高线图 (Contour)</span>
           <select value={selResp} onChange={e => setSelResp(e.target.value)} className="h-7 px-2 text-[11px] rounded bg-background border border-border">
             {responses.map(r => <option key={r.name} value={r.name}>{r.name}</option>)}
           </select>
-          <span className="text-xs text-muted-foreground">X:</span>
+          <span className="text-sm text-muted-foreground">X:</span>
           <select value={selX} onChange={e => setSelX(e.target.value)} className="h-7 px-2 text-[11px] rounded bg-background border border-border">
             {factors.map(f => <option key={f.name} value={f.name}>{f.name}</option>)}
           </select>
-          <span className="text-xs text-muted-foreground">Y:</span>
+          <span className="text-sm text-muted-foreground">Y:</span>
           <select value={selY} onChange={e => setSelY(e.target.value)} className="h-7 px-2 text-[11px] rounded bg-background border border-border">
             {factors.filter(f => f.name !== selX).map(f => <option key={f.name} value={f.name}>{f.name}</option>)}
           </select>

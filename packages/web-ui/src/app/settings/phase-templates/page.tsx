@@ -200,22 +200,22 @@ export default function PhaseTemplatesPage() {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs font-mono">{t.type}</Badge>
+                      <Badge variant="outline" className="text-sm font-mono">{t.type}</Badge>
                       {t.label}
                     </CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="text-sm space-y-2">
                   <p className="text-muted-foreground">{t.description}</p>
-                  <div className="flex gap-3 text-xs text-muted-foreground">
+                  <div className="flex gap-3 text-sm text-muted-foreground">
                     <span>{t.steps?.length || t.fixed_steps} 步</span>
                     <span>{t.param_schema?.length || 0} 参数绑定</span>
                   </div>
                   {expandedType === t.type && (
                     <div className="mt-3 pt-3 border-t space-y-2" onClick={e => e.stopPropagation()}>
                       {t.steps?.length > 0 && t.steps.map((s, i) => (
-                        <div key={i} className="text-xs flex items-center gap-1">
-                          <Badge variant="outline" className="w-5 h-5 flex items-center justify-center p-0 text-xs">{s.step_number}</Badge>
+                        <div key={i} className="text-sm flex items-center gap-1">
+                          <Badge variant="outline" className="w-5 h-5 flex items-center justify-center p-0 text-sm">{s.step_number}</Badge>
                           <span>{s.name}</span>
                           <span className="text-muted-foreground ml-auto">
                             → {s.next_step === 'end' ? '结束' : s.next_step === 'next' ? `Step${s.step_number + 1}` : `Step${s.next_step}`}
@@ -223,7 +223,7 @@ export default function PhaseTemplatesPage() {
                         </div>
                       ))}
                       {t.param_schema?.length > 0 && (
-                        <div className="text-xs">
+                        <div className="text-sm">
                           <span className="font-medium">PLC参数: </span>
                           {(t.param_schema as any[]).map((p: any) => p.plc_tag || p.key).join(', ')}
                         </div>
@@ -338,26 +338,26 @@ function TemplateEditor({ template, plcVars, isNew, onSave, onClose }: {
           {tab === 'basic' && (
             <div className="grid gap-3">
               <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">类型标识 *</Label>
+                <div><Label className="text-sm">类型标识 *</Label>
                   <Input value={form.type} disabled={!isNew} onChange={e => up({ type: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })} placeholder="如 custom_heat" /></div>
-                <div><Label className="text-xs">显示名称 *</Label>
+                <div><Label className="text-sm">显示名称 *</Label>
                   <Input value={form.label} onChange={e => up({ label: e.target.value })} /></div>
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <div><Label className="text-xs">分类</Label>
+                <div><Label className="text-sm">分类</Label>
                   <Select value={form.category} onValueChange={v => up({ category: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select></div>
-                <div><Label className="text-xs">颜色</Label>
+                <div><Label className="text-sm">颜色</Label>
                   <Select value={form.color} onValueChange={v => up({ color: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{COLORS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select></div>
-                <div><Label className="text-xs">排序</Label>
+                <div><Label className="text-sm">排序</Label>
                   <Input type="number" value={form.sort_order} onChange={e => up({ sort_order: parseInt(e.target.value) || 0 })} /></div>
               </div>
-              <div><Label className="text-xs">描述</Label>
+              <div><Label className="text-sm">描述</Label>
                 <Input value={form.description} onChange={e => up({ description: e.target.value })} /></div>
             </div>
           )}
@@ -365,17 +365,17 @@ function TemplateEditor({ template, plcVars, isNew, onSave, onClose }: {
           {/* ── 步骤序列 ── */}
           {tab === 'steps' && (
             <div className="space-y-3">
-              <p className="text-xs text-muted-foreground">每步可配置组合条件(AND/OR) + 自定义跳转目标</p>
+              <p className="text-sm text-muted-foreground">每步可配置组合条件(AND/OR) + 自定义跳转目标</p>
               {form.steps.map((step, si) => (
                 <Card key={si} className="p-3 space-y-2">
                   <div className="flex items-center gap-2">
-                    <Badge className="text-xs">{step.step_number}</Badge>
+                    <Badge className="text-sm">{step.step_number}</Badge>
                     <Input className="flex-1 h-8 text-sm font-medium" value={step.name} placeholder="步骤名称"
                       onChange={e => upStep(si, { name: e.target.value })} />
                     <div className="flex items-center gap-1">
-                      <Label className="text-xs whitespace-nowrap">完成→</Label>
+                      <Label className="text-sm whitespace-nowrap">完成→</Label>
                       <Select value={String(step.next_step)} onValueChange={v => upStep(si, { next_step: v === 'next' ? 'next' : v === 'end' ? 'end' : parseInt(v) })}>
-                        <SelectTrigger className="h-8 w-24 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-8 w-24 text-sm"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="next">下一步</SelectItem>
                           <SelectItem value="end">结束Phase</SelectItem>
@@ -389,17 +389,17 @@ function TemplateEditor({ template, plcVars, isNew, onSave, onClose }: {
                       <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
-                  <Input className="h-7 text-xs" value={step.description} placeholder="步骤描述"
+                  <Input className="h-7 text-sm" value={step.description} placeholder="步骤描述"
                     onChange={e => upStep(si, { description: e.target.value })} />
 
                   {/* 组合条件 */}
                   <div className="bg-muted/50 rounded p-2 space-y-2">
                     <div className="flex items-center gap-2">
-                      <Label className="text-xs font-medium">完成条件</Label>
+                      <Label className="text-sm font-medium">完成条件</Label>
                       <Select value={step.completion.logic} onValueChange={v => upStep(si, {
                         completion: { ...step.completion, logic: v as any },
                       })}>
-                        <SelectTrigger className="h-7 w-20 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-7 w-20 text-sm"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="single">单条件</SelectItem>
                           <SelectItem value="and">全部满足(AND)</SelectItem>
@@ -407,7 +407,7 @@ function TemplateEditor({ template, plcVars, isNew, onSave, onClose }: {
                         </SelectContent>
                       </Select>
                       <div className="flex items-center gap-1 ml-auto">
-                        <Label className="text-xs">取反(NOT)</Label>
+                        <Label className="text-sm">取反(NOT)</Label>
                         <Switch checked={step.completion.not || false} onCheckedChange={v => upStep(si, {
                           completion: { ...step.completion, not: v },
                         })} />
@@ -427,7 +427,7 @@ function TemplateEditor({ template, plcVars, isNew, onSave, onClose }: {
                       />
                     ))}
                     {step.completion.logic !== 'single' && (
-                      <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => {
+                      <Button variant="ghost" size="sm" className="h-6 text-sm" onClick={() => {
                         const conds = [...step.completion.conditions, { type: 'duration' as const, duration_s: 10 }];
                         upStep(si, { completion: { ...step.completion, conditions: conds } });
                       }}><Plus className="w-3 h-3 mr-1" /> 添加条件</Button>
@@ -444,14 +444,14 @@ function TemplateEditor({ template, plcVars, isNew, onSave, onClose }: {
           {/* ── PLC 参数绑定 ── */}
           {tab === 'params' && (
             <div className="space-y-3">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 将PLC变量绑定为Phase参数。配方编辑时用户可设置参数值，运行时写入PLC。
               </p>
               {(form.param_schema as any[]).map((param: ParamBinding, i: number) => (
                 <Card key={i} className="p-3">
                   <div className="flex gap-2 items-end">
                     <div className="flex-1">
-                      <Label className="text-xs">PLC变量</Label>
+                      <Label className="text-sm">PLC变量</Label>
                       <Select value={param.plc_tag || ''} onValueChange={v => {
                         const found = plcVars.find(pv => pv.tag_name === v);
                         upParam(i, {
@@ -459,7 +459,7 @@ function TemplateEditor({ template, plcVars, isNew, onSave, onClose }: {
                           label: found ? found.description : v,
                         } as any);
                       }}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="选择PLC变量" /></SelectTrigger>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="选择PLC变量" /></SelectTrigger>
                         <SelectContent>
                           {allVars.map(v => (
                             <SelectItem key={v.tag_name} value={v.tag_name}>
@@ -470,18 +470,18 @@ function TemplateEditor({ template, plcVars, isNew, onSave, onClose }: {
                       </Select>
                     </div>
                     <div className="w-40">
-                      <Label className="text-xs">显示名</Label>
-                      <Input className="h-8 text-xs" value={param.label}
+                      <Label className="text-sm">显示名</Label>
+                      <Input className="h-8 text-sm" value={param.label}
                         onChange={e => upParam(i, { label: e.target.value } as any)} />
                     </div>
                     <div className="w-24">
-                      <Label className="text-xs">默认值</Label>
-                      <Input className="h-8 text-xs" type="number" value={param.default_value ?? ''}
+                      <Label className="text-sm">默认值</Label>
+                      <Input className="h-8 text-sm" type="number" value={param.default_value ?? ''}
                         onChange={e => upParam(i, { default_value: parseFloat(e.target.value) } as any)} />
                     </div>
                     <div className="flex items-center gap-1 pb-1">
                       <Switch checked={param.write_on_enter} onCheckedChange={v => upParam(i, { write_on_enter: v } as any)} />
-                      <Label className="text-xs whitespace-nowrap">启动写入</Label>
+                      <Label className="text-sm whitespace-nowrap">启动写入</Label>
                     </div>
                     <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => delParam(i)}>
                       <Trash2 className="w-3 h-3" />
@@ -493,7 +493,7 @@ function TemplateEditor({ template, plcVars, isNew, onSave, onClose }: {
                 <Plus className="w-3 h-3 mr-1" /> 绑定PLC变量
               </Button>
               {allVars.length === 0 && (
-                <p className="text-xs text-orange-600">⚠ 尚未配置PLC变量，请先到 PLC通讯配置 中添加变量</p>
+                <p className="text-sm text-orange-600">⚠ 尚未配置PLC变量，请先到 PLC通讯配置 中添加变量</p>
               )}
             </div>
           )}
@@ -520,14 +520,14 @@ function ConditionRow({ cond, plcVars, onChange, onRemove }: {
     <div className="flex gap-2 items-end">
       <div className="w-32">
         <Select value={cond.type} onValueChange={v => onChange({ ...cond, type: v as any })}>
-          <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>{COND_TYPES.map(ct => <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>)}</SelectContent>
         </Select>
       </div>
       {cond.type !== 'duration' && (
         <div className="flex-1">
           <Select value={cond.channel || ''} onValueChange={v => onChange({ ...cond, channel: v })}>
-            <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="PLC变量" /></SelectTrigger>
+            <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="PLC变量" /></SelectTrigger>
             <SelectContent>
               {plcVars.map(v => <SelectItem key={v.tag_name} value={v.tag_name}>{v.tag_name} ({v.description})</SelectItem>)}
             </SelectContent>
@@ -536,17 +536,17 @@ function ConditionRow({ cond, plcVars, onChange, onRemove }: {
       )}
       {cond.type === 'duration' ? (
         <div className="w-20">
-          <Input className="h-7 text-xs" type="number" value={cond.duration_s ?? ''} placeholder="秒"
+          <Input className="h-7 text-sm" type="number" value={cond.duration_s ?? ''} placeholder="秒"
             onChange={e => onChange({ ...cond, duration_s: parseInt(e.target.value) || 0 })} />
         </div>
       ) : cond.type === 'in_band' ? (
         <div className="w-20">
-          <Input className="h-7 text-xs" type="number" value={cond.tolerance ?? ''} placeholder="死区"
+          <Input className="h-7 text-sm" type="number" value={cond.tolerance ?? ''} placeholder="死区"
             onChange={e => onChange({ ...cond, tolerance: parseFloat(e.target.value) || 0 })} />
         </div>
       ) : (
         <div className="w-20">
-          <Input className="h-7 text-xs" type="number" value={cond.value ?? ''} placeholder="目标值"
+          <Input className="h-7 text-sm" type="number" value={cond.value ?? ''} placeholder="目标值"
             onChange={e => onChange({ ...cond, value: parseFloat(e.target.value) || 0 })} />
         </div>
       )}

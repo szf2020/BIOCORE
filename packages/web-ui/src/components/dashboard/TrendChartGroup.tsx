@@ -42,10 +42,10 @@ function Sparkline({ label, unit, data, currentValue, sv, min, max, color }: Spa
   return (
     <Card className="p-3">
       <div className="flex justify-between items-baseline mb-1">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className="text-sm font-medium text-muted-foreground">{label}</span>
         <div className="flex items-baseline gap-2">
           {sv !== undefined && (
-            <span className="text-xs text-muted-foreground">SV: {sv}{unit}</span>
+            <span className="text-sm text-muted-foreground">SV: {sv}{unit}</span>
           )}
           <span className={cn('text-sm font-bold font-mono', color)}>
             {currentValue !== null ? currentValue.toFixed(1) : '--'}{unit}
@@ -89,7 +89,7 @@ function Sparkline({ label, unit, data, currentValue, sv, min, max, color }: Spa
           />
         )}
       </svg>
-      <div className="flex justify-between text-xs text-muted-foreground mt-0.5">
+      <div className="flex justify-between text-sm text-muted-foreground mt-0.5">
         <span>{min}{unit}</span>
         <span>{max}{unit}</span>
       </div>

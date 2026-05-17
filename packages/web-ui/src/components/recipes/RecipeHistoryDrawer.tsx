@@ -105,7 +105,7 @@ export function RecipeHistoryDrawer({ open, recipeId, onClose }: Props) {
           <div className="flex items-center gap-2">
             <History className="w-4 h-4 text-primary" />
             <h2 className="text-sm font-semibold">版本历史</h2>
-            {recipeId && <span className="text-xs text-muted-foreground font-mono">{recipeId}</span>}
+            {recipeId && <span className="text-sm text-muted-foreground font-mono">{recipeId}</span>}
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="w-4 h-4" />
@@ -120,7 +120,7 @@ export function RecipeHistoryDrawer({ open, recipeId, onClose }: Props) {
             <div className="text-center text-muted-foreground py-10 text-sm">无历史版本</div>
           ) : (
             <div className="p-4 space-y-2">
-              <p className="text-xs text-muted-foreground mb-2">选择 2 个版本对比差异</p>
+              <p className="text-sm text-muted-foreground mb-2">选择 2 个版本对比差异</p>
               {versions.map(v => {
                 const isSelected = selected.includes(v.version);
                 return (
@@ -137,28 +137,28 @@ export function RecipeHistoryDrawer({ open, recipeId, onClose }: Props) {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-mono text-sm font-semibold">v{v.version}</span>
-                          <span className={`px-1.5 py-0.5 rounded text-xs ${STATUS_COLORS[v.status] || 'bg-gray-500/20'}`}>
+                          <span className={`px-1.5 py-0.5 rounded text-sm ${STATUS_COLORS[v.status] || 'bg-gray-500/20'}`}>
                             {v.status}
                           </span>
                           {v.dag_schema_version >= 2 && (
-                            <span className="px-1.5 py-0.5 rounded text-xs bg-purple-500/20 text-purple-300">
+                            <span className="px-1.5 py-0.5 rounded text-sm bg-purple-500/20 text-purple-300">
                               DAG v2
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-foreground">{v.name}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
+                        <div className="text-sm text-foreground">{v.name}</div>
+                        <div className="text-sm text-muted-foreground mt-1">
                           {new Date(v.created_at).toLocaleString('zh-CN')} · {v.created_by}
                         </div>
                         {v.parent_version && (
-                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <div className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
                             <GitBranch className="w-2.5 h-2.5" />
                             源自 v{v.parent_version}
                           </div>
                         )}
                       </div>
                       {isSelected && (
-                        <div className="text-xs text-primary font-semibold">
+                        <div className="text-sm text-primary font-semibold">
                           {selected.indexOf(v.version) === 0 ? 'A' : 'B'}
                         </div>
                       )}
@@ -174,7 +174,7 @@ export function RecipeHistoryDrawer({ open, recipeId, onClose }: Props) {
         {selected.length === 2 && (
           <div className="border-t border-border p-3 space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-xs flex items-center gap-1.5">
+              <div className="text-sm flex items-center gap-1.5">
                 <span className="font-mono text-foreground">v{selected[0]}</span>
                 <ArrowRight className="w-3 h-3 text-muted-foreground" />
                 <span className="font-mono text-foreground">v{selected[1]}</span>
@@ -182,7 +182,7 @@ export function RecipeHistoryDrawer({ open, recipeId, onClose }: Props) {
               <button
                 onClick={runDiff}
                 disabled={diffLoading}
-                className="h-7 px-3 rounded text-xs bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1"
+                className="h-7 px-3 rounded text-sm bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1"
               >
                 {diffLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
                 对比
@@ -192,7 +192,7 @@ export function RecipeHistoryDrawer({ open, recipeId, onClose }: Props) {
             {diff && (
               <div className="border border-border rounded p-2 max-h-[200px] overflow-y-auto bg-muted/20">
                 {diff.diff.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-3 text-xs">两个版本完全相同</div>
+                  <div className="text-center text-muted-foreground py-3 text-sm">两个版本完全相同</div>
                 ) : (
                   <div className="space-y-1.5">
                     {diff.diff.map((d, i) => {

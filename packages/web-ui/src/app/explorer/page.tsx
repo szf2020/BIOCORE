@@ -167,7 +167,7 @@ export default function ExplorerPage() {
               <TableBody>
                 {data.slice(-20).reverse().map((row, i) => (
                   <TableRow key={i}>
-                    <TableCell className="text-xs">{new Date(row.time).toLocaleString('zh-CN')}</TableCell>
+                    <TableCell className="text-sm">{new Date(row.time).toLocaleString('zh-CN')}</TableCell>
                     {activeFields.map(f => <TableCell key={f}>{typeof row[f] === 'number' ? (row[f] as number).toFixed(2) : row[f] ?? '-'}</TableCell>)}
                   </TableRow>
                 ))}

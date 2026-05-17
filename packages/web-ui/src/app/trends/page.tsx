@@ -336,20 +336,20 @@ export default function TrendsPage() {
         <CardContent className="p-3 flex flex-wrap items-start gap-3">
           {/* 反应器多选 */}
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">反应器 (可多选)</span>
+            <span className="text-sm text-muted-foreground">反应器 (可多选)</span>
             <div className="flex flex-wrap gap-1 max-w-xl">
-              {reactors.length === 0 && <span className="text-xs text-muted-foreground">(无设备)</span>}
+              {reactors.length === 0 && <span className="text-sm text-muted-foreground">(无设备)</span>}
               {reactors.map(r => {
                 const on = selectedReactors.has(r.reactor_id);
                 return (
                   <button
                     key={r.reactor_id}
                     onClick={() => toggleReactor(r.reactor_id)}
-                    className={`flex items-center gap-1 h-8 px-2 rounded border text-xs transition ${on ? 'bg-primary/20 border-primary text-primary' : 'bg-card border-border text-muted-foreground hover:bg-muted'}`}
+                    className={`flex items-center gap-1 h-8 px-2 rounded border text-sm transition ${on ? 'bg-primary/20 border-primary text-primary' : 'bg-card border-border text-muted-foreground hover:bg-muted'}`}
                   >
                     {on ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
                     <span className="font-mono">{r.reactor_id}</span>
-                    <span className="text-xs opacity-70">{r.vessel_volume_L ? `${r.vessel_volume_L}L` : ''}</span>
+                    <span className="text-sm opacity-70">{r.vessel_volume_L ? `${r.vessel_volume_L}L` : ''}</span>
                   </button>
                 );
               })}
@@ -361,14 +361,14 @@ export default function TrendsPage() {
           {/* 每个 reactor 的批次选择 */}
           {selectedReactors.size > 0 && (
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">每反应器的批次</span>
+              <span className="text-sm text-muted-foreground">每反应器的批次</span>
               <div className="flex flex-wrap gap-2">
                 {[...selectedReactors].map(rid => {
                   const list = batchesByReactor.get(rid) || [];
                   const current = selectedBatches.get(rid) || NO_BATCH;
                   return (
                     <div key={rid} className="flex items-center gap-1">
-                      <span className="text-xs text-muted-foreground font-mono">{rid}:</span>
+                      <span className="text-sm text-muted-foreground font-mono">{rid}:</span>
                       <select value={current}
                         onChange={e => setSelectedBatches(prev => {
                           const next = new Map(prev);
@@ -409,16 +409,16 @@ export default function TrendsPage() {
             ))}
             <Button size="sm" variant={custom ? 'default' : 'outline'} onClick={() => setCustom(true)}>自定义</Button>
             {custom && (<>
-              <Input type="datetime-local" value={cFrom} onChange={e => setCFrom(e.target.value)} className="h-9 w-44 text-xs" />
-              <span className="text-muted-foreground text-xs">~</span>
-              <Input type="datetime-local" value={cTo} onChange={e => setCTo(e.target.value)} className="h-9 w-44 text-xs" />
+              <Input type="datetime-local" value={cFrom} onChange={e => setCFrom(e.target.value)} className="h-9 w-44 text-sm" />
+              <span className="text-muted-foreground text-sm">~</span>
+              <Input type="datetime-local" value={cTo} onChange={e => setCTo(e.target.value)} className="h-9 w-44 text-sm" />
             </>)}
           </div>
 
           <div className="w-px h-6 bg-border" />
 
           {/* M2.3: 按发酵经过秒数对齐开关 */}
-          <label className="flex items-center gap-1.5 cursor-pointer text-xs">
+          <label className="flex items-center gap-1.5 cursor-pointer text-sm">
             <input
               type="checkbox"
               checked={shouldAlign}
@@ -448,7 +448,7 @@ export default function TrendsPage() {
           <div className="w-px h-6 bg-border" />
 
           {/* 离线取样叠加开关 */}
-          <label className="flex items-center gap-1.5 cursor-pointer text-xs">
+          <label className="flex items-center gap-1.5 cursor-pointer text-sm">
             <input type="checkbox" checked={showSamples} onChange={e => setShowSamples(e.target.checked)} />
             <span>显示离线取样</span>
           </label>
@@ -473,7 +473,7 @@ export default function TrendsPage() {
       {/* 错误提示 */}
       {errMsg && (
         <Card className="border-red-500/30 bg-red-500/10">
-          <CardContent className="p-3 text-xs text-red-600">{errMsg}</CardContent>
+          <CardContent className="p-3 text-sm text-red-600">{errMsg}</CardContent>
         </Card>
       )}
 
@@ -504,7 +504,7 @@ export default function TrendsPage() {
       })()}
 
       {/* 底部统计 */}
-      <div className="text-xs text-muted-foreground text-right">
+      <div className="text-sm text-muted-foreground text-right">
         共 {totalPoints} 个数据点 · {filteredResults.length} 个反应器 · {shouldAlign ? '按发酵经过时间对齐' : '绝对时间'} · {facetedMode ? '分面' : '叠加'} · 范围 {custom ? '自定义' : RANGES[ri].label}
       </div>
     </div>

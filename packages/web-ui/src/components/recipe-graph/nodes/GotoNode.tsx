@@ -23,9 +23,9 @@ export function GotoNode({ data, selected }: NodeProps) {
       <Handle type="target" position={Position.Left} className="!w-2 !h-2 !bg-violet-400" />
       <div className="flex items-center gap-2">
         <CornerDownRight className="w-3.5 h-3.5 text-violet-300 flex-shrink-0" />
-        <div className="text-xs font-semibold text-violet-100">Goto</div>
+        <div className="text-sm font-semibold text-violet-100">Goto</div>
       </div>
-      <div className="mt-1 pt-1 border-t border-violet-700/40 text-xs font-mono text-violet-100 truncate">
+      <div className="mt-1 pt-1 border-t border-violet-700/40 text-sm font-mono text-violet-100 truncate">
         → {target}
       </div>
       <Handle type="source" position={Position.Right} className="!w-2 !h-2 !bg-violet-400" />
