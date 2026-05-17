@@ -1114,6 +1114,129 @@ export class SQLiteService {
   getDatabase(): Database.Database { return this.db; }
 
   close(): void { this.db.close(); }
+
+  // ─── fuxa_views (SP-FX-1) ──────────────────────────────────
+  createFuxaView(v: {
+    id: string;
+    name: string;
+    type?: string;
+    payload: string;
+    width: number;
+    height: number;
+    parent_view_id?: string | null;
+    is_template?: number;
+    created_by?: string | null;
+  }): void {
+    this.db.prepare(
+      `INSERT INTO fuxa_views
+        (id, name, type, payload, width, height, parent_view_id, is_template, created_by, updated_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      v.id,
+      v.name,
+      v.type ?? 'svg',
+      v.payload,
+      v.width,
+      v.height,
+      v.parent_view_id ?? null,
+      v.is_template ?? 0,
+      v.created_by ?? null,
+      v.created_by ?? null,
+    );
+  }
+
+  getFuxaView(id: string): FuxaViewRow | null {
+    return (
+      this.db.prepare(`SELECT * FROM fuxa_views WHERE id = ?`).get(id) as
+        | FuxaViewRow
+        | undefined
+    ) ?? null;
+  }
+
+  listFuxaViews(opts: { isTemplate?: boolean } = {}): FuxaViewRow[] {
+    if (opts.isTemplate === true) {
+      return this.db
+        .prepare(`SELECT * FROM fuxa_views WHERE is_template = 1 ORDER BY updated_at DESC`)
+        .all() as FuxaViewRow[];
+    }
+    if (opts.isTemplate === false) {
+      return this.db
+        .prepare(`SELECT * FROM fuxa_views WHERE is_template = 0 ORDER BY updated_at DESC`)
+        .all() as FuxaViewRow[];
+    }
+    return this.db
+      .prepare(`SELECT * FROM fuxa_views ORDER BY updated_at DESC`)
+      .all() as FuxaViewRow[];
+  }
+
+  /**
+   * Returns true if the row was updated; false on optimistic-lock conflict
+   * (no rows matched the expected version). Pass `force=true` to bypass.
+   */
+  updateFuxaView(
+    id: string,
+    patch: {
+      expectedVersion: number;
+      name?: string;
+      type?: string;
+      payload?: string;
+      width?: number;
+      height?: number;
+      parent_view_id?: string | null;
+      is_template?: number;
+      updated_by?: string | null;
+      force?: boolean;
+    },
+  ): boolean {
+    const sets: string[] = [];
+    const args: any[] = [];
+    if (patch.name !== undefined)            { sets.push(`name = ?`); args.push(patch.name); }
+    if (patch.type !== undefined)            { sets.push(`type = ?`); args.push(patch.type); }
+    if (patch.payload !== undefined)         { sets.push(`payload = ?`); args.push(patch.payload); }
+    if (patch.width !== undefined)           { sets.push(`width = ?`); args.push(patch.width); }
+    if (patch.height !== undefined)          { sets.push(`height = ?`); args.push(patch.height); }
+    if (patch.parent_view_id !== undefined)  { sets.push(`parent_view_id = ?`); args.push(patch.parent_view_id); }
+    if (patch.is_template !== undefined)     { sets.push(`is_template = ?`); args.push(patch.is_template); }
+    if (patch.updated_by !== undefined)      { sets.push(`updated_by = ?`); args.push(patch.updated_by); }
+    sets.push(`version = version + 1`);
+    sets.push(`updated_at = datetime('now')`);
+    const where = patch.force
+      ? `WHERE id = ?`
+      : `WHERE id = ? AND version = ?`;
+    args.push(id);
+    if (!patch.force) args.push(patch.expectedVersion);
+    const stmt = this.db.prepare(`UPDATE fuxa_views SET ${sets.join(', ')} ${where}`);
+    const info = stmt.run(...args);
+    return info.changes > 0;
+  }
+
+  deleteFuxaView(id: string): void {
+    this.db.prepare(`DELETE FROM fuxa_views WHERE id = ?`).run(id);
+  }
+
+  /**
+   * Copies the row with new id and " Copy" suffixed name. version resets to 1.
+   * parent_view_id is preserved.
+   */
+  duplicateFuxaView(
+    sourceId: string,
+    opts: { newId: string; userId?: string | null },
+  ): string {
+    const src = this.getFuxaView(sourceId);
+    if (!src) throw new Error(`fuxa_view ${sourceId} not found`);
+    this.createFuxaView({
+      id: opts.newId,
+      name: `${src.name} Copy`,
+      type: src.type,
+      payload: src.payload,
+      width: src.width,
+      height: src.height,
+      parent_view_id: src.parent_view_id,
+      is_template: src.is_template,
+      created_by: opts.userId ?? null,
+    });
+    return opts.newId;
+  }
 }
 
 // ─── Notification system (T35) ───────────────────────────────
@@ -1359,3 +1482,19 @@ export interface ScadaView extends ScadaViewMeta {
 }
 
 export const SCADA_ITEMS_MAX_BYTES = 500 * 1024;
+
+export interface FuxaViewRow {
+  id: string;
+  name: string;
+  type: string;
+  payload: string;                    // FuxaView JSON
+  width: number;
+  height: number;
+  parent_view_id: string | null;
+  is_template: number;                // 0 | 1
+  version: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+}
