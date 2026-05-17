@@ -12,6 +12,10 @@ import { produce } from 'immer';
 import type { FuxaView } from '../models/hmi';
 import type { FuxaWidget } from '../models/widget';
 
+// SP-FX-3b.1: editor grid size in svg user-space units. Fixed at 10 for now;
+// dynamic gridSize deferred to SP-FX-3b.2.
+export const GRID_SIZE = 10;
+
 const HISTORY_LIMIT = 50;
 
 // ---------- data shape ----------
@@ -21,6 +25,7 @@ export interface EditorData {
   isDirty: boolean;
   history: { past: FuxaView[]; future: FuxaView[] };
   selection: string[];
+  snapEnabled: boolean;
 }
 
 // ---------- actions shape ----------
@@ -38,6 +43,7 @@ export interface EditorActions {
   removeFromSelection: (id: string) => void;
   clearSelection: () => void;
   markClean: () => void;
+  setSnapEnabled: (enabled: boolean) => void;
 }
 
 export type EditorState = EditorData & EditorActions;
@@ -57,24 +63,27 @@ const _store = create<EditorData>(() => ({
   isDirty: false,
   history: { past: [], future: [] },
   selection: [],
+  snapEnabled: true,
 }));
 
 // ---------- module-level actions (survive setState replace) ----------
 
 const actions: EditorActions = {
-  openView: (view) => _store.setState({
+  openView: (view) => _store.setState((s) => ({
     currentView: view,
     isDirty: false,
     history: { past: [], future: [] },
     selection: [],
-  }),
+    snapEnabled: s.snapEnabled,
+  })),
 
-  closeView: () => _store.setState({
+  closeView: () => _store.setState((s) => ({
     currentView: null,
     isDirty: false,
     history: { past: [], future: [] },
     selection: [],
-  }),
+    snapEnabled: s.snapEnabled,
+  })),
 
   addWidget: (widget) => {
     const { currentView } = _store.getState();
@@ -149,6 +158,7 @@ const actions: EditorActions = {
 
   clearSelection: () => _store.setState({ selection: [] }),
   markClean: () => _store.setState({ isDirty: false }),
+  setSnapEnabled: (enabled) => _store.setState({ snapEnabled: enabled }),
 };
 
 // ---------- public store (data + actions merged) ----------

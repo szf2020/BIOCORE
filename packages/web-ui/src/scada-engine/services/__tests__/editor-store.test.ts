@@ -168,3 +168,38 @@ describe('editor-store (SP-FX-2)', () => {
     expect(useEditorStore.getState().currentView).toBeNull();
   });
 });
+
+describe('editorStore snap-grid (SP-FX-3b.1)', () => {
+  beforeEach(() => {
+    useEditorStore.setState({
+      currentView: null,
+      isDirty: false,
+      history: { past: [], future: [] },
+      selection: [],
+      snapEnabled: true,
+    } as any, true);
+  });
+
+  it('default snapEnabled === true', () => {
+    expect(useEditorStore.getState().snapEnabled).toBe(true);
+  });
+
+  it('setSnapEnabled(false) updates state without pushing history', () => {
+    const before = useEditorStore.getState().history.past.length;
+    useEditorStore.getState().setSnapEnabled(false);
+    expect(useEditorStore.getState().snapEnabled).toBe(false);
+    expect(useEditorStore.getState().history.past.length).toBe(before);
+  });
+
+  it('setSnapEnabled does not affect currentView or items', () => {
+    const view = {
+      id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>',
+      width: 800, height: 600,
+      items: { w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 50, h: 30 } },
+      schemaVersion: 1,
+    };
+    useEditorStore.getState().openView(view as any);
+    useEditorStore.getState().setSnapEnabled(false);
+    expect(useEditorStore.getState().currentView).toEqual(view);
+  });
+});
