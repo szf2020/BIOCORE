@@ -2,7 +2,7 @@
 // 提供简易 3 栏 (field / op / value) + 自由文本输入 + 后端实时校验
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '@/lib/auth';
 import { CheckCircle, AlertCircle } from 'lucide-react';
 
@@ -20,6 +20,14 @@ export function ConditionExpressionEditor({ value, onChange }: Props) {
   const [draft, setDraft] = useState(value);
   const [validity, setValidity] = useState<{ ok: boolean; error?: string } | null>(null);
   const [debouncing, setDebouncing] = useState(false);
+
+  // SP-RG-2 (H-5): keep a live ref to onChange so the pending debounce timer
+  // always calls the most-recent handler. Without this, switching to a different
+  // branch node whose expression happens to equal `draft` does not retrigger
+  // the [draft]-keyed effect, leaving the timer with a stale onChange that
+  // writes the validation result into the previously-selected node.
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
   // 同步外部 value
   useEffect(() => { setDraft(value); }, [value]);
@@ -41,7 +49,7 @@ export function ConditionExpressionEditor({ value, onChange }: Props) {
         .then(data => {
           const ok = data?.valid === true;
           setValidity({ ok, error: data?.error });
-          onChange(draft, ok);
+          onChangeRef.current(draft, ok);
         })
         .catch(() => setValidity({ ok: false, error: '校验失败' }))
         .finally(() => setDebouncing(false));

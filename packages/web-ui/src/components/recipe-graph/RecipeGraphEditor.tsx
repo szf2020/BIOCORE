@@ -48,8 +48,11 @@ export interface RecipeDAG {
   schema_version: 2;
   nodes: DAGNode[];
   edges: DAGEdge[];
-  /** B1.3: recipe-level executor options (forwarded to DAGExecutor). */
-  options?: { maxRevisits?: number };
+  /** B1.3: recipe-level executor options (forwarded to DAGExecutor).
+   *  SP-RG-2 (H-4): `_hasLayout` is a UI-only sentinel set by flowToDag once
+   *  the editor has persisted positions; reload uses it to skip auto-layout
+   *  instead of guessing from node positions. */
+  options?: { maxRevisits?: number; _hasLayout?: boolean };
 }
 
 const nodeTypes: NodeTypes = {
@@ -99,9 +102,16 @@ export function dagToFlow(dag: RecipeDAG): { nodes: Node[]; edges: Edge[] } {
 }
 
 // react-flow → DAG
-export function flowToDag(nodes: Node[], edges: Edge[]): RecipeDAG {
+// SP-RG-2 (H-4): accepts prevOptions so editor-managed flags (maxRevisits) survive
+// the round-trip; always stamps `_hasLayout: true` so subsequent loads skip dagre.
+export function flowToDag(
+  nodes: Node[],
+  edges: Edge[],
+  prevOptions?: RecipeDAG['options'],
+): RecipeDAG {
   return {
     schema_version: 2,
+    options: { ...(prevOptions || {}), _hasLayout: true },
     nodes: nodes.map(n => {
       const d = n.data as any;
       const base: DAGNode = {
@@ -135,7 +145,13 @@ export function flowToDag(nodes: Node[], edges: Edge[]): RecipeDAG {
         if (d.exitExpression && String(d.exitExpression).trim().length > 0) {
           base.exitExpression = String(d.exitExpression).trim();
         }
-        if (d.maxIterations != null && Number.isFinite(d.maxIterations)) {
+        // SP-RG-2 (H-3): strip non-positive maxIterations so the BV-22 guard in
+        // recipe-validator cannot be bypassed via inspector min={1} circumvention.
+        if (
+          d.maxIterations != null &&
+          Number.isFinite(d.maxIterations) &&
+          Number(d.maxIterations) > 0
+        ) {
           base.maxIterations = Number(d.maxIterations);
         }
       }
@@ -159,9 +175,13 @@ interface Props {
 
 function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
   const { nodes: initNodes, edges: initEdges } = useMemo(() => {
-    // 如果节点没有 position, 自动布局
+    // SP-RG-2 (H-4): use the explicit `_hasLayout` sentinel set by flowToDag.
+    // The old heuristic ("all nodes at origin?") destroyed user-arranged
+    // positions whenever the inverse held (any node legitimately near 0,0).
+    // First load of a pre-sentinel legacy DAG still triggers one auto-layout,
+    // after which save stamps the sentinel and the layout becomes sticky.
     const flow = dagToFlow(initialDag);
-    const needsLayout = flow.nodes.every(n => n.position.x === 0 && n.position.y === 0);
+    const needsLayout = !initialDag.options?._hasLayout;
     return needsLayout ? applyDagreLayout(flow.nodes, flow.edges) : flow;
   }, [initialDag]);
 
@@ -411,8 +431,9 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
     const errs = validateDag();
     setValidationErrors(errs);
     if (errs.length > 0) return;  // 校验失败时不保存, 让用户看到错误
-    onSave(flowToDag(nodes, edges));
-  }, [nodes, edges, onSave, validateDag]);
+    // SP-RG-2 (H-4): forward initialDag.options so executor flags survive the round-trip.
+    onSave(flowToDag(nodes, edges, initialDag.options));
+  }, [nodes, edges, onSave, validateDag, initialDag.options]);
 
   const updateNodeData = useCallback((nodeId: string, patch: Record<string, any>) => {
     setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, data: { ...n.data, ...patch } } : n));
