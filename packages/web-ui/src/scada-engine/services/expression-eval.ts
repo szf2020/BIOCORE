@@ -76,7 +76,7 @@ export function evalExpression(
         defaults[v] = 0;
       }
     }
-    return parsed.evaluate({ ...SAFE_FNS, ...defaults, ...tagValues });
+    return parsed.evaluate({ ...SAFE_FNS, ...defaults, ...tagValues } as any);
   } catch (e) {
     console.warn(`expression-eval: evaluate failed: ${expr}`, (e as Error).message);
     return undefined;
