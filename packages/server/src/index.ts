@@ -62,6 +62,7 @@ import { registerBatchRoutes } from './batch-routes';
 import { registerReactorRoutes } from './reactor-routes';
 import { registerAuthRoutes } from './auth-routes';
 import { registerScadaRoutes } from './scada-routes';
+import { registerFuxaViewsRoutes } from './fuxa-views-routes';
 import { startScadaWriteDispatcher } from './engine/scada-write-dispatcher';
 import { createPlcWriter } from './engine/plc-writer';
 import { executeRecipePlcWrite } from './engine/recipe-plc-write';
@@ -3095,6 +3096,7 @@ registerReactorRoutes(apiRouter, {
 
 // SCADA 项目 + 视图 REST API (broadcast 已在作用域内)
 registerScadaRoutes(apiRouter, { sqlite, broadcast });
+registerFuxaViewsRoutes(apiRouter, { sqlite });
 
 // ── 趋势历史数据 (InfluxDB) ──
 
