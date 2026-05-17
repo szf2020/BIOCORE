@@ -6,3 +6,7 @@ export * from './models/widget';
 export * from './models/property';
 export * from './models/animation';
 export * as fuxaViewsApi from './api/fuxa-views';
+
+// SP-FX-2 additions
+export * from './services';
+export * from './dialogs';
