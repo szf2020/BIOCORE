@@ -10,6 +10,7 @@ import {
   FuxaEventSchema,
   FuxaPropertySchema,
 } from '../property';
+import { FuxaWidgetSchema } from '../widget';
 import {
   isMoveAction, isOpacityAction, isColorAction,
 } from '../animation';
@@ -127,5 +128,26 @@ describe('animation discriminators', () => {
     expect(isMoveAction(o)).toBe(false);
     expect(isOpacityAction(o)).toBe(true);
     expect(isColorAction(a)).toBe(false);
+  });
+});
+
+describe('FuxaWidgetSchema (SP-FX-3a)', () => {
+  it('FuxaWidgetSchema accepts optional x/y/w/h geometry fields', () => {
+    const parsed = FuxaWidgetSchema.parse({
+      id: 'w1', type: 'svg-ext-value', property: {},
+      x: 100, y: 50, w: 80, h: 40,
+    });
+    expect(parsed.x).toBe(100);
+    expect(parsed.y).toBe(50);
+    expect(parsed.w).toBe(80);
+    expect(parsed.h).toBe(40);
+  });
+
+  it('FuxaWidgetSchema parses widget without geometry (backward-compat)', () => {
+    const parsed = FuxaWidgetSchema.parse({
+      id: 'w1', type: 'svg-ext-value', property: {},
+    });
+    expect(parsed.x).toBeUndefined();
+    expect(parsed.w).toBeUndefined();
   });
 });
