@@ -105,7 +105,8 @@ describe('PointerTools (SP-FX-3a)', () => {
   it('mousedown on handle: transitions to drag-handle', () => {
     const box: Box = { x: 100, y: 100, w: 80, h: 60 };
     handles.hitTest.mockReturnValue('se');
-    getWidgetAt.mockReturnValue({ id: 'w1', box });
+    getSelectedIds.mockReturnValue(['w1']);
+    getWidgetBoxes.mockReturnValue(new Map([['w1', box]]));
     tools.handleMouseDown(md(180, 160));
     expect(tools.state.kind).toBe('drag-handle');
     if (tools.state.kind === 'drag-handle') {
@@ -136,8 +137,10 @@ describe('PointerTools (SP-FX-3a)', () => {
   });
 
   it('drag-handle SE: mousemove applies handle delta', () => {
+    const box: Box = { x: 100, y: 100, w: 80, h: 60 };
     handles.hitTest.mockReturnValue('se');
-    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 100, y: 100, w: 80, h: 60 } });
+    getSelectedIds.mockReturnValue(['w1']);
+    getWidgetBoxes.mockReturnValue(new Map([['w1', box]]));
     tools.handleMouseDown(md(180, 160));
     tools.handleMouseMove(mm(200, 175));
     const lastCall = canvas.upsertWidget.mock.calls[canvas.upsertWidget.mock.calls.length - 1][0];
@@ -146,8 +149,10 @@ describe('PointerTools (SP-FX-3a)', () => {
   });
 
   it('drag-handle mouseup fires onWidgetTransformed with resized box', () => {
+    const box: Box = { x: 100, y: 100, w: 80, h: 60 };
     handles.hitTest.mockReturnValue('se');
-    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 100, y: 100, w: 80, h: 60 } });
+    getSelectedIds.mockReturnValue(['w1']);
+    getWidgetBoxes.mockReturnValue(new Map([['w1', box]]));
     tools.handleMouseDown(md(180, 160));
     tools.handleMouseUp(mu(200, 175));
     expect(onWidgetTransformed).toHaveBeenCalledWith('w1', expect.objectContaining({ w: 100, h: 75 }));
@@ -205,9 +210,11 @@ describe('PointerTools snap + cancel (SP-FX-3b.1)', () => {
   });
 
   it('drag-handle SE with snap: w/h snapped to 10', () => {
+    const box: Box = { x: 50, y: 50, w: 120, h: 80 };
     getSnapEnabled.mockReturnValue(true);
     handles.hitTest.mockReturnValue('se');
-    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 50, y: 50, w: 120, h: 80 } });
+    getSelectedIds.mockReturnValue(['w1']);
+    getWidgetBoxes.mockReturnValue(new Map([['w1', box]]));
     tools.handleMouseDown(md(170, 130));
     tools.handleMouseMove(mm(188, 147));  // dx=18, dy=17 → newBox w=138 h=97 → snap → 140,100
     const lastCall = canvas.upsertWidget.mock.calls[canvas.upsertWidget.mock.calls.length - 1][0];
@@ -337,8 +344,10 @@ describe('PointerTools multi-drag + box-select + threshold (SP-FX-3b.2.1)', () =
 
 describe('PointerTools drag-rotate (SP-FX-3b.2.2)', () => {
   it('mousedown on rotate handle: state=drag-rotate with pivot=center, startRotate=0', () => {
+    const box: Box = { x: 50, y: 50, w: 100, h: 60 };
     handles.hitTest.mockReturnValue('rotate');
-    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 50, y: 50, w: 100, h: 60 } });
+    getSelectedIds.mockReturnValue(['w1']);
+    getWidgetBoxes.mockReturnValue(new Map([['w1', box]]));
     getCurrentRotate.mockReturnValue(undefined);
     tools.handleMouseDown(md(100, 30));
     expect(tools.state.kind).toBe('drag-rotate');
@@ -350,8 +359,10 @@ describe('PointerTools drag-rotate (SP-FX-3b.2.2)', () => {
   });
 
   it('drag-rotate mousemove free: fires canvas.applyRotate + onRotateMove with computed deg', () => {
+    const box: Box = { x: 50, y: 50, w: 100, h: 60 };
     handles.hitTest.mockReturnValue('rotate');
-    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 50, y: 50, w: 100, h: 60 } });
+    getSelectedIds.mockReturnValue(['w1']);
+    getWidgetBoxes.mockReturnValue(new Map([['w1', box]]));
     getCurrentRotate.mockReturnValue(0);
     tools.handleMouseDown(md(150, 80));  // startPt at angle 0 from pivot (100,80)
     tools.handleMouseMove(mm(100, 130));  // currentPt at angle 90 from pivot
@@ -363,8 +374,10 @@ describe('PointerTools drag-rotate (SP-FX-3b.2.2)', () => {
   });
 
   it('drag-rotate mousemove with Shift: snaps to 15 step', () => {
+    const box: Box = { x: 50, y: 50, w: 100, h: 60 };
     handles.hitTest.mockReturnValue('rotate');
-    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 50, y: 50, w: 100, h: 60 } });
+    getSelectedIds.mockReturnValue(['w1']);
+    getWidgetBoxes.mockReturnValue(new Map([['w1', box]]));
     getCurrentRotate.mockReturnValue(0);
     tools.handleMouseDown(md(150, 80));
     const shiftMove = new MouseEvent('mousemove', {
@@ -379,8 +392,10 @@ describe('PointerTools drag-rotate (SP-FX-3b.2.2)', () => {
   });
 
   it('drag-rotate mouseup commits via onRotated; state idle; onRotateMove(null,null)', () => {
+    const box: Box = { x: 50, y: 50, w: 100, h: 60 };
     handles.hitTest.mockReturnValue('rotate');
-    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 50, y: 50, w: 100, h: 60 } });
+    getSelectedIds.mockReturnValue(['w1']);
+    getWidgetBoxes.mockReturnValue(new Map([['w1', box]]));
     getCurrentRotate.mockReturnValue(0);
     tools.handleMouseDown(md(150, 80));
     tools.handleMouseUp(mu(100, 130));
@@ -393,8 +408,10 @@ describe('PointerTools drag-rotate (SP-FX-3b.2.2)', () => {
   });
 
   it('drag-rotate mouseup with deg===startRotate: no onRotated fire (short-circuit)', () => {
+    const box: Box = { x: 50, y: 50, w: 100, h: 60 };
     handles.hitTest.mockReturnValue('rotate');
-    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 50, y: 50, w: 100, h: 60 } });
+    getSelectedIds.mockReturnValue(['w1']);
+    getWidgetBoxes.mockReturnValue(new Map([['w1', box]]));
     getCurrentRotate.mockReturnValue(45);
     tools.handleMouseDown(md(150, 80));
     tools.handleMouseUp(mu(150, 80));  // same pt → deg=45=startRotate
@@ -403,8 +420,10 @@ describe('PointerTools drag-rotate (SP-FX-3b.2.2)', () => {
   });
 
   it('cancel() in drag-rotate: canvas.applyRotate(startRotate); tooltip hide; idle; no onRotated', () => {
+    const box: Box = { x: 50, y: 50, w: 100, h: 60 };
     handles.hitTest.mockReturnValue('rotate');
-    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 50, y: 50, w: 100, h: 60 } });
+    getSelectedIds.mockReturnValue(['w1']);
+    getWidgetBoxes.mockReturnValue(new Map([['w1', box]]));
     getCurrentRotate.mockReturnValue(30);
     tools.handleMouseDown(md(150, 80));
     tools.handleMouseMove(mm(100, 130));
@@ -416,17 +435,18 @@ describe('PointerTools drag-rotate (SP-FX-3b.2.2)', () => {
     expect(tools.state.kind).toBe('idle');
   });
 
-  it('mousedown on rotate handle but no widget hit: stays idle (defensive)', () => {
+  it('mousedown on rotate handle but no single selection: stays idle (defensive)', () => {
     handles.hitTest.mockReturnValue('rotate');
-    getWidgetAt.mockReturnValue(null);
+    getSelectedIds.mockReturnValue([]);  // no selection → stays idle
     tools.handleMouseDown(md(100, 30));
     expect(tools.state.kind).toBe('idle');
   });
 
   it('drag-rotate state preserves startBox unchanged', () => {
     handles.hitTest.mockReturnValue('rotate');
-    const box = { x: 50, y: 50, w: 100, h: 60 };
-    getWidgetAt.mockReturnValue({ id: 'w1', box });
+    const box: Box = { x: 50, y: 50, w: 100, h: 60 };
+    getSelectedIds.mockReturnValue(['w1']);
+    getWidgetBoxes.mockReturnValue(new Map([['w1', box]]));
     getCurrentRotate.mockReturnValue(15);
     tools.handleMouseDown(md(100, 30));
     if (tools.state.kind === 'drag-rotate') {

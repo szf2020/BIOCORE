@@ -71,8 +71,15 @@ export class PointerTools {
 
     const handle = this.handles.hitTest(pt);
     if (handle) {
-      const widgetHit = this.cb.getWidgetAt(pt);
-      if (!widgetHit) return;
+      // Handles can be outside widget bbox (e.g. rotate is 20px above top edge),
+      // so resolve widget from the current single-selection rather than getWidgetAt(pt).
+      const selectedIds = this.cb.getSelectedIds();
+      if (selectedIds.length !== 1) return;
+      const widgetId = selectedIds[0];
+      const boxes = this.cb.getWidgetBoxes([widgetId]);
+      const box = boxes.get(widgetId);
+      if (!box) return;
+      const widgetHit = { id: widgetId, box };
       if (handle === 'rotate') {
         const pivot: Point = { x: widgetHit.box.x + widgetHit.box.w / 2, y: widgetHit.box.y + widgetHit.box.h / 2 };
         const startRotate = this.cb.getCurrentRotate(widgetHit.id) ?? 0;
