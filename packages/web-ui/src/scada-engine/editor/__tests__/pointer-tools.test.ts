@@ -19,7 +19,7 @@ beforeEach(() => {
   onSelect = vi.fn();
   getWidgetAt = vi.fn();
   tools = new PointerTools(canvas as any, handles as any, {
-    getWidgetAt: (pt) => getWidgetAt(pt),
+    getWidgetAt: (pt) => getWidgetAt(pt) as { id: string; box: Box } | null,
     onWidgetTransformed: (id, box) => onWidgetTransformed(id, box),
     onSelect: (id) => onSelect(id),
   });
