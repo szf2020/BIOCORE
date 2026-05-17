@@ -13,5 +13,8 @@ export const FuxaWidgetSchema = z.object({
   y: z.number().optional(),
   w: z.number().nonnegative().optional(),
   h: z.number().nonnegative().optional(),
+  // SP-FX-3b.2.2: optional rotation in degrees [0, 360]. Omitted from JSON
+  // when undefined or 0 (editor strips on commit).
+  rotate: z.number().min(0).max(360).optional(),
 });
 export type FuxaWidget = z.infer<typeof FuxaWidgetSchema>;
