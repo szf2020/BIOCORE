@@ -150,3 +150,43 @@ export class SnapGuides {
     this.group.remove();
   }
 }
+
+// SP-FX-3b.2.2: rotate-drag tooltip — SVG <text> overlay near pivot showing current angle.
+
+export class RotateTooltip {
+  private group: G;
+  private textElement: SVGTextElement;
+  private destroyed = false;
+
+  constructor(overlay: G) {
+    this.group = overlay.group().attr('data-overlay', 'rotate-tooltip').attr('visibility', 'hidden');
+    // Create raw SVG text element to avoid svg.js bbox computation in jsdom
+    this.textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    this.textElement.setAttribute('data-rotate-text', '');
+    this.textElement.setAttribute('fill', '#3b82f6');
+    this.textElement.setAttribute('font-size', '11');
+    this.textElement.setAttribute('font-family', 'monospace');
+    this.textElement.setAttribute('pointer-events', 'none');
+    this.group.node.appendChild(this.textElement);
+  }
+
+  show(deg: number, pivot: { x: number; y: number }): void {
+    if (this.destroyed) return;
+    const degStr = `${deg.toFixed(1)}°`;
+    this.textElement.textContent = degStr;
+    this.textElement.setAttribute('x', String(pivot.x + 12));
+    this.textElement.setAttribute('y', String(pivot.y - 4));
+    this.group.attr('visibility', 'visible');
+  }
+
+  hide(): void {
+    if (this.destroyed) return;
+    this.group.attr('visibility', 'hidden');
+  }
+
+  destroy(): void {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    this.group.remove();
+  }
+}

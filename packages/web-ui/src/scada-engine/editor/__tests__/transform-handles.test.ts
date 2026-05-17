@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CanvasController } from '../canvas-svg';
-import { TransformHandles, SnapGuides } from '../transform-handles';
+import { TransformHandles, SnapGuides, RotateTooltip } from '../transform-handles';
 import type { Box } from '../geometry';
 
 let container: HTMLDivElement;
@@ -135,5 +135,37 @@ describe('SnapGuides (SP-FX-3b.2.1)', () => {
     const group = container.querySelector('[data-overlay="snap-guides"]');
     expect(group?.getAttribute('visibility')).toBe('hidden');
     expect(() => guides.hide()).not.toThrow();
+  });
+});
+
+describe('RotateTooltip (SP-FX-3b.2.2)', () => {
+  it('show renders SVG text with degree label at pivot offset', () => {
+    const t = new RotateTooltip(canvas.overlayLayer);
+    t.show(45.3, { x: 100, y: 50 });
+    const group = container.querySelector('[data-overlay="rotate-tooltip"]') as SVGGElement;
+    expect(group).not.toBeNull();
+    expect(group.getAttribute('visibility')).toBe('visible');
+    const text = container.querySelector('[data-rotate-text]') as SVGTextElement;
+    expect(text).not.toBeNull();
+    expect(text.textContent).toBe('45.3°');
+    expect(text.getAttribute('x')).toBe('112');
+    expect(text.getAttribute('y')).toBe('46');
+  });
+
+  it('hide sets visibility hidden; idempotent', () => {
+    const t = new RotateTooltip(canvas.overlayLayer);
+    t.show(45, { x: 100, y: 50 });
+    t.hide();
+    const group = container.querySelector('[data-overlay="rotate-tooltip"]') as SVGGElement;
+    expect(group.getAttribute('visibility')).toBe('hidden');
+    expect(() => t.hide()).not.toThrow();
+  });
+
+  it('destroy removes node from DOM; idempotent', () => {
+    const t = new RotateTooltip(canvas.overlayLayer);
+    t.show(45, { x: 100, y: 50 });
+    t.destroy();
+    expect(container.querySelector('[data-overlay="rotate-tooltip"]')).toBeNull();
+    expect(() => t.destroy()).not.toThrow();
   });
 });
