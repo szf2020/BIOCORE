@@ -103,3 +103,39 @@ describe('CanvasController (SP-FX-3a)', () => {
     expect(c.getElement('w2')).toBeDefined();
   });
 });
+
+describe('CanvasController.setGridVisible (SP-FX-3b.1)', () => {
+  it('setGridVisible(true) inserts pattern + grid rect; rect renders below widget layer', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    c.setGridVisible(true, 10);
+    const pattern = container.querySelector('pattern[data-grid="10"]');
+    const gridRect = container.querySelector('[data-overlay="grid"]');
+    expect(pattern).not.toBeNull();
+    expect(gridRect).not.toBeNull();
+    expect(gridRect?.getAttribute('pointer-events')).toBe('none');
+    // grid rect appears before widget layer in document order (= renders below)
+    const root = c.getSvgRoot();
+    const all = Array.from(root.children);
+    const widgetLayer = root.querySelector('[data-layer="widgets"]');
+    expect(all.indexOf(gridRect as Element)).toBeLessThan(all.indexOf(widgetLayer as Element));
+  });
+
+  it('setGridVisible(false) removes pattern + rect; idempotent on second false', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    c.setGridVisible(true, 10);
+    c.setGridVisible(false);
+    expect(container.querySelector('pattern[data-grid]')).toBeNull();
+    expect(container.querySelector('[data-overlay="grid"]')).toBeNull();
+    expect(() => c.setGridVisible(false)).not.toThrow();
+  });
+
+  it('re-true after false re-inserts; widget layer untouched', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    c.upsertWidget({ id: 'w1', type: 'svg-ext-value', property: {}, x: 50, y: 50, w: 100, h: 80 } as any);
+    c.setGridVisible(true, 10);
+    c.setGridVisible(false);
+    c.setGridVisible(true, 10);
+    expect(container.querySelector('pattern[data-grid="10"]')).not.toBeNull();
+    expect(container.querySelector('[data-widget-id="w1"]')).not.toBeNull();
+  });
+});
