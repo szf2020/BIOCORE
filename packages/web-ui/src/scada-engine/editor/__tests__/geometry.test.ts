@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   clientToSvg, handlePositions, handleFromPoint, applyHandleDrag,
-  type Box,
+  snap, snapPoint,
+  type Box, type Point,
 } from '../geometry';
 import { identityMatrix } from '@/test/svgDomHelpers';
 
@@ -122,5 +123,24 @@ describe('geometry.applyHandleDrag (SP-FX-3a)', () => {
 
   it('rotate handle is a no-op in SP-FX-3a', () => {
     expect(applyHandleDrag(box, 'rotate', 50, 50)).toEqual(box);
+  });
+});
+
+describe('geometry.snap (SP-FX-3b.1)', () => {
+  it('rounds box.x/y down to grid', () => {
+    expect(snap({ x: 3, y: 7, w: 100, h: 100 }, 10)).toEqual({ x: 0, y: 10, w: 100, h: 100 });
+  });
+
+  it('rounds box.x/y up to grid', () => {
+    expect(snap({ x: 6, y: 7, w: 100, h: 100 }, 10)).toEqual({ x: 10, y: 10, w: 100, h: 100 });
+  });
+
+  it('rounds w/h to grid', () => {
+    expect(snap({ x: 0, y: 0, w: 103, h: 97 }, 10)).toEqual({ x: 0, y: 0, w: 100, h: 100 });
+  });
+
+  it('clamps w/h to gridSize when snap would zero; snapPoint also rounds', () => {
+    expect(snap({ x: 0, y: 0, w: 3, h: 3 }, 10)).toEqual({ x: 0, y: 0, w: 10, h: 10 });
+    expect(snapPoint({ x: 23, y: 47 }, 10)).toEqual({ x: 20, y: 50 });
   });
 });

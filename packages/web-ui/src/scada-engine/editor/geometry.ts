@@ -81,3 +81,24 @@ export function applyHandleDrag(box: Box, handle: HandleId, dx: number, dy: numb
 
   return { x, y, w, h };
 }
+
+// SP-FX-3b.1: snap helpers — round geometry to gridSize integers.
+// MIN-gridSize clamp on w/h ensures snap never produces a 0-width/height widget.
+
+export function snap(box: Box, gridSize: number): Box {
+  if (gridSize <= 0) throw new Error('invalid grid size');
+  return {
+    x: Math.round(box.x / gridSize) * gridSize,
+    y: Math.round(box.y / gridSize) * gridSize,
+    w: Math.max(gridSize, Math.round(box.w / gridSize) * gridSize),
+    h: Math.max(gridSize, Math.round(box.h / gridSize) * gridSize),
+  };
+}
+
+export function snapPoint(pt: Point, gridSize: number): Point {
+  if (gridSize <= 0) throw new Error('invalid grid size');
+  return {
+    x: Math.round(pt.x / gridSize) * gridSize,
+    y: Math.round(pt.y / gridSize) * gridSize,
+  };
+}
