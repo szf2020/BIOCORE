@@ -1,0 +1,83 @@
+// SP-FX-3a pure geometry helpers for the editor canvas. No DOM dependency.
+
+export interface Box { x: number; y: number; w: number; h: number; }
+export interface Point { x: number; y: number; }
+
+export type HandleId =
+  | 'nw' | 'n' | 'ne'
+  | 'w'  | 'e'
+  | 'sw' | 's' | 'se'
+  | 'rotate';
+
+const ROTATE_HANDLE_OFFSET = 20;
+const MIN_BOX = 5;
+
+export function clientToSvg(pt: Point, ctm: { a: number; b: number; c: number; d: number; e: number; f: number }): Point {
+  return {
+    x: ctm.a * pt.x + ctm.c * pt.y + ctm.e,
+    y: ctm.b * pt.x + ctm.d * pt.y + ctm.f,
+  };
+}
+
+export function handlePositions(box: Box): Record<HandleId, Point> {
+  const x = box.x;
+  const y = box.y;
+  const w = box.w;
+  const h = box.h;
+  return {
+    nw: { x, y },
+    n:  { x: x + w / 2, y },
+    ne: { x: x + w, y },
+    w:  { x, y: y + h / 2 },
+    e:  { x: x + w, y: y + h / 2 },
+    sw: { x, y: y + h },
+    s:  { x: x + w / 2, y: y + h },
+    se: { x: x + w, y: y + h },
+    rotate: { x: x + w / 2, y: y - ROTATE_HANDLE_OFFSET },
+  };
+}
+
+const HANDLE_ORDER: HandleId[] = ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se', 'rotate'];
+const DEFAULT_THRESHOLD = 6;
+
+export function handleFromPoint(box: Box, pt: Point, threshold: number = DEFAULT_THRESHOLD): HandleId | null {
+  const positions = handlePositions(box);
+  for (const h of HANDLE_ORDER) {
+    const p = positions[h];
+    if (Math.abs(pt.x - p.x) <= threshold && Math.abs(pt.y - p.y) <= threshold) {
+      return h;
+    }
+  }
+  return null;
+}
+
+export function applyHandleDrag(box: Box, handle: HandleId, dx: number, dy: number): Box {
+  let { x, y, w, h } = box;
+
+  switch (handle) {
+    case 'nw': x += dx; y += dy; w -= dx; h -= dy; break;
+    case 'n':  y += dy; h -= dy; break;
+    case 'ne': y += dy; w += dx; h -= dy; break;
+    case 'w':  x += dx; w -= dx; break;
+    case 'e':  w += dx; break;
+    case 'sw': x += dx; w -= dx; h += dy; break;
+    case 's':  h += dy; break;
+    case 'se': w += dx; h += dy; break;
+    case 'rotate': return box;
+  }
+
+  // Clamp. If w/h drops below MIN_BOX, pin and freeze x/y on the side that
+  // wouldn't pull beyond the opposite edge.
+  if (w < MIN_BOX) {
+    w = MIN_BOX;
+    if (handle === 'nw' || handle === 'w' || handle === 'sw') x = box.x + (box.w - MIN_BOX);
+    else x = box.x;
+  }
+  if (h < MIN_BOX) {
+    h = MIN_BOX;
+    if (handle === 'nw' || handle === 'n' || handle === 'ne') y = box.y + (box.h - MIN_BOX);
+    else y = box.y;
+  }
+
+  return { x, y, w, h };
+}
