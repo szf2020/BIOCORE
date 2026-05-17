@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useEditorStore } from '../services/editor-store';
 import { CanvasController } from './canvas-svg';
-import { TransformHandles, SnapGuides } from './transform-handles';
+import { TransformHandles, SnapGuides, RotateTooltip } from './transform-handles';
 import { PointerTools } from './pointer-tools';
 import { snapPoint, computeBbox, type Box } from './geometry';
 import type { FuxaWidget } from '../models';
@@ -13,6 +13,7 @@ interface Refs {
   pointer: PointerTools;
   snapGuides: SnapGuides;
   rubberBand: SVGRectElement;
+  rotateTooltip: RotateTooltip;
 }
 
 function getWidgetGeom(w: FuxaWidget): Box | null {
@@ -40,6 +41,7 @@ export function EditorCanvas() {
     });
     const handles = new TransformHandles(canvas.overlayLayer);
     const snapGuides = new SnapGuides(canvas.overlayLayer);
+    const rotateTooltip = new RotateTooltip(canvas.overlayLayer);
     const rubberBand = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     rubberBand.setAttribute('data-overlay', 'rubber-band');
     rubberBand.setAttribute('visibility', 'hidden');
@@ -139,14 +141,29 @@ export function EditorCanvas() {
           r.setAttribute('visibility', 'visible');
         }
       },
+      getCurrentRotate: (id) => {
+        const view = useEditorStore.getState().currentView;
+        return (view?.items[id] as { rotate?: number } | undefined)?.rotate;
+      },
+      onRotated: (id, deg) => {
+        const store = useEditorStore.getState();
+        if (deg === 0) store.updateWidget(id, { rotate: undefined } as Partial<FuxaWidget>);
+        else store.updateWidget(id, { rotate: deg } as Partial<FuxaWidget>);
+      },
+      onRotateMove: (deg, pivot) => {
+        if (!refs.current) return;
+        if (deg === null || pivot === null) refs.current.rotateTooltip.hide();
+        else refs.current.rotateTooltip.show(deg, pivot);
+      },
     });
-    refs.current = { canvas, handles, pointer, snapGuides, rubberBand };
+    refs.current = { canvas, handles, pointer, snapGuides, rubberBand, rotateTooltip };
     canvas.loadView(currentView);
     const store0 = useEditorStore.getState();
     canvas.setGridVisible(store0.snapEnabled ?? true, store0.gridSize ?? 10);
     return () => {
       pointer.destroy();
       snapGuides.destroy();
+      rotateTooltip.destroy();
       canvas.destroy();
       refs.current = null;
     };

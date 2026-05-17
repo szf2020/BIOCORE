@@ -338,3 +338,93 @@ describe('EditorCanvas SP-FX-3b.2.1', () => {
     expect(rb.getAttribute('visibility')).toBe('hidden');
   });
 });
+
+describe('EditorCanvas rotate (SP-FX-3b.2.2)', () => {
+  function makeViewWithItems(items: Record<string, FuxaWidget>): FuxaView {
+    return {
+      id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>',
+      width: 800, height: 600,
+      items,
+      schemaVersion: 1,
+    } as FuxaView;
+  }
+
+  function fireKey(key: string) {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  }
+
+  it('rotateTooltip mounted in overlay layer with visibility hidden', () => {
+    const { container } = render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 50, y: 50, w: 100, h: 60 } as any,
+      }));
+    });
+    const tooltip = container.querySelector('[data-overlay="rotate-tooltip"]') as SVGGElement;
+    expect(tooltip).not.toBeNull();
+    expect(tooltip.getAttribute('visibility')).toBe('hidden');
+  });
+
+  it('view loaded with widget.rotate=30 renders transform attr on widget node', () => {
+    const { container } = render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 50, y: 50, w: 100, h: 60, rotate: 30 } as any,
+      }));
+    });
+    const el = container.querySelector('[data-widget-id="w1"]') as SVGElement;
+    expect(el.getAttribute('transform')).toBe('rotate(30 100 80)');
+  });
+
+  it('updateWidget rotate=undefined strips rotate from store (commitRotate(0) path)', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 50, y: 50, w: 100, h: 60, rotate: 45 } as any,
+      }));
+    });
+    act(() => { useEditorStore.getState().updateWidget('w1', { rotate: undefined } as any); });
+    const w = useEditorStore.getState().currentView!.items.w1 as any;
+    expect('rotate' in w).toBe(false);
+  });
+
+  it('TransformHandles position stays at unrotated AABB even when widget.rotate is set', () => {
+    const { container } = render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 50, y: 50, w: 100, h: 60, rotate: 90 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1']);
+    });
+    const overlay = container.querySelector('[data-overlay="transform"]') as SVGGElement;
+    expect(overlay).not.toBeNull();
+    expect(overlay.getAttribute('transform') ?? '').not.toContain('rotate');
+  });
+
+  it('selection useEffect with rotated widget: selectionRect at unrotated geom', () => {
+    const { container } = render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 50, y: 50, w: 100, h: 60, rotate: 45 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1']);
+    });
+    const selRect = container.querySelector('[data-overlay="transform"] rect:not([data-handle]):not([data-bbox-corner])') as SVGRectElement;
+    expect(selRect).not.toBeNull();
+    expect(selRect.getAttribute('x')).toBe('50');
+    expect(selRect.getAttribute('y')).toBe('50');
+  });
+
+  it('ESC during idle with rotated widget selected does not change widget.rotate', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 50, y: 50, w: 100, h: 60, rotate: 45 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1']);
+    });
+    act(() => { fireKey('Escape'); });
+    const w = useEditorStore.getState().currentView!.items.w1 as any;
+    expect(w.rotate).toBe(45);
+  });
+});
