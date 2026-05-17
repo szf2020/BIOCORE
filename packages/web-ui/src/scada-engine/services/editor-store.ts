@@ -110,7 +110,14 @@ const actions: EditorActions = {
       history: opts?.silent
         ? s.history
         : { past: pushHistory(s.history.past, s.currentView!), future: [] },
-      currentView: produce(currentView, (draft) => { Object.assign(draft.items[id], patch); }),
+      currentView: produce(currentView, (draft) => {
+        const target = draft.items[id] as Record<string, unknown>;
+        for (const k of Object.keys(patch)) {
+          const v = (patch as Record<string, unknown>)[k];
+          if (v === undefined) delete target[k];
+          else target[k] = v;
+        }
+      }),
       isDirty: true,
     }));
   },

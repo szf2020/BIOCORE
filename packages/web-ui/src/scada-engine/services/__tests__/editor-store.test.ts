@@ -266,3 +266,28 @@ describe('editorStore updateWidget silent opt (SP-FX-3b.2.1)', () => {
     expect(useEditorStore.getState().history.past.length).toBe(before + 1);
   });
 });
+
+describe('editorStore updateWidget undefined-value deletes key (SP-FX-3b.2.2)', () => {
+  beforeEach(() => {
+    useEditorStore.setState({
+      currentView: null,
+      isDirty: false,
+      history: { past: [], future: [] },
+      selection: [],
+      snapEnabled: true,
+      gridSize: 10,
+    } as any, true);
+    useEditorStore.getState().openView({
+      id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>',
+      width: 800, height: 600,
+      items: { w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 50, h: 30, rotate: 45 } },
+      schemaVersion: 1,
+    } as any);
+  });
+
+  it('updateWidget patch with rotate=undefined deletes the rotate key', () => {
+    useEditorStore.getState().updateWidget('w1', { rotate: undefined } as any);
+    const w = useEditorStore.getState().currentView!.items.w1 as any;
+    expect('rotate' in w).toBe(false);
+  });
+});
