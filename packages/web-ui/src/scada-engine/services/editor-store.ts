@@ -12,8 +12,10 @@ import { produce } from 'immer';
 import type { FuxaView } from '../models/hmi';
 import type { FuxaWidget } from '../models/widget';
 
-// SP-FX-3b.1: editor grid size in svg user-space units. Fixed at 10 for now;
-// dynamic gridSize deferred to SP-FX-3b.2.
+// SP-FX-3b.2.1: GRID_SIZE migrated to editorStore.gridSize state. Kept as
+// deprecated re-export for SP-FX-3b.1 backward compatibility. New code should
+// read useEditorStore.getState().gridSize instead.
+/** @deprecated Read useEditorStore.getState().gridSize instead */
 export const GRID_SIZE = 10;
 
 const HISTORY_LIMIT = 50;
@@ -26,6 +28,7 @@ export interface EditorData {
   history: { past: FuxaView[]; future: FuxaView[] };
   selection: string[];
   snapEnabled: boolean;
+  gridSize: number;
 }
 
 // ---------- actions shape ----------
@@ -34,7 +37,7 @@ export interface EditorActions {
   openView: (view: FuxaView) => void;
   closeView: () => void;
   addWidget: (widget: FuxaWidget) => void;
-  updateWidget: (id: string, patch: Partial<FuxaWidget>) => void;
+  updateWidget: (id: string, patch: Partial<FuxaWidget>, opts?: { silent?: boolean }) => void;
   deleteWidgets: (ids: string[]) => void;
   undo: () => void;
   redo: () => void;
@@ -44,6 +47,7 @@ export interface EditorActions {
   clearSelection: () => void;
   markClean: () => void;
   setSnapEnabled: (enabled: boolean) => void;
+  setGridSize: (n: number) => void;
 }
 
 export type EditorState = EditorData & EditorActions;
@@ -64,6 +68,7 @@ const _store = create<EditorData>(() => ({
   history: { past: [], future: [] },
   selection: [],
   snapEnabled: true,
+  gridSize: 10,
 }));
 
 // ---------- module-level actions (survive setState replace) ----------
@@ -75,6 +80,7 @@ const actions: EditorActions = {
     history: { past: [], future: [] },
     selection: [],
     snapEnabled: s.snapEnabled,
+    gridSize: s.gridSize,
   })),
 
   closeView: () => _store.setState((s) => ({
@@ -83,6 +89,7 @@ const actions: EditorActions = {
     history: { past: [], future: [] },
     selection: [],
     snapEnabled: s.snapEnabled,
+    gridSize: s.gridSize,
   })),
 
   addWidget: (widget) => {
@@ -95,12 +102,14 @@ const actions: EditorActions = {
     }));
   },
 
-  updateWidget: (id, patch) => {
+  updateWidget: (id, patch, opts) => {
     const { currentView } = _store.getState();
     if (!currentView) return;
     if (!currentView.items[id]) return;
     _store.setState((s) => ({
-      history: { past: pushHistory(s.history.past, s.currentView!), future: [] },
+      history: opts?.silent
+        ? s.history
+        : { past: pushHistory(s.history.past, s.currentView!), future: [] },
       currentView: produce(currentView, (draft) => { Object.assign(draft.items[id], patch); }),
       isDirty: true,
     }));
@@ -159,6 +168,10 @@ const actions: EditorActions = {
   clearSelection: () => _store.setState({ selection: [] }),
   markClean: () => _store.setState({ isDirty: false }),
   setSnapEnabled: (enabled) => _store.setState({ snapEnabled: enabled }),
+  setGridSize: (n) => {
+    if (![8, 10, 16, 20].includes(n)) return;
+    _store.setState({ gridSize: n });
+  },
 };
 
 // ---------- public store (data + actions merged) ----------

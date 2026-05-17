@@ -203,3 +203,66 @@ describe('editorStore snap-grid (SP-FX-3b.1)', () => {
     expect(useEditorStore.getState().currentView).toEqual(view);
   });
 });
+
+describe('editorStore gridSize + setGridSize (SP-FX-3b.2.1)', () => {
+  beforeEach(() => {
+    useEditorStore.setState({
+      currentView: null,
+      isDirty: false,
+      history: { past: [], future: [] },
+      selection: [],
+      snapEnabled: true,
+      gridSize: 10,
+    } as any, true);
+  });
+
+  it('default gridSize === 10', () => {
+    expect(useEditorStore.getState().gridSize).toBe(10);
+  });
+
+  it('setGridSize(20) sets state without pushing history', () => {
+    const before = useEditorStore.getState().history.past.length;
+    useEditorStore.getState().setGridSize(20);
+    expect(useEditorStore.getState().gridSize).toBe(20);
+    expect(useEditorStore.getState().history.past.length).toBe(before);
+  });
+
+  it('setGridSize(12) silently rejected (non-whitelist value)', () => {
+    useEditorStore.getState().setGridSize(20);
+    useEditorStore.getState().setGridSize(12);
+    expect(useEditorStore.getState().gridSize).toBe(20);
+  });
+});
+
+describe('editorStore updateWidget silent opt (SP-FX-3b.2.1)', () => {
+  beforeEach(() => {
+    useEditorStore.setState({
+      currentView: null,
+      isDirty: false,
+      history: { past: [], future: [] },
+      selection: [],
+      snapEnabled: true,
+      gridSize: 10,
+    } as any, true);
+    useEditorStore.getState().openView({
+      id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>',
+      width: 800, height: 600,
+      items: { w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 50, h: 30 } },
+      schemaVersion: 1,
+    } as any);
+  });
+
+  it('updateWidget with {silent:true} applies patch without history push', () => {
+    const before = useEditorStore.getState().history.past.length;
+    useEditorStore.getState().updateWidget('w1', { x: 100 } as any, { silent: true });
+    expect((useEditorStore.getState().currentView!.items.w1 as any).x).toBe(100);
+    expect(useEditorStore.getState().history.past.length).toBe(before);
+  });
+
+  it('updateWidget default still pushes history (regression)', () => {
+    const before = useEditorStore.getState().history.past.length;
+    useEditorStore.getState().updateWidget('w1', { x: 200 } as any);
+    expect((useEditorStore.getState().currentView!.items.w1 as any).x).toBe(200);
+    expect(useEditorStore.getState().history.past.length).toBe(before + 1);
+  });
+});
