@@ -12,6 +12,7 @@ import { vi } from 'vitest';
 
 export interface MockCanvas {
   upsertWidget: ReturnType<typeof vi.fn>;
+  applyRotate: ReturnType<typeof vi.fn>;
   getSvgRoot: ReturnType<typeof vi.fn>;
   destroy: ReturnType<typeof vi.fn>;
   _svgRoot: SVGSVGElement;
@@ -22,6 +23,7 @@ export function makeMockCanvas(): MockCanvas {
   document.body.appendChild(svgRoot);
   return {
     upsertWidget: vi.fn(),
+    applyRotate: vi.fn(),
     getSvgRoot: vi.fn(() => svgRoot) as ReturnType<typeof vi.fn>,
     destroy: vi.fn(),
     _svgRoot: svgRoot,

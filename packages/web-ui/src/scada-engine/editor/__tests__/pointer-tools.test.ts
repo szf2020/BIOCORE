@@ -21,6 +21,10 @@ let onBoxSelect: ReturnType<typeof vi.fn>;
 let onWidgetTransformedBatch: ReturnType<typeof vi.fn>;
 let onDragVisualUpdate: ReturnType<typeof vi.fn>;
 let onBoxSelectMove: ReturnType<typeof vi.fn>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let getCurrentRotate: ReturnType<typeof vi.fn<any[], any>>;
+let onRotated: ReturnType<typeof vi.fn>;
+let onRotateMove: ReturnType<typeof vi.fn>;
 let tools: PointerTools;
 
 beforeEach(() => {
@@ -38,6 +42,9 @@ beforeEach(() => {
   onWidgetTransformedBatch = vi.fn();
   onDragVisualUpdate = vi.fn();
   onBoxSelectMove = vi.fn();
+  getCurrentRotate = vi.fn(() => undefined);
+  onRotated = vi.fn();
+  onRotateMove = vi.fn();
   tools = new PointerTools(canvas as any, handles as any, {
     getWidgetAt: (pt) => getWidgetAt(pt) as { id: string; box: Box } | null,
     onWidgetTransformed: (id, box) => onWidgetTransformed(id, box),
@@ -50,6 +57,9 @@ beforeEach(() => {
     onWidgetTransformedBatch: (entries) => onWidgetTransformedBatch(entries),
     onDragVisualUpdate: (box) => onDragVisualUpdate(box),
     onBoxSelectMove: (rect) => onBoxSelectMove(rect),
+    getCurrentRotate: (id) => getCurrentRotate(id) as number | undefined,
+    onRotated: (id, rotate) => onRotated(id, rotate),
+    onRotateMove: (deg, pivot) => onRotateMove(deg, pivot),
   });
 });
 
@@ -322,5 +332,106 @@ describe('PointerTools multi-drag + box-select + threshold (SP-FX-3b.2.1)', () =
     tools.handleMouseUp(mu(20, 20));
     expect(onWidgetTransformedBatch).not.toHaveBeenCalled();
     expect(tools.state.kind).toBe('idle');
+  });
+});
+
+describe('PointerTools drag-rotate (SP-FX-3b.2.2)', () => {
+  it('mousedown on rotate handle: state=drag-rotate with pivot=center, startRotate=0', () => {
+    handles.hitTest.mockReturnValue('rotate');
+    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 50, y: 50, w: 100, h: 60 } });
+    getCurrentRotate.mockReturnValue(undefined);
+    tools.handleMouseDown(md(100, 30));
+    expect(tools.state.kind).toBe('drag-rotate');
+    if (tools.state.kind === 'drag-rotate') {
+      expect(tools.state.widgetId).toBe('w1');
+      expect(tools.state.pivot).toEqual({ x: 100, y: 80 });
+      expect(tools.state.startRotate).toBe(0);
+    }
+  });
+
+  it('drag-rotate mousemove free: fires canvas.applyRotate + onRotateMove with computed deg', () => {
+    handles.hitTest.mockReturnValue('rotate');
+    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 50, y: 50, w: 100, h: 60 } });
+    getCurrentRotate.mockReturnValue(0);
+    tools.handleMouseDown(md(150, 80));  // startPt at angle 0 from pivot (100,80)
+    tools.handleMouseMove(mm(100, 130));  // currentPt at angle 90 from pivot
+    expect(canvas.applyRotate).toHaveBeenCalled();
+    const lastApply = canvas.applyRotate.mock.calls[canvas.applyRotate.mock.calls.length - 1];
+    expect(lastApply[1]).toBeCloseTo(90, 0);  // deg
+    expect(lastApply[2]).toEqual({ x: 100, y: 80 });
+    expect(onRotateMove).toHaveBeenCalled();
+  });
+
+  it('drag-rotate mousemove with Shift: snaps to 15 step', () => {
+    handles.hitTest.mockReturnValue('rotate');
+    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 50, y: 50, w: 100, h: 60 } });
+    getCurrentRotate.mockReturnValue(0);
+    tools.handleMouseDown(md(150, 80));
+    const shiftMove = new MouseEvent('mousemove', {
+      clientX: 100 + 50 * Math.cos(23 * Math.PI / 180),
+      clientY: 80 + 50 * Math.sin(23 * Math.PI / 180),
+      shiftKey: true,
+      bubbles: true,
+    });
+    tools.handleMouseMove(shiftMove);
+    const lastApply = canvas.applyRotate.mock.calls[canvas.applyRotate.mock.calls.length - 1];
+    expect(lastApply[1]).toBe(30);
+  });
+
+  it('drag-rotate mouseup commits via onRotated; state idle; onRotateMove(null,null)', () => {
+    handles.hitTest.mockReturnValue('rotate');
+    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 50, y: 50, w: 100, h: 60 } });
+    getCurrentRotate.mockReturnValue(0);
+    tools.handleMouseDown(md(150, 80));
+    tools.handleMouseUp(mu(100, 130));
+    expect(onRotated).toHaveBeenCalled();
+    const [id, deg] = onRotated.mock.calls[0];
+    expect(id).toBe('w1');
+    expect(deg).toBeCloseTo(90, 0);
+    expect(tools.state.kind).toBe('idle');
+    expect(onRotateMove).toHaveBeenLastCalledWith(null, null);
+  });
+
+  it('drag-rotate mouseup with deg===startRotate: no onRotated fire (short-circuit)', () => {
+    handles.hitTest.mockReturnValue('rotate');
+    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 50, y: 50, w: 100, h: 60 } });
+    getCurrentRotate.mockReturnValue(45);
+    tools.handleMouseDown(md(150, 80));
+    tools.handleMouseUp(mu(150, 80));  // same pt → deg=45=startRotate
+    expect(onRotated).not.toHaveBeenCalled();
+    expect(tools.state.kind).toBe('idle');
+  });
+
+  it('cancel() in drag-rotate: canvas.applyRotate(startRotate); tooltip hide; idle; no onRotated', () => {
+    handles.hitTest.mockReturnValue('rotate');
+    getWidgetAt.mockReturnValue({ id: 'w1', box: { x: 50, y: 50, w: 100, h: 60 } });
+    getCurrentRotate.mockReturnValue(30);
+    tools.handleMouseDown(md(150, 80));
+    tools.handleMouseMove(mm(100, 130));
+    canvas.applyRotate.mockClear();
+    tools.cancel();
+    expect(canvas.applyRotate).toHaveBeenCalledWith('w1', 30, { x: 100, y: 80 });
+    expect(onRotated).not.toHaveBeenCalled();
+    expect(onRotateMove).toHaveBeenLastCalledWith(null, null);
+    expect(tools.state.kind).toBe('idle');
+  });
+
+  it('mousedown on rotate handle but no widget hit: stays idle (defensive)', () => {
+    handles.hitTest.mockReturnValue('rotate');
+    getWidgetAt.mockReturnValue(null);
+    tools.handleMouseDown(md(100, 30));
+    expect(tools.state.kind).toBe('idle');
+  });
+
+  it('drag-rotate state preserves startBox unchanged', () => {
+    handles.hitTest.mockReturnValue('rotate');
+    const box = { x: 50, y: 50, w: 100, h: 60 };
+    getWidgetAt.mockReturnValue({ id: 'w1', box });
+    getCurrentRotate.mockReturnValue(15);
+    tools.handleMouseDown(md(100, 30));
+    if (tools.state.kind === 'drag-rotate') {
+      expect(tools.state.startBox).toEqual(box);
+      expect(tools.state.startRotate).toBe(15);
+    }
   });
 });

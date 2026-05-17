@@ -5,14 +5,15 @@
 
 import type { CanvasController } from './canvas-svg';
 import type { TransformHandles } from './transform-handles';
-import { clientToSvg, applyHandleDrag, snap, computeBbox, intersectsBox, type HandleId, type Box, type Point } from './geometry';
+import { clientToSvg, applyHandleDrag, snap, computeBbox, intersectsBox, applyRotate, type HandleId, type Box, type Point } from './geometry';
 import { useEditorStore } from '../services/editor-store';
 
 export type PointerState =
   | { kind: 'idle' }
   | { kind: 'drag-body'; widgetIds: string[]; startPt: Point; startBoxes: Map<string, Box> }
   | { kind: 'drag-handle'; widgetId: string; handle: HandleId; startPt: Point; startBox: Box }
-  | { kind: 'box-select'; startPt: Point; currentPt: Point; shiftKey: boolean };
+  | { kind: 'box-select'; startPt: Point; currentPt: Point; shiftKey: boolean }
+  | { kind: 'drag-rotate'; widgetId: string; startPt: Point; pivot: Point; startBox: Box; startRotate: number };
 
 export interface PointerToolsCallbacks {
   getWidgetAt: (pt: Point) => { id: string; box: Box } | null;
@@ -26,6 +27,9 @@ export interface PointerToolsCallbacks {
   onWidgetTransformedBatch: (entries: { id: string; newBox: Box }[]) => void;
   onDragVisualUpdate: (box: Box | null) => void;
   onBoxSelectMove: (rect: Box | null) => void;
+  getCurrentRotate: (id: string) => number | undefined;
+  onRotated: (id: string, rotate: number) => void;
+  onRotateMove: (deg: number | null, pivot: Point | null) => void;
 }
 
 const CLICK_DRAG_THRESHOLD = 3;
@@ -68,7 +72,12 @@ export class PointerTools {
     const handle = this.handles.hitTest(pt);
     if (handle) {
       const widgetHit = this.cb.getWidgetAt(pt);
-      if (widgetHit) {
+      if (!widgetHit) return;
+      if (handle === 'rotate') {
+        const pivot: Point = { x: widgetHit.box.x + widgetHit.box.w / 2, y: widgetHit.box.y + widgetHit.box.h / 2 };
+        const startRotate = this.cb.getCurrentRotate(widgetHit.id) ?? 0;
+        this.state = { kind: 'drag-rotate', widgetId: widgetHit.id, startPt: pt, pivot, startBox: widgetHit.box, startRotate };
+      } else {
         this.state = { kind: 'drag-handle', widgetId: widgetHit.id, handle, startPt: pt, startBox: widgetHit.box };
       }
       return;
@@ -99,6 +108,14 @@ export class PointerTools {
     if (this.destroyed) return;
     if (this.state.kind === 'idle') return;
     const pt = this.clientPt(e);
+
+    if (this.state.kind === 'drag-rotate') {
+      const snapStep = e.shiftKey ? 15 : 0;
+      const deg = applyRotate(this.state.pivot, this.state.startPt, pt, this.state.startRotate, snapStep);
+      this.canvas.applyRotate(this.state.widgetId, deg, this.state.pivot);
+      this.cb.onRotateMove(deg, this.state.pivot);
+      return;
+    }
 
     if (this.state.kind === 'box-select') {
       this.state.currentPt = pt;
@@ -151,6 +168,15 @@ export class PointerTools {
     if (this.destroyed) return;
     if (this.state.kind === 'idle') return;
     const pt = this.clientPt(e);
+
+    if (this.state.kind === 'drag-rotate') {
+      const snapStep = e.shiftKey ? 15 : 0;
+      const deg = applyRotate(this.state.pivot, this.state.startPt, pt, this.state.startRotate, snapStep);
+      if (deg !== this.state.startRotate) this.cb.onRotated(this.state.widgetId, deg);
+      this.state = { kind: 'idle' };
+      this.cb.onRotateMove(null, null);
+      return;
+    }
 
     if (this.state.kind === 'box-select') {
       const distance = Math.max(Math.abs(pt.x - this.state.startPt.x), Math.abs(pt.y - this.state.startPt.y));
@@ -219,6 +245,13 @@ export class PointerTools {
       this.handles.updateBox(startBox);
       this.state = { kind: 'idle' };
       this.cb.onDragVisualUpdate(null);
+      return;
+    }
+
+    if (this.state.kind === 'drag-rotate') {
+      this.canvas.applyRotate(this.state.widgetId, this.state.startRotate, this.state.pivot);
+      this.state = { kind: 'idle' };
+      this.cb.onRotateMove(null, null);
       return;
     }
 
