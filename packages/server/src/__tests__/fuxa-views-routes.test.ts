@@ -136,4 +136,11 @@ describe('fuxa-views-routes POST (SP-FX-1)', () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/payload/i);
   });
+
+  it('POST /fuxa-views with invalid type returns 400', async () => {
+    const { app } = makeApp();
+    const res = await request(app).post('/api/v1/fuxa-views').send({ ...body(), type: 'invalid' as any });
+    expect(res.status).toBe(400);
+    expect(res.body.field).toBe('type');
+  });
 });

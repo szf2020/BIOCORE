@@ -37,7 +37,7 @@ const PayloadSchema = z.object({
 const CreateBodySchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
-  type: z.string().min(1),
+  type: z.enum(['svg', 'cards', 'svg-shapes']),
   payload: PayloadSchema,
   width: z.number().int().positive(),
   height: z.number().int().positive(),
