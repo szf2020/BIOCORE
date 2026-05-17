@@ -226,14 +226,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <nav className="w-[224px] surface-low flex flex-col">
         <div className="px-5 py-5">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                  style={{ background: 'linear-gradient(135deg, #0F766E, #005c55)' }}>
               <Activity className="w-4 h-4 text-white" />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <h1 className="text-[15px] font-bold tracking-tight text-foreground leading-none">BIOCore</h1>
               <p className="text-[10px] text-muted-foreground mt-1 font-mono tracking-wider">v0.1.0 · MES</p>
             </div>
+            <ThemeToggle />
           </div>
         </div>
         <div className="flex-1 px-2 py-1 overflow-y-auto mes-scroll">
@@ -317,11 +318,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             );
           })}
         </div>
-        {/* Bottom: theme + user + clock cluster (moved from header right) + WS indicator. */}
+        {/* Bottom: WS+clock row, user row. Theme toggle moved to brand header. */}
         <div className="px-4 py-3 text-xs text-muted-foreground space-y-2 border-t border-border/30">
-          <div className="flex items-center justify-between gap-2">
-            <ThemeToggle />
-            <LiveClock />
+          <div className="flex items-center gap-2">
+            <div className={`status-led ${wsConnected ? 'status-led-running' : 'status-led-stopped'}`} />
+            <span className="font-mono text-[11px]">WS {wsConnected ? '已连接' : '未连接'}</span>
+            <div className="ml-auto"><LiveClock /></div>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -340,10 +342,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={`status-led ${wsConnected ? 'status-led-running' : 'status-led-stopped'}`} />
-            <span className="font-mono text-[11px]">WS {wsConnected ? '已连接' : '未连接'}</span>
           </div>
         </div>
       </nav>
@@ -431,18 +429,24 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
 
   if (unack.length === 0) {
     return (
-      <div className="ml-auto flex items-center gap-2 px-3 w-full max-w-[840px] rounded-md border border-border bg-muted h-9">
-        <Bell className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
-        <span className="text-xs text-muted-foreground shrink-0">报警信息</span>
-        <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border border-muted-foreground/40 text-muted-foreground/70">0</span>
-        <span className="flex-1 text-xs text-muted-foreground truncate">无未确认报警</span>
-        <span className="shrink-0 text-[10px] text-muted-foreground/60 font-mono tabular-nums">0/0</span>
-        <button disabled className="shrink-0 p-1 rounded text-muted-foreground/30 cursor-not-allowed" title="上一条">
-          <ChevronUp className="w-3 h-3" />
-        </button>
-        <button disabled className="shrink-0 p-1 rounded text-muted-foreground/30 cursor-not-allowed" title="下一条">
-          <ChevronDown className="w-3 h-3" />
-        </button>
+      <div className="ml-auto flex items-center gap-2 w-full max-w-[840px] h-9">
+        {/* Label chip — separate box from the message strip */}
+        <div className="shrink-0 flex items-center gap-1.5 px-2.5 h-full rounded-md border border-border bg-muted">
+          <Bell className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+          <span className="text-xs text-muted-foreground shrink-0">报警信息</span>
+          <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border border-muted-foreground/40 text-muted-foreground/70">0</span>
+        </div>
+        {/* Message + nav strip */}
+        <div className="flex-1 flex items-center gap-2 px-3 h-full rounded-md border border-border bg-muted min-w-0">
+          <span className="flex-1 text-xs text-muted-foreground truncate">无未确认报警</span>
+          <span className="shrink-0 text-[10px] text-muted-foreground/60 font-mono tabular-nums">0/0</span>
+          <button disabled className="shrink-0 p-1 rounded text-muted-foreground/30 cursor-not-allowed" title="上一条">
+            <ChevronUp className="w-3 h-3" />
+          </button>
+          <button disabled className="shrink-0 p-1 rounded text-muted-foreground/30 cursor-not-allowed" title="下一条">
+            <ChevronDown className="w-3 h-3" />
+          </button>
+        </div>
       </div>
     );
   }
@@ -454,34 +458,40 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
     : 'bg-blue-500/15 text-blue-600 border-blue-500/30';
 
   return (
-    <div className="ml-auto flex items-center gap-2 px-3 w-full max-w-[840px] rounded-md border border-red-500/40 bg-red-500/10 dark:bg-red-500/15 h-9">
-      <Bell className="w-3.5 h-3.5 text-mes-red shrink-0" />
-      <span className="text-xs font-medium text-red-700 dark:text-red-300 shrink-0">报警信息</span>
-      <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border ${sevColor}`}>
-        {unack.length}
-      </span>
-      <span className="flex-1 text-xs font-medium text-red-700 dark:text-red-300 truncate" title={cur.message}>
-        {cur.message || '(无消息)'}
-      </span>
-      <span className="shrink-0 text-[10px] text-muted-foreground font-mono tabular-nums">
-        {idx + 1}/{unack.length}
-      </span>
-      <button
-        onClick={() => setIdx(i => (i - 1 + unack.length) % unack.length)}
-        disabled={unack.length < 2}
-        className="shrink-0 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        title="上一条"
-      >
-        <ChevronUp className="w-3 h-3" />
-      </button>
-      <button
-        onClick={() => setIdx(i => (i + 1) % unack.length)}
-        disabled={unack.length < 2}
-        className="shrink-0 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        title="下一条"
-      >
-        <ChevronDown className="w-3 h-3" />
-      </button>
+    <div className="ml-auto flex items-center gap-2 w-full max-w-[840px] h-9">
+      {/* Label chip — separate box, mirrors empty-state layout */}
+      <div className="shrink-0 flex items-center gap-1.5 px-2.5 h-full rounded-md border border-red-500/40 bg-red-500/10 dark:bg-red-500/15">
+        <Bell className="w-3.5 h-3.5 text-mes-red shrink-0" />
+        <span className="text-xs font-medium text-red-700 dark:text-red-300 shrink-0">报警信息</span>
+        <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border ${sevColor}`}>
+          {unack.length}
+        </span>
+      </div>
+      {/* Message + nav strip */}
+      <div className="flex-1 flex items-center gap-2 px-3 h-full rounded-md border border-red-500/40 bg-red-500/10 dark:bg-red-500/15 min-w-0">
+        <span className="flex-1 text-xs font-medium text-red-700 dark:text-red-300 truncate" title={cur.message}>
+          {cur.message || '(无消息)'}
+        </span>
+        <span className="shrink-0 text-[10px] text-muted-foreground font-mono tabular-nums">
+          {idx + 1}/{unack.length}
+        </span>
+        <button
+          onClick={() => setIdx(i => (i - 1 + unack.length) % unack.length)}
+          disabled={unack.length < 2}
+          className="shrink-0 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          title="上一条"
+        >
+          <ChevronUp className="w-3 h-3" />
+        </button>
+        <button
+          onClick={() => setIdx(i => (i + 1) % unack.length)}
+          disabled={unack.length < 2}
+          className="shrink-0 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          title="下一条"
+        >
+          <ChevronDown className="w-3 h-3" />
+        </button>
+      </div>
     </div>
   );
 }
