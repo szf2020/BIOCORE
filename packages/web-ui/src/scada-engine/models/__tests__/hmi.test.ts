@@ -93,6 +93,20 @@ describe('FuxaEventSchema + FuxaActionSchema', () => {
       FuxaActionSchema.parse({ type: 'visibility' } as any),
     ).toThrow();
   });
+
+  it('FuxaEventSchema requireConfirm defaults to true when omitted', () => {
+    const parsed = FuxaEventSchema.parse({
+      type: 'click', action: 'set-value', actparam: 'F01.AO-0_cv',
+    });
+    expect(parsed.requireConfirm).toBe(true);
+  });
+
+  it('FuxaEventSchema requireConfirm honors explicit false', () => {
+    const parsed = FuxaEventSchema.parse({
+      type: 'click', action: 'set-value', actparam: 'F01.AO-0_cv', requireConfirm: false,
+    });
+    expect(parsed.requireConfirm).toBe(false);
+  });
 });
 
 describe('FuxaProperty schema', () => {

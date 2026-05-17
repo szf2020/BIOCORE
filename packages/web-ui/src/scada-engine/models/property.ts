@@ -16,6 +16,10 @@ export const FuxaEventSchema = z.object({
   action: FuxaEventActionSchema,
   actparam: z.string(),
   actoptions: z.record(z.any()).optional(),
+  // SP-FX-2: when true (default), set-value actions require ConfirmDialog
+  // approval before writeTag fires. Designer can set false on view-property
+  // dialog for high-frequency manual controls.
+  requireConfirm: z.boolean().optional().default(true),
 });
 export type FuxaEvent = z.infer<typeof FuxaEventSchema>;
 
