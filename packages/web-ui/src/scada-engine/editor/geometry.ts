@@ -102,3 +102,25 @@ export function snapPoint(pt: Point, gridSize: number): Point {
     y: Math.round(pt.y / gridSize) * gridSize,
   };
 }
+
+// SP-FX-3b.2.1: multi-widget helpers — AABB computations + multi-drag translation.
+
+export function computeBbox(boxes: Box[]): Box {
+  if (boxes.length === 0) return { x: 0, y: 0, w: 0, h: 0 };
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const b of boxes) {
+    if (b.x < minX) minX = b.x;
+    if (b.y < minY) minY = b.y;
+    if (b.x + b.w > maxX) maxX = b.x + b.w;
+    if (b.y + b.h > maxY) maxY = b.y + b.h;
+  }
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+}
+
+export function intersectsBox(a: Box, b: Box): boolean {
+  return !(a.x + a.w < b.x || b.x + b.w < a.x || a.y + a.h < b.y || b.y + b.h < a.y);
+}
+
+export function applyMultiDrag(boxes: Box[], dx: number, dy: number): Box[] {
+  return boxes.map((b) => ({ x: b.x + dx, y: b.y + dy, w: b.w, h: b.h }));
+}

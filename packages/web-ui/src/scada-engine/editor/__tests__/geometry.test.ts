@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   clientToSvg, handlePositions, handleFromPoint, applyHandleDrag,
   snap, snapPoint,
+  computeBbox, intersectsBox, applyMultiDrag,
   type Box, type Point,
 } from '../geometry';
 import { identityMatrix } from '@/test/svgDomHelpers';
@@ -142,5 +143,44 @@ describe('geometry.snap (SP-FX-3b.1)', () => {
   it('clamps w/h to gridSize when snap would zero; snapPoint also rounds', () => {
     expect(snap({ x: 0, y: 0, w: 3, h: 3 }, 10)).toEqual({ x: 0, y: 0, w: 10, h: 10 });
     expect(snapPoint({ x: 23, y: 47 }, 10)).toEqual({ x: 20, y: 50 });
+  });
+});
+
+describe('geometry.computeBbox (SP-FX-3b.2.1)', () => {
+  it('empty array returns zero box', () => {
+    expect(computeBbox([])).toEqual({ x: 0, y: 0, w: 0, h: 0 });
+  });
+
+  it('single box returns same box', () => {
+    const b: Box = { x: 10, y: 20, w: 50, h: 30 };
+    expect(computeBbox([b])).toEqual(b);
+  });
+
+  it('two disjoint boxes returns union AABB', () => {
+    const a: Box = { x: 10, y: 10, w: 50, h: 30 };
+    const b: Box = { x: 100, y: 100, w: 60, h: 40 };
+    expect(computeBbox([a, b])).toEqual({ x: 10, y: 10, w: 150, h: 130 });
+  });
+});
+
+describe('geometry.intersectsBox (SP-FX-3b.2.1)', () => {
+  it('disjoint boxes return false', () => {
+    expect(intersectsBox({ x: 0, y: 0, w: 10, h: 10 }, { x: 100, y: 100, w: 10, h: 10 })).toBe(false);
+  });
+
+  it('overlapping and edge-touch boxes return true', () => {
+    expect(intersectsBox({ x: 0, y: 0, w: 50, h: 50 }, { x: 30, y: 30, w: 50, h: 50 })).toBe(true);
+    expect(intersectsBox({ x: 0, y: 0, w: 50, h: 50 }, { x: 50, y: 0, w: 50, h: 50 })).toBe(true);
+  });
+});
+
+describe('geometry.applyMultiDrag (SP-FX-3b.2.1)', () => {
+  it('translates all boxes by delta, preserves w/h, returns [] for empty input', () => {
+    expect(applyMultiDrag([], 10, 20)).toEqual([]);
+    const boxes: Box[] = [{ x: 0, y: 0, w: 50, h: 30 }, { x: 100, y: 100, w: 60, h: 40 }];
+    expect(applyMultiDrag(boxes, 10, 20)).toEqual([
+      { x: 10, y: 20, w: 50, h: 30 },
+      { x: 110, y: 120, w: 60, h: 40 },
+    ]);
   });
 });
