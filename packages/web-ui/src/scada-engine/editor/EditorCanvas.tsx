@@ -51,6 +51,7 @@ export function EditorCanvas() {
       },
       onWidgetTransformed: (id, box) => updateWidget(id, box as Partial<FuxaWidget>),
       onSelect: (id) => setSelection(id ? [id] : []),
+      getSnapEnabled: () => useEditorStore.getState().snapEnabled,
     });
     refs.current = { canvas, handles, pointer };
     canvas.loadView(currentView);

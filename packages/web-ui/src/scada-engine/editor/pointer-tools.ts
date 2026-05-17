@@ -5,7 +5,8 @@
 
 import type { CanvasController } from './canvas-svg';
 import type { TransformHandles } from './transform-handles';
-import { clientToSvg, applyHandleDrag, type HandleId, type Box, type Point } from './geometry';
+import { clientToSvg, applyHandleDrag, snap, type HandleId, type Box, type Point } from './geometry';
+import { GRID_SIZE } from '../services/editor-store';
 
 export type PointerState =
   | { kind: 'idle' }
@@ -16,6 +17,7 @@ export interface PointerToolsCallbacks {
   getWidgetAt: (pt: Point) => { id: string; box: Box } | null;
   onWidgetTransformed: (id: string, newBox: Box) => void;
   onSelect: (id: string | null) => void;
+  getSnapEnabled: () => boolean;
 }
 
 export class PointerTools {
@@ -77,9 +79,10 @@ export class PointerTools {
     const pt = this.clientPt(e);
     const dx = pt.x - this.state.startPt.x;
     const dy = pt.y - this.state.startPt.y;
-    const newBox = this.state.kind === 'drag-body'
+    let newBox = this.state.kind === 'drag-body'
       ? { x: this.state.startBox.x + dx, y: this.state.startBox.y + dy, w: this.state.startBox.w, h: this.state.startBox.h }
       : applyHandleDrag(this.state.startBox, this.state.handle, dx, dy);
+    if (this.cb.getSnapEnabled()) newBox = snap(newBox, GRID_SIZE);
     this.canvas.upsertWidget({ id: this.state.widgetId, type: 'svg-ext-value' as any, property: {} as any, x: newBox.x, y: newBox.y, w: newBox.w, h: newBox.h });
     this.handles.updateBox(newBox);
   }
@@ -90,10 +93,21 @@ export class PointerTools {
     const pt = this.clientPt(e);
     const dx = pt.x - this.state.startPt.x;
     const dy = pt.y - this.state.startPt.y;
-    const newBox = this.state.kind === 'drag-body'
+    let newBox = this.state.kind === 'drag-body'
       ? { x: this.state.startBox.x + dx, y: this.state.startBox.y + dy, w: this.state.startBox.w, h: this.state.startBox.h }
       : applyHandleDrag(this.state.startBox, this.state.handle, dx, dy);
+    if (this.cb.getSnapEnabled()) newBox = snap(newBox, GRID_SIZE);
     this.cb.onWidgetTransformed(this.state.widgetId, newBox);
+    this.state = { kind: 'idle' };
+  }
+
+  cancel(): void {
+    if (this.destroyed) return;
+    if (this.state.kind === 'idle') return;
+    const startBox = this.state.startBox;
+    const widgetId = this.state.widgetId;
+    this.canvas.upsertWidget({ id: widgetId, type: 'svg-ext-value' as any, property: {} as any, x: startBox.x, y: startBox.y, w: startBox.w, h: startBox.h });
+    this.handles.updateBox(startBox);
     this.state = { kind: 'idle' };
   }
 
