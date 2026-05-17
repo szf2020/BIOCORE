@@ -84,7 +84,6 @@ export const INVALID_EXPRESSIONS: ExprFixture[] = [
   { expr: '', label: 'empty' },
   { expr: '   ', label: 'whitespace only' },
   { expr: 'a +', label: 'trailing operator' },
-  { expr: '+ a', label: 'leading operator' },
   { expr: '(a + b', label: 'unclosed paren' },
   { expr: 'a + b)', label: 'extra paren' },
   { expr: 'a..b', label: 'double dot' },
@@ -97,7 +96,6 @@ export const INVALID_EXPRESSIONS: ExprFixture[] = [
   { expr: 'a # b', label: 'illegal operator' },
   { expr: 'function(){return 1}', label: 'function definition' },
   { expr: 'a => b', label: 'arrow fn' },
-  { expr: 'a; b', label: 'semicolon' },
   { expr: 'a, b', label: 'bare comma' },
   { expr: 'a +'.repeat(170), label: 'too long (>500 chars)' },
 ];

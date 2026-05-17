@@ -37,17 +37,8 @@ describe('expression-eval FUXA fixtures (SP-FX-2 R1 gate)', () => {
         escapees.push(`${label ?? expr}: returned ${JSON.stringify(result)} (expected undefined)`);
       }
     }
-    const ratio = (INVALID_EXPRESSIONS.length - escapees.length) / INVALID_EXPRESSIONS.length;
-    if (escapees.length > 0) {
-      // eslint-disable-next-line no-console
-      console.warn(`expression-eval: ${escapees.length} INVALID fixtures escaped:\n  ${escapees.join('\n  ')}`);
+    if (escapees.length) {
+      throw new Error(`INVALID fixtures must downgrade to undefined.\n  ${escapees.join('\n  ')}`);
     }
-    if (ratio < 0.7) {
-      throw new Error(
-        `R1 stop condition (INVALID): only ${INVALID_EXPRESSIONS.length - escapees.length}/${INVALID_EXPRESSIONS.length} ` +
-        `(${(ratio * 100).toFixed(1)}%) downgrade to undefined. Switch to custom evaluator or shrink syntax.`,
-      );
-    }
-    expect(ratio).toBeGreaterThanOrEqual(0.7);
   });
 });
