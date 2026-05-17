@@ -259,3 +259,45 @@ describe('fuxa-views-routes DELETE (SP-FX-1)', () => {
     expect(child.parent_view_id).toBeNull();
   });
 });
+
+describe('fuxa-views-routes POST /:id/duplicate (SP-FX-1)', () => {
+  it('returns 201 with the new row, version=1, name suffixed " Copy"', async () => {
+    const { app, sqlite } = makeApp();
+    sqlite.createFuxaView({ id: 'orig', name: 'Orig', type: 'svg', payload: '{}', width: 100, height: 100 });
+    const res = await request(app)
+      .post('/api/v1/fuxa-views/orig/duplicate')
+      .send({ newId: 'copy-1' });
+    expect(res.status).toBe(201);
+    expect(res.body.id).toBe('copy-1');
+    expect(res.body.name).toBe('Orig Copy');
+    expect(res.body.version).toBe(1);
+  });
+
+  it('returns 404 when source id missing', async () => {
+    const { app } = makeApp();
+    const res = await request(app)
+      .post('/api/v1/fuxa-views/never/duplicate')
+      .send({ newId: 'x' });
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 409 when newId already exists', async () => {
+    const { app, sqlite } = makeApp();
+    sqlite.createFuxaView({ id: 'orig', name: 'O', type: 'svg', payload: '{}', width: 1, height: 1 });
+    sqlite.createFuxaView({ id: 'taken', name: 'T', type: 'svg', payload: '{}', width: 1, height: 1 });
+    const res = await request(app)
+      .post('/api/v1/fuxa-views/orig/duplicate')
+      .send({ newId: 'taken' });
+    expect(res.status).toBe(409);
+  });
+
+  it('returns 400 when newId missing', async () => {
+    const { app, sqlite } = makeApp();
+    sqlite.createFuxaView({ id: 'orig', name: 'O', type: 'svg', payload: '{}', width: 1, height: 1 });
+    const res = await request(app)
+      .post('/api/v1/fuxa-views/orig/duplicate')
+      .send({});
+    expect(res.status).toBe(400);
+    expect(res.body.field).toBe('newId');
+  });
+});

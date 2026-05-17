@@ -45,6 +45,10 @@ const CreateBodySchema = z.object({
   is_template: z.number().int().min(0).max(1).optional(),
 });
 
+const DuplicateBodySchema = z.object({
+  newId: z.string().min(1),
+});
+
 const UpdateBodySchema = z.object({
   name: z.string().min(1),
   type: z.enum(['svg', 'cards', 'svg-shapes']),
@@ -156,6 +160,29 @@ export function registerFuxaViewsRoutes(apiRouter: Router, deps: FuxaViewsRoutes
   apiRouter.delete('/fuxa-views/:id', (req, res) => {
     sqlite.deleteFuxaView(req.params.id);
     res.status(204).end();
+  });
+
+  // ─── Duplicate ───────────────────────────────────────────
+  apiRouter.post('/fuxa-views/:id/duplicate', (req, res) => {
+    const parsed = DuplicateBodySchema.safeParse(req.body);
+    if (!parsed.success) return zodFail(res, parsed.error);
+    if (!sqlite.getFuxaView(req.params.id)) {
+      return res.status(404).json({ error: '源视图不存在' });
+    }
+    if (sqlite.getFuxaView(parsed.data.newId)) {
+      return res.status(409).json({ error: `fuxa_view ${parsed.data.newId} already exists` });
+    }
+    try {
+      sqlite.duplicateFuxaView(req.params.id, {
+        newId: parsed.data.newId,
+        userId: getUserId(req),
+      });
+      const row = sqlite.getFuxaView(parsed.data.newId);
+      res.status(201).json(row);
+    } catch (e) {
+      console.error('fuxa-views duplicate failed:', (e as Error).message);
+      res.status(500).json({ error: 'duplicate failed' });
+    }
   });
 }
 
