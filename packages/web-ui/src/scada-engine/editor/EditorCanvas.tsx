@@ -1,10 +1,10 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
-import { useEditorStore } from '../services/editor-store';
+import { useEditorStore, GRID_SIZE } from '../services/editor-store';
 import { CanvasController } from './canvas-svg';
 import { TransformHandles } from './transform-handles';
 import { PointerTools } from './pointer-tools';
-import type { Box } from './geometry';
+import { snapPoint, type Box } from './geometry';
 import type { FuxaWidget } from '../models';
 
 interface Refs {
@@ -24,6 +24,7 @@ export function EditorCanvas() {
   const currentView = useEditorStore((s) => s.currentView);
   const selection = useEditorStore((s) => s.selection);
   const items = useEditorStore((s) => s.currentView?.items);
+  const snapEnabled = useEditorStore((s) => s.snapEnabled);
 
   // (a) Lifecycle: mount/unmount on currentView.id change
   useEffect(() => {
@@ -55,6 +56,7 @@ export function EditorCanvas() {
     });
     refs.current = { canvas, handles, pointer };
     canvas.loadView(currentView);
+    canvas.setGridVisible(useEditorStore.getState().snapEnabled ?? true, GRID_SIZE);
     return () => {
       pointer.destroy();
       canvas.destroy();
@@ -81,6 +83,55 @@ export function EditorCanvas() {
     if (!geom) { refs.current.handles.hide(); return; }
     refs.current.handles.show(geom);
   }, [selection, items]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // SP-FX-3b.1: snap-toggle wire — repaint grid background when snapEnabled changes.
+  useEffect(() => {
+    if (!refs.current) return;
+    refs.current.canvas.setGridVisible(snapEnabled, GRID_SIZE);
+  }, [snapEnabled]);
+
+  // SP-FX-3b.1: global keyboard handler — Escape / Ctrl+Z / Ctrl+Y / Arrow nudge.
+  // Skipped when activeElement is INPUT / TEXTAREA / contentEditable.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const ae = document.activeElement;
+      const tag = (ae?.tagName ?? '').toUpperCase();
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (ae as any)?.isContentEditable) return;
+
+      if (e.key === 'Escape') {
+        refs.current?.pointer.cancel();
+        return;
+      }
+      if (e.ctrlKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (refs.current?.pointer.state.kind !== 'idle') return;
+        useEditorStore.getState().undo();
+        return;
+      }
+      if (e.ctrlKey && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        if (refs.current?.pointer.state.kind !== 'idle') return;
+        useEditorStore.getState().redo();
+        return;
+      }
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+        const state = useEditorStore.getState();
+        const id = state.selection[0];
+        if (!id || !state.currentView) return;
+        const w = state.currentView.items[id] as any;
+        if (typeof w.x !== 'number') return;
+        const step = e.shiftKey ? GRID_SIZE : 1;
+        const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+        const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+        const next = { x: w.x + dx, y: w.y + dy };
+        const final = state.snapEnabled ? snapPoint(next, GRID_SIZE) : next;
+        state.updateWidget(id, final as Partial<FuxaWidget>);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <div ref={containerRef} className="w-full h-full overflow-auto bg-white">

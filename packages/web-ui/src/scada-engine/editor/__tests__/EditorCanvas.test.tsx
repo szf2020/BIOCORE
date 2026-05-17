@@ -99,3 +99,94 @@ describe('EditorCanvas (SP-FX-3a)', () => {
     expect(container.querySelector('svg')).toBeNull();
   });
 });
+
+describe('EditorCanvas keyboard handler (SP-FX-3b.1)', () => {
+  function makeViewWithW1(): FuxaView {
+    return {
+      id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>',
+      width: 800, height: 600,
+      items: { w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 50, y: 50, w: 120, h: 80 } },
+      schemaVersion: 1,
+    } as FuxaView;
+  }
+
+  function fireKey(key: string, mods: { ctrlKey?: boolean; shiftKey?: boolean } = {}) {
+    const event = new KeyboardEvent('keydown', { key, bubbles: true, ...mods });
+    document.dispatchEvent(event);
+  }
+
+  it('Ctrl+Z restores previous widget state', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithW1());
+      useEditorStore.getState().updateWidget('w1', { x: 100 });
+    });
+    expect((useEditorStore.getState().currentView!.items.w1 as any).x).toBe(100);
+    act(() => { fireKey('z', { ctrlKey: true }); });
+    expect((useEditorStore.getState().currentView!.items.w1 as any).x).toBe(50);
+  });
+
+  it('Ctrl+Y re-applies after undo', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithW1());
+      useEditorStore.getState().updateWidget('w1', { x: 100 });
+      useEditorStore.getState().undo();
+    });
+    expect((useEditorStore.getState().currentView!.items.w1 as any).x).toBe(50);
+    act(() => { fireKey('y', { ctrlKey: true }); });
+    expect((useEditorStore.getState().currentView!.items.w1 as any).x).toBe(100);
+  });
+
+  it('ArrowRight with selection moves widget x+1 and pushes history', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithW1());
+      useEditorStore.getState().setSelection(['w1']);
+      useEditorStore.getState().setSnapEnabled(false);
+    });
+    const pastBefore = useEditorStore.getState().history.past.length;
+    act(() => { fireKey('ArrowRight'); });
+    const w = useEditorStore.getState().currentView!.items.w1 as any;
+    expect(w.x).toBe(51);
+    expect(useEditorStore.getState().history.past.length).toBe(pastBefore + 1);
+  });
+
+  it('Shift+ArrowRight moves widget x+10', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithW1());
+      useEditorStore.getState().setSelection(['w1']);
+      useEditorStore.getState().setSnapEnabled(false);
+    });
+    act(() => { fireKey('ArrowRight', { shiftKey: true }); });
+    const w = useEditorStore.getState().currentView!.items.w1 as any;
+    expect(w.x).toBe(60);
+  });
+
+  it('keyboard handler skipped when activeElement is INPUT', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithW1());
+      useEditorStore.getState().setSelection(['w1']);
+      useEditorStore.getState().setSnapEnabled(false);
+    });
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    act(() => { fireKey('ArrowRight'); });
+    const w = useEditorStore.getState().currentView!.items.w1 as any;
+    expect(w.x).toBe(50);  // unchanged — handler skipped
+    document.body.removeChild(input);
+  });
+
+  it('snap-wire: setSnapEnabled toggles grid background', () => {
+    const { container } = render(<EditorCanvas />);
+    act(() => { useEditorStore.getState().openView(makeViewWithW1()); });
+    expect(container.querySelector('[data-overlay="grid"]')).not.toBeNull();
+    act(() => { useEditorStore.getState().setSnapEnabled(false); });
+    expect(container.querySelector('[data-overlay="grid"]')).toBeNull();
+    act(() => { useEditorStore.getState().setSnapEnabled(true); });
+    expect(container.querySelector('[data-overlay="grid"]')).not.toBeNull();
+  });
+});
