@@ -31,7 +31,7 @@ export function readTagSnapshot(tagId: string): TagSnapshot {
   const parsed = parseTagId(tagId);
   if (!parsed) return STALE;
   const s = useRealtimeStore.getState();
-  if (!s.wsConnected) return { value: null, isStale: true, ageMs: Infinity };
+  if (!s.wsConnected) return STALE;
   const reactor = (s.reactorData as any)?.[parsed.reactorId];
   if (!reactor || !reactor.processValues) return STALE;
   const v = reactor.processValues[parsed.field];
@@ -95,3 +95,10 @@ export async function writeTag(tagId: string, value: number | string | boolean, 
 
 // Attach default ack handler for test introspection
 (writeTag as any).__currentAckHandler = handleAck;
+
+// SP-FX-2 test-only: clear pending acks between test runs to prevent
+// cross-test pollution of the module-level singleton.
+export function __clearPendingForTests(): void {
+  for (const [, p] of pending) clearTimeout(p.timer);
+  pending.clear();
+}

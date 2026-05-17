@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import * as rtStore from '@/stores/realtime-store';
-import { readTagSnapshot, writeTag } from '../tag-binding';
+import { readTagSnapshot, writeTag, __clearPendingForTests } from '../tag-binding';
 
 vi.mock('@/stores/realtime-store', async (importActual) => {
   const actual = await importActual<typeof rtStore>();
@@ -14,6 +14,7 @@ vi.mock('@/stores/realtime-store', async (importActual) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  __clearPendingForTests();
   useRealtimeStore.setState({
     _tick: 0,
     wsConnected: true,
