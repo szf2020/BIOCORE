@@ -73,3 +73,67 @@ describe('fuxa-views-routes GET (SP-FX-1)', () => {
     expect(res.body.error).toBeDefined();
   });
 });
+
+describe('fuxa-views-routes POST (SP-FX-1)', () => {
+  const body = () => ({
+    id: 'new-1',
+    name: 'New View',
+    type: 'svg' as const,
+    payload: {
+      id: 'new-1', name: 'New View', type: 'svg', svgcontent: '<svg/>',
+      width: 100, height: 100, items: {}, schemaVersion: 1,
+    },
+    width: 100,
+    height: 100,
+  });
+
+  it('POST /fuxa-views creates a row and returns it with version=1', async () => {
+    const { app, sqlite } = makeApp();
+    const res = await request(app).post('/api/v1/fuxa-views').send(body());
+    expect(res.status).toBe(201);
+    expect(res.body.id).toBe('new-1');
+    expect(res.body.version).toBe(1);
+    expect(sqlite.getFuxaView('new-1')).not.toBeNull();
+  });
+
+  it('POST /fuxa-views records created_by from req.user.user_id', async () => {
+    const { app, sqlite } = makeApp();
+    await request(app).post('/api/v1/fuxa-views').send(body());
+    expect(sqlite.getFuxaView('new-1')!.created_by).toBe('test-user');
+  });
+
+  it('POST /fuxa-views with conflicting id returns 409', async () => {
+    const { app, sqlite } = makeApp();
+    sqlite.createFuxaView({
+      id: 'dup', name: 'Old', type: 'svg', payload: '{}', width: 1, height: 1,
+    });
+    const res = await request(app).post('/api/v1/fuxa-views').send({ ...body(), id: 'dup' });
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBeDefined();
+  });
+
+  it('POST /fuxa-views with missing id returns 400', async () => {
+    const { app } = makeApp();
+    const b = body();
+    const res = await request(app).post('/api/v1/fuxa-views').send({ ...b, id: undefined });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+    expect(res.body.field).toBe('id');
+  });
+
+  it('POST /fuxa-views with non-positive width returns 400', async () => {
+    const { app } = makeApp();
+    const res = await request(app).post('/api/v1/fuxa-views').send({ ...body(), width: 0 });
+    expect(res.status).toBe(400);
+    expect(res.body.field).toBe('width');
+  });
+
+  it('POST /fuxa-views with bad payload schema returns 400', async () => {
+    const { app } = makeApp();
+    const b = body();
+    const bad = { ...b, payload: { ...b.payload, schemaVersion: 2 } };
+    const res = await request(app).post('/api/v1/fuxa-views').send(bad);
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/payload/i);
+  });
+});
