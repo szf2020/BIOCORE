@@ -30,7 +30,9 @@ describe('FileUploadDialog (SP-FX-2)', () => {
     const input = screen.getByTestId('file-input') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [makeFile('ok.svg', 500)] } });
     await waitFor(() => expect(onUpload).toHaveBeenCalledTimes(1));
-    expect(onUpload.mock.calls[0][0][0].name).toBe('ok.svg');
+    const calls = onUpload.mock.calls as unknown as [File[]][];
+    const firstCallFiles = calls[0]?.[0] ?? [];
+    expect(firstCallFiles[0]?.name).toBe('ok.svg');
   });
 
   it('shows error message when onUpload rejects', async () => {
@@ -48,6 +50,8 @@ describe('FileUploadDialog (SP-FX-2)', () => {
     expect(input.multiple).toBe(true);
     fireEvent.change(input, { target: { files: [makeFile('a.svg', 100), makeFile('b.svg', 100)] } });
     await waitFor(() => expect(onUpload).toHaveBeenCalledTimes(1));
-    expect(onUpload.mock.calls[0][0]).toHaveLength(2);
+    const calls = onUpload.mock.calls as unknown as [File[]][];
+    const firstCallFiles = calls[0]?.[0] ?? [];
+    expect(firstCallFiles).toHaveLength(2);
   });
 });

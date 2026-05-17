@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useEditorStore } from '../editor-store';
-import type { FuxaView, FuxaWidget } from '../../models/hmi';
+import type { FuxaView } from '../../models/hmi';
+import type { FuxaWidget } from '../../models/widget';
 
 function makeView(overrides: Partial<FuxaView> = {}): FuxaView {
   return {

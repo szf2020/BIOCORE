@@ -9,7 +9,8 @@
 
 import { create } from 'zustand';
 import { produce } from 'immer';
-import type { FuxaView, FuxaWidget } from '../models/hmi';
+import type { FuxaView } from '../models/hmi';
+import type { FuxaWidget } from '../models/widget';
 
 const HISTORY_LIMIT = 50;
 
@@ -151,17 +152,31 @@ const actions: EditorActions = {
 };
 
 // ---------- public store (data + actions merged) ----------
-// getState() always returns live data merged with stable action refs.
-// setState() delegates to _store so tests can reset data in isolation.
+// getState() returns data + stable action refs. setState/subscribe forward
+// to the underlying data store so tests can reset state via {...EditorData}.
 
-export const useEditorStore = {
-  // hook usage (React components)
-  ..._store,
-  // zustand store API surface expected by tests
-  getState: (): EditorState => ({ ..._store.getState(), ...actions }),
+interface EditorStoreApi {
+  getState: () => EditorState;
   setState: (
     partial: Partial<EditorData> | ((s: EditorData) => Partial<EditorData>),
     replace?: boolean,
-  ) => (_store.setState as any)(partial, replace),
-  subscribe: _store.subscribe.bind(_store),
-} as unknown as typeof _store & { getState: () => EditorState };
+  ) => void;
+  subscribe: typeof _store.subscribe;
+}
+
+export const useEditorStore: EditorStoreApi & {
+  // also callable as hook for React consumers selecting a slice
+  <T>(selector: (s: EditorState) => T): T;
+} = Object.assign(
+  function useEditorStoreHook<T>(selector: (s: EditorState) => T): T {
+    return _store((d) => selector({ ...d, ...actions }));
+  },
+  {
+    getState: (): EditorState => ({ ..._store.getState(), ...actions }),
+    setState: (
+      partial: Partial<EditorData> | ((s: EditorData) => Partial<EditorData>),
+      replace?: boolean,
+    ): void => { (_store.setState as any)(partial, replace); },
+    subscribe: _store.subscribe.bind(_store),
+  },
+) as any;
