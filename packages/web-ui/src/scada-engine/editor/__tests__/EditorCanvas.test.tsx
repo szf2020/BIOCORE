@@ -190,3 +190,151 @@ describe('EditorCanvas keyboard handler (SP-FX-3b.1)', () => {
     expect(container.querySelector('[data-overlay="grid"]')).not.toBeNull();
   });
 });
+
+describe('EditorCanvas SP-FX-3b.2.1', () => {
+  function makeViewWithItems(items: Record<string, FuxaWidget>): FuxaView {
+    return {
+      id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>',
+      width: 800, height: 600,
+      items,
+      schemaVersion: 1,
+    } as FuxaView;
+  }
+
+  function fireKey(key: string, mods: { ctrlKey?: boolean; shiftKey?: boolean; repeat?: boolean } = {}) {
+    const event = new KeyboardEvent('keydown', { key, bubbles: true, ...mods });
+    document.dispatchEvent(event);
+  }
+
+  function fireKeyUp(key: string) {
+    document.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+  }
+
+  it('Ctrl+A selects all items in currentView', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 50, h: 30 } as any,
+        w2: { id: 'w2', type: 'svg-ext-value', property: {}, x: 100, y: 100, w: 60, h: 40 } as any,
+      }));
+    });
+    act(() => { fireKey('a', { ctrlKey: true }); });
+    const sel = [...useEditorStore.getState().selection].sort();
+    expect(sel).toEqual(['w1', 'w2']);
+  });
+
+  it('Ctrl+A while activeElement=INPUT does NOT trigger select-all', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 50, h: 30 } as any,
+      }));
+    });
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    act(() => { fireKey('a', { ctrlKey: true }); });
+    expect(useEditorStore.getState().selection).toEqual([]);
+    document.body.removeChild(input);
+  });
+
+  it('Arrow with selection N>=2: all widgets move, 1 history entry', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 50, y: 50, w: 60, h: 40 } as any,
+        w2: { id: 'w2', type: 'svg-ext-value', property: {}, x: 200, y: 200, w: 60, h: 40 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1', 'w2']);
+      useEditorStore.getState().setSnapEnabled(false);
+    });
+    const pastBefore = useEditorStore.getState().history.past.length;
+    act(() => { fireKey('ArrowRight'); });
+    const w1 = useEditorStore.getState().currentView!.items.w1 as any;
+    const w2 = useEditorStore.getState().currentView!.items.w2 as any;
+    expect(w1.x).toBe(51);
+    expect(w2.x).toBe(201);
+    expect(useEditorStore.getState().history.past.length).toBe(pastBefore + 1);
+  });
+
+  it('Arrow nudge: first press +1 history; e.repeat=true: no push; new fresh press +1', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 50, y: 50, w: 60, h: 40 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1']);
+      useEditorStore.getState().setSnapEnabled(false);
+    });
+    const past0 = useEditorStore.getState().history.past.length;
+    act(() => { fireKey('ArrowRight'); });
+    const past1 = useEditorStore.getState().history.past.length;
+    expect(past1).toBe(past0 + 1);
+    act(() => { fireKey('ArrowRight', { repeat: true }); });
+    expect(useEditorStore.getState().history.past.length).toBe(past1);
+    act(() => { fireKeyUp('ArrowRight'); });
+    act(() => { fireKey('ArrowRight'); });
+    expect(useEditorStore.getState().history.past.length).toBe(past1 + 1);
+  });
+
+  it('ESC tier 2: idle + selection non-empty → setSelection([])', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 50, y: 50, w: 60, h: 40 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1']);
+    });
+    act(() => { fireKey('Escape'); });
+    expect(useEditorStore.getState().selection).toEqual([]);
+  });
+
+  it('ESC tier 3: idle + selection empty → no-op', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({}));
+    });
+    expect(useEditorStore.getState().selection).toEqual([]);
+    expect(() => act(() => { fireKey('Escape'); })).not.toThrow();
+    expect(useEditorStore.getState().selection).toEqual([]);
+  });
+
+  it('selection.length >= 2: handles render as bbox (corners visible)', () => {
+    const { container } = render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 50, h: 30 } as any,
+        w2: { id: 'w2', type: 'svg-ext-value', property: {}, x: 200, y: 200, w: 50, h: 30 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1', 'w2']);
+    });
+    const corners = container.querySelectorAll('[data-bbox-corner]');
+    const visibleCorners = Array.from(corners).filter((c) => c.getAttribute('visibility') !== 'hidden');
+    expect(visibleCorners.length).toBe(4);
+  });
+
+  it('setGridSize triggers canvas.setGridVisible repaint with new size', () => {
+    const { container } = render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 50, h: 30 } as any,
+      }));
+    });
+    expect(container.querySelector('pattern[data-grid="10"]')).not.toBeNull();
+    act(() => { useEditorStore.getState().setGridSize(20); });
+    expect(container.querySelector('pattern[data-grid="20"]')).not.toBeNull();
+    expect(container.querySelector('pattern[data-grid="10"]')).toBeNull();
+  });
+
+  it('rubber-band rect mounted in overlay layer with visibility hidden initially', () => {
+    const { container } = render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 50, h: 30 } as any,
+      }));
+    });
+    const rb = container.querySelector('[data-overlay="rubber-band"]') as SVGRectElement;
+    expect(rb).not.toBeNull();
+    expect(rb.getAttribute('visibility')).toBe('hidden');
+  });
+});

@@ -1,16 +1,18 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
-import { useEditorStore, GRID_SIZE } from '../services/editor-store';
+import { useEditorStore } from '../services/editor-store';
 import { CanvasController } from './canvas-svg';
-import { TransformHandles } from './transform-handles';
+import { TransformHandles, SnapGuides } from './transform-handles';
 import { PointerTools } from './pointer-tools';
-import { snapPoint, type Box } from './geometry';
+import { snapPoint, computeBbox, type Box } from './geometry';
 import type { FuxaWidget } from '../models';
 
 interface Refs {
   canvas: CanvasController;
   handles: TransformHandles;
   pointer: PointerTools;
+  snapGuides: SnapGuides;
+  rubberBand: SVGRectElement;
 }
 
 function getWidgetGeom(w: FuxaWidget): Box | null {
@@ -21,10 +23,12 @@ function getWidgetGeom(w: FuxaWidget): Box | null {
 export function EditorCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const refs = useRef<Refs | null>(null);
+  const nudgeStateRef = useRef<{ lastKey: string | null }>({ lastKey: null });
   const currentView = useEditorStore((s) => s.currentView);
   const selection = useEditorStore((s) => s.selection);
   const items = useEditorStore((s) => s.currentView?.items);
   const snapEnabled = useEditorStore((s) => s.snapEnabled);
+  const gridSize = useEditorStore((s) => s.gridSize);
 
   // (a) Lifecycle: mount/unmount on currentView.id change
   useEffect(() => {
@@ -35,7 +39,16 @@ export function EditorCanvas() {
       height: currentView.height,
     });
     const handles = new TransformHandles(canvas.overlayLayer);
-    const { updateWidget, setSelection } = useEditorStore.getState();
+    const snapGuides = new SnapGuides(canvas.overlayLayer);
+    const rubberBand = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rubberBand.setAttribute('data-overlay', 'rubber-band');
+    rubberBand.setAttribute('visibility', 'hidden');
+    rubberBand.setAttribute('fill', 'rgba(59,130,246,0.1)');
+    rubberBand.setAttribute('stroke', '#3b82f6');
+    rubberBand.setAttribute('stroke-dasharray', '4 2');
+    rubberBand.setAttribute('pointer-events', 'none');
+    (canvas.overlayLayer.node as SVGGElement).appendChild(rubberBand);
+
     const pointer = new PointerTools(canvas, handles, {
       getWidgetAt: (pt) => {
         const view = useEditorStore.getState().currentView;
@@ -50,15 +63,90 @@ export function EditorCanvas() {
         }
         return null;
       },
-      onWidgetTransformed: (id, box) => updateWidget(id, box as Partial<FuxaWidget>),
-      onSelect: (id) => setSelection(id ? [id] : []),
+      onWidgetTransformed: (id, box) => useEditorStore.getState().updateWidget(id, box as Partial<FuxaWidget>),
+      onSelect: (id, additive) => {
+        const store = useEditorStore.getState();
+        if (!id) {
+          if (!additive) store.setSelection([]);
+          return;
+        }
+        if (additive) {
+          if (store.selection.includes(id)) store.removeFromSelection(id);
+          else store.addToSelection(id);
+        } else {
+          store.setSelection([id]);
+        }
+      },
       getSnapEnabled: () => useEditorStore.getState().snapEnabled,
+      getSelectedIds: () => useEditorStore.getState().selection,
+      getWidgetBoxes: (ids) => {
+        const view = useEditorStore.getState().currentView;
+        const m = new Map<string, Box>();
+        if (!view) return m;
+        for (const id of ids) {
+          const g = getWidgetGeom(view.items[id]);
+          if (g) m.set(id, g);
+        }
+        return m;
+      },
+      getAllWidgetBoxes: () => {
+        const view = useEditorStore.getState().currentView;
+        const m = new Map<string, Box>();
+        if (!view) return m;
+        for (const id in view.items) {
+          const g = getWidgetGeom(view.items[id]);
+          if (g) m.set(id, g);
+        }
+        return m;
+      },
+      onBoxSelect: (ids, additive) => {
+        const store = useEditorStore.getState();
+        if (additive) {
+          const merged = Array.from(new Set([...store.selection, ...ids]));
+          store.setSelection(merged);
+        } else {
+          store.setSelection(ids);
+        }
+      },
+      onWidgetTransformedBatch: (entries) => {
+        if (entries.length === 0) return;
+        const store = useEditorStore.getState();
+        for (let i = 0; i < entries.length - 1; i++) {
+          store.updateWidget(entries[i].id, entries[i].newBox as Partial<FuxaWidget>, { silent: true });
+        }
+        const last = entries[entries.length - 1];
+        store.updateWidget(last.id, last.newBox as Partial<FuxaWidget>);
+      },
+      onDragVisualUpdate: (box) => {
+        if (!refs.current) return;
+        const store = useEditorStore.getState();
+        if (box && store.snapEnabled && store.currentView) {
+          refs.current.snapGuides.show(box, { w: store.currentView.width, h: store.currentView.height });
+        } else {
+          refs.current.snapGuides.hide();
+        }
+      },
+      onBoxSelectMove: (rect) => {
+        if (!refs.current) return;
+        const r = refs.current.rubberBand;
+        if (!rect) {
+          r.setAttribute('visibility', 'hidden');
+        } else {
+          r.setAttribute('x', String(rect.x));
+          r.setAttribute('y', String(rect.y));
+          r.setAttribute('width', String(rect.w));
+          r.setAttribute('height', String(rect.h));
+          r.setAttribute('visibility', 'visible');
+        }
+      },
     });
-    refs.current = { canvas, handles, pointer };
+    refs.current = { canvas, handles, pointer, snapGuides, rubberBand };
     canvas.loadView(currentView);
-    canvas.setGridVisible(useEditorStore.getState().snapEnabled ?? true, GRID_SIZE);
+    const store0 = useEditorStore.getState();
+    canvas.setGridVisible(store0.snapEnabled ?? true, store0.gridSize ?? 10);
     return () => {
       pointer.destroy();
+      snapGuides.destroy();
       canvas.destroy();
       refs.current = null;
     };
@@ -75,23 +163,31 @@ export function EditorCanvas() {
   // (c) Handle sync: show/hide handles when selection or items change
   useEffect(() => {
     if (!refs.current || !currentView) return;
-    const id = selection[0];
-    if (!id) { refs.current.handles.hide(); return; }
-    const widget = currentView.items[id];
-    if (!widget) { refs.current.handles.hide(); return; }
-    const geom = getWidgetGeom(widget);
-    if (!geom) { refs.current.handles.hide(); return; }
-    refs.current.handles.show(geom);
+    if (selection.length === 0) { refs.current.handles.hide(); return; }
+    if (selection.length === 1) {
+      const w = currentView.items[selection[0]];
+      const g = w ? getWidgetGeom(w) : null;
+      if (g) refs.current.handles.show(g);
+      else refs.current.handles.hide();
+      return;
+    }
+    const boxes: Box[] = [];
+    for (const id of selection) {
+      const w = currentView.items[id];
+      const g = w ? getWidgetGeom(w) : null;
+      if (g) boxes.push(g);
+    }
+    if (boxes.length === 0) refs.current.handles.hide();
+    else refs.current.handles.showBbox(computeBbox(boxes));
   }, [selection, items]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // SP-FX-3b.1: snap-toggle wire — repaint grid background when snapEnabled changes.
+  // SP-FX-3b.1+3b.2.1: snap-toggle wire + dynamic gridSize.
   useEffect(() => {
     if (!refs.current) return;
-    refs.current.canvas.setGridVisible(snapEnabled, GRID_SIZE);
-  }, [snapEnabled]);
+    refs.current.canvas.setGridVisible(snapEnabled ?? true, gridSize ?? 10);
+  }, [snapEnabled, gridSize]);
 
-  // SP-FX-3b.1: global keyboard handler — Escape / Ctrl+Z / Ctrl+Y / Arrow nudge.
-  // Skipped when activeElement is INPUT / TEXTAREA / contentEditable.
+  // SP-FX-3b.2.1: extended keyboard handler — Ctrl+A, ESC 3-tier, Arrow nudge coalesce.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const ae = document.activeElement;
@@ -99,9 +195,26 @@ export function EditorCanvas() {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || (ae as any)?.isContentEditable) return;
 
       if (e.key === 'Escape') {
-        refs.current?.pointer.cancel();
+        if (refs.current?.pointer.state.kind !== 'idle') {
+          refs.current?.pointer.cancel();
+          return;
+        }
+        const sel = useEditorStore.getState().selection;
+        if (sel.length > 0) {
+          e.preventDefault();
+          useEditorStore.getState().setSelection([]);
+        }
         return;
       }
+
+      if (e.ctrlKey && (e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        const view = useEditorStore.getState().currentView;
+        if (!view) return;
+        useEditorStore.getState().setSelection(Object.keys(view.items));
+        return;
+      }
+
       if (e.ctrlKey && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (refs.current?.pointer.state.kind !== 'idle') return;
@@ -114,23 +227,47 @@ export function EditorCanvas() {
         useEditorStore.getState().redo();
         return;
       }
+
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
         const state = useEditorStore.getState();
-        const id = state.selection[0];
-        if (!id || !state.currentView) return;
-        const w = state.currentView.items[id] as any;
-        if (typeof w.x !== 'number') return;
-        const step = e.shiftKey ? GRID_SIZE : 1;
+        const ids = state.selection;
+        if (ids.length === 0 || !state.currentView) return;
+        const gs = state.gridSize ?? 10;
+        const step = e.shiftKey ? gs : 1;
         const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
         const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
-        const next = { x: w.x + dx, y: w.y + dy };
-        const final = state.snapEnabled ? snapPoint(next, GRID_SIZE) : next;
-        state.updateWidget(id, final as Partial<FuxaWidget>);
+        const isRepeat = (e.repeat === true) || (nudgeStateRef.current.lastKey === e.key);
+        nudgeStateRef.current.lastKey = e.key;
+        const survivingIds = ids.filter((id) => {
+          const w = state.currentView!.items[id] as any;
+          return typeof w?.x === 'number';
+        });
+        if (survivingIds.length === 0) return;
+        for (let i = 0; i < survivingIds.length; i++) {
+          const id = survivingIds[i];
+          const w = state.currentView!.items[id] as any;
+          const next = { x: w.x + dx, y: w.y + dy };
+          const final = state.snapEnabled ? snapPoint(next, gs) : next;
+          const isLast = i === survivingIds.length - 1;
+          state.updateWidget(id, final as Partial<FuxaWidget>, { silent: isRepeat || !isLast });
+        }
       }
     };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
+        if (nudgeStateRef.current.lastKey === e.key) nudgeStateRef.current.lastKey = null;
+      }
+    };
+    const onBlur = () => { nudgeStateRef.current.lastKey = null; };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    document.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
+    };
   }, []);
 
   return (
