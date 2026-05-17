@@ -234,3 +234,28 @@ describe('fuxa-views-routes PUT (SP-FX-1)', () => {
     expect(res.body.field).toBe('width');
   });
 });
+
+describe('fuxa-views-routes DELETE (SP-FX-1)', () => {
+  it('DELETE /fuxa-views/:id removes the row, returns 204', async () => {
+    const { app, sqlite } = makeApp();
+    sqlite.createFuxaView({ id: 'd1', name: 'X', type: 'svg', payload: '{}', width: 100, height: 100 });
+    const res = await request(app).delete('/api/v1/fuxa-views/d1');
+    expect(res.status).toBe(204);
+    expect(sqlite.getFuxaView('d1')).toBeNull();
+  });
+
+  it('DELETE on missing id returns 204 (idempotent)', async () => {
+    const { app } = makeApp();
+    const res = await request(app).delete('/api/v1/fuxa-views/never');
+    expect(res.status).toBe(204);
+  });
+
+  it('DELETE parent cascades children parent_view_id to NULL', async () => {
+    const { app, sqlite } = makeApp();
+    sqlite.createFuxaView({ id: 'p', name: 'P', type: 'svg', payload: '{}', width: 1, height: 1 });
+    sqlite.createFuxaView({ id: 'c', name: 'C', type: 'svg', payload: '{}', width: 1, height: 1, parent_view_id: 'p' });
+    await request(app).delete('/api/v1/fuxa-views/p');
+    const child = sqlite.getFuxaView('c')!;
+    expect(child.parent_view_id).toBeNull();
+  });
+});

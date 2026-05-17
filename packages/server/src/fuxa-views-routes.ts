@@ -151,6 +151,12 @@ export function registerFuxaViewsRoutes(apiRouter: Router, deps: FuxaViewsRoutes
     }
     res.json(sqlite.getFuxaView(req.params.id));
   });
+
+  // ─── Delete (idempotent) ─────────────────────────────────
+  apiRouter.delete('/fuxa-views/:id', (req, res) => {
+    sqlite.deleteFuxaView(req.params.id);
+    res.status(204).end();
+  });
 }
 
 // getUserId is used by Tasks 6 and 9 (POST + duplicate) when they bolt on to this file.
