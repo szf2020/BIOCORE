@@ -198,14 +198,29 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   // Phase 模板库 (从 /api/phase-templates 加载) — 用作"添加 Phase 时的快捷模板"
   const [apiTemplates, setApiTemplates] = useState<APIPhaseTemplate[]>([]);
+  // SP-RG-3 (M-3): expose phase-template fetch failure instead of silently
+  // falling back to a hardcoded `phase_type: 'heating'` blank node.
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
   // DAG 校验错误
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   useEffect(() => {
     fetch(`${API}/api/phase-templates`)
-      .then(r => r.ok ? r.json() : [])
-      .then(data => { if (Array.isArray(data)) setApiTemplates(data); })
-      .catch(() => { /* ignore */ });
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) {
+          setApiTemplates(data);
+          setTemplatesError(null);
+        } else {
+          throw new Error('响应不是数组');
+        }
+      })
+      .catch(err => {
+        setTemplatesError(`模板库加载失败: ${err.message ?? err}`);
+      });
   }, []);
 
   const findTemplate = useCallback(
@@ -340,18 +355,22 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
         }
         const d = n.data as any;
         const edgeTo = outEdges[0]?.target;
-        if (!d.target?.trim() && !edgeTo) {
+        const inspectorTarget = d.target?.trim() || '';
+        // SP-RG-3 (M-5): when inspector target ≠ edge target, only emit the
+        // mismatch error. The downstream "unknown target" check would otherwise
+        // double-report the same fix (resolving the mismatch fixes both).
+        if (!inspectorTarget && !edgeTo) {
           errs.push(`Goto 节点 ${n.id} 缺少 target 目标`);
-        } else if (edgeTo && d.target && d.target !== edgeTo) {
-          errs.push(`Goto 节点 ${n.id} 的 target "${d.target}" 与连接 to "${edgeTo}" 不一致`);
-        }
-        const targetId = d.target || edgeTo;
-        const targetNode = nodes.find(x => x.id === targetId);
-        if (targetId && !targetNode) {
-          errs.push(`Goto 节点 ${n.id} 的 target "${targetId}" 不是 DAG 内已知节点`);
-        }
-        if (targetNode?.type === 'start') {
-          errs.push(`Goto 节点 ${n.id} 不能跳到 start 节点`);
+        } else if (edgeTo && inspectorTarget && inspectorTarget !== edgeTo) {
+          errs.push(`Goto 节点 ${n.id} 的 target "${inspectorTarget}" 与连接 to "${edgeTo}" 不一致`);
+        } else {
+          const canonicalTarget = edgeTo || inspectorTarget;
+          const targetNode = nodes.find(x => x.id === canonicalTarget);
+          if (!targetNode) {
+            errs.push(`Goto 节点 ${n.id} 的 target "${canonicalTarget}" 不是 DAG 内已知节点`);
+          } else if (targetNode.type === 'start') {
+            errs.push(`Goto 节点 ${n.id} 不能跳到 start 节点`);
+          }
         }
       }
       if (n.type === 'loop') {
@@ -500,9 +519,14 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
               ))}
             </div>
           ))}
-          {apiTemplates.length === 0 && (
+          {apiTemplates.length === 0 && !templatesError && (
             <div className="text-[10px] text-muted-foreground italic px-1">
               模板库为空 — 到"系统设置 → Phase 模板配置"添加
+            </div>
+          )}
+          {templatesError && (
+            <div className="text-[10px] text-red-600 bg-red-500/10 border border-red-500/40 rounded px-2 py-1.5">
+              {templatesError}
             </div>
           )}
         </div>
