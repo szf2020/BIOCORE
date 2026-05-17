@@ -104,6 +104,37 @@ describe('CanvasController (SP-FX-3a)', () => {
   });
 });
 
+describe('CanvasController.applyRotate (SP-FX-3b.2.2)', () => {
+  it('applyRotate(id, 45, pivot) sets transform attr on widget node', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    c.loadView(makeView({ w1: makeWidget('w1', 50, 50, 120, 80) }));
+    c.applyRotate('w1', 45, { x: 110, y: 90 });
+    const el = container.querySelector('[data-widget-id="w1"]') as SVGElement;
+    expect(el.getAttribute('transform')).toBe('rotate(45 110 90)');
+    c.destroy();
+  });
+
+  it('applyRotate(id, 0, pivot) removes transform attr', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    c.loadView(makeView({ w1: makeWidget('w1', 50, 50, 120, 80) }));
+    c.applyRotate('w1', 45, { x: 110, y: 90 });
+    c.applyRotate('w1', 0, { x: 110, y: 90 });
+    const el = container.querySelector('[data-widget-id="w1"]') as SVGElement;
+    expect(el.getAttribute('transform')).toBeNull();
+    c.destroy();
+  });
+
+  it('upsertWidget renders transform when widget.rotate is non-zero', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    const w = { ...makeWidget('w1', 50, 50, 100, 60), rotate: 30 } as any;
+    c.loadView(makeView({ w1: w }));
+    const el = container.querySelector('[data-widget-id="w1"]') as SVGElement;
+    // cx = 50 + 100/2 = 100; cy = 50 + 60/2 = 80
+    expect(el.getAttribute('transform')).toBe('rotate(30 100 80)');
+    c.destroy();
+  });
+});
+
 describe('CanvasController.setGridVisible (SP-FX-3b.1)', () => {
   it('setGridVisible(true) inserts pattern + grid rect; rect renders below widget layer', () => {
     const c = new CanvasController(container, { width: 800, height: 600 });

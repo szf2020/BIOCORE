@@ -60,6 +60,15 @@ export class CanvasController {
     } else {
       el.attr({ x: widget.x, y: widget.y, width: widget.w, height: widget.h });
     }
+    // SP-FX-3b.2.2: apply rotate transform on render. Omits transform when 0/undefined.
+    const r = (widget as { rotate?: number }).rotate;
+    if (typeof r === 'number' && r !== 0) {
+      const cx = widget.x + widget.w / 2;
+      const cy = widget.y + widget.h / 2;
+      (el.node as SVGElement).setAttribute('transform', `rotate(${r} ${cx} ${cy})`);
+    } else {
+      (el.node as SVGElement).removeAttribute('transform');
+    }
   }
 
   removeWidget(id: string): void {
@@ -72,6 +81,15 @@ export class CanvasController {
 
   getElement(id: string): SvgElement | undefined {
     return this.widgetMap.get(id);
+  }
+
+  // SP-FX-3b.2.2: live rotate transform applied during drag-rotate FSM.
+  applyRotate(id: string, deg: number, pivot: { x: number; y: number }): void {
+    if (this.destroyed) return;
+    const el = this.widgetMap.get(id);
+    if (!el) return;
+    if (deg === 0) (el.node as SVGElement).removeAttribute('transform');
+    else (el.node as SVGElement).setAttribute('transform', `rotate(${deg} ${pivot.x} ${pivot.y})`);
   }
 
   getSvgRoot(): SVGSVGElement {
