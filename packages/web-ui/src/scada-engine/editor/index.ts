@@ -5,5 +5,6 @@ export { TransformHandles } from './transform-handles';
 export { PointerTools, type PointerState, type PointerToolsCallbacks } from './pointer-tools';
 export {
   clientToSvg, handlePositions, handleFromPoint, applyHandleDrag,
+  snap, snapPoint,
   type Box, type Point, type HandleId,
 } from './geometry';
