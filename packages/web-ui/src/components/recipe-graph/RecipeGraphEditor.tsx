@@ -31,6 +31,7 @@ export interface DAGNode {
   params?: Record<string, any>;
   label?: string;                    // 节点显示名 (操作员视角)
   expression?: string;
+  default_branch?: 'true' | 'false'; // branch: PV 字段缺失时的回退分支
   target?: string;                   // B1.3 goto: 跳转目标节点 id
   // B1.2 loop:
   exitExpression?: string;           // repeat-until 退出条件
@@ -61,7 +62,7 @@ const nodeTypes: NodeTypes = {
 };
 
 // DAG → react-flow 节点/边
-function dagToFlow(dag: RecipeDAG): { nodes: Node[]; edges: Edge[] } {
+export function dagToFlow(dag: RecipeDAG): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = dag.nodes.map(n => ({
     id: n.id,
     type: n.type,
@@ -69,9 +70,10 @@ function dagToFlow(dag: RecipeDAG): { nodes: Node[]; edges: Edge[] } {
     data: {
       phase_id: n.phase_id || '',
       phase_type: n.phase_type || '',
-      label: (n as any).label || n.phase_id || n.id,
+      label: n.label || n.phase_id || n.id,
       params: n.params || {},
       expression: n.expression || '',
+      default_branch: n.default_branch, // SP-RG-1: round-trip branch fallback
       target: n.target || '',           // B1.3 goto target
       // B1.2 loop fields — pass through so LoopNode + inspector can render/edit them
       exitExpression: n.exitExpression || '',
@@ -97,7 +99,7 @@ function dagToFlow(dag: RecipeDAG): { nodes: Node[]; edges: Edge[] } {
 }
 
 // react-flow → DAG
-function flowToDag(nodes: Node[], edges: Edge[]): RecipeDAG {
+export function flowToDag(nodes: Node[], edges: Edge[]): RecipeDAG {
   return {
     schema_version: 2,
     nodes: nodes.map(n => {
@@ -115,6 +117,11 @@ function flowToDag(nodes: Node[], edges: Edge[]): RecipeDAG {
       }
       if (n.type === 'branch') {
         base.expression = d.expression;
+        // SP-RG-1 (H-2): persist branch fallback. Without this the operator-
+        // configured default_branch silently resets on every save.
+        if (d.default_branch === 'true' || d.default_branch === 'false') {
+          base.default_branch = d.default_branch;
+        }
       }
       if (n.type === 'goto') {
         // B1.3: keep target in sync with the (single) outgoing edge.
@@ -160,6 +167,14 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
+  // SP-RG-1 (H-1): useNodesState/useEdgesState only honour the initial arg.
+  // When initialDag arrives via async fetch (the common case), the recomputed
+  // initNodes/initEdges from useMemo never reach React-Flow state — user
+  // would see an empty graph and overwrite the stored recipe on save.
+  useEffect(() => {
+    setNodes(initNodes);
+    setEdges(initEdges);
+  }, [initNodes, initEdges, setNodes, setEdges]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   // Phase 模板库 (从 /api/phase-templates 加载) — 用作"添加 Phase 时的快捷模板"
   const [apiTemplates, setApiTemplates] = useState<APIPhaseTemplate[]>([]);
