@@ -3,6 +3,7 @@ import {
   clientToSvg, handlePositions, handleFromPoint, applyHandleDrag,
   snap, snapPoint,
   computeBbox, intersectsBox, applyMultiDrag,
+  applyRotate,
   type Box, type Point,
 } from '../geometry';
 import { identityMatrix } from '@/test/svgDomHelpers';
@@ -182,5 +183,47 @@ describe('geometry.applyMultiDrag (SP-FX-3b.2.1)', () => {
       { x: 10, y: 20, w: 50, h: 30 },
       { x: 110, y: 120, w: 60, h: 40 },
     ]);
+  });
+});
+
+describe('geometry.applyRotate (SP-FX-3b.2.2)', () => {
+  const pivot: Point = { x: 100, y: 100 };
+
+  it('mouse stays at startPt: returns startRotate (no delta)', () => {
+    const startPt: Point = { x: 150, y: 100 };
+    expect(applyRotate(pivot, startPt, startPt, 30, 0)).toBe(30);
+  });
+
+  it('90 degree rotation: mouse from +x to +y axis returns +90', () => {
+    const startPt: Point = { x: 150, y: 100 }; // angle 0
+    const currentPt: Point = { x: 100, y: 150 }; // angle 90 (svg y down → +y axis)
+    expect(applyRotate(pivot, startPt, currentPt, 0, 0)).toBe(90);
+  });
+
+  it('snap step 15: raw 23 → 30 (round to nearest)', () => {
+    const startPt: Point = { x: 150, y: 100 };
+    const currentPt: Point = {
+      x: 100 + 50 * Math.cos(23 * Math.PI / 180),
+      y: 100 + 50 * Math.sin(23 * Math.PI / 180),
+    };
+    expect(applyRotate(pivot, startPt, currentPt, 0, 15)).toBe(30);
+  });
+
+  it('snap step 15: raw 7 → 0 (round to nearest)', () => {
+    const startPt: Point = { x: 150, y: 100 };
+    const currentPt: Point = {
+      x: 100 + 50 * Math.cos(7 * Math.PI / 180),
+      y: 100 + 50 * Math.sin(7 * Math.PI / 180),
+    };
+    expect(applyRotate(pivot, startPt, currentPt, 0, 15)).toBe(0);
+  });
+
+  it('normalize: startRotate 350 + delta 30 → 20 (mod 360)', () => {
+    const startPt: Point = { x: 150, y: 100 };
+    const currentPt: Point = {
+      x: 100 + 50 * Math.cos(30 * Math.PI / 180),
+      y: 100 + 50 * Math.sin(30 * Math.PI / 180),
+    };
+    expect(applyRotate(pivot, startPt, currentPt, 350, 0)).toBe(20);
   });
 });

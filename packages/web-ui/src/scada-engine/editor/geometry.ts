@@ -124,3 +124,21 @@ export function intersectsBox(a: Box, b: Box): boolean {
 export function applyMultiDrag(boxes: Box[], dx: number, dy: number): Box[] {
   return boxes.map((b) => ({ x: b.x + dx, y: b.y + dy, w: b.w, h: b.h }));
 }
+
+// SP-FX-3b.2.2: rotation math — atan2-delta around pivot, optional snap to step.
+
+export function applyRotate(
+  pivot: Point,
+  startPt: Point,
+  currentPt: Point,
+  startRotate: number,
+  snapStep: number,
+): number {
+  const a0 = Math.atan2(startPt.y - pivot.y, startPt.x - pivot.x);
+  const a1 = Math.atan2(currentPt.y - pivot.y, currentPt.x - pivot.x);
+  let deg = startRotate + (a1 - a0) * 180 / Math.PI;
+  deg = ((deg % 360) + 360) % 360;
+  if (snapStep > 0) deg = Math.round(deg / snapStep) * snapStep;
+  if (deg === 360) deg = 0;
+  return deg;
+}
