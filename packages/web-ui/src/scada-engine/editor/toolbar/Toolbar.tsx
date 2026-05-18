@@ -1,8 +1,11 @@
 // SP-FX-4: top toolbar — 4 commands + global keyboard shortcuts (Cmd+S/Z/Shift+Z/Y).
+// SP-FX-48.8: + 视图属性 button → opens ViewPropertyDialog for bg color / size edits.
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
+import { produce } from 'immer';
 import { useEditorStore } from '../../services/editor-store';
 import { executeSave } from './commands';
+import { ViewPropertyDialog } from '../../dialogs/ViewPropertyDialog';
 import { useLocale } from '@/i18n/useLocale';
 
 export interface ToolbarProps { viewId: string; }
@@ -12,6 +15,8 @@ export function Toolbar({ viewId }: ToolbarProps): JSX.Element {
   const snapEnabled = useEditorStore((s) => s.snapEnabled);
   const canUndo = useEditorStore((s) => s.history.past.length > 0);
   const canRedo = useEditorStore((s) => s.history.future.length > 0);
+  const currentView = useEditorStore((s) => s.currentView);
+  const [propsOpen, setPropsOpen] = useState(false);
 
   const runSave = useCallback(async () => {
     const a = useEditorStore.getState();
@@ -83,6 +88,37 @@ export function Toolbar({ viewId }: ToolbarProps): JSX.Element {
       >
         {t('toolbar.grid')}
       </button>
+      <button
+        data-cmd="view-props"
+        onClick={() => setPropsOpen(true)}
+        disabled={!currentView}
+        className="px-3 py-1 text-sm rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-100 disabled:opacity-40"
+      >
+        视图属性
+      </button>
+      {currentView && (
+        <ViewPropertyDialog
+          open={propsOpen}
+          view={currentView as any}
+          onCancel={() => setPropsOpen(false)}
+          onSave={(patch) => {
+            useEditorStore.setState((s) => {
+              if (!s.currentView) return s;
+              return {
+                ...s,
+                currentView: produce(s.currentView, (draft) => {
+                  if (patch.name !== undefined) (draft as any).name = patch.name;
+                  if (patch.width !== undefined) (draft as any).width = patch.width;
+                  if (patch.height !== undefined) (draft as any).height = patch.height;
+                  if (patch.background_color !== undefined) (draft as any).background_color = patch.background_color;
+                }),
+                isDirty: true,
+              } as any;
+            });
+            setPropsOpen(false);
+          }}
+        />
+      )}
     </header>
   );
 }
