@@ -621,3 +621,49 @@ describe('SCADA REST API — batch reorder', () => {
     expect(reorderEvent!.payload).toMatchObject({ project_id: 'p1', ordered_view_ids: ['v3', 'v2', 'v1'] });
   });
 });
+
+describe('SCADA REST API — GET project pagination', () => {
+  async function seedPaginationViews(count: number) {
+    const { app } = makeApp();
+    await request(app).post('/api/v1/scada/projects').set('X-Test-Role', 'engineer')
+      .send({ project_id: 'pp1', name: 'Pagination Project' }).expect(201);
+    for (let i = 1; i <= count; i++) {
+      await request(app).post('/api/v1/scada/projects/pp1/views').set('X-Test-Role', 'engineer')
+        .send({ view_id: `pv${i}`, name: `View ${i}`, display_order: i }).expect(201);
+    }
+    return app;
+  }
+
+  it('no limit/offset — returns all views + total equals count', async () => {
+    const app = await seedPaginationViews(5);
+    const r = await request(app).get('/api/v1/scada/projects/pp1').expect(200);
+    expect(r.body.views).toHaveLength(5);
+    expect(r.body.total).toBe(5);
+  });
+
+  it('limit=2&offset=0 — returns first 2 views, total=5', async () => {
+    const app = await seedPaginationViews(5);
+    const r = await request(app).get('/api/v1/scada/projects/pp1?limit=2&offset=0').expect(200);
+    expect(r.body.views).toHaveLength(2);
+    expect(r.body.total).toBe(5);
+  });
+
+  it('limit=2&offset=4 — returns 1 view (last)', async () => {
+    const app = await seedPaginationViews(5);
+    const r = await request(app).get('/api/v1/scada/projects/pp1?limit=2&offset=4').expect(200);
+    expect(r.body.views).toHaveLength(1);
+    expect(r.body.total).toBe(5);
+  });
+
+  it('limit=0 → 400', async () => {
+    const app = await seedPaginationViews(2);
+    const r = await request(app).get('/api/v1/scada/projects/pp1?limit=0').expect(400);
+    expect(r.body.error).toBeTruthy();
+  });
+
+  it('limit=NaN → 400', async () => {
+    const app = await seedPaginationViews(2);
+    const r = await request(app).get('/api/v1/scada/projects/pp1?limit=abc').expect(400);
+    expect(r.body.error).toBeTruthy();
+  });
+});

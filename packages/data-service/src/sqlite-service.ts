@@ -974,11 +974,22 @@ export class SQLiteService {
   }
 
   // ─── SCADA 视图 ───────────────────────────────────────────
-  listScadaViewsByProject(projectId: string): ScadaViewMeta[] {
-    return this.db.prepare(
-      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at
-       FROM scada_views WHERE project_id = ? ORDER BY display_order ASC, name ASC`
-    ).all(projectId) as ScadaViewMeta[];
+  listScadaViewsByProject(projectId: string): ScadaViewMeta[];
+  listScadaViewsByProject(projectId: string, opts: { limit: number; offset: number }): { views: ScadaViewMeta[]; total: number };
+  listScadaViewsByProject(
+    projectId: string,
+    opts?: { limit: number; offset: number },
+  ): ScadaViewMeta[] | { views: ScadaViewMeta[]; total: number } {
+    const SELECT = `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at
+       FROM scada_views WHERE project_id = ? ORDER BY display_order ASC, name ASC`;
+    if (!opts) {
+      return this.db.prepare(SELECT).all(projectId) as ScadaViewMeta[];
+    }
+    const total = (this.db.prepare(
+      `SELECT COUNT(*) AS cnt FROM scada_views WHERE project_id = ?`
+    ).get(projectId) as { cnt: number }).cnt;
+    const views = this.db.prepare(`${SELECT} LIMIT ? OFFSET ?`).all(projectId, opts.limit, opts.offset) as ScadaViewMeta[];
+    return { views, total };
   }
 
   listScadaViewsByReactor(reactorId: string): ScadaViewMeta[] {

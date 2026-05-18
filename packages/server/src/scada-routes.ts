@@ -50,8 +50,25 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
   apiRouter.get('/scada/projects/:projectId', (req, res) => {
     const meta = sqlite.getScadaProject(req.params.projectId);
     if (!meta) return res.status(404).json({ error: 'project_not_found' });
+
+    const rawLimit = req.query.limit;
+    const rawOffset = req.query.offset;
+
+    if (rawLimit !== undefined) {
+      const limit = Number(rawLimit);
+      if (!Number.isInteger(limit) || limit < 1) {
+        return res.status(400).json({ error: 'limit must be a positive integer' });
+      }
+      const offset = rawOffset !== undefined ? Number(rawOffset) : 0;
+      if (!Number.isInteger(offset) || offset < 0) {
+        return res.status(400).json({ error: 'offset must be a non-negative integer' });
+      }
+      const { views, total } = sqlite.listScadaViewsByProject(req.params.projectId, { limit, offset });
+      return res.json({ ...meta, views, total });
+    }
+
     const views = sqlite.listScadaViewsByProject(req.params.projectId);
-    res.json({ ...meta, views });
+    res.json({ ...meta, views, total: views.length });
   });
 
   apiRouter.post('/scada/projects', requireRole('admin', 'engineer'), (req, res) => {
