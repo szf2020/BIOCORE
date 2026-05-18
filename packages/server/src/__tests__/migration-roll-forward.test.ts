@@ -1,6 +1,6 @@
 // ============================================================
-// migration-roll-forward.test.ts — SP-FX-30
-// fresh DB roll-forward 端到端验证: 001~035 全 migration 顺序执行
+// migration-roll-forward.test.ts — SP-FX-30 (updated SP-FX-34)
+// fresh DB roll-forward 端到端验证: 001~036 全 migration 顺序执行
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
@@ -16,20 +16,20 @@ async function rollForward(): Promise<Database.Database> {
   return db;
 }
 
-describe('migration roll-forward 001~035', () => {
-  it('T1: fresh DB 顺序执行全 35 migration 不抛异常', async () => {
+describe('migration roll-forward 001~036', () => {
+  it('T1: fresh DB 顺序执行全 36 migration 不抛异常', async () => {
     // Arrange: fresh in-memory DB
     // Act + Assert: 不应抛出异常
     await expect(rollForward()).resolves.toBeDefined();
   });
 
-  it('T2: _migrations 表记录恰好 34 条 (每个 migration 文件各一条; 006 未加入故为 34)', async () => {
-    // 注: migrations 目录含 001~035 号但 006 缺失, 实际共 34 个文件
+  it('T2: _migrations 表记录恰好 35 条 (每个 migration 文件各一条; 006 未加入故为 35)', async () => {
+    // 注: migrations 目录含 001~036 号但 006 缺失, 实际共 35 个文件
     const db = await rollForward();
     const row = db
       .prepare('SELECT count(*) AS cnt FROM _migrations')
       .get() as { cnt: number };
-    expect(row.cnt).toBe(34);
+    expect(row.cnt).toBe(35);
   });
 
   it('T3: 关键业务表全部存在', async () => {
@@ -79,5 +79,15 @@ describe('migration roll-forward 001~035', () => {
 
     expect(cols, 'scada_views 应含 owner_id (035 加)').toContain('owner_id');
     expect(cols, 'scada_views 应含 acl (035 加)').toContain('acl');
+  });
+
+  it('T6: scada_views 含 svgcontent 列 (migration 036 SP-FX-34 KI-3)', async () => {
+    const db = await rollForward();
+    const cols = db
+      .prepare('PRAGMA table_info(scada_views)')
+      .all()
+      .map((r: any) => r.name as string);
+
+    expect(cols, 'scada_views 应含 svgcontent (036 加)').toContain('svgcontent');
   });
 });
