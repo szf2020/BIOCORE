@@ -37,7 +37,7 @@ describe('/scada2/edit/new', () => {
     await act(async () => { fireEvent.click(screen.getByText('空白')); });
     await act(async () => { fireEvent.click(screen.getByText('创建')); });
     expect(createMock).toHaveBeenCalledWith('New View', { cloneFrom: undefined });
-    expect(navMock.replace).toHaveBeenCalledWith('/scada2/edit/new-view-1');
+    expect(navMock.replace).toHaveBeenCalledWith('/scada2/edit-v2/new-view-1');
   });
 
   it('clone create: user picks template, submits → POST with clone_from', async () => {

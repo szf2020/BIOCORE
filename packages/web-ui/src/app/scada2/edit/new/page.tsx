@@ -24,7 +24,7 @@ export default function Page() {
     setError(null);
     try {
       const newId = await create(name.trim(), { cloneFrom: templateId ?? undefined });
-      router.replace(`/scada2/edit/${newId}`);
+      router.replace(`/scada2/edit-v2/${newId}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
