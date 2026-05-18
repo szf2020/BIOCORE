@@ -631,7 +631,8 @@ describe('EditorCanvas drop wire (SP-FX-4)', () => {
     const host = document.querySelector('[data-editor-canvas-host]') as HTMLElement;
     fireEvent(host, makeDragEvent('drop', 'rect', { clientX: 23, clientY: 47 }));
     expect(addSpy).toHaveBeenCalledTimes(1);
-    const widget = addSpy.mock.calls[0][0];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const widget = addSpy.mock.calls[0][0] as any;
     expect(widget.type).toBe('rect');
     expect(widget.x % 10).toBe(0);
     expect(widget.y % 10).toBe(0);
@@ -664,7 +665,8 @@ describe('EditorCanvas drop wire (SP-FX-4)', () => {
     });
     const host = document.querySelector('[data-editor-canvas-host]') as HTMLElement;
     fireEvent(host, makeDragEvent('drop', 'ellipse', { clientX: 0, clientY: 0 }));
-    expect(addSpy.mock.calls[0][0].type).toBe('ellipse');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((addSpy.mock.calls[0][0] as any).type).toBe('ellipse');
     addSpy.mockRestore();
   });
 });
