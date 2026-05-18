@@ -21,6 +21,7 @@ interface AiSuggestion {
 }
 
 export function AiSuggestionCard({ batchId }: { batchId?: string }) {
+  const { t } = useLocale();
   const [suggestions, setSuggestions] = useState<AiSuggestion[]>([]);
   const [loading, setLoading] = useState(true);
 

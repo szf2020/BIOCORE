@@ -49,6 +49,7 @@ interface Props {
 }
 
 export function InterlockPanel({ reactorId, currentState, activeFaultCodes = [] }: Props) {
+  const { t } = useLocale();
   const [ilData, setIlData] = useState<InterlockResponse | null>(null);
   const [rfList, setRfList] = useState<RunningFaultItem[]>([]);
   const [loading, setLoading] = useState(false);

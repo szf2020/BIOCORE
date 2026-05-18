@@ -50,6 +50,7 @@ const STATUS_STYLES: Record<string, { bg: string; label: string }> = {
 };
 
 export default function RecipeListPage() {
+  const { t } = useLocale();
   const router = useRouter();
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
   const [loading, setLoading] = useState(true);

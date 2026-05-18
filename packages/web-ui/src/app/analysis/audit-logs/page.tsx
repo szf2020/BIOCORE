@@ -101,6 +101,7 @@ function renderTarget(
 }
 
 export default function AuditLogsPage() {
+  const { t } = useLocale();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

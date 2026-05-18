@@ -30,6 +30,7 @@ interface User {
 }
 
 export default function UsersPage() {
+  const { t } = useLocale();
   const [users, setUsers] = useState<User[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);

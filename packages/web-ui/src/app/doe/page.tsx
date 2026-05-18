@@ -51,6 +51,7 @@ const DESIGN_TYPE_LABEL: Record<string, string> = {
 };
 
 export default function DoeListPage() {
+  const { t } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const audit = useAudit();

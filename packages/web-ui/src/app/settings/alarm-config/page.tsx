@@ -58,6 +58,7 @@ const EMPTY: Partial<AlarmDef> = {
 };
 
 export default function AlarmConfigPage() {
+  const { t } = useLocale();
   const [rows, setRows] = useState<AlarmDef[]>([]);
   const [loading, setLoading] = useState(false);
   const [reactors, setReactors] = useState<Reactor[]>([]);

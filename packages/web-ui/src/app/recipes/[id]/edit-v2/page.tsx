@@ -32,6 +32,7 @@ const EMPTY_DAG: RecipeDAG = {
 };
 
 export default function RecipeEditV2Page() {
+  const { t } = useLocale();
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();

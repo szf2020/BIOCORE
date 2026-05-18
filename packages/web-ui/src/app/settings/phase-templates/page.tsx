@@ -91,6 +91,7 @@ const COND_TYPES: { value: Condition['type']; label: string }[] = [
 // ─── 主页面 ────────────────────────────────────────────────
 
 export default function PhaseTemplatesPage() {
+  const { t } = useLocale();
   const [templates, setTemplates] = useState<PhaseTemplate[]>([]);
   const [editing, setEditing] = useState<PhaseTemplate | null>(null);
   const [showDialog, setShowDialog] = useState(false);

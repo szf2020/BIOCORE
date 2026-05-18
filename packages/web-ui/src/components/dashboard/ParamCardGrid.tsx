@@ -64,6 +64,7 @@ function ParamCard({ label, channel, value, unit, sv, cv, cvLabel, deadband = 1,
 const PARAM_LABELS = ['温度 °C', 'pH', '溶氧 %', '搅拌 rpm', '通气 NL/m', '罐压 bar', '称重 kg', '补料 mL/h'];
 
 export function ParamCardGrid({ pv }: { pv: ProcessValues | null }) {
+  const { t } = useLocale();
   if (!pv) {
     return (
       <div className="grid grid-cols-2 gap-2">

@@ -23,6 +23,7 @@ interface PhaseStepTrackerProps {
 }
 
 export function PhaseStepTracker({ state, phaseNames, currentPhaseId, currentPhaseType }: PhaseStepTrackerProps) {
+  const { t } = useLocale();
   const phaseIndex = state?.phase_index ?? 0;
   const totalPhases = state?.total_phases ?? 0;
   const stepNumber = state?.step_number ?? 0;

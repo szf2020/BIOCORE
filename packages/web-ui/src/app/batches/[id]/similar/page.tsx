@@ -22,6 +22,7 @@ interface SimilarBatch {
 }
 
 export default function SimilarBatchesPage() {
+  const { t } = useLocale();
   const params = useParams();
   const batchId = params.id as string;
   const [field, setField] = useState('temperature');

@@ -107,6 +107,7 @@ function buildCusumChartOption(
 }
 
 export function CusumAlertPanel({ batchId, reactorId }: { batchId?: string; reactorId?: string }) {
+  const { t } = useLocale();
   // 多反应器隔离: 按 reactorId 取 CUSUM 数据, 未匹配 fallback 顶层
   const _topCusumAlerts = useRealtimeStore((s) => s.cusumAlerts);
   const _topCusumHistory = useRealtimeStore((s) => s.cusumHistory);

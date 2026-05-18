@@ -23,6 +23,7 @@ const CHANNELS = [
 ];
 
 export default function CalibrationPage() {
+  const { t } = useLocale();
   const [selected, setSelected] = useState('AI-2');
   const [cal, setCal] = useState<any>(null);
   const [form, setForm] = useState({ low_raw: 0, low_eng: 4, high_raw: 27648, high_eng: 10 });

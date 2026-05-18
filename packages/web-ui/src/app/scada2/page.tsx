@@ -23,6 +23,7 @@ function PageInner() {
 }
 
 export default function Page() {
+  const { t } = useLocale();
   return (
     <Suspense fallback={<div style={{ padding: 16 }}>加载中…</div>}>
       <PageInner />

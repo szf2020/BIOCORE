@@ -6,6 +6,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useLocale } from '@/i18n/useLocale';
 
 export default function Page(): JSX.Element {
+  const { t } = useLocale();
   const params = useParams<{ viewId: string }>();
   const search = useSearchParams();
   const router = useRouter();

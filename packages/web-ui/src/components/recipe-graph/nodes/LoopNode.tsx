@@ -13,6 +13,7 @@ export interface LoopNodeData extends Record<string, unknown> {
 }
 
 export function LoopNode({ data, selected }: NodeProps) {
+  const { t } = useLocale();
   const d = data as LoopNodeData;
   const exitExpr = d.exitExpression && d.exitExpression.trim().length > 0
     ? d.exitExpression

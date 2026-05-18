@@ -22,6 +22,7 @@ async function fetchJson<T = any>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export default function NotificationsSettingsPage() {
+  const { t } = useLocale();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
   const [eventTypes, setEventTypes] = useState<string[]>([]);

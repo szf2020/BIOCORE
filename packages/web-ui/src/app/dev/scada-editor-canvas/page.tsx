@@ -17,6 +17,7 @@ function fixtureView(): FuxaView {
 }
 
 export default function DevScadaEditorCanvas() {
+  const { t } = useLocale();
   useEffect(() => {
     if (typeof window === 'undefined' || process.env.NODE_ENV === 'production') return;
     useEditorStore.getState().openView(fixtureView());

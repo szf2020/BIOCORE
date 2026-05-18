@@ -53,6 +53,7 @@ function fmtTime(raw: string | null): string {
 }
 
 export default function AlarmHistoryPage() {
+  const { t } = useLocale();
   const [rows, setRows] = useState<AlarmRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);

@@ -71,6 +71,7 @@ const EMPTY_SAMPLE = {
 };
 
 export default function BatchDetailPage() {
+  const { t } = useLocale();
   const params = useParams();
   const id = params.id as string;
   const audit = useAudit();

@@ -15,6 +15,7 @@ interface RootCauseResult {
 }
 
 export function RootCausePanel({ alarmId, alarmCode, onClose }: {
+  const { t } = useLocale();
   alarmId: string | number;
   alarmCode?: string;
   onClose: () => void;

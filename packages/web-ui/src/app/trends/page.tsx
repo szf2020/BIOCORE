@@ -61,6 +61,7 @@ interface TrendFetchResult {
 }
 
 export default function TrendsPage() {
+  const { t } = useLocale();
   const [active, setActive] = useState<Set<PK>>(() => new Set(PARAMS.filter(p => p.on).map(p => p.key)));
   const [ri, setRi] = useState(0);
   const [cFrom, setCFrom] = useState('');

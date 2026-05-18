@@ -98,6 +98,7 @@ interface DashboardLayoutEditorProps {
 }
 
 export function DashboardLayoutEditor({ open, onClose }: DashboardLayoutEditorProps) {
+  const { t } = useLocale();
   const [layout, setLayout] = useState<DashboardLayout>(DEFAULT_LAYOUT);
 
   // DnD sensors

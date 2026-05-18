@@ -38,6 +38,7 @@ async function callApi(url: string, init?: RequestInit): Promise<any> {
 }
 
 export function ChannelManager({
+  const { t } = useLocale();
   channels, onChange, apiBase,
 }: {
   channels: Channel[];

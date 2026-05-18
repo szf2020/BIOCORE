@@ -50,6 +50,7 @@ function setNestedValue(obj: Record<string, any>, key: string, value: any): void
 }
 
 export function NodeInspector({ node, template, allTemplates, allNodes, onChange, onClose }: Props) {
+  const { t } = useLocale();
   if (!node) return null;
 
   const data = node.data as any;

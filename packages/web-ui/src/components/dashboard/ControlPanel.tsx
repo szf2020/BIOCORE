@@ -59,6 +59,7 @@ const STATE_LABELS: Record<string, string> = {
 };
 
 export function ControlPanel({ state, reactorId = 'F01' }: ControlPanelProps) {
+  const { t } = useLocale();
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
   const [changingRecipe, setChangingRecipe] = useState(false);
   const [approvedRecipes, setApprovedRecipes] = useState<any[]>([]);

@@ -111,6 +111,7 @@ interface TrendChartGroupProps {
 }
 
 export function TrendChartGroup({
+  const { t } = useLocale();
   tempHistory,
   phHistory,
   doHistory,

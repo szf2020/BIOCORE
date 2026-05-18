@@ -18,6 +18,7 @@ interface NoticeBannerProps {
 }
 
 export function NoticeBanner({ notices, onAcknowledge }: NoticeBannerProps) {
+  const { t } = useLocale();
   const unack = notices.filter(n => !n.acknowledged).slice(0, 5);
 
   const formatTime = (iso: string): string => {

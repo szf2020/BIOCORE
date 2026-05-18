@@ -28,6 +28,7 @@ interface AlarmBannerProps {
 }
 
 export function AlarmBanner({ alarms, onAcknowledge, onViewAll }: AlarmBannerProps) {
+  const { t } = useLocale();
   const unacknowledged = alarms
     .filter((a) => !a.acknowledged)
     .slice(0, 3);

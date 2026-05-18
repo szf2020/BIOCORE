@@ -21,6 +21,7 @@ interface InterlockConfig {
 }
 
 export default function InterlockConfigPage() {
+  const { t } = useLocale();
   const audit = useAudit();
   const [configs, setConfigs] = useState<InterlockConfig[]>([]);
   const [selected, setSelected] = useState('');

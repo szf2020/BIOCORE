@@ -50,6 +50,7 @@ function fmtTime(raw: string | null): string {
 }
 
 export default function CusumHistoryPage() {
+  const { t } = useLocale();
   const [rows, setRows] = useState<CusumRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);

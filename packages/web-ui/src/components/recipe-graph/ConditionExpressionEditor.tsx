@@ -18,6 +18,7 @@ interface Props {
 }
 
 export function ConditionExpressionEditor({ value, onChange }: Props) {
+  const { t } = useLocale();
   const [draft, setDraft] = useState(value);
   const [validity, setValidity] = useState<{ ok: boolean; error?: string } | null>(null);
   const [debouncing, setDebouncing] = useState(false);

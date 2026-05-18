@@ -90,6 +90,7 @@ const DEFAULT_VARIABLE_TEMPLATES: Partial<PLCVariableMapping>[] = [
 // ─── 主页面组件 ─────────────────────────────────────────────
 
 export default function PLCConfigPage() {
+  const { t } = useLocale();
   const [activeTab, setActiveTab] = useState<'connections' | 'variables'>('connections');
   const [connections, setConnections] = useState<PLCConnection[]>([]);
   const [variables, setVariables] = useState<PLCVariableMapping[]>([]);

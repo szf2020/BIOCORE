@@ -37,6 +37,7 @@ function formatMtime(mtime: string): string {
 }
 
 export default function BackupPage() {
+  const { t } = useLocale();
   const { user } = useAuth();
   const [backups, setBackups] = useState<BackupFile[]>([]);
   const [loading, setLoading] = useState(false);

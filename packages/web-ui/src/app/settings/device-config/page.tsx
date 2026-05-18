@@ -69,6 +69,7 @@ const EMPTY_FORM: FormData = {
 };
 
 export default function DeviceConfigPage() {
+  const { t } = useLocale();
   const [reactors, setReactors] = useState<ReactorConfig[]>([]);
   const [plcConnections, setPlcConnections] = useState<PLCConnection[]>([]);
   const [showDialog, setShowDialog] = useState(false);

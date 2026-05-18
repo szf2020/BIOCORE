@@ -12,6 +12,7 @@ export interface GotoNodeData extends Record<string, unknown> {
 }
 
 export function GotoNode({ data, selected }: NodeProps) {
+  const { t } = useLocale();
   const d = data as GotoNodeData;
   const target = d.target || '(未设置)';
 

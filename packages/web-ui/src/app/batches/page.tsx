@@ -43,6 +43,7 @@ function formatDuration(startedAt?: string, endedAt?: string, durationH?: number
 }
 
 export default function BatchesPage() {
+  const { t } = useLocale();
   const router = useRouter();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);

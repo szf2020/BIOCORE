@@ -47,6 +47,7 @@ function Cell({ label, value, unit }: { label: string; value: string; unit: stri
 }
 
 export function CalculatedParamsBar({ params, airflow, feedRate }: CalculatedParamsBarProps) {
+  const { t } = useLocale();
   const airflowStr = typeof airflow === 'number' ? airflow.toFixed(1) : '--';
   const feedRateStr = typeof feedRate === 'number' ? feedRate.toFixed(1) : '--';
   return (

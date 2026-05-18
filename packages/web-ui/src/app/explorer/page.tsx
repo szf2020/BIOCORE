@@ -78,6 +78,7 @@ function MiniChart({ data, fields }: { data: DataPoint[]; fields: string[] }) {
 }
 
 export default function ExplorerPage() {
+  const { t } = useLocale();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [batchId, setBatchId] = useState('');
   const [range, setRange] = useState<string>('24h');

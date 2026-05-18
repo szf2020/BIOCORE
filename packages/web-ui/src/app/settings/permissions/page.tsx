@@ -37,6 +37,7 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 export default function PermissionsPage() {
+  const { t } = useLocale();
   const [perms, setPerms] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
 

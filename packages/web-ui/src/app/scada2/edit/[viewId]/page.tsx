@@ -18,6 +18,7 @@ type LoadState =
   | { kind: 'ready'; updatedAt: string; projectId: string; isTemplate: number };
 
 export default function Page() {
+  const { t } = useLocale();
   const params = useParams<{ viewId: string }>();
   const search = useSearchParams();
   const reactorId = search?.get('reactor') ?? 'F01';

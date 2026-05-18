@@ -30,6 +30,7 @@ async function fetchJson<T = any>(url: string): Promise<T> {
 }
 
 export default function AdminHealthPage() {
+  const { t } = useLocale();
   const [snap, setSnap] = useState<FullSnap | null>(null);
   const [series, setSeries] = useState<TimeseriesSample[]>([]);
   const [error, setError] = useState<string | null>(null);

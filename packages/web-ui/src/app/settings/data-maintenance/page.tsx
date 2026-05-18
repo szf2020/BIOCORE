@@ -14,6 +14,7 @@ interface MaintenanceConfig {
 }
 
 export default function DataMaintenancePage() {
+  const { t } = useLocale();
   const [config, setConfig] = useState<MaintenanceConfig>({
     auto_backup: false,
     backup_interval_h: 24,

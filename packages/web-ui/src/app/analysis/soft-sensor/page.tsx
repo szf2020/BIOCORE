@@ -23,6 +23,7 @@ interface PredictionResult {
 }
 
 export default function SoftSensorPage() {
+  const { t } = useLocale();
   const [models, setModels] = useState<SoftSensorModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTrainDialog, setShowTrainDialog] = useState(false);

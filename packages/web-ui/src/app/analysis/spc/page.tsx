@@ -26,6 +26,7 @@ const CHART_TYPE_LABELS: Record<ChartType, string> = {
 };
 
 export default function SpcPage() {
+  const { t } = useLocale();
   const [parameters, setParameters] = useState<SpcParameter[]>([]);
   const [selectedParam, setSelectedParam] = useState('');
   const [chartType, setChartType] = useState<ChartType>('individual');

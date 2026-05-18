@@ -10,6 +10,7 @@ import { useLocale } from '@/i18n/useLocale';
 type LoadState = 'loading' | 'ready' | 'error';
 
 export default function ViewV2Page({
+  const { t } = useLocale();
   params,
 }: {
   params: { viewId: string };

@@ -56,6 +56,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export default function FormulaConfigPage() {
+  const { t } = useLocale();
   const audit = useAudit();
   const [formulas, setFormulas] = useState<FormulaConfig[]>([]);
   const [selected, setSelected] = useState<string>('');

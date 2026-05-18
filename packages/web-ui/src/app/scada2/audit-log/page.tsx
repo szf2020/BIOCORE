@@ -26,6 +26,7 @@ interface AuditRow {
 const RESOURCE_TYPES = ['batches', 'recipes', 'views', 'users', 'scada', 'permissions'];
 
 export default function AuditLogPage() {
+  const { t } = useLocale();
   const { user } = useAuth();
   const [rows, setRows] = useState<AuditRow[]>([]);
   const [userId, setUserId] = useState('');

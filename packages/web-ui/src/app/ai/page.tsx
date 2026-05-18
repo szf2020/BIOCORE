@@ -44,6 +44,7 @@ const QUICK_QUESTIONS = [
 ];
 
 export default function AiPage() {
+  const { t } = useLocale();
   const [messages, setMessages] = useState<Message[]>([
     { role: 'system', content: '你好，我是BIOCore AI助手。可以帮助你分析发酵数据、诊断异常、优化工艺参数，也可以为你生成批次分析报告。\n\n试试说: "帮我生成 BATCH-20260413-001 的批次报告"', timestamp: new Date().toISOString() },
   ]);

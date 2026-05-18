@@ -20,6 +20,7 @@ const PROVIDER_OPTIONS = [
 ];
 
 export default function AiConfigPage() {
+  const { t } = useLocale();
   const [config, setConfig] = useState<AiConfig>({
     ollama_url: 'http://localhost:11434',
     model: 'gemma4',

@@ -12,6 +12,7 @@ export interface BranchNodeData extends Record<string, unknown> {
 }
 
 export function BranchNode({ data, selected }: NodeProps) {
+  const { t } = useLocale();
   const d = data as BranchNodeData;
   const expr = d.expression || '(未设置)';
 

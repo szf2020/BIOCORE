@@ -72,6 +72,7 @@ const RUN_STATUS: Record<string, { bg: string; label: string }> = {
 };
 
 export default function DoeDetailPage() {
+  const { t } = useLocale();
   const params = useParams();
   const router = useRouter();
   const audit = useAudit();

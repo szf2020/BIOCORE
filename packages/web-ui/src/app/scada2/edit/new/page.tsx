@@ -6,6 +6,7 @@ import { useViewMutations } from '@/hooks/useViewMutations';
 import { useLocale } from '@/i18n/useLocale';
 
 export default function Page() {
+  const { t } = useLocale();
   const router = useRouter();
   const search = useSearchParams();
   const projectId = search?.get('project') ?? 'default';

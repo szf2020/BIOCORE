@@ -20,6 +20,7 @@ interface SiteConfig {
 }
 
 export default function SiteMetaPage() {
+  const { t } = useLocale();
   const audit = useAudit();
   const [data, setData] = useState<SiteConfig | null>(null);
   const [facility, setFacility] = useState('');

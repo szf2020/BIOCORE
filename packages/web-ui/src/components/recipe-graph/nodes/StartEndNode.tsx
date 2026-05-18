@@ -7,6 +7,7 @@ import { Play, Square } from 'lucide-react';
 import { useLocale } from '@/i18n/useLocale';
 
 export function StartNode({ selected }: NodeProps) {
+  const { t } = useLocale();
   return (
     <div
       className={`relative w-14 h-14 rounded-full border-2 flex items-center justify-center shadow-md transition-colors ${

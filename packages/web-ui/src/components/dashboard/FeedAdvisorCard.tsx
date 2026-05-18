@@ -30,6 +30,7 @@ const DEFAULT_PARAMS = {
 };
 
 export function FeedAdvisorCard({ batchId }: { batchId?: string }) {
+  const { t } = useLocale();
   const [recommendation, setRecommendation] = useState<FeedRecommendation | null>(null);
   const [loading, setLoading] = useState(false);
 

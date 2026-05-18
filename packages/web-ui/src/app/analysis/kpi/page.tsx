@@ -44,6 +44,7 @@ interface KpiSummary {
 interface ParetoItem { category: string; label: string; total_min: number; percentage: number; cumulative_pct: number; event_count: number }
 
 export default function KpiDashboardPage() {
+  const { t } = useLocale();
   const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [trends, setTrends] = useState<BatchKpi[]>([]);
   const [batches, setBatches] = useState<BatchKpi[]>([]);

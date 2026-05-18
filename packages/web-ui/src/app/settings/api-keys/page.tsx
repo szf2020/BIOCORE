@@ -35,6 +35,7 @@ interface ApiKey {
 }
 
 export default function ApiKeysPage() {
+  const { t } = useLocale();
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');

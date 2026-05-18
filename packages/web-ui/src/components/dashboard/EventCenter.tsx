@@ -103,6 +103,7 @@ function Section({ title, icon: Icon, color, items, kind, onAck, emptyText }: {
 // alarms prop 保留参数签名兼容旧调用, 但 EventCenter 现在只展示"提示信息"
 // (报警在 TopBar AlarmStrip 显示, 避免重复)
 export function EventCenter({ notices, onAcknowledge }: Props) {
+  const { t } = useLocale();
   const unackNotices = notices.filter(n => !n.acknowledged);
 
   return (

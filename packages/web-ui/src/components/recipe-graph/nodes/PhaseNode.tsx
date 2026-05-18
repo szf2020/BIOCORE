@@ -14,6 +14,7 @@ export interface PhaseNodeData extends Record<string, unknown> {
 }
 
 export function PhaseNode({ data, selected }: NodeProps) {
+  const { t } = useLocale();
   const d = data as PhaseNodeData;
   const paramCount = d.params ? Object.keys(d.params).length : 0;
 

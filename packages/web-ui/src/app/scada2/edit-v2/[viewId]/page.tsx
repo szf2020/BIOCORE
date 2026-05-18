@@ -12,6 +12,7 @@ import { useLocale } from '@/i18n/useLocale';
 type LoadState = 'loading' | 'ready' | 'not_found' | 'error';
 
 export default function Page({ params }: { params: { viewId: string } }): JSX.Element {
+  const { t } = useLocale();
   const [state, setState] = useState<LoadState>('loading');
   const openView = useEditorStore.getState().openView;
 

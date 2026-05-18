@@ -42,6 +42,7 @@ function getStateLabel(state: string): string {
 }
 
 export default function HmiPage() {
+  const { t } = useLocale();
   const reactorStates = useRealtimeStore(s => s.reactorStates);
   const [reactorIds, setReactorIds] = useState<string[]>([]);
   const [selectedReactor, setSelectedReactor] = useState<string>('');

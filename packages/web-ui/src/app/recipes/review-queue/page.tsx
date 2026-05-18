@@ -32,6 +32,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function ReviewQueuePage() {
+  const { t } = useLocale();
   const router = useRouter();
   const audit = useAudit();
   const [pending, setPending] = useState<PendingRecipe[]>([]);

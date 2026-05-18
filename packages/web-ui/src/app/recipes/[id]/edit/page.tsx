@@ -372,6 +372,7 @@ function SortablePhaseCard({ phase, index, total, executionMode, isSelected, onR
 // ─── 主编辑器 ─────────────────────────────────────────────────
 
 export default function RecipeEditorPage() {
+  const { t } = useLocale();
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();

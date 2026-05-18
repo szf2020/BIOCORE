@@ -19,6 +19,7 @@ export interface Rule {
 interface ChannelRef { id: string }
 
 export function RuleTable({
+  const { t } = useLocale();
   rules: initial, channels, eventTypes, onSave,
 }: {
   rules: Rule[];

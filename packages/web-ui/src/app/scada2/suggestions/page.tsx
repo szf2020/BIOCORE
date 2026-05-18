@@ -6,6 +6,7 @@ import { SuggestionList } from '@/components/scada/suggestions/SuggestionList';
 import { useLocale } from '@/i18n/useLocale';
 
 export default function ScadaSuggestionsPage() {
+  const { t } = useLocale();
   const { suggestions, failed, loading, error, refetch, accept, reject, retry } = useScadaSuggestions();
 
   return (
