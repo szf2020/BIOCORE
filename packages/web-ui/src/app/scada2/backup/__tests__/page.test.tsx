@@ -40,7 +40,7 @@ let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   fetchMock = vi.fn();
-  global.fetch = fetchMock;
+  global.fetch = fetchMock as unknown as typeof fetch;
   // 默认: GET /admin/backups 返回列表
   fetchMock.mockResolvedValue({
     ok: true,
