@@ -1,0 +1,24 @@
+# Grafana datasource provisioning — Prometheus (SP-FX-38)
+# 自动配置 Prometheus 数据源
+#
+# 启动 Grafana 时此文件挂载到:
+#   /etc/grafana/provisioning/datasources/prometheus.yml
+#
+# Prometheus URL: http://prometheus:9090
+#   (Docker 网络内部访问, 服务名 prometheus 由 docker-compose 解析)
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      # Grafana 用 $__rate_interval 时需要 scrapeInterval 提示
+      scrapeInterval: 15s
+      httpMethod: POST
+    version: 1

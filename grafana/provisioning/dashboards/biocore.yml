@@ -1,0 +1,22 @@
+# Grafana dashboard provisioning — BIOCore (SP-FX-38)
+# 自动加载 grafana/dashboards/ 目录下所有 JSON dashboard
+#
+# 启动 Grafana 时此文件挂载到:
+#   /etc/grafana/provisioning/dashboards/biocore.yml
+#
+# 对应 docker-compose volume:
+#   ./grafana/provisioning:/etc/grafana/provisioning:ro
+
+apiVersion: 1
+
+providers:
+  - name: BIOCore
+    type: file
+    folder: BIOCore
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

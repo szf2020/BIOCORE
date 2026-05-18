@@ -1,0 +1,37 @@
+# Prometheus scrape 配置 — BIOCore (SP-FX-38)
+#
+# 抓取目标: BIOCore server /api/v1/metrics (SP-FX-28)
+# bearer_token: 从环境变量 METRICS_AUTH_TOKEN 注入（避免 token 写死在 config）
+#
+# 启动方式:
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml \
+#     --profile observability up -d
+#
+# 端口:
+#   Prometheus: http://localhost:9090
+#   Grafana:    http://localhost:3002  (admin / biocore_admin)
+#
+# 生产部署注意:
+#   1. 设置 METRICS_AUTH_TOKEN 为有效 admin API key
+#   2. 建议通过 secret manager 注入, 不要写入 docker-compose.yml
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    deployment: biocore
+
+scrape_configs:
+  # BIOCore 应用层指标 (SP-FX-28: http / write_intent / audit_log)
+  - job_name: biocore
+    metrics_path: /api/v1/metrics
+    scrape_interval: 15s
+    authorization:
+      type: Bearer
+      # METRICS_AUTH_TOKEN 通过 docker-compose environment 注入
+      credentials: "${METRICS_AUTH_TOKEN}"
+    static_configs:
+      - targets:
+          - "server:3001"
+        labels:
+          service: biocore-server
