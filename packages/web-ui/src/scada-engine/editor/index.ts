@@ -8,5 +8,6 @@ export {
   snap, snapPoint,
   computeBbox, intersectsBox, applyMultiDrag,
   applyRotate,
+  applyMultiRotate, applyGroupResize, anchorOf,
   type Box, type Point, type HandleId,
 } from './geometry';
