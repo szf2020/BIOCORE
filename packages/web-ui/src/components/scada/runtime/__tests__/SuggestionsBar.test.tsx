@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import type { ScadaSuggestion } from '@/api/scada';
 
 vi.mock('@/api/scada', () => ({
@@ -34,14 +34,16 @@ function makeSuggestion(overrides: Partial<ScadaSuggestion> = {}): ScadaSuggesti
 
 describe('SuggestionsBar', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
     vi.mocked(scadaApi.fetchScadaSuggestions).mockResolvedValue([]);
     vi.mocked(scadaApi.acceptSuggestion).mockResolvedValue({ success: true });
     vi.mocked(scadaApi.rejectSuggestion).mockResolvedValue({ success: true });
+    // stub setInterval to prevent 5s poll from running during tests
+    vi.spyOn(globalThis, 'setInterval').mockReturnValue(0 as unknown as ReturnType<typeof setInterval>);
+    vi.spyOn(globalThis, 'clearInterval').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    vi.restoreAllMocks();
     vi.clearAllMocks();
   });
 
