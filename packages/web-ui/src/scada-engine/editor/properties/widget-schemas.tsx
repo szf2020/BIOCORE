@@ -13,6 +13,92 @@ const GEOMETRY_ENTRIES = [
   { key: 'h', label: '高', type: 'number' as const, geometric: true, min: 0 },
 ];
 
+// SP-FX-48.12: shared FUXA-parity ranges[] + actions[] editor.
+// Used by gauge-progress / pipe / tank / motor / valve / pump / compressor / bag.
+// Schema-level UI binds to runtime-helpers.matchRange/applyActions.
+function renderRangesAndActions(property: Record<string, unknown>, onChange: (patch: Record<string, unknown>) => void): JSX.Element {
+  const ranges = Array.isArray((property as any).ranges)
+    ? ((property as any).ranges as Array<{ min: number; max: number; color: string }>)
+    : [];
+  const actions = Array.isArray((property as any).actions)
+    ? ((property as any).actions as Array<{ type: 'hide'|'show'|'blink'; range?: { min: number; max: number } }>)
+    : [];
+  return (
+    <>
+      <div data-section="ranges" className="mb-2">
+        <p className="text-xs text-zinc-400 mb-1">值范围 ({ranges.length})</p>
+        {ranges.map((r, i) => (
+          <div key={i} className="flex items-center gap-1 mb-1 text-xs">
+            <input type="number" value={r.min}
+              className="w-14 bg-zinc-800 border border-zinc-700 rounded px-1"
+              onChange={(e) => {
+                const next = ranges.slice(); next[i] = { ...r, min: Number(e.target.value) };
+                onChange({ ranges: next });
+              }} />
+            <span>→</span>
+            <input type="number" value={r.max}
+              className="w-14 bg-zinc-800 border border-zinc-700 rounded px-1"
+              onChange={(e) => {
+                const next = ranges.slice(); next[i] = { ...r, max: Number(e.target.value) };
+                onChange({ ranges: next });
+              }} />
+            <input type="color" value={r.color ?? '#22c55e'}
+              className="w-6 h-6 bg-transparent border-0"
+              onChange={(e) => {
+                const next = ranges.slice(); next[i] = { ...r, color: e.target.value };
+                onChange({ ranges: next });
+              }} />
+            <button className="text-red-400 hover:text-red-300 ml-auto"
+              onClick={() => { const next = ranges.slice(); next.splice(i, 1); onChange({ ranges: next }); }}
+            >×</button>
+          </div>
+        ))}
+        <button className="text-xs text-blue-400 underline"
+          onClick={() => onChange({ ranges: [...ranges, { min: 0, max: 1, color: '#22c55e' }] })}
+        >+ 添加范围</button>
+      </div>
+      <div data-section="actions">
+        <p className="text-xs text-zinc-400 mb-1">动作 ({actions.length})</p>
+        {actions.map((a, i) => (
+          <div key={i} className="flex items-center gap-1 mb-1 text-xs">
+            <select value={a.type}
+              className="bg-zinc-800 border border-zinc-700 rounded px-1"
+              onChange={(e) => {
+                const next = actions.slice(); next[i] = { ...a, type: e.target.value as any };
+                onChange({ actions: next });
+              }}>
+              <option value="hide">隐藏</option>
+              <option value="show">显示</option>
+              <option value="blink">闪烁</option>
+            </select>
+            <input type="number" placeholder="min" value={a.range?.min ?? 0}
+              className="w-14 bg-zinc-800 border border-zinc-700 rounded px-1"
+              onChange={(e) => {
+                const next = actions.slice();
+                next[i] = { ...a, range: { min: Number(e.target.value), max: a.range?.max ?? 0 } };
+                onChange({ actions: next });
+              }} />
+            <span>→</span>
+            <input type="number" placeholder="max" value={a.range?.max ?? 0}
+              className="w-14 bg-zinc-800 border border-zinc-700 rounded px-1"
+              onChange={(e) => {
+                const next = actions.slice();
+                next[i] = { ...a, range: { min: a.range?.min ?? 0, max: Number(e.target.value) } };
+                onChange({ actions: next });
+              }} />
+            <button className="text-red-400 hover:text-red-300 ml-auto"
+              onClick={() => { const next = actions.slice(); next.splice(i, 1); onChange({ actions: next }); }}
+            >×</button>
+          </div>
+        ))}
+        <button className="text-xs text-blue-400 underline"
+          onClick={() => onChange({ actions: [...actions, { type: 'blink', range: { min: 0, max: 1 } }] })}
+        >+ 添加动作</button>
+      </div>
+    </>
+  );
+}
+
 export const rectSchema: WidgetPropertySchema = {
   entries: [
     { key: 'fill', label: '填充色', type: 'color', allowNone: true },
@@ -268,13 +354,15 @@ export const gaugeProgressSchema: WidgetPropertySchema = {
     { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
     { key: 'min', label: '最小值', type: 'number' },
     { key: 'max', label: '最大值', type: 'number' },
-    { key: 'barColor', label: '进度条颜色', type: 'color' },
+    { key: 'barColor', label: '进度条颜色 (默认)', type: 'color' },
     { key: 'showLabel', label: '显示数值标签', type: 'boolean' },
     { key: 'x', label: 'X', type: 'number', geometric: true },
     { key: 'y', label: 'Y', type: 'number', geometric: true },
     { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
     { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
   ],
+  // SP-FX-48.12: ranges[] + actions[] editors (FUXA parity)
+  renderCustomSection: (property, onChange) => renderRangesAndActions(property, onChange),
 };
 
 export const htmlSwitchSchema: WidgetPropertySchema = {

@@ -1,8 +1,10 @@
 // SP-FX-6.2: GaugeProgress — vertical progress bar scaled by value/range.
 // FUXA equivalent: svg-ext-gauge_progress
+// SP-FX-48.12: ranges[] (value→barColor mapping) + actions[] (hide/show/blink)
 
 import type { GaugeBase, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } from '../../gauge-base';
 import type { FuxaWidget } from '../../../models';
+import { matchRange, applyActions, createActionRuntime, teardownActions, type Range, type RangeAction, type ActionRuntime } from '../../runtime-helpers';
 
 interface ProgressProperty {
   variableId?: string;
@@ -10,6 +12,8 @@ interface ProgressProperty {
   max?: number;
   barColor?: string;
   showLabel?: boolean;
+  ranges?: Range[];
+  actions?: RangeAction[];
 }
 
 const DEFAULT_BAR_COLOR = '#3F4964';
@@ -19,6 +23,7 @@ class GaugeProgress implements GaugeBase {
   private barRect: SVGRectElement | null = null;
   private labelEl: SVGTextElement | null = null;
   private widget!: FuxaWidget;
+  private actionRt: ActionRuntime = createActionRuntime();
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -66,6 +71,7 @@ class GaugeProgress implements GaugeBase {
   }
 
   onUnmount(): void {
+    teardownActions(this.actionRt);
     this.bgRect?.remove();
     this.barRect?.remove();
     this.labelEl?.remove();
@@ -99,6 +105,12 @@ class GaugeProgress implements GaugeBase {
     if (this.labelEl) {
       this.labelEl.textContent = String(clamped);
     }
+
+    // SP-FX-48.12: ranges → bar color override; actions → hide/show/blink
+    const matched = matchRange(numVal, prop.ranges);
+    if (matched?.color) this.barRect.setAttribute('fill', matched.color);
+    else if (prop.barColor) this.barRect.setAttribute('fill', prop.barColor);
+    applyActions(numVal, prop.actions, this.barRect, this.actionRt);
   }
 
   onPropertyChange(change: GaugePropChange): void {
