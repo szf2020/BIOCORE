@@ -142,3 +142,99 @@ export function applyRotate(
   if (deg === 360) deg = 0;
   return deg;
 }
+
+// SP-FX-3b.2.3: multi-select rotate + group-resize helpers.
+
+export type MultiRotateResult = Map<string, { box: Box; rotate: number }>;
+
+export function applyMultiRotate(
+  startBoxes: Map<string, Box>,
+  startRotates: Map<string, number>,
+  pivot: Point,
+  startPt: Point,
+  currentPt: Point,
+  snapStep: number,
+): MultiRotateResult {
+  const a0 = Math.atan2(startPt.y - pivot.y, startPt.x - pivot.x);
+  const a1 = Math.atan2(currentPt.y - pivot.y, currentPt.x - pivot.x);
+  let delta = (a1 - a0) * 180 / Math.PI;
+  if (snapStep > 0) delta = Math.round(delta / snapStep) * snapStep;
+  const rad = delta * Math.PI / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const out: MultiRotateResult = new Map();
+  for (const [id, sb] of startBoxes) {
+    const sr = startRotates.get(id) ?? 0;
+    const wcx = sb.x + sb.w / 2;
+    const wcy = sb.y + sb.h / 2;
+    const dx = wcx - pivot.x;
+    const dy = wcy - pivot.y;
+    const newCx = pivot.x + dx * cos - dy * sin;
+    const newCy = pivot.y + dx * sin + dy * cos;
+    const newBox: Box = { x: newCx - sb.w / 2, y: newCy - sb.h / 2, w: sb.w, h: sb.h };
+    let newRotate = ((sr + delta) % 360 + 360) % 360;
+    if (newRotate === 360) newRotate = 0;
+    out.set(id, { box: newBox, rotate: newRotate });
+  }
+  return out;
+}
+
+export function anchorOf(handle: HandleId, bbox: Box): Point {
+  switch (handle) {
+    case 'nw': return { x: bbox.x + bbox.w, y: bbox.y + bbox.h };
+    case 'n':  return { x: bbox.x + bbox.w / 2, y: bbox.y + bbox.h };
+    case 'ne': return { x: bbox.x, y: bbox.y + bbox.h };
+    case 'w':  return { x: bbox.x + bbox.w, y: bbox.y + bbox.h / 2 };
+    case 'e':  return { x: bbox.x, y: bbox.y + bbox.h / 2 };
+    case 'sw': return { x: bbox.x + bbox.w, y: bbox.y };
+    case 's':  return { x: bbox.x + bbox.w / 2, y: bbox.y };
+    case 'se': return { x: bbox.x, y: bbox.y };
+    default:   return { x: bbox.x, y: bbox.y };
+  }
+}
+
+export type GroupResizeResult = { bbox: Box; widgets: Map<string, Box> };
+
+export function applyGroupResize(
+  startBbox: Box,
+  newBbox: Box,
+  handle: HandleId,
+  startBoxes: Map<string, Box>,
+  aspectLock: boolean,
+): GroupResizeResult | null {
+  const anchor = anchorOf(handle, startBbox);
+  let scaleX = newBbox.w / startBbox.w;
+  let scaleY = newBbox.h / startBbox.h;
+  if (handle === 'n' || handle === 's') scaleX = 1;
+  if (handle === 'w' || handle === 'e') scaleY = 1;
+  const isCorner = handle === 'nw' || handle === 'ne' || handle === 'sw' || handle === 'se';
+  if (aspectLock && isCorner) {
+    const s = Math.min(Math.abs(scaleX), Math.abs(scaleY));
+    scaleX = scaleX < 0 ? -s : s;
+    scaleY = scaleY < 0 ? -s : s;
+  }
+  const widgets = new Map<string, Box>();
+  for (const [id, sb] of startBoxes) {
+    const newW = sb.w * scaleX;
+    const newH = sb.h * scaleY;
+    if (Math.abs(newW) < MIN_BOX || Math.abs(newH) < MIN_BOX) return null;
+    const newX = anchor.x + (sb.x - anchor.x) * scaleX;
+    const newY = anchor.y + (sb.y - anchor.y) * scaleY;
+    widgets.set(id, { x: newX, y: newY, w: newW, h: newH });
+  }
+  const finalW = Math.abs(startBbox.w * scaleX);
+  const finalH = Math.abs(startBbox.h * scaleY);
+  let bx: number, by: number;
+  switch (handle) {
+    case 'nw': bx = anchor.x - finalW; by = anchor.y - finalH; break;
+    case 'n':  bx = anchor.x - finalW / 2; by = anchor.y - finalH; break;
+    case 'ne': bx = anchor.x; by = anchor.y - finalH; break;
+    case 'w':  bx = anchor.x - finalW; by = anchor.y - finalH / 2; break;
+    case 'e':  bx = anchor.x; by = anchor.y - finalH / 2; break;
+    case 'sw': bx = anchor.x - finalW; by = anchor.y; break;
+    case 's':  bx = anchor.x - finalW / 2; by = anchor.y; break;
+    case 'se': bx = anchor.x; by = anchor.y; break;
+    default:   bx = anchor.x; by = anchor.y; break;
+  }
+  return { bbox: { x: bx, y: by, w: finalW, h: finalH }, widgets };
+}

@@ -4,6 +4,7 @@ import {
   snap, snapPoint,
   computeBbox, intersectsBox, applyMultiDrag,
   applyRotate,
+  applyMultiRotate, applyGroupResize, anchorOf,
   type Box, type Point,
 } from '../geometry';
 import { identityMatrix } from '@/test/svgDomHelpers';
@@ -225,5 +226,100 @@ describe('geometry.applyRotate (SP-FX-3b.2.2)', () => {
       y: 100 + 50 * Math.sin(30 * Math.PI / 180),
     };
     expect(applyRotate(pivot, startPt, currentPt, 350, 0)).toBe(20);
+  });
+});
+
+describe('geometry.applyMultiRotate (SP-FX-3b.2.3)', () => {
+  it('empty Map returns empty Map', () => {
+    const result = applyMultiRotate(new Map(), new Map(), { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 0 }, 0);
+    expect(result.size).toBe(0);
+  });
+
+  it('single widget at bbox center, 90° delta: position unchanged (orbit radius 0), rotate += 90', () => {
+    const startBoxes = new Map<string, Box>([['w1', { x: -25, y: -15, w: 50, h: 30 }]]);
+    const startRotates = new Map<string, number>([['w1', 0]]);
+    const pivot: Point = { x: 0, y: 0 };
+    const startPt: Point = { x: 50, y: 0 };
+    const currentPt: Point = { x: 0, y: 50 };
+    const result = applyMultiRotate(startBoxes, startRotates, pivot, startPt, currentPt, 0);
+    const w1 = result.get('w1')!;
+    expect(w1.box.x).toBeCloseTo(-25, 5);
+    expect(w1.box.y).toBeCloseTo(-15, 5);
+    expect(w1.rotate).toBeCloseTo(90, 5);
+  });
+
+  it('2 widgets offset from bbox center, 90° delta: centers rotated, rotate accumulates', () => {
+    const startBoxes = new Map<string, Box>([
+      ['w1', { x: 100, y: -10, w: 20, h: 20 }],
+      ['w2', { x: -10, y: 100, w: 20, h: 20 }],
+    ]);
+    const startRotates = new Map<string, number>([['w1', 0], ['w2', 30]]);
+    const pivot: Point = { x: 0, y: 0 };
+    const startPt: Point = { x: 50, y: 0 };
+    const currentPt: Point = { x: 0, y: 50 };
+    const result = applyMultiRotate(startBoxes, startRotates, pivot, startPt, currentPt, 0);
+    expect(result.get('w1')!.box.x).toBeCloseTo(-10, 5);
+    expect(result.get('w1')!.box.y).toBeCloseTo(100, 5);
+    expect(result.get('w1')!.rotate).toBeCloseTo(90, 5);
+    expect(result.get('w2')!.box.x).toBeCloseTo(-120, 5);
+    expect(result.get('w2')!.box.y).toBeCloseTo(-10, 5);
+    expect(result.get('w2')!.rotate).toBeCloseTo(120, 5);
+  });
+
+  it('snapStep 15: raw 23° delta snaps to 30°', () => {
+    const startBoxes = new Map<string, Box>([['w1', { x: -25, y: -15, w: 50, h: 30 }]]);
+    const startRotates = new Map<string, number>([['w1', 0]]);
+    const pivot: Point = { x: 0, y: 0 };
+    const startPt: Point = { x: 50, y: 0 };
+    const currentPt: Point = {
+      x: 50 * Math.cos(23 * Math.PI / 180),
+      y: 50 * Math.sin(23 * Math.PI / 180),
+    };
+    const result = applyMultiRotate(startBoxes, startRotates, pivot, startPt, currentPt, 15);
+    expect(result.get('w1')!.rotate).toBe(30);
+  });
+});
+
+describe('geometry.applyGroupResize (SP-FX-3b.2.3)', () => {
+  it('SE corner 2x scale: all widgets scale 2x from NW anchor', () => {
+    const startBbox: Box = { x: 0, y: 0, w: 100, h: 80 };
+    const newBbox: Box = { x: 0, y: 0, w: 200, h: 160 };
+    const startBoxes = new Map<string, Box>([
+      ['w1', { x: 10, y: 10, w: 30, h: 20 }],
+      ['w2', { x: 60, y: 50, w: 30, h: 20 }],
+    ]);
+    const result = applyGroupResize(startBbox, newBbox, 'se', startBoxes, false);
+    expect(result).not.toBeNull();
+    if (!result) return;
+    const w1 = result.widgets.get('w1')!;
+    expect(w1.x).toBe(20);
+    expect(w1.y).toBe(20);
+    expect(w1.w).toBe(60);
+    expect(w1.h).toBe(40);
+    const w2 = result.widgets.get('w2')!;
+    expect(w2.x).toBe(120);
+    expect(w2.y).toBe(100);
+    expect(w2.w).toBe(60);
+    expect(w2.h).toBe(40);
+  });
+
+  it('aspectLock on NW corner picks min absolute scale', () => {
+    const startBbox: Box = { x: 0, y: 0, w: 100, h: 100 };
+    const newBbox: Box = { x: -100, y: -50, w: 200, h: 150 };
+    const startBoxes = new Map<string, Box>([['w1', { x: 0, y: 0, w: 100, h: 100 }]]);
+    const result = applyGroupResize(startBbox, newBbox, 'nw', startBoxes, true);
+    expect(result).not.toBeNull();
+    if (!result) return;
+    const w1 = result.widgets.get('w1')!;
+    expect(w1.w).toBe(150);
+    expect(w1.h).toBe(150);
+  });
+
+  it('any widget projecting w<5 returns null (freeze)', () => {
+    const startBbox: Box = { x: 0, y: 0, w: 100, h: 80 };
+    const newBbox: Box = { x: 0, y: 0, w: 2, h: 80 };
+    const startBoxes = new Map<string, Box>([['w1', { x: 0, y: 0, w: 100, h: 80 }]]);
+    const result = applyGroupResize(startBbox, newBbox, 'e', startBoxes, false);
+    expect(result).toBeNull();
   });
 });
