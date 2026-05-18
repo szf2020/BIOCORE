@@ -3,6 +3,7 @@ import {
   valueSchema, htmlButtonSchema, htmlInputSchema, htmlChartSchema, htmlTableSchema,
   gaugeSemaphoreSchema, gaugeProgressSchema, htmlSwitchSchema, sliderSchema, pipeSchema,
   htmlBagSchema, htmlGraphSchema, tankSchema, motorSchema, htmlImageSchema,
+  htmlIframeSchema, compressorSchema, valveSchema, pumpSchema, htmlSelectSchema,
 } from '../widget-schemas';
 
 describe('widget-schemas', () => {
@@ -153,5 +154,83 @@ describe('widget-schemas', () => {
     expect(WIDGET_SCHEMAS['svg-ext-tank']).toBeDefined();
     expect(WIDGET_SCHEMAS['svg-ext-motor']).toBeDefined();
     expect(WIDGET_SCHEMAS['svg-ext-html_img']).toBeDefined();
+  });
+
+  // SP-FX-10 batch 4 schema tests (+10)
+
+  it('htmlIframeSchema has src text entry and geometric x/y/w/h', () => {
+    const srcEntry = htmlIframeSchema.entries.find(e => e.key === 'src');
+    expect(srcEntry?.type).toBe('text');
+    const geoKeys = htmlIframeSchema.entries.filter(e => e.geometric).map(e => e.key);
+    expect(geoKeys).toEqual(expect.arrayContaining(['x', 'y', 'w', 'h']));
+  });
+
+  it('htmlIframeSchema has no variableId entry (iframe has no tag binding)', () => {
+    const varEntry = htmlIframeSchema.entries.find(e => e.key === 'variableId');
+    expect(varEntry).toBeUndefined();
+  });
+
+  it('compressorSchema has tag-ref variableId entry and geometric x/y/w/h', () => {
+    const entry = compressorSchema.entries.find(e => e.key === 'variableId');
+    expect(entry?.type).toBe('tag-ref');
+    const geoKeys = compressorSchema.entries.filter(e => e.geometric).map(e => e.key);
+    expect(geoKeys).toEqual(expect.arrayContaining(['x', 'y', 'w', 'h']));
+  });
+
+  it('compressorSchema has renderCustomSection for state mapping', () => {
+    expect(typeof compressorSchema.renderCustomSection).toBe('function');
+    const result = compressorSchema.renderCustomSection!({}, () => {});
+    expect((result as any).props['data-section']).toBe('compressor-states');
+  });
+
+  it('valveSchema has tag-ref variableId entry and geometric x/y/w/h', () => {
+    const entry = valveSchema.entries.find(e => e.key === 'variableId');
+    expect(entry?.type).toBe('tag-ref');
+    const geoKeys = valveSchema.entries.filter(e => e.geometric).map(e => e.key);
+    expect(geoKeys).toEqual(expect.arrayContaining(['x', 'y', 'w', 'h']));
+  });
+
+  it('valveSchema has openValue text entry, openColor and closedColor color entries', () => {
+    const openValEntry = valveSchema.entries.find(e => e.key === 'openValue');
+    expect(openValEntry?.type).toBe('text');
+    const openColorEntry = valveSchema.entries.find(e => e.key === 'openColor');
+    expect(openColorEntry?.type).toBe('color');
+    const closedColorEntry = valveSchema.entries.find(e => e.key === 'closedColor');
+    expect(closedColorEntry?.type).toBe('color');
+  });
+
+  it('pumpSchema has tag-ref variableId entry and geometric x/y/w/h', () => {
+    const entry = pumpSchema.entries.find(e => e.key === 'variableId');
+    expect(entry?.type).toBe('tag-ref');
+    const geoKeys = pumpSchema.entries.filter(e => e.geometric).map(e => e.key);
+    expect(geoKeys).toEqual(expect.arrayContaining(['x', 'y', 'w', 'h']));
+  });
+
+  it('pumpSchema has bladeCount number entry and renderCustomSection', () => {
+    const bladeEntry = pumpSchema.entries.find(e => e.key === 'bladeCount');
+    expect(bladeEntry?.type).toBe('number');
+    expect(typeof pumpSchema.renderCustomSection).toBe('function');
+  });
+
+  it('htmlSelectSchema has tag-ref variableId entry and geometric x/y/w/h', () => {
+    const entry = htmlSelectSchema.entries.find(e => e.key === 'variableId');
+    expect(entry?.type).toBe('tag-ref');
+    const geoKeys = htmlSelectSchema.entries.filter(e => e.geometric).map(e => e.key);
+    expect(geoKeys).toEqual(expect.arrayContaining(['x', 'y', 'w', 'h']));
+  });
+
+  it('htmlSelectSchema has renderCustomSection for options list', () => {
+    expect(typeof htmlSelectSchema.renderCustomSection).toBe('function');
+    const result = htmlSelectSchema.renderCustomSection!({}, () => {});
+    expect((result as any).props['data-section']).toBe('select-options');
+  });
+
+  it('WIDGET_SCHEMAS includes all 5 batch-4 widget types', async () => {
+    const { WIDGET_SCHEMAS } = await import('../widget-schemas');
+    expect(WIDGET_SCHEMAS['svg-ext-html_iframe']).toBeDefined();
+    expect(WIDGET_SCHEMAS['svg-ext-compressor']).toBeDefined();
+    expect(WIDGET_SCHEMAS['svg-ext-valve']).toBeDefined();
+    expect(WIDGET_SCHEMAS['svg-ext-pump']).toBeDefined();
+    expect(WIDGET_SCHEMAS['svg-ext-html_select']).toBeDefined();
   });
 });

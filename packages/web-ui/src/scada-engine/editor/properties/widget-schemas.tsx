@@ -287,6 +287,121 @@ export const htmlImageSchema: WidgetPropertySchema = {
   ],
 };
 
+// SP-FX-10 Batch 4 schemas
+
+export const htmlIframeSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'src', label: '嵌入 URL (https://)', type: 'text', placeholder: 'https://example.com' },
+    { key: 'title', label: 'iframe 标题', type: 'text', placeholder: '页面标题' },
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+};
+
+export const compressorSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'defaultColor', label: '默认颜色', type: 'color' },
+    { key: 'bodyColor', label: '机壳颜色', type: 'color' },
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+  renderCustomSection: (property, onChange) => {
+    const states = Array.isArray((property as any).states)
+      ? ((property as any).states as Array<{ value: string; color: string; label?: string }>)
+      : [];
+    return (
+      <div data-section="compressor-states">
+        <p className="text-xs text-zinc-400 mb-1">状态映射 ({states.length} 条)</p>
+        <button
+          className="text-xs text-blue-400 underline"
+          onClick={() => {
+            onChange({ states: [...states, { value: '0', color: '#9ca3af', label: '' }] });
+          }}
+        >
+          + 添加状态
+        </button>
+      </div>
+    );
+  },
+};
+
+export const valveSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'openValue', label: '开阀值', type: 'text', placeholder: '1' },
+    { key: 'openColor', label: '开阀颜色', type: 'color' },
+    { key: 'closedColor', label: '关阀颜色', type: 'color' },
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+};
+
+export const pumpSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'defaultColor', label: '默认颜色', type: 'color' },
+    { key: 'bladeCount', label: '叶片数量', type: 'number', min: 2, max: 8, step: 1 },
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+  renderCustomSection: (property, onChange) => {
+    const states = Array.isArray((property as any).states)
+      ? ((property as any).states as Array<{ value: string; color: string }>)
+      : [];
+    return (
+      <div data-section="pump-states">
+        <p className="text-xs text-zinc-400 mb-1">状态映射 ({states.length} 条)</p>
+        <button
+          className="text-xs text-blue-400 underline"
+          onClick={() => {
+            onChange({ states: [...states, { value: '0', color: '#9ca3af' }] });
+          }}
+        >
+          + 添加状态
+        </button>
+      </div>
+    );
+  },
+};
+
+export const htmlSelectSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'placeholder', label: '占位文本', type: 'text', placeholder: '请选择...' },
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+  renderCustomSection: (property, onChange) => {
+    const options = Array.isArray((property as any).options)
+      ? ((property as any).options as Array<{ value: string; label: string }>)
+      : [];
+    return (
+      <div data-section="select-options">
+        <p className="text-xs text-zinc-400 mb-1">选项列表 ({options.length} 条)</p>
+        <button
+          className="text-xs text-blue-400 underline"
+          onClick={() => {
+            onChange({ options: [...options, { value: '', label: '' }] });
+          }}
+        >
+          + 添加选项
+        </button>
+      </div>
+    );
+  },
+};
+
 /** Lookup map: widget.type → WidgetPropertySchema */
 export const WIDGET_SCHEMAS: Record<string, WidgetPropertySchema> = {
   'svg-ext-value': valueSchema,
@@ -305,4 +420,10 @@ export const WIDGET_SCHEMAS: Record<string, WidgetPropertySchema> = {
   'svg-ext-tank': tankSchema,
   'svg-ext-motor': motorSchema,
   'svg-ext-html_img': htmlImageSchema,
+  // SP-FX-10 batch 4
+  'svg-ext-html_iframe': htmlIframeSchema,
+  'svg-ext-compressor': compressorSchema,
+  'svg-ext-valve': valveSchema,
+  'svg-ext-pump': pumpSchema,
+  'svg-ext-html_select': htmlSelectSchema,
 };
