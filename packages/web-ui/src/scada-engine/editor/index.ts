@@ -11,3 +11,11 @@ export {
   applyMultiRotate, applyGroupResize, anchorOf,
   type Box, type Point, type HandleId,
 } from './geometry';
+
+// SP-FX-4 shell exports
+export { EditorShell, type EditorShellProps } from './editor-shell';
+export { Palette } from './palette/Palette';
+export { PALETTE_ITEMS, makeWidget, type PaletteItem, type PaletteItemType } from './palette/palette-items';
+export { Toolbar, type ToolbarProps } from './toolbar/Toolbar';
+export { executeSave, type CommandContext } from './toolbar/commands';
+export { PropertiesPlaceholder } from './properties/PropertiesPlaceholder';
