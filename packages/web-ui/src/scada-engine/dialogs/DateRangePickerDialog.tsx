@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useFocusTrap } from './useFocusTrap';
 
 export interface DateRangePickerDialogProps {
   isOpen: boolean;
@@ -23,6 +24,8 @@ export function DateRangePickerDialog({
   onClose,
   onConfirm,
 }: DateRangePickerDialogProps): JSX.Element | null {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, isOpen);
   const init = initialValue ?? { from: new Date(), to: new Date() };
   const [from, setFrom] = useState<Date>(init.from);
   const [to, setTo] = useState<Date>(init.to);
@@ -52,6 +55,7 @@ export function DateRangePickerDialog({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         data-dialog="date-range-picker"
         onKeyDown={handleKey}

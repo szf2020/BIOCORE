@@ -1,6 +1,7 @@
 'use client';
-import React from 'react';
+import React, { useRef } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useFocusTrap } from './useFocusTrap';
 
 export type MessageLevel = 'info' | 'warn' | 'error';
 
@@ -20,9 +21,12 @@ const LEVEL_STYLES: Record<MessageLevel, { icon: string; ring: string }> = {
 
 export function SectionMessageDialog({ open, level, title, message, onClose }: SectionMessageDialogProps) {
   const style = LEVEL_STYLES[level];
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, open);
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent
+        ref={dialogRef}
         data-level={level}
         className={`max-w-md rounded-lg bg-background p-6 shadow-lg border-2 ${style.ring}`}
       >

@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useFocusTrap } from './useFocusTrap';
 import {
   Home, Settings, User, Lock, Unlock, Bell, Mail, Search,
   ChevronUp, ChevronDown, ChevronLeft, ChevronRight,
@@ -60,6 +61,8 @@ export function IconSelectorDialog({
   onClose,
   onConfirm,
 }: IconSelectorDialogProps): JSX.Element | null {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, isOpen);
   const [q, setQ] = useState('');
   const [sel, setSel] = useState<string | undefined>(initialValue);
 
@@ -85,6 +88,7 @@ export function IconSelectorDialog({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         data-dialog="icon-selector"
         onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}

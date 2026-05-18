@@ -1,7 +1,8 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { z } from 'zod';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useFocusTrap } from './useFocusTrap';
 import type { FuxaView } from '../models/hmi';
 
 export interface ViewPropertyPatch {
@@ -26,6 +27,8 @@ export interface ViewPropertyDialogProps {
 }
 
 export function ViewPropertyDialog({ open, view, onSave, onCancel }: ViewPropertyDialogProps) {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, open);
   const [name, setName] = useState(view.name);
   const [width, setWidth] = useState(String(view.width));
   const [height, setHeight] = useState(String(view.height));
@@ -52,7 +55,7 @@ export function ViewPropertyDialog({ open, view, onSave, onCancel }: ViewPropert
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
-      <DialogContent className="max-w-md rounded-lg bg-background p-6 shadow-lg">
+      <DialogContent ref={dialogRef} className="max-w-md rounded-lg bg-background p-6 shadow-lg">
         <h2 className="text-lg font-semibold mb-4">视图属性</h2>
 
         <div className="space-y-3">

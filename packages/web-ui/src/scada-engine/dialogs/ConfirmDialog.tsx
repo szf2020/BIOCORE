@@ -1,6 +1,7 @@
 'use client';
-import React from 'react';
+import React, { useRef } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useFocusTrap } from './useFocusTrap';
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -23,9 +24,12 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, open);
+
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel?.(); }}>
-      <DialogContent className="max-w-md rounded-lg bg-background p-6 shadow-lg">
+      <DialogContent ref={dialogRef} className="max-w-md rounded-lg bg-background p-6 shadow-lg">
         <h2 className="text-lg font-semibold mb-2">{title}</h2>
         <p className="text-sm text-muted-foreground mb-4">{message}</p>
         <div className="flex justify-end gap-2">

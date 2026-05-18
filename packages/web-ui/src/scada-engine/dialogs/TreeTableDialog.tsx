@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useFocusTrap } from './useFocusTrap';
 
 export interface TreeTableNode {
   id: string;
@@ -66,6 +67,8 @@ export function TreeTableDialog({
   onClose,
   onConfirm,
 }: TreeTableDialogProps): JSX.Element | null {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, isOpen);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(initialValue ?? []));
 
   useEffect(() => {
@@ -91,6 +94,7 @@ export function TreeTableDialog({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         data-dialog="tree-table"
         onKeyDown={(e) => {

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useFocusTrap } from './useFocusTrap';
 
 export interface BitmaskDialogProps {
   isOpen: boolean;
@@ -17,6 +18,8 @@ export function BitmaskDialog({
   onClose,
   onConfirm,
 }: BitmaskDialogProps): JSX.Element | null {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, isOpen);
   const [value, setValue] = useState<number>(Math.round(initialValue));
 
   useEffect(() => {
@@ -36,6 +39,7 @@ export function BitmaskDialog({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         data-dialog="bitmask"
         onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}

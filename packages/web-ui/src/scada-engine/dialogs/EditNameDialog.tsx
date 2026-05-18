@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useFocusTrap } from './useFocusTrap';
 
 export interface EditNameDialogProps {
   isOpen: boolean;
@@ -15,6 +16,8 @@ export function EditNameDialog({
   onClose,
   onConfirm,
 }: EditNameDialogProps): JSX.Element | null {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, isOpen);
   const [value, setValue] = useState(initialValue);
 
   useEffect(() => {
@@ -31,6 +34,7 @@ export function EditNameDialog({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         data-dialog="edit-name"
         onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}

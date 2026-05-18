@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useId } from 'react';
+import React, { useState, useEffect, useId, useRef } from 'react';
+import { useFocusTrap } from './useFocusTrap';
 
 export interface RangeNumberDialogProps {
   isOpen: boolean;
@@ -15,6 +16,8 @@ export function RangeNumberDialog({
   onClose,
   onConfirm,
 }: RangeNumberDialogProps): JSX.Element | null {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, isOpen);
   const [min, setMin] = useState<number>(initialValue.min);
   const [max, setMax] = useState<number>(initialValue.max);
   const minId = useId();
@@ -38,6 +41,7 @@ export function RangeNumberDialog({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         data-dialog="range-number"
         onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}

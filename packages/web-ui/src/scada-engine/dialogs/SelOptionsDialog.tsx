@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useFocusTrap } from './useFocusTrap';
 
 export interface SelOptionsDialogProps {
   isOpen: boolean;
@@ -19,6 +20,8 @@ export function SelOptionsDialog({
   onClose,
   onConfirm,
 }: SelOptionsDialogProps): JSX.Element | null {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, isOpen);
   const [selected, setSelected] = useState<string[]>(() => {
     if (Array.isArray(initialValue)) return initialValue;
     if (typeof initialValue === 'string') return [initialValue];
@@ -53,6 +56,7 @@ export function SelOptionsDialog({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         data-dialog="sel-options"
         onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}

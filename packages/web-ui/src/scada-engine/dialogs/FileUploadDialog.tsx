@@ -1,6 +1,7 @@
 'use client';
 import React, { useRef, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useFocusTrap } from './useFocusTrap';
 
 export interface FileUploadDialogProps {
   open: boolean;
@@ -18,6 +19,8 @@ export function FileUploadDialog({
   maxSizeBytes = DEFAULT_MAX_SIZE, onUpload, onCancel,
 }: FileUploadDialogProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, open);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +45,7 @@ export function FileUploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
-      <DialogContent className="max-w-md rounded-lg bg-background p-6 shadow-lg">
+      <DialogContent ref={dialogRef} className="max-w-md rounded-lg bg-background p-6 shadow-lg">
         <h2 className="text-lg font-semibold mb-4">选择文件</h2>
         <input
           ref={inputRef}
