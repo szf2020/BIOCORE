@@ -220,4 +220,8 @@ export {
 } from './sqlite-service';
 export type { ScadaProjectMeta, ScadaViewMeta, ScadaView } from './sqlite-service';
 
+// SP-FX-19: 审计日志服务
+export { insertAuditLog, queryAuditLog } from './audit-log-service';
+export type { AuditLogEntry, AuditLogRow, AuditLogQuery } from './audit-log-service';
+
 export { InfluxService as default };
