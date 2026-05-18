@@ -61,4 +61,64 @@ describe('ViewCard', () => {
     render(<ViewCard view={baseView} onEdit={vi.fn()} onOpen={vi.fn()} onDuplicate={vi.fn()} onDelete={vi.fn()} />);
     expect(screen.getByTestId('view-card')).toBeTruthy();
   });
+
+  it('无 onAcl prop 时不显示权限按钮', () => {
+    render(<ViewCard view={baseView} onEdit={vi.fn()} onOpen={vi.fn()} onDuplicate={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.queryByTestId('view-card-acl-btn')).toBeNull();
+  });
+
+  it('admin 角色传入 onAcl 时显示权限按钮', () => {
+    render(
+      <ViewCard
+        view={baseView}
+        onEdit={vi.fn()} onOpen={vi.fn()} onDuplicate={vi.fn()} onDelete={vi.fn()}
+        currentUserId="u_admin"
+        currentUserRole="admin"
+        onAcl={vi.fn()}
+      />
+    );
+    expect(screen.getByTestId('view-card-acl-btn')).toBeTruthy();
+  });
+
+  it('owner 传入 onAcl 时显示权限按钮', () => {
+    const viewWithOwner = { ...baseView, owner_id: 'u_owner' };
+    render(
+      <ViewCard
+        view={viewWithOwner}
+        onEdit={vi.fn()} onOpen={vi.fn()} onDuplicate={vi.fn()} onDelete={vi.fn()}
+        currentUserId="u_owner"
+        currentUserRole="engineer"
+        onAcl={vi.fn()}
+      />
+    );
+    expect(screen.getByTestId('view-card-acl-btn')).toBeTruthy();
+  });
+
+  it('非 owner 非 admin 时不显示权限按钮（即使有 onAcl）', () => {
+    render(
+      <ViewCard
+        view={baseView}
+        onEdit={vi.fn()} onOpen={vi.fn()} onDuplicate={vi.fn()} onDelete={vi.fn()}
+        currentUserId="u_stranger"
+        currentUserRole="operator"
+        onAcl={vi.fn()}
+      />
+    );
+    expect(screen.queryByTestId('view-card-acl-btn')).toBeNull();
+  });
+
+  it('点击权限按钮调用 onAcl', () => {
+    const onAcl = vi.fn();
+    render(
+      <ViewCard
+        view={baseView}
+        onEdit={vi.fn()} onOpen={vi.fn()} onDuplicate={vi.fn()} onDelete={vi.fn()}
+        currentUserId="u_admin"
+        currentUserRole="admin"
+        onAcl={onAcl}
+      />
+    );
+    fireEvent.click(screen.getByTestId('view-card-acl-btn'));
+    expect(onAcl).toHaveBeenCalledWith('v1');
+  });
 });

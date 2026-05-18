@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { ExternalLink, Pencil, Copy, Trash2 } from 'lucide-react';
+import { ExternalLink, Pencil, Copy, Trash2, Shield } from 'lucide-react';
 import type { ViewMeta } from '@/hooks/useViewList';
 import { ThumbnailRenderer } from './ThumbnailRenderer';
 
@@ -10,6 +10,12 @@ interface Props {
   onOpen: (viewId: string) => void;
   onDuplicate: (viewId: string) => void;
   onDelete: (view: ViewMeta) => void;
+  /** 当前用户 ID (用于 owner 检查) */
+  currentUserId?: string;
+  /** 当前用户角色 (用于 admin 检查) */
+  currentUserRole?: string;
+  /** 点击权限按钮回调 (仅 owner 或 admin 时可见) */
+  onAcl?: (viewId: string) => void;
 }
 
 function relativeTime(iso?: string): string {
@@ -24,8 +30,12 @@ function relativeTime(iso?: string): string {
   return `${days} 天前`;
 }
 
-export function ViewCard({ view, onEdit, onOpen, onDuplicate, onDelete }: Props) {
+export function ViewCard({ view, onEdit, onOpen, onDuplicate, onDelete, currentUserId, currentUserRole, onAcl }: Props) {
   const hasSvg = typeof view.svgcontent === 'string' && view.svgcontent.trim().length > 0;
+
+  const isAdmin = currentUserRole === 'admin';
+  const isOwner = !!currentUserId && view.owner_id === currentUserId;
+  const showAclBtn = !!onAcl && (isAdmin || isOwner);
 
   return (
     <div
@@ -115,6 +125,16 @@ export function ViewCard({ view, onEdit, onOpen, onDuplicate, onDelete }: Props)
         >
           <Trash2 size={14} />
         </button>
+        {showAclBtn && (
+          <button
+            data-testid="view-card-acl-btn"
+            onClick={() => onAcl!(view.view_id)}
+            title="权限"
+            style={{ flex: 1, padding: '3px 0', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6b7280' }}
+          >
+            <Shield size={14} />
+          </button>
+        )}
       </div>
     </div>
   );

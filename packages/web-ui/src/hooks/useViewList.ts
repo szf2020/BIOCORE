@@ -11,6 +11,8 @@ export interface ViewMeta {
   is_svg?: number;
   updated_at?: string;
   svgcontent?: string | null;
+  owner_id?: string | null;
+  acl?: string; // JSON: { users: string[], roles: string[] }
 }
 
 export interface UseViewListOpts {
