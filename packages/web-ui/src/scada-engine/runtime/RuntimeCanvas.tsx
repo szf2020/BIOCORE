@@ -197,6 +197,42 @@ export function RuntimeCanvas({ view, viewId, reactorId }: RuntimeCanvasProps): 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view.id]);
 
+  // Effect G: SP-FX-31 — 订阅 gaugeRegistry.onReplace, 当 widget meta 被 hot-swap 时
+  // unmount 旧实例并 mount 新实例，保持 gaugeMapRef 与最新 meta 对齐.
+  useEffect(() => {
+    const unsubscribe = gaugeRegistry.onReplace((event) => {
+      const { widgetType, newMeta } = event;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      for (const [id, w] of Object.entries(view.items)) {
+        if ((w as FuxaWidget).type !== widgetType) continue;
+        const widget = w as FuxaWidget;
+
+        // unmount 旧实例
+        gaugeMapRef.current.get(id)?.onUnmount();
+        gaugeMapRef.current.delete(id);
+
+        // mount 新实例
+        const newGauge = newMeta.create();
+        const ctx: GaugeContext = {
+          parentGroup: canvas.widgetLayer.node as SVGGElement,
+          readValue: readTagSnapshot,
+          canvasSize: { width: view.width, height: view.height },
+          mode: 'runtime',
+          onWriteIntent: (intent: { tag: string; value: unknown; widgetId: string }) => {
+            const wItem = (view.items as Record<string, FuxaWidget>)[intent.widgetId] ?? null;
+            setDialogWidget(wItem);
+          },
+        };
+        newGauge.onMount(widget, ctx);
+        gaugeMapRef.current.set(id, newGauge);
+      }
+    });
+    return unsubscribe;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view.id, reactorId]);
+
   return (
     <>
       {/* SP-FX-25: gesture wrapper — overflow-hidden to clip panned/zoomed canvas */}

@@ -14,7 +14,7 @@ vi.mock('../../editor/canvas-svg', () => ({
 }));
 
 vi.mock('../../gauges/gauge-registry', () => ({
-  gaugeRegistry: { create: () => null, getSignals: () => [] },
+  gaugeRegistry: { create: () => null, getSignals: () => [], onReplace: () => () => {} },
 }));
 
 vi.mock('../../services/tag-binding-bridge', () => ({

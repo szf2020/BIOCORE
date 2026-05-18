@@ -33,6 +33,7 @@ vi.mock('../../gauges/gauge-registry', () => ({
   gaugeRegistry: {
     create: vi.fn().mockReturnValue(mockGauge),
     getSignals: vi.fn().mockReturnValue(['TAG_01']),
+    onReplace: vi.fn().mockReturnValue(vi.fn()),
   },
 }));
 
