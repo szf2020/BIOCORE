@@ -19,7 +19,7 @@
     "backup": "bash scripts/backup-db.sh",
     "backup:restore": "bash scripts/restore-db.sh",
     "seed:demo": "sqlite3 packages/server/data/biocore.db < scripts/seed-demo.sql",
-    "gen:shape-catalog": "node_modules/.pnpm/node_modules/.bin/tsx scripts/gen-shape-catalog.ts"
+    "gen:shape-catalog": "tsx scripts/gen-shape-catalog.ts"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -27,9 +27,16 @@
   },
   "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
   "pnpm": {
-    "onlyBuiltDependencies": ["puppeteer", "better-sqlite3", "node-snap7"]
+    "onlyBuiltDependencies": [
+      "puppeteer",
+      "better-sqlite3",
+      "node-snap7"
+    ]
   },
   "dependencies": {
     "playwright": "^1.59.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
   }
 }

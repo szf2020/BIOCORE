@@ -36,8 +36,8 @@ describe('genCatalog', () => {
     expect(count).toBe(2);
     const body = readFileSync(outFile, 'utf8');
     expect(body).toContain("export const SHAPE_CATALOG");
-    expect(body).toContain("{ id: \"a\", label: \"A\", src: '/scada-shapes/a.svg' }");
-    expect(body).toContain("{ id: \"b\", label: \"B\", src: '/scada-shapes/b.svg' }");
+    expect(body).toContain('{ id: "a", label: "A", src: "/scada-shapes/a.svg" }');
+    expect(body).toContain('{ id: "b", label: "B", src: "/scada-shapes/b.svg" }');
     expect(body.indexOf('a.svg')).toBeLessThan(body.indexOf('b.svg'));
   });
 
@@ -55,5 +55,14 @@ describe('genCatalog', () => {
     expect(count).toBe(1);
     const body = readFileSync(outFile, 'utf8');
     expect(body).toContain('a\\"b');
+  });
+
+  it("filename with single-quote is JSON-escaped in src field", () => {
+    writeFileSync(join(srcDir, "it's-a-valve.svg"), '<svg/>');
+    const { count } = genCatalog(srcDir, outFile);
+    expect(count).toBe(1);
+    const body = readFileSync(outFile, 'utf8');
+    // src must be double-quoted JSON so the apostrophe is safe
+    expect(body).toContain('src: "/scada-shapes/it\'s-a-valve.svg"');
   });
 });
