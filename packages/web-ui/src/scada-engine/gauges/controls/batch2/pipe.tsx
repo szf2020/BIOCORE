@@ -14,7 +14,12 @@ interface PipeAction {
 
 interface PipeProperty {
   variableId?: string;
-  options?: { pipe?: string; content?: string };
+  options?: {
+    pipe?: string;
+    content?: string;
+    flowDirection?: 'cw' | 'ccw' | 'none';
+    flowSpeed?: number;
+  };
   actions?: PipeAction[];
 }
 
@@ -25,6 +30,9 @@ class PipeGauge implements GaugeBase {
   private pipeEl: SVGLineElement | null = null;
   private widget!: FuxaWidget;
   private defaultColor = DEFAULT_PIPE_COLOR;
+  private flowInterval: ReturnType<typeof setInterval> | null = null;
+  private dashOffset = 0;
+  private ctxMode: 'editor' | 'runtime' = 'editor';
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -58,9 +66,40 @@ class PipeGauge implements GaugeBase {
     line.setAttribute('data-pipe', 'true');
     ctx.parentGroup.appendChild(line);
     this.pipeEl = line;
+
+    this.ctxMode = ctx.mode;
+    this.startFlowAnimation(w);
+  }
+
+  private startFlowAnimation(w: number): void {
+    const prop = this.widget.property as PipeProperty;
+    const dir = prop.options?.flowDirection;
+    if (this.ctxMode !== 'runtime' || !dir || dir === 'none') return;
+
+    const speed = prop.options?.flowSpeed ?? 2;
+    const dashLen = Math.max(10, w * 0.5);
+    this.dashOffset = 0;
+    this.pipeEl?.setAttribute('stroke-dasharray', `${dashLen} ${dashLen}`);
+    this.pipeEl?.setAttribute('stroke-dashoffset', '0');
+
+    this.flowInterval = setInterval(() => {
+      if (!this.pipeEl) return;
+      this.dashOffset = dir === 'cw'
+        ? this.dashOffset - speed
+        : this.dashOffset + speed;
+      this.pipeEl.setAttribute('stroke-dashoffset', String(this.dashOffset));
+    }, 16);
+  }
+
+  private stopFlowAnimation(): void {
+    if (this.flowInterval !== null) {
+      clearInterval(this.flowInterval);
+      this.flowInterval = null;
+    }
   }
 
   onUnmount(): void {
+    this.stopFlowAnimation();
     this.bgRect?.remove();
     this.pipeEl?.remove();
     this.bgRect = null;
@@ -85,6 +124,7 @@ class PipeGauge implements GaugeBase {
   }
 
   onPropertyChange(change: GaugePropChange): void {
+    this.stopFlowAnimation();
     this.widget = change.nextWidget;
     const prop = this.widget.property as PipeProperty;
     const pipeColor = prop.options?.pipe ?? DEFAULT_PIPE_COLOR;
@@ -94,6 +134,17 @@ class PipeGauge implements GaugeBase {
     }
     if (this.bgRect && prop.options?.content) {
       this.bgRect.setAttribute('fill', prop.options.content);
+    }
+    // Restart animation with potentially new flowDirection/flowSpeed
+    const w = (this.widget as any).w ?? 120;
+    if (this.pipeEl) {
+      const dir = prop.options?.flowDirection;
+      if (!dir || dir === 'none') {
+        this.pipeEl.removeAttribute('stroke-dasharray');
+        this.pipeEl.removeAttribute('stroke-dashoffset');
+      } else {
+        this.startFlowAnimation(w);
+      }
     }
   }
 

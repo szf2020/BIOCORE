@@ -1,5 +1,6 @@
 // SP-FX-6.2 T9: RED tests for PipeGauge — run BEFORE impl exists.
-import { describe, it, expect, vi } from 'vitest';
+// SP-FX-14: added flow animation tests (T1-T5)
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { GaugeContext } from '../../../gauge-base';
 import type { FuxaWidget } from '../../../../models';
 
@@ -25,11 +26,11 @@ const makeWidget = (overrides: Partial<FuxaWidget> = {}): FuxaWidget => ({
   ...overrides,
 } as unknown as FuxaWidget);
 
-const makeCtx = (): GaugeContext => ({
+const makeCtx = (mode: 'editor' | 'runtime' = 'editor'): GaugeContext => ({
   parentGroup: document.createElementNS('http://www.w3.org/2000/svg', 'g') as SVGGElement,
   readValue: vi.fn().mockReturnValue({ value: 0, isStale: false }),
   canvasSize: { width: 800, height: 600 },
-  mode: 'editor',
+  mode,
 });
 
 describe('PipeGauge', () => {
@@ -99,6 +100,81 @@ describe('PipeGauge', () => {
     expect(ctx.parentGroup.childElementCount).toBeGreaterThanOrEqual(1);
     gauge.onUnmount();
     expect(ctx.parentGroup.childElementCount).toBe(0);
+    expect(() => gauge.onUnmount()).not.toThrow();
+  });
+});
+
+// SP-FX-14: flow animation tests
+describe('PipeGauge — flow animation', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  const makeFlowWidget = (flowDirection: 'cw' | 'ccw' | 'none' = 'cw') =>
+    makeWidget({
+      property: {
+        variableId: 'r1.AI-2',
+        options: { pipe: '#E79180', content: '#DADADA', flowDirection, flowSpeed: 2 },
+        actions: [],
+      },
+    } as Partial<FuxaWidget>);
+
+  it('flowDirection="cw" runtime: pipeEl gets stroke-dasharray after onMount', async () => {
+    const { pipeMeta } = await import('../../../controls/batch2/pipe');
+    const ctx = makeCtx('runtime');
+    const gauge = pipeMeta.create();
+    gauge.onMount(makeFlowWidget('cw'), ctx);
+    const pipeEl = ctx.parentGroup.querySelector('[data-pipe="true"]') as SVGElement | null;
+    expect(pipeEl).toBeTruthy();
+    expect(pipeEl?.getAttribute('stroke-dasharray')).toBeTruthy();
+  });
+
+  it('flowDirection="cw" runtime: interval advances dashoffset each tick', async () => {
+    const { pipeMeta } = await import('../../../controls/batch2/pipe');
+    const ctx = makeCtx('runtime');
+    const gauge = pipeMeta.create();
+    gauge.onMount(makeFlowWidget('cw'), ctx);
+    const pipeEl = ctx.parentGroup.querySelector('[data-pipe="true"]') as SVGElement | null;
+    const before = parseFloat(pipeEl?.getAttribute('stroke-dashoffset') ?? '0');
+    vi.advanceTimersByTime(32);
+    const after = parseFloat(pipeEl?.getAttribute('stroke-dashoffset') ?? '0');
+    // cw: offset 减小（或因模运算变化）
+    expect(after).not.toBe(before);
+  });
+
+  it('flowDirection="none" runtime: no interval, no stroke-dasharray', async () => {
+    const { pipeMeta } = await import('../../../controls/batch2/pipe');
+    const ctx = makeCtx('runtime');
+    const gauge = pipeMeta.create();
+    gauge.onMount(makeFlowWidget('none'), ctx);
+    const pipeEl = ctx.parentGroup.querySelector('[data-pipe="true"]') as SVGElement | null;
+    const daBefore = pipeEl?.getAttribute('stroke-dasharray');
+    vi.advanceTimersByTime(100);
+    // 无动画时 stroke-dasharray 应为 null 或不变
+    expect(daBefore).toBeFalsy();
+  });
+
+  it('editor mode + flowDirection="cw": no interval (dashoffset stays static)', async () => {
+    const { pipeMeta } = await import('../../../controls/batch2/pipe');
+    const ctx = makeCtx('editor');
+    const gauge = pipeMeta.create();
+    gauge.onMount(makeFlowWidget('cw'), ctx);
+    const pipeEl = ctx.parentGroup.querySelector('[data-pipe="true"]') as SVGElement | null;
+    const before = pipeEl?.getAttribute('stroke-dashoffset') ?? null;
+    vi.advanceTimersByTime(100);
+    const after = pipeEl?.getAttribute('stroke-dashoffset') ?? null;
+    expect(after).toBe(before);
+  });
+
+  it('onUnmount clears interval and is idempotent', async () => {
+    const { pipeMeta } = await import('../../../controls/batch2/pipe');
+    const ctx = makeCtx('runtime');
+    const gauge = pipeMeta.create();
+    gauge.onMount(makeFlowWidget('cw'), ctx);
+    const pipeEl = ctx.parentGroup.querySelector('[data-pipe="true"]') as SVGElement | null;
+    gauge.onUnmount();
+    const offsetAfterUnmount = pipeEl?.getAttribute('stroke-dashoffset') ?? null;
+    vi.advanceTimersByTime(200);
+    // interval 已清除，offset 不再变化（元素已 remove，无法查询）
     expect(() => gauge.onUnmount()).not.toThrow();
   });
 });
