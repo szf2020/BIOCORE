@@ -19,3 +19,8 @@ export { PALETTE_ITEMS, makeWidget, type PaletteItem, type PaletteItemType } fro
 export { Toolbar, type ToolbarProps } from './toolbar/Toolbar';
 export { executeSave, type CommandContext } from './toolbar/commands';
 export { PropertiesPlaceholder } from './properties/PropertiesPlaceholder';
+
+// SP-FX-5
+export { ShapePicker } from './palette/ShapePicker';
+export { makeShapeWidget } from './palette/palette-items';
+export { SHAPE_CATALOG, type PaletteShape } from './palette/shape-catalog';
