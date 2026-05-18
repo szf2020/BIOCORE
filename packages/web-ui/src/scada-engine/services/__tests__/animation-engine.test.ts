@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { resolveAnimations, evalAnimations, type AnimationPatch } from '../animation-engine';
 import type { FuxaWidget } from '../../models';
 
@@ -136,5 +138,22 @@ describe('evalAnimations', () => {
     expect(patches).toHaveLength(1);
     expect(patches[0]!.target).toBe('rotate');
     expect(patches[0]!.value).toBeCloseTo(180, 0);
+  });
+});
+
+describe('animation-engine safety invariants (CI-greppable)', () => {
+  it('contains no writeTag, sendWsMessage, eval(), new Function, fetch(), XMLHttpRequest', () => {
+    const src = readFileSync(
+      resolve(__dirname, '../animation-engine.ts'),
+      'utf-8',
+    );
+    // Strip single-line comments before checking to avoid false positives from
+    // SAFETY INVARIANT comment that names the banned APIs for documentation.
+    const codeOnly = src
+      .split('\n')
+      .filter((line) => !line.trimStart().startsWith('//'))
+      .join('\n');
+    const BANNED = /writeTag|sendWsMessage|eval\(|new Function|fetch\(|XMLHttpRequest/;
+    expect(BANNED.test(codeOnly)).toBe(false);
   });
 });
