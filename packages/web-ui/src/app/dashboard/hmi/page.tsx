@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import { useLocale } from '@/i18n/useLocale';
+import { ViewListPanel } from '@/components/scada/pages/ViewListPanel';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -113,13 +114,8 @@ export default function HmiPage() {
         </Link>
       </header>
 
-      <main className="flex-1 relative bg-slate-100">
-        <iframe
-          key={selectedReactor}
-          src={scadaListUrl}
-          className="absolute inset-0 w-full h-full border-0"
-          title="BIOCore SCADA"
-        />
+      <main className="flex-1 overflow-auto bg-slate-100">
+        <ViewListPanel projectId="default" />
       </main>
     </div>
   );
