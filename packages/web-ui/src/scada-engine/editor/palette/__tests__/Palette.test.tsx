@@ -43,11 +43,13 @@ describe('Palette component (SP-FX-4)', () => {
     expect(recordedEffect).toBe('copy');
   });
 
-  it('items rendered as <li> inside <ul data-section="basic"> within data-panel="palette" wrapper', () => {
+  it('items rendered as <li> inside details[data-section="basic"] > ul within data-panel="palette" wrapper', () => {
+    // SP-FX-48.12: palette restructured into collapsible <details> sections;
+    // basic items now live inside <details data-section="basic"><ul>...
     const { container } = render(<Palette />);
     const panel = container.querySelector('[data-panel="palette"]') as HTMLElement;
     expect(panel).not.toBeNull();
-    const basic = panel.querySelector('ul[data-section="basic"]') as HTMLUListElement;
+    const basic = panel.querySelector('details[data-section="basic"] ul') as HTMLUListElement;
     expect(basic).not.toBeNull();
     const lis = Array.from(basic.children).filter((c) => c.tagName === 'LI');
     expect(lis.length).toBe(3);
