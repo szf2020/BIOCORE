@@ -66,3 +66,15 @@ describe('ShapePicker', () => {
     expect(grid.querySelectorAll('li').length).toBe(SHAPE_CATALOG.length);
   });
 });
+
+describe('ShapePicker category filter', () => {
+  it('omits category dropdown when SHAPE_CATALOG has no category entries', () => {
+    render(<ShapePicker />);
+    expect(document.querySelector('[data-input="shape-category"]')).toBeNull();
+  });
+
+  it('renders search input alongside no-category state', () => {
+    render(<ShapePicker />);
+    expect(screen.getByPlaceholderText('搜索形状...')).toBeInTheDocument();
+  });
+});

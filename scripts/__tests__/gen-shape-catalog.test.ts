@@ -66,3 +66,25 @@ describe('genCatalog', () => {
     expect(body).toContain('src: "/scada-shapes/it\'s-a-valve.svg"');
   });
 });
+
+describe('genCatalog category support', () => {
+  it('reads sidecar shape-categories.json and emits category field', () => {
+    writeFileSync(join(srcDir, 'pump-1.svg'), '<svg/>');
+    writeFileSync(join(srcDir, 'valve-3way.svg'), '<svg/>');
+    const catsFile = join(tmpRoot, 'cats.json');
+    writeFileSync(catsFile, JSON.stringify({ 'pump-1': 'pumps', 'valve-3way': 'valves' }));
+    const { count } = genCatalog(srcDir, outFile, catsFile);
+    expect(count).toBe(2);
+    const body = readFileSync(outFile, 'utf8');
+    expect(body).toContain('category: "pumps"');
+    expect(body).toContain('category: "valves"');
+  });
+
+  it('no sidecar produces entries without category field', () => {
+    writeFileSync(join(srcDir, 'tank.svg'), '<svg/>');
+    const { count } = genCatalog(srcDir, outFile);
+    expect(count).toBe(1);
+    const body = readFileSync(outFile, 'utf8');
+    expect(body).not.toContain('category:');
+  });
+});

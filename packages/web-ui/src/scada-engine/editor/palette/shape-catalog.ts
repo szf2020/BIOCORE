@@ -4,6 +4,7 @@ export interface PaletteShape {
   id: string;
   label: string;
   src: string;
+  category?: string;
 }
 
 export const SHAPE_CATALOG: ReadonlyArray<PaletteShape> = [

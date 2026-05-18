@@ -3,23 +3,46 @@ import { SHAPE_CATALOG, type PaletteShape } from './shape-catalog';
 
 export function ShapePicker(): JSX.Element {
   const [q, setQ] = useState('');
+  const [cat, setCat] = useState<string>('');
+  const distinctCats = useMemo(() => {
+    const s = new Set<string>();
+    for (const e of SHAPE_CATALOG) if (e.category) s.add(e.category);
+    return Array.from(s).sort();
+  }, []);
   const filtered = useMemo<ReadonlyArray<PaletteShape>>(() => {
-    if (!q.trim()) return SHAPE_CATALOG;
-    const lo = q.toLowerCase();
-    return SHAPE_CATALOG.filter(
-      (s) => s.id.toLowerCase().includes(lo) || s.label.toLowerCase().includes(lo),
-    );
-  }, [q]);
+    let xs: ReadonlyArray<PaletteShape> = SHAPE_CATALOG;
+    if (cat) xs = xs.filter((s) => s.category === cat);
+    if (q.trim()) {
+      const lo = q.toLowerCase();
+      xs = xs.filter(
+        (s) => s.id.toLowerCase().includes(lo) || s.label.toLowerCase().includes(lo),
+      );
+    }
+    return xs;
+  }, [q, cat]);
 
   return (
     <div data-panel="shape-picker" className="flex flex-col flex-1 min-h-0 border-t border-zinc-700">
+      {distinctCats.length > 0 ? (
+        <select
+          data-input="shape-category"
+          value={cat}
+          onChange={(e) => setCat(e.target.value)}
+          className="m-2 px-2 py-1 text-sm bg-zinc-800 text-zinc-100 rounded"
+        >
+          <option value="">全部</option>
+          {distinctCats.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      ) : null}
       <input
         data-input="shape-search"
         type="text"
         placeholder="搜索形状..."
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        className="m-2 px-2 py-1 text-sm bg-zinc-800 text-zinc-100 rounded"
+        className="m-2 mt-0 px-2 py-1 text-sm bg-zinc-800 text-zinc-100 rounded"
       />
       {filtered.length === 0 ? (
         <p data-empty className="px-2 text-sm text-zinc-500">无匹配</p>
