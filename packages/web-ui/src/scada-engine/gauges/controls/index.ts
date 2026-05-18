@@ -16,3 +16,8 @@ gaugeRegistry.register(htmlChartMeta);
 gaugeRegistry.register(htmlTableMeta);
 
 export { valueMeta, htmlButtonMeta, htmlInputMeta, htmlChartMeta, htmlTableMeta };
+
+// SP-FX-11: unify all 4 batches — side-effect imports trigger registration
+import './batch2/index';
+import './batch3/index';
+import './batch4/index';
