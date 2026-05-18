@@ -170,3 +170,29 @@ describe('CanvasController.setGridVisible (SP-FX-3b.1)', () => {
     expect(container.querySelector('[data-widget-id="w1"]')).not.toBeNull();
   });
 });
+
+describe('CanvasController.upsertWidget rotate regression (SP-FX-3b.2.3)', () => {
+  it('upsertWidget existing widget rotate 30→60 updates transform attr', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = { ...makeWidget('w1', 50, 50, 100, 60), rotate: 30 } as any;
+    c.loadView(makeView({ w1: w }));
+    const el = container.querySelector('[data-widget-id="w1"]') as SVGElement;
+    expect(el.getAttribute('transform')).toBe('rotate(30 100 80)');
+    c.upsertWidget({ ...w, rotate: 60 });
+    expect(el.getAttribute('transform')).toBe('rotate(60 100 80)');
+    c.destroy();
+  });
+
+  it('upsertWidget existing widget rotate set to undefined removes transform attr', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = { ...makeWidget('w1', 50, 50, 100, 60), rotate: 30 } as any;
+    c.loadView(makeView({ w1: w }));
+    const el = container.querySelector('[data-widget-id="w1"]') as SVGElement;
+    expect(el.getAttribute('transform')).toBe('rotate(30 100 80)');
+    c.upsertWidget(makeWidget('w1', 50, 50, 100, 60));
+    expect(el.getAttribute('transform')).toBeNull();
+    c.destroy();
+  });
+});
