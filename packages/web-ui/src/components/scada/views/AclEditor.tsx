@@ -12,6 +12,7 @@
 // ============================================================
 
 import React, { useState } from 'react';
+import { useLocale } from '@/i18n/useLocale';
 
 const ALL_ROLES = ['admin', 'operator', 'engineer', 'viewer'] as const;
 
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export function AclEditor({ viewId, currentAcl, onClose, onSaved }: Props) {
+  const { t } = useLocale();
   const [users, setUsers] = useState<string[]>(currentAcl.users);
   const [roles, setRoles] = useState<string[]>(currentAcl.roles);
   const [newUser, setNewUser] = useState('');
@@ -66,12 +68,12 @@ export function AclEditor({ viewId, currentAcl, onClose, onSaved }: Props) {
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? '保存失败');
+        setError(data.error ?? t('acl-editor.save'));
         return;
       }
       onSaved();
     } catch {
-      setError('网络错误');
+      setError(t('common.error'));
     } finally {
       setSaving(false);
     }
@@ -91,11 +93,11 @@ export function AclEditor({ viewId, currentAcl, onClose, onSaved }: Props) {
         background: '#fff', borderRadius: 8,
         padding: 24, minWidth: 360, boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
       }}>
-        <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600 }}>视图权限设置</h3>
+        <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600 }}>{t('acl-editor.title')}</h3>
 
         {/* Users 列表 */}
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>允许的用户</div>
+          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>{t('acl-editor.user')}</div>
           <div style={{ marginBottom: 8 }}>
             {users.map(uid => (
               <div key={uid} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
@@ -116,7 +118,7 @@ export function AclEditor({ viewId, currentAcl, onClose, onSaved }: Props) {
               value={newUser}
               onChange={e => setNewUser(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') addUser(); }}
-              placeholder="输入用户 ID"
+              placeholder={t('acl-editor.user')}
               style={{ flex: 1, padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 4, fontSize: 13 }}
             />
             <button
@@ -131,7 +133,7 @@ export function AclEditor({ viewId, currentAcl, onClose, onSaved }: Props) {
 
         {/* Roles 复选框 */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>允许的角色</div>
+          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>{t('acl-editor.role')}</div>
           {ALL_ROLES.map(role => (
             <label key={role} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, cursor: 'pointer', fontSize: 13 }}>
               <input

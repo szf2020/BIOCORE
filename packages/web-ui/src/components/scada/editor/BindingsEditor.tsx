@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { useLocale } from '@/i18n/useLocale';
 import type { Binding } from '@/widgets';
 
 export interface BindingsEditorProps {
@@ -9,6 +10,7 @@ export interface BindingsEditorProps {
 }
 
 export function BindingsEditor({ bindings, bindableProps, onChange }: BindingsEditorProps) {
+  const { t } = useLocale();
   const handleAdd = () => {
     const defaultProp = bindableProps[0] ?? '';
     onChange([...bindings, { tag: '', prop: defaultProp }]);
@@ -33,7 +35,7 @@ export function BindingsEditor({ bindings, bindableProps, onChange }: BindingsEd
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-700">绑定 (Bindings)</span>
+        <span className="text-sm font-semibold text-gray-700">{t('bindings-editor.title')}</span>
         <button
           type="button"
           onClick={handleAdd}
@@ -44,13 +46,13 @@ export function BindingsEditor({ bindings, bindableProps, onChange }: BindingsEd
         </button>
       </div>
       {bindings.length === 0 && (
-        <div className="text-sm text-gray-400 italic">无绑定</div>
+        <div className="text-sm text-gray-400 italic">{t('bindings-editor.no-bindings')}</div>
       )}
       {bindings.map((b, i) => (
         <div key={i} className="border rounded p-2 space-y-1 bg-gray-50">
           <div className="grid grid-cols-2 gap-1">
             <div>
-              <label className="block text-sm text-gray-600">字段</label>
+              <label className="block text-sm text-gray-600">Field</label>
               <select
                 value={b.prop}
                 onChange={(e) => update(i, { prop: e.target.value })}
@@ -73,7 +75,7 @@ export function BindingsEditor({ bindings, bindableProps, onChange }: BindingsEd
             </div>
           </div>
           <div>
-            <label className="block text-sm text-gray-600">变换 (可选, v=原值)</label>
+            <label className="block text-sm text-gray-600">Transform (opt, v=value)</label>
             <textarea
               name="transform"
               value={b.transform ?? ''}

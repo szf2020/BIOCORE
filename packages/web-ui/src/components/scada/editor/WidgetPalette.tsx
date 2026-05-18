@@ -1,12 +1,14 @@
 'use client';
 import React from 'react';
+import { useLocale } from '@/i18n/useLocale';
 import { WIDGET_REGISTRY } from '@/widgets/registry';
 
 export function WidgetPalette() {
+  const { t } = useLocale();
   const keys = Object.keys(WIDGET_REGISTRY) as Array<keyof typeof WIDGET_REGISTRY>;
   return (
     <div className="p-3 space-y-2 overflow-y-auto bg-white border-r" style={{ width: 180 }}>
-      <h3 className="text-sm font-semibold text-gray-700 mb-2">控件</h3>
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">{t('widget-palette.title')}</h3>
       {keys.map(k => {
         const entry = WIDGET_REGISTRY[k];
         return (

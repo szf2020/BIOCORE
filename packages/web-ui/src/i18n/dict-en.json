@@ -220,6 +220,7 @@
   "acl-editor.save": "Save Permissions",
   "acl-editor.no-users": "No permissions configured",
   "new-view-dialog.title": "New View",
+  "new-view-dialog.view-id-label": "View ID",
   "new-view-dialog.name-label": "View Name",
   "new-view-dialog.name-placeholder": "Enter view name...",
   "new-view-dialog.template-label": "Use Template",

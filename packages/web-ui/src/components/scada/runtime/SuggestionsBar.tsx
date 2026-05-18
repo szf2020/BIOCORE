@@ -1,5 +1,6 @@
 'use client';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocale } from '@/i18n/useLocale';
 import {
   fetchScadaSuggestions,
   acceptSuggestion as apiAccept,
@@ -79,6 +80,7 @@ export interface SuggestionsBarProps {
 // SuggestionsBar
 // ---------------------------------------------------------------------------
 export function SuggestionsBar({ viewId, reactorId: _reactorId, showSuggestions = true }: SuggestionsBarProps) {
+  const { t } = useLocale();
   const [collapsed, setCollapsed] = useState(false);
   const { suggestions, loading, error, accept, reject } = useSuggestionsBar(viewId);
 
@@ -86,10 +88,10 @@ export function SuggestionsBar({ viewId, reactorId: _reactorId, showSuggestions 
 
   const count = suggestions.length;
   const headerLabel = loading
-    ? '加载中…'
+    ? t('common.loading')
     : error
-      ? `错误: ${error}`
-      : `AI 建议 (${count} 条)`;
+      ? `${t('common.error')}: ${error}`
+      : `${t('suggestions-bar.title')} (${count})`;
 
   return (
     <div
@@ -128,7 +130,7 @@ export function SuggestionsBar({ viewId, reactorId: _reactorId, showSuggestions 
           type="button"
           onClick={(e) => { e.stopPropagation(); setCollapsed((c) => !c); }}
           style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}
-          aria-label={collapsed ? '展开' : '收起'}
+          aria-label={collapsed ? t('app-layout.expand-menu') : t('app-layout.collapse-menu')}
         >
           {collapsed ? '▲' : '▼'}
         </button>
@@ -141,7 +143,7 @@ export function SuggestionsBar({ viewId, reactorId: _reactorId, showSuggestions 
           style={{ overflowY: 'auto', maxHeight: 276, padding: '0 12px 8px' }}
         >
           {count === 0 && !loading && !error && (
-            <div style={{ color: '#9ca3af', fontSize: 13, padding: '8px 4px' }}>暂无待处理建议</div>
+            <div style={{ color: '#9ca3af', fontSize: 13, padding: '8px 4px' }}>{t('suggestions-bar.no-suggestions')}</div>
           )}
           {suggestions.map((s) => {
             let reason = s.reasoning ?? '—';
