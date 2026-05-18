@@ -67,6 +67,7 @@ import { startScadaWriteDispatcher } from './engine/scada-write-dispatcher';
 import { createPlcWriter } from './engine/plc-writer';
 import { executeRecipePlcWrite } from './engine/recipe-plc-write';
 import { registerAuditLogRoutes } from './audit-log-routes';
+import { registerBackupRoutes } from './backup-routes';
 import type { BatchControllerConfig } from '@biocore/batch-engine';
 import {
   installCrashHandlers,
@@ -531,6 +532,8 @@ registerRecipeRoutes(apiRouter, {
 });
 registerBatchRoutes(apiRouter, sqlite);
 registerAuditLogRoutes(apiRouter, sqlite);
+// SP-FX-20: backup / restore UI
+registerBackupRoutes(apiRouter, { dataDir: DATA_DIR });
 // route-handler-split: 认证 + 用户管理 抽离到 ./auth-routes
 // createJWT/verifyPassword/hashPasswordBcrypt 仍在本文件 (test/scheduler 路径
 // 复用), 通过 deps 注入。函数声明已提升, 引用安全。
