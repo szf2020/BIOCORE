@@ -43,13 +43,14 @@ describe('Palette component (SP-FX-4)', () => {
     expect(recordedEffect).toBe('copy');
   });
 
-  it('items rendered as <li> inside <ul data-panel="palette">', () => {
+  it('items rendered as <li> inside <ul data-section="basic"> within data-panel="palette" wrapper', () => {
     const { container } = render(<Palette />);
-    const ul = container.querySelector('ul[data-panel="palette"]');
-    expect(ul).not.toBeNull();
-    // Avoid :scope > li selector (jsdom/nwsapi bug with className containing brackets).
-    // Filter children to LI elements via direct DOM API.
-    const lis = Array.from(ul!.children).filter((c) => c.tagName === 'LI');
+    const panel = container.querySelector('[data-panel="palette"]') as HTMLElement;
+    expect(panel).not.toBeNull();
+    const basic = panel.querySelector('ul[data-section="basic"]') as HTMLUListElement;
+    expect(basic).not.toBeNull();
+    const lis = Array.from(basic.children).filter((c) => c.tagName === 'LI');
     expect(lis.length).toBe(3);
+    expect(panel.querySelector('[data-panel="shape-picker"]')).not.toBeNull();
   });
 });
