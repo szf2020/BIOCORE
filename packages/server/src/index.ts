@@ -68,6 +68,7 @@ import { createPlcWriter } from './engine/plc-writer';
 import { executeRecipePlcWrite } from './engine/recipe-plc-write';
 import { registerAuditLogRoutes } from './audit-log-routes';
 import { registerBackupRoutes } from './backup-routes';
+import { createBackupSchedulerFromEnv, BackupScheduler } from './services/backup-scheduler';
 // SP-FX-28: Prometheus metrics
 import { registerMetricsRoutes } from './metrics-routes';
 import { metricsRegistry } from './services/metrics';
@@ -540,8 +541,9 @@ registerRecipeRoutes(apiRouter, {
 });
 registerBatchRoutes(apiRouter, sqlite);
 registerAuditLogRoutes(apiRouter, sqlite);
-// SP-FX-20: backup / restore UI
-registerBackupRoutes(apiRouter, { dataDir: DATA_DIR });
+// SP-FX-20: backup / restore UI; SP-FX-39: scheduler dep 注入
+const backupScheduler: BackupScheduler | null = createBackupSchedulerFromEnv(DATA_DIR);
+registerBackupRoutes(apiRouter, { dataDir: DATA_DIR, scheduler: backupScheduler ?? undefined });
 // route-handler-split: 认证 + 用户管理 抽离到 ./auth-routes
 // createJWT/verifyPassword/hashPasswordBcrypt 仍在本文件 (test/scheduler 路径
 // 复用), 通过 deps 注入。函数声明已提升, 引用安全。
@@ -3340,6 +3342,8 @@ async function gracefulShutdown(signal: string): Promise<void> {
     }
     // 5. 停止后台调度器 (AI 建议引擎等)
     stopSchedulers();
+    // SP-FX-39: 停止 backup scheduler
+    try { backupScheduler?.stop(); } catch { /* ignore */ }
     // 6. Flush + close InfluxDB
     if (influxWriteApi) {
       try { await influxWriteApi.close(); } catch { /* ignore */ }
@@ -3477,6 +3481,8 @@ async function start(): Promise<void> {
     },
   });
   });
+  // SP-FX-39: 启动 backup scheduler (仅当 BACKUP_INTERVAL_HOURS 已设置)
+  backupScheduler?.start();
 }
 
 start().catch((e) => {
