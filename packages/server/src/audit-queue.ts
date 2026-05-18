@@ -17,8 +17,15 @@
  */
 
 import type { SQLiteService } from '@biocore/data-service';
+import { metricsRegistry } from './services/metrics';
 
 type WriteAuditLogArgs = Parameters<SQLiteService['writeAuditLog']>[0];
+
+// SP-FX-28: audit log writes counter (全局 registry 单例)
+const auditWritesTotal = metricsRegistry.counter(
+  'audit_log_writes_total',
+  'Total number of audit log entries written to SQLite',
+);
 
 export class AuditQueue {
   private queue: WriteAuditLogArgs[] = [];
@@ -56,6 +63,8 @@ export class AuditQueue {
       });
       txn(batch);
       this.stats.drained += batch.length;
+      // SP-FX-28: 每成功写入一条 audit log 计数加 1
+      for (let i = 0; i < batch.length; i++) auditWritesTotal.inc();
     } catch (e) {
       this.stats.dropped += batch.length;
       console.error('[AUDIT] queue drain failed; ' + batch.length + ' rows dropped:', (e as Error).message);

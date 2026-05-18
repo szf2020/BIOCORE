@@ -2923,6 +2923,8 @@ apiRouter.post('/ai/suggestions/:id/accept', (req: any, res) => {
       ip_address: req.ip || req.socket?.remoteAddress || null,
       trace_id: req.trace_id,
     });
+    // SP-FX-28: write_intent accept 计数
+    metricsRegistry.counter('write_intent_total', 'WriteIntent accept/reject count').inc({ result: 'accept' });
     // 广播建议被采纳事件
     broadcast('ai_suggestion', { id: parseInt(req.params.id), action: 'accepted' });
     res.json({ success: true });
@@ -2942,6 +2944,8 @@ apiRouter.post('/ai/suggestions/:id/reject', (req: any, res) => {
       ip_address: req.ip || req.socket?.remoteAddress || null,
       trace_id: req.trace_id,
     });
+    // SP-FX-28: write_intent reject 计数
+    metricsRegistry.counter('write_intent_total', 'WriteIntent accept/reject count').inc({ result: 'reject' });
     res.json({ success: true });
   } catch (e) {
     res.status(400).json({ error: (e as Error).message });
