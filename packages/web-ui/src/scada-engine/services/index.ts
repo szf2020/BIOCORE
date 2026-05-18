@@ -24,3 +24,13 @@ export {
   evalExpression,
   parseTagsFromExpression,
 } from './expression-eval';
+
+// SP-FX-7 additions
+export {
+  resolveAnimations,
+  evalAnimations,
+  type AnimationPatch,
+  type ResolvedAnimation,
+} from './animation-engine';
+
+export { bindGaugesToRealtime } from './tag-binding-bridge';
