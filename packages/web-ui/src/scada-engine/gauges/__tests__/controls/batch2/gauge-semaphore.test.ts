@@ -124,7 +124,7 @@ describe('GaugeSemaphore — blink/hide/show actions', () => {
     gauge.onProcess({ value: 50, isStale: false });
     const el = ctx.parentGroup.querySelector('[data-widget-id="w1"]') as SVGCircleElement | null;
     expect(el).toBeTruthy();
-    expect((el as HTMLElement).style.display).toBe('none');
+    expect((el as unknown as HTMLElement).style.display).toBe('none');
   });
 
   it('show action with range match: circleEl style.display = ""', async () => {
@@ -135,7 +135,7 @@ describe('GaugeSemaphore — blink/hide/show actions', () => {
     gauge.onProcess({ value: 50, isStale: false });
     const el = ctx.parentGroup.querySelector('[data-widget-id="w1"]') as SVGCircleElement | null;
     expect(el).toBeTruthy();
-    expect((el as HTMLElement).style.display).toBe('');
+    expect((el as unknown as HTMLElement).style.display).toBe('');
   });
 
   it('blink action with range match: blinkInterval starts and toggles visibility', async () => {
@@ -145,9 +145,9 @@ describe('GaugeSemaphore — blink/hide/show actions', () => {
     gauge.onMount(makeActionWidget('blink', true), ctx);
     gauge.onProcess({ value: 50, isStale: false });
     const el = ctx.parentGroup.querySelector('[data-widget-id="w1"]') as SVGCircleElement | null;
-    const visibilityBefore = (el as HTMLElement).style.visibility;
+    const visibilityBefore = (el as unknown as HTMLElement).style.visibility;
     vi.advanceTimersByTime(500);
-    const visibilityAfter = (el as HTMLElement).style.visibility;
+    const visibilityAfter = (el as unknown as HTMLElement).style.visibility;
     // visibility should have toggled
     expect(visibilityAfter).not.toBe(visibilityBefore);
   });
@@ -159,9 +159,9 @@ describe('GaugeSemaphore — blink/hide/show actions', () => {
     gauge.onMount(makeActionWidget('blink', false), ctx);
     gauge.onProcess({ value: 50, isStale: false });
     const el = ctx.parentGroup.querySelector('[data-widget-id="w1"]') as SVGCircleElement | null;
-    const visibilityBefore = (el as HTMLElement).style.visibility;
+    const visibilityBefore = (el as unknown as HTMLElement).style.visibility;
     vi.advanceTimersByTime(600);
-    const visibilityAfter = (el as HTMLElement).style.visibility;
+    const visibilityAfter = (el as unknown as HTMLElement).style.visibility;
     expect(visibilityAfter).toBe(visibilityBefore);
   });
 
