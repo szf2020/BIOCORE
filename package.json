@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "chokidar": "^3.6.0",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "vitest": "1.6.1"
   }
 }
