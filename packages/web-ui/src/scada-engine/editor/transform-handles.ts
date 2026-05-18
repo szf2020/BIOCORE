@@ -63,8 +63,9 @@ export class TransformHandles {
     this.mode = 'bbox';
     this.group.attr('visibility', 'visible');
     this.selectionRect.attr('stroke-dasharray', BBOX_DASH);
+    // SP-FX-3b.2.3: all 9 handles visible in bbox mode for group-resize / group-rotate
     for (const id of ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se', 'rotate'] as HandleId[]) {
-      this.handles[id].attr('visibility', 'hidden');
+      this.handles[id].attr('visibility', 'visible');
     }
     for (const c of this.bboxCorners) c.attr('visibility', 'visible');
     this.layoutBbox(bbox);
@@ -77,6 +78,12 @@ export class TransformHandles {
     this.bboxCorners[1].attr('x', bbox.x + bbox.w - half).attr('y', bbox.y - half);
     this.bboxCorners[2].attr('x', bbox.x - half).attr('y', bbox.y + bbox.h - half);
     this.bboxCorners[3].attr('x', bbox.x + bbox.w - half).attr('y', bbox.y + bbox.h - half);
+    // SP-FX-3b.2.3: position 9 handles (8 resize + rotate) at bbox edges
+    const positions = handlePositions(bbox);
+    for (const id in positions) {
+      const p = positions[id as HandleId];
+      this.handles[id as HandleId].attr('x', p.x - HANDLE_HALF).attr('y', p.y - HANDLE_HALF);
+    }
   }
 
   hide(): void {
