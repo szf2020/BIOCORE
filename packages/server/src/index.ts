@@ -68,6 +68,10 @@ import { createPlcWriter } from './engine/plc-writer';
 import { executeRecipePlcWrite } from './engine/recipe-plc-write';
 import { registerAuditLogRoutes } from './audit-log-routes';
 import { registerBackupRoutes } from './backup-routes';
+// SP-FX-28: Prometheus metrics
+import { registerMetricsRoutes } from './metrics-routes';
+import { metricsRegistry } from './services/metrics';
+import { createMetricsMiddleware } from './middlewares/metrics-middleware';
 import type { BatchControllerConfig } from '@biocore/batch-engine';
 import {
   installCrashHandlers,
@@ -628,6 +632,11 @@ apiRouter.use('/notifications', createNotificationsRouter({
   db: sqlite.getDatabase(),
   alertRouter,
 }));
+
+// SP-FX-28: Prometheus metrics endpoint (admin only)
+registerMetricsRoutes(apiRouter, metricsRegistry);
+// SP-FX-28: HTTP metrics middleware (全局拦截, 在挂载前注册)
+app.use(createMetricsMiddleware(metricsRegistry));
 
 // 双挂载:
 //   /api/v1/* — 新路径, 走 v1ResponseWrapper → authMiddleware → apiRouter
