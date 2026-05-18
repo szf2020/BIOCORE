@@ -5,7 +5,7 @@ import { CanvasController } from './canvas-svg';
 import { TransformHandles, SnapGuides, RotateTooltip } from './transform-handles';
 import { PointerTools } from './pointer-tools';
 import { snapPoint, computeBbox, clientToSvg, type Box } from './geometry';
-import { makeWidget, makeShapeWidget } from './palette/palette-items';
+import { makeWidget, makeShapeWidget, makeGaugeWidget } from './palette/palette-items';
 import type { FuxaWidget } from '../models';
 
 interface Refs {
@@ -361,6 +361,13 @@ export function EditorCanvas() {
           } catch {
             // malformed JSON; silently ignore
           }
+          return;
+        }
+
+        // SP-FX-27: batch 2 gauge widgets drag support.
+        const gaugeType = e.dataTransfer.getData('palette-gauge');
+        if (gaugeType) {
+          store.addWidget(makeGaugeWidget(gaugeType, local, store.gridSize));
         }
       }}
     >

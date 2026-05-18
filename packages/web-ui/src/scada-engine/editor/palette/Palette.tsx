@@ -1,7 +1,8 @@
 // SP-FX-4 + SP-FX-5: palette panel — basic shapes on top, ShapePicker below.
+// SP-FX-27: batch 2 gauge widgets section added between basic and ShapePicker.
 
 import React from 'react';
-import { PALETTE_ITEMS } from './palette-items';
+import { PALETTE_ITEMS, GAUGE_PALETTE_ITEMS } from './palette-items';
 import { ShapePicker } from './ShapePicker';
 
 export function Palette(): JSX.Element {
@@ -15,6 +16,22 @@ export function Palette(): JSX.Element {
             data-palette-item={item.id}
             onDragStart={(e) => {
               e.dataTransfer.setData('palette-item', item.id);
+              e.dataTransfer.effectAllowed = 'copy';
+            }}
+            className="cursor-grab px-2 py-1 text-sm text-zinc-100 hover:bg-zinc-800 rounded"
+          >
+            {item.label}
+          </li>
+        ))}
+      </ul>
+      <ul data-section="gauges" className="p-2 space-y-1 border-t border-zinc-700">
+        {GAUGE_PALETTE_ITEMS.map((item) => (
+          <li
+            key={item.widgetType}
+            draggable
+            data-palette-gauge={item.widgetType}
+            onDragStart={(e) => {
+              e.dataTransfer.setData('palette-gauge', item.widgetType);
               e.dataTransfer.effectAllowed = 'copy';
             }}
             className="cursor-grab px-2 py-1 text-sm text-zinc-100 hover:bg-zinc-800 rounded"
