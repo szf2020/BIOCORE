@@ -16,23 +16,22 @@ export interface PropertyPanelProps {
   widget: FuxaWidget | null;
   schema: WidgetPropertySchema | null;
   onChange: (patch: Partial<FuxaWidget>) => void;
+  /** SP-FX-25: mobile bottom-sheet 模式 */
+  mobileMode?: boolean;
 }
 
 const BASE_CLASS = 'w-[250px] flex-shrink-0 border-l border-zinc-700 bg-zinc-900 p-3 text-sm text-zinc-100 overflow-y-auto';
+const BOTTOM_SHEET_CLASS = 'fixed bottom-0 left-0 right-0 z-50 bg-zinc-900 border-t border-zinc-700 p-3 text-sm text-zinc-100 overflow-y-auto max-h-[60vh]';
 
-export function PropertyPanel({ widget, schema, onChange }: PropertyPanelProps): JSX.Element {
-  const reactorData = useRealtimeStore((s) => s.reactorData);
-  const tagOptions = Object.keys(reactorData).flatMap((rid) =>
-    PROCESS_VALUES_FIELDS.map((f) => `${rid}.${f}`)
-  );
-
-  if (!widget) {
-    return <aside data-panel="properties" className={BASE_CLASS}><p>未选中</p></aside>;
-  }
-  if (!schema) {
-    return <aside data-panel="properties" className={BASE_CLASS}><p>无属性面板</p></aside>;
-  }
-
+/** 内容区复用组件，避免重复 JSX */
+function PropertyContent({
+  widget, schema, tagOptions, onChange,
+}: {
+  widget: FuxaWidget;
+  schema: WidgetPropertySchema;
+  tagOptions: string[];
+  onChange: (patch: Partial<FuxaWidget>) => void;
+}): JSX.Element {
   const property = (widget.property ?? {}) as Record<string, unknown>;
 
   function handleChange(entry: PropertySchemaEntry, rawValue: unknown): void {
@@ -47,24 +46,64 @@ export function PropertyPanel({ widget, schema, onChange }: PropertyPanelProps):
   }
 
   return (
-    <aside data-panel="properties" className={BASE_CLASS}>
-      <div className="space-y-2">
-        {schema.entries.map((entry) => (
-          <div key={entry.key} className="flex flex-col gap-0.5">
-            <label className="text-xs text-zinc-400">{entry.label}</label>
-            <EntryInput entry={entry} widget={widget} property={property} tagOptions={tagOptions} onChange={handleChange} />
-          </div>
-        ))}
-        {schema.renderCustomSection && (
-          <>
-            <hr className="border-zinc-700 my-2" />
-            {schema.renderCustomSection(
-              property,
-              (patch) => onChange({ property: { ...property, ...patch } } as Partial<FuxaWidget>),
-            )}
-          </>
+    <div className="space-y-2">
+      {schema.entries.map((entry) => (
+        <div key={entry.key} className="flex flex-col gap-0.5">
+          <label className="text-xs text-zinc-400">{entry.label}</label>
+          <EntryInput entry={entry} widget={widget} property={property} tagOptions={tagOptions} onChange={handleChange} />
+        </div>
+      ))}
+      {schema.renderCustomSection && (
+        <>
+          <hr className="border-zinc-700 my-2" />
+          {schema.renderCustomSection(
+            property,
+            (patch) => onChange({ property: { ...property, ...patch } } as Partial<FuxaWidget>),
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+export function PropertyPanel({ widget, schema, onChange, mobileMode = false }: PropertyPanelProps): JSX.Element {
+  const reactorData = useRealtimeStore((s) => s.reactorData);
+  const tagOptions = Object.keys(reactorData).flatMap((rid) =>
+    PROCESS_VALUES_FIELDS.map((f) => `${rid}.${f}`)
+  );
+
+  // SP-FX-25: bottom-sheet mode for mobile
+  if (mobileMode) {
+    return (
+      <div
+        data-testid="property-panel-bottom-sheet"
+        data-panel="properties"
+        className={BOTTOM_SHEET_CLASS}
+      >
+        {/* drag handle */}
+        <div
+          data-testid="bottom-sheet-handle"
+          className="w-10 h-1 bg-zinc-600 rounded-full mx-auto mb-3 cursor-grab"
+        />
+        {!widget && <p>未选中</p>}
+        {widget && !schema && <p>无属性面板</p>}
+        {widget && schema && (
+          <PropertyContent widget={widget} schema={schema} tagOptions={tagOptions} onChange={onChange} />
         )}
       </div>
+    );
+  }
+
+  if (!widget) {
+    return <aside data-panel="properties" className={BASE_CLASS}><p>未选中</p></aside>;
+  }
+  if (!schema) {
+    return <aside data-panel="properties" className={BASE_CLASS}><p>无属性面板</p></aside>;
+  }
+
+  return (
+    <aside data-panel="properties" className={BASE_CLASS}>
+      <PropertyContent widget={widget} schema={schema} tagOptions={tagOptions} onChange={onChange} />
     </aside>
   );
 }
