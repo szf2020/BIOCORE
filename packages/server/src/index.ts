@@ -238,6 +238,8 @@ import { createAdminCrashesRouter } from './routes/admin-crashes';
 import { EventStream, createEventsSseRouter } from './routes/events-sse';
 import { createNotificationsRouter } from './routes/notifications';
 import { listChannels as listNotifChannels, listRules as listNotifRules } from '@biocore/data-service';
+// SP-FX-37: 生产健康检查端点
+import { registerHealthRoutes } from './health-routes';
 
 // JWT 认证
 import { createHash, randomBytes, timingSafeEqual } from 'crypto';
@@ -319,6 +321,8 @@ import {
   createReactorWiring,
 } from './reactor-wiring';
 import { initAuditQueue, getAuditQueue } from './audit-queue';
+// SP-FX-40: API rate limiting (零依赖 in-memory 固定窗口计数器)
+import { rateLimit, defaultRateLimitConfig } from './middlewares/rate-limit';
 
 // Phase模板步骤定义: 从数据库读取, 关联系统设置中的Phase模板配置
 // 数据库用 PascalCase (Prepare/AddWater), 引擎用 snake_case (prepare/water_fill)
@@ -635,8 +639,18 @@ apiRouter.use('/notifications', createNotificationsRouter({
 
 // SP-FX-28: Prometheus metrics endpoint (admin only)
 registerMetricsRoutes(apiRouter, metricsRegistry);
+// SP-FX-40: 全局 rate-limit (cors/json/traceMw 之后, auth 之前)
+// 100 req/min per IP; /health /liveness /metrics 豁免
+app.use(rateLimit(defaultRateLimitConfig));
 // SP-FX-28: HTTP metrics middleware (全局拦截, 在挂载前注册)
 app.use(createMetricsMiddleware(metricsRegistry));
+
+// SP-FX-37: 健康检查端点 (PUBLIC — 在 PUBLIC_PATHS 已注册, 不需 auth)
+// GET /api/v1/health/live  → 200 liveness
+// GET /api/v1/health/ready → 200/503 readiness (DB ping)
+registerHealthRoutes(apiRouter, {
+  db: { ping: () => { sqlite.getDatabase().prepare('SELECT 1').get(); return true; } },
+});
 
 // 双挂载:
 //   /api/v1/* — 新路径, 走 v1ResponseWrapper → authMiddleware → apiRouter

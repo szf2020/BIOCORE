@@ -18,7 +18,7 @@ import type Database from 'better-sqlite3';
 //   - 移除 /ai/report 和 /admin/metrics (H1+H2: 不应公开)
 //   - 改为精确匹配 (req.path === p), 防止前缀绕过
 //   - 仅 swagger UI 需要子路径 (CSS/JS), 单独走 DOCS_PUBLIC_PREFIXES
-export const PUBLIC_PATHS = ['/auth/login', '/status', '/docs.json', '/admin/health/liveness'];
+export const PUBLIC_PATHS = ['/auth/login', '/status', '/docs.json', '/admin/health/liveness', '/health/live', '/health/ready'];
 
 // 仅这些前缀仍按 startsWith 匹配 (swagger-ui-express 提供 /docs, /docs/swagger-ui.css 等)
 export const DOCS_PUBLIC_PREFIXES = ['/docs'];
