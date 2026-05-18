@@ -65,11 +65,30 @@ export interface GaugePaletteItem {
 }
 
 export const GAUGE_PALETTE_ITEMS: GaugePaletteItem[] = [
-  { widgetType: 'svg-ext-gauge_semaphore', label: '信号灯', defaultW: 60,  defaultH: 60  },
-  { widgetType: 'svg-ext-gauge_progress',  label: '进度条', defaultW: 40,  defaultH: 120 },
-  { widgetType: 'svg-ext-html_switch',     label: '开关',   defaultW: 60,  defaultH: 30  },
-  { widgetType: 'svg-ext-html_slider',     label: '滑块',   defaultW: 200, defaultH: 40  },
-  { widgetType: 'svg-ext-pipe',            label: '管道',   defaultW: 120, defaultH: 20  },
+  // Batch 1: HTML controls (SP-FX-6.1)
+  { widgetType: 'svg-ext-value',           label: '数值显示',  defaultW: 120, defaultH: 30  },
+  { widgetType: 'svg-ext-html_button',     label: '按钮',      defaultW: 100, defaultH: 36  },
+  { widgetType: 'svg-ext-html_input',      label: '输入框',    defaultW: 140, defaultH: 32  },
+  { widgetType: 'svg-ext-html_chart',      label: '折线图表',  defaultW: 320, defaultH: 200 },
+  { widgetType: 'svg-ext-own_ctrl-table',  label: '表格',      defaultW: 280, defaultH: 160 },
+  // Batch 2: gauges (SP-FX-6.2)
+  { widgetType: 'svg-ext-gauge_semaphore', label: '信号灯',    defaultW: 60,  defaultH: 60  },
+  { widgetType: 'svg-ext-gauge_progress',  label: '进度条',    defaultW: 40,  defaultH: 120 },
+  { widgetType: 'svg-ext-html_switch',     label: '开关',      defaultW: 60,  defaultH: 30  },
+  { widgetType: 'svg-ext-html_slider',     label: '滑块',      defaultW: 200, defaultH: 40  },
+  { widgetType: 'svg-ext-pipe',            label: '管道',      defaultW: 120, defaultH: 20  },
+  // Batch 3: process shapes (SP-FX-9)
+  { widgetType: 'svg-ext-html_bag',        label: '袋装料',    defaultW: 60,  defaultH: 80  },
+  { widgetType: 'svg-ext-html_graph',      label: '柱状图',    defaultW: 200, defaultH: 140 },
+  { widgetType: 'svg-ext-tank',            label: '罐体',      defaultW: 80,  defaultH: 140 },
+  { widgetType: 'svg-ext-motor',           label: '电机',      defaultW: 80,  defaultH: 80  },
+  { widgetType: 'svg-ext-html_img',        label: '图片',      defaultW: 120, defaultH: 80  },
+  // Batch 4: industrial widgets (SP-FX-10)
+  { widgetType: 'svg-ext-html_iframe',     label: '内嵌网页',  defaultW: 320, defaultH: 200 },
+  { widgetType: 'svg-ext-compressor',      label: '压缩机',    defaultW: 100, defaultH: 80  },
+  { widgetType: 'svg-ext-valve',           label: '阀门',      defaultW: 60,  defaultH: 60  },
+  { widgetType: 'svg-ext-pump',            label: '水泵',      defaultW: 80,  defaultH: 80  },
+  { widgetType: 'svg-ext-html_select',     label: '下拉选择',  defaultW: 140, defaultH: 32  },
 ];
 
 export function makeGaugeWidget(

@@ -34,6 +34,11 @@ export class CanvasController {
   // on remove and re-mount on update (lighter than implementing diff-based
   // gauge property propagation in the editor canvas).
   private gaugeMap = new Map<string, GaugeBase>();
+  // SP-FX-48.6: snapshot of last-rendered widget shape per id; used to skip
+  // gauge re-creation when EditorCanvas's items-effect re-upserts every widget
+  // on each store update (avoids React "synchronous unmount during render"
+  // warnings from html-chart/html-table which use createRoot internally).
+  private widgetSnapshot = new Map<string, string>();
   private destroyed = false;
 
   constructor(container: HTMLElement, opts: CanvasOpts) {
@@ -49,6 +54,7 @@ export class CanvasController {
     if (this.destroyed) return;
     for (const [, g] of this.gaugeMap) g.onUnmount();
     this.gaugeMap.clear();
+    this.widgetSnapshot.clear();
     for (const [, el] of this.widgetMap) el.remove();
     this.widgetMap.clear();
     for (const id in view.items) {
@@ -66,9 +72,22 @@ export class CanvasController {
     // SP-FX-48.4: gauge widgets must be re-created on every upsert so geometry
     // updates flow through gauge.onMount. Remove via the public path first so
     // the rotate-transform code below always sees the fresh wrapper.
+    // SP-FX-48.6: skip re-create when widget shape is unchanged — avoids
+    // thrashing React roots inside foreignObject-based gauges (html-chart etc.).
     if (el && this.gaugeMap.has(widget.id)) {
+      const snap = JSON.stringify({
+        t: widget.type, x: widget.x, y: widget.y, w: widget.w, h: widget.h,
+        r: (widget as { rotate?: number }).rotate ?? 0, p: widget.property,
+      });
+      if (this.widgetSnapshot.get(widget.id) === snap) return;
+      this.widgetSnapshot.set(widget.id, snap);
       this.removeWidget(widget.id);
       el = undefined;
+    } else if (!el) {
+      this.widgetSnapshot.set(widget.id, JSON.stringify({
+        t: widget.type, x: widget.x, y: widget.y, w: widget.w, h: widget.h,
+        r: (widget as { rotate?: number }).rotate ?? 0, p: widget.property,
+      }));
     }
     if (!el) {
       el = this.createElementForType(widget);
@@ -216,6 +235,7 @@ export class CanvasController {
       gauge.onUnmount();
       this.gaugeMap.delete(id);
     }
+    this.widgetSnapshot.delete(id);
     const el = this.widgetMap.get(id);
     if (!el) return;
     el.remove();
@@ -290,6 +310,7 @@ export class CanvasController {
     this.destroyed = true;
     for (const [, g] of this.gaugeMap) g.onUnmount();
     this.gaugeMap.clear();
+    this.widgetSnapshot.clear();
     this.widgetMap.clear();
     this.root.remove();
   }
