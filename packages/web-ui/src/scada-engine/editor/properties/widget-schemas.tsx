@@ -194,6 +194,99 @@ export const pipeSchema: WidgetPropertySchema = {
   ],
 };
 
+// SP-FX-9 Batch 3 schemas
+
+export const htmlBagSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'onValue', label: 'ON 值', type: 'text', placeholder: '1' },
+    { key: 'onColor', label: 'ON 颜色', type: 'color' },
+    { key: 'offColor', label: 'OFF 颜色', type: 'color' },
+    { key: 'shape', label: '形状', type: 'select', options: [
+      { value: 'circle', label: '圆形' }, { value: 'rect', label: '矩形' },
+    ]},
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+};
+
+export const htmlGraphSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'maxPoints', label: '最大点数', type: 'number', min: 5, max: 600, step: 5 },
+    { key: 'lineColor', label: '折线颜色', type: 'color' },
+    { key: 'bgColor', label: '背景色', type: 'color' },
+    { key: 'minVal', label: '最小值', type: 'number' },
+    { key: 'maxVal', label: '最大值', type: 'number' },
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+};
+
+export const tankSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'min', label: '最小值', type: 'number' },
+    { key: 'max', label: '最大值', type: 'number' },
+    { key: 'fillColor', label: '液体颜色', type: 'color' },
+    { key: 'bgColor', label: '罐体颜色', type: 'color' },
+    { key: 'showLabel', label: '显示数值', type: 'boolean' },
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+};
+
+export const motorSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'defaultColor', label: '默认颜色', type: 'color' },
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+  renderCustomSection: (property, onChange) => {
+    const states = Array.isArray((property as any).states)
+      ? ((property as any).states as Array<{ value: string; color: string; label?: string }>)
+      : [];
+    return (
+      <div data-section="motor-states">
+        <p className="text-xs text-zinc-400 mb-1">状态映射 ({states.length} 条)</p>
+        <button
+          className="text-xs text-blue-400 underline"
+          onClick={() => {
+            onChange({ states: [...states, { value: '0', color: '#9ca3af', label: '' }] });
+          }}
+        >
+          + 添加状态
+        </button>
+      </div>
+    );
+  },
+};
+
+export const htmlImageSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'src', label: '图片 URL', type: 'text', placeholder: 'https://...' },
+    { key: 'variableId', label: '动态 Tag (可选)', type: 'tag-ref' },
+    { key: 'fit', label: '填充方式', type: 'select', options: [
+      { value: 'contain', label: 'contain' },
+      { value: 'cover', label: 'cover' },
+      { value: 'fill', label: 'fill' },
+    ]},
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+};
+
 /** Lookup map: widget.type → WidgetPropertySchema */
 export const WIDGET_SCHEMAS: Record<string, WidgetPropertySchema> = {
   'svg-ext-value': valueSchema,
@@ -206,4 +299,10 @@ export const WIDGET_SCHEMAS: Record<string, WidgetPropertySchema> = {
   'svg-ext-html_switch': htmlSwitchSchema,
   'svg-ext-html_slider': sliderSchema,
   'svg-ext-pipe': pipeSchema,
+  // SP-FX-9 batch 3
+  'svg-ext-html_bag': htmlBagSchema,
+  'svg-ext-html_graph': htmlGraphSchema,
+  'svg-ext-tank': tankSchema,
+  'svg-ext-motor': motorSchema,
+  'svg-ext-html_img': htmlImageSchema,
 };
