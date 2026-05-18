@@ -224,4 +224,22 @@ export type { ScadaProjectMeta, ScadaViewMeta, ScadaView, ScadaViewAcl } from '.
 export { insertAuditLog, queryAuditLog } from './audit-log-service';
 export type { AuditLogEntry, AuditLogRow, AuditLogQuery } from './audit-log-service';
 
+// SP-FX-43: Analytics 聚合查询
+export {
+  parseRangeToDays,
+  queryViewUsage,
+  queryWidgetTypes,
+  queryUserActivity,
+  queryWriteIntentStats,
+} from './analytics-service';
+export type {
+  ViewUsageRow,
+  WidgetTypeRow,
+  DauRow,
+  WauRow,
+  UserActivityResult,
+  RejectReasonRow,
+  WriteIntentStatsResult,
+} from './analytics-service';
+
 export { InfluxService as default };
