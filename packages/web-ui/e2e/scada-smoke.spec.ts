@@ -20,7 +20,8 @@ test.describe('SCADA smoke', () => {
   test('lists SCADA views', async ({ page }) => {
     await page.goto('/scada2');
     await expect(page.getByRole('heading', { name: /SCADA/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /新建|create/i })).toBeVisible();
+    // SP-FX-12 T3: "新建画面" 是 <a> 链接, 非 button — 改用 link role
+    await expect(page.getByRole('link', { name: /新建|create/i })).toBeVisible();
   });
 
   test('opens suggestions inbox', async ({ page }) => {
