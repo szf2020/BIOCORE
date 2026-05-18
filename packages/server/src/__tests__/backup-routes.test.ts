@@ -1,13 +1,14 @@
 // ============================================================
 // backup-routes.test.ts — SP-FX-20 TDD RED-first
 // ============================================================
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import { registerBackupRoutes } from '../backup-routes';
+import { EventEmitter } from 'node:events';
+import { registerBackupRoutes, getRepoRoot } from '../backup-routes';
 
 // SQLite magic header (前 16 字节)
 const SQLITE_MAGIC = Buffer.from('SQLite format 3\0');
@@ -150,5 +151,35 @@ describe('POST /admin/restore (SP-FX-20)', () => {
       .post('/api/v1/admin/restore')
       .attach('file', Buffer.from(SQLITE_MAGIC), { filename: 'test.sqlite', contentType: 'application/octet-stream' });
     expect(res.status).toBe(403);
+  });
+});
+
+// ─── KI-1 SP-FX-34: getRepoRoot() 逻辑验证 ──────────────────
+// 直接测试 getRepoRoot() 纯函数，无需 mock child_process
+describe('getRepoRoot (KI-1 SP-FX-34)', () => {
+  afterEach(() => {
+    delete process.env.BIOCORE_ROOT;
+  });
+
+  it('优先使用 BIOCORE_ROOT env', () => {
+    const fakeRoot = '/fake/repo/root';
+    process.env.BIOCORE_ROOT = fakeRoot;
+    expect(getRepoRoot()).toBe(fakeRoot);
+  });
+
+  it('fallback = resolve(__dirname, ../../..) 指向 repo root', () => {
+    delete process.env.BIOCORE_ROOT;
+    const result = getRepoRoot();
+    // backup-routes.ts __dirname = packages/server/src → ../../.. = repo root
+    // 验证 result 不含 /packages/server/src 路径
+    expect(result).not.toContain('packages/server/src');
+    // 验证 result 是实际 biocore repo root 路径
+    expect(result).toMatch(/biocore-sp-fx-17$/);
+  });
+
+  it('BIOCORE_ROOT 未设置时 fallback 为绝对路径', () => {
+    delete process.env.BIOCORE_ROOT;
+    const result = getRepoRoot();
+    expect(result.startsWith('/')).toBe(true);
   });
 });

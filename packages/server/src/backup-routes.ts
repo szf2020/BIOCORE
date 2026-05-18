@@ -26,7 +26,7 @@ import {
   closeSync,
   copyFileSync,
 } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import multer from 'multer';
@@ -36,6 +36,12 @@ import { requireRole } from './middlewares/auth';
 export interface BackupRoutesDeps {
   /** 数据目录, 默认 DATA_DIR = './data'. backups 子目录在此下创建. */
   dataDir: string;
+}
+
+// KI-1 SP-FX-34: repo root 计算，优先 BIOCORE_ROOT env，fallback __dirname/../../../..
+// 暴露为可导出函数以便单元测试直接验证逻辑，无需 mock child_process
+export function getRepoRoot(): string {
+  return process.env.BIOCORE_ROOT ?? resolve(__dirname, '../../..');
 }
 
 // SQLite 文件头魔数: "SQLite format 3\0" (前 16 字节)
@@ -94,7 +100,8 @@ export function registerBackupRoutes(router: Router, deps: BackupRoutesDeps): vo
       DB_PATH: mainDbPath,
     };
 
-    const child = spawn('bash', [scriptPath], { env, cwd: process.cwd() });
+    // KI-1 SP-FX-34: cwd 使用 repo root，不依赖 process.cwd()（server 可从任意目录启动）
+    const child = spawn('bash', [scriptPath], { env, cwd: getRepoRoot() });
     let stderr = '';
 
     child.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
