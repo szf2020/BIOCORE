@@ -96,8 +96,10 @@ export function ViewListPanel({ projectId }: Props) {
   if (error) return <div style={{ padding: 8, color: '#dc2626' }}>错误: {error.message}</div>;
   if (views.length === 0 && page === 1 && !q && tags.length === 0) return (
     <>
-      <ViewListSearchBar q={q} sort={sort} tags={tags} availableTags={[]} onChange={handleFilterChange} />
-      <ViewListToolbar viewMode={viewMode} onModeChange={handleModeChange} pageSize={size} onPageSizeChange={setSize} />
+      <div data-testid="sticky-toolbar-container" className="sticky top-0 z-10 bg-background border-b">
+        <ViewListSearchBar q={q} sort={sort} tags={tags} availableTags={[]} onChange={handleFilterChange} />
+        <ViewListToolbar viewMode={viewMode} onModeChange={handleModeChange} pageSize={size} onPageSizeChange={setSize} />
+      </div>
       <div style={{ padding: 8, color: '#666' }}>没有画面</div>
     </>
   );
@@ -186,16 +188,18 @@ export function ViewListPanel({ projectId }: Props) {
         </div>
       )}
 
-      {/* SP-FX-21: 搜索/排序/tag 过滤栏 */}
-      <ViewListSearchBar
-        q={q}
-        sort={sort}
-        tags={tags}
-        availableTags={availableTags}
-        onChange={handleFilterChange}
-      />
-
-      <ViewListToolbar viewMode={viewMode} onModeChange={handleModeChange} pageSize={size} onPageSizeChange={setSize} />
+      {/* SP-FX-25: sticky toolbar container (search + toolbar) for mobile */}
+      <div data-testid="sticky-toolbar-container" className="sticky top-0 z-10 bg-background border-b">
+        {/* SP-FX-21: 搜索/排序/tag 过滤栏 */}
+        <ViewListSearchBar
+          q={q}
+          sort={sort}
+          tags={tags}
+          availableTags={availableTags}
+          onChange={handleFilterChange}
+        />
+        <ViewListToolbar viewMode={viewMode} onModeChange={handleModeChange} pageSize={size} onPageSizeChange={setSize} />
+      </div>
 
       {viewMode === 'cards' ? (
         <ViewCardGrid
