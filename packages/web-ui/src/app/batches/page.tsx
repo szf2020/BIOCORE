@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { History, Search } from 'lucide-react';
 import { BatchComparePanel } from '@/components/BatchComparePanel';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = 'http://localhost:3001';
 

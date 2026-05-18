@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles, AlertTriangle, AlertCircle, Info, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Alarm, AlarmSeverity } from '@/types';
+import { useLocale } from '@/i18n/useLocale';
 
 const SEVERITY_ICON: Record<AlarmSeverity, React.ElementType> = {
   critical: AlertTriangle,

@@ -7,6 +7,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useEditorStore } from '@/scada-engine/services/editor-store';
 import { EditorShell } from '@/scada-engine/editor/editor-shell';
 import { parseFuxaView } from '@/scada-engine/models/hmi';
+import { useLocale } from '@/i18n/useLocale';
 
 type LoadState = 'loading' | 'ready' | 'not_found' | 'error';
 

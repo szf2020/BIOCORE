@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Plus, Trash2, Server, Pencil, FlaskConical, Power, Link2 } from 'lucide-react';
 import { useAudit } from '@/hooks/useAudit';
 import { apiFetch } from '@/lib/auth';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

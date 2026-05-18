@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { EditorCanvas } from '@/scada-engine/editor';
 import { useEditorStore } from '@/scada-engine/services';
 import type { FuxaView, FuxaWidget } from '@/scada-engine/models';
+import { useLocale } from '@/i18n/useLocale';
 
 function fixtureView(): FuxaView {
   const items: Record<string, FuxaWidget> = {

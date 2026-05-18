@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle, AlertCircle, Info, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Alarm, AlarmSeverity } from '@/types';
+import { useLocale } from '@/i18n/useLocale';
 
 const SEVERITY_CONFIG: Record<AlarmSeverity, {
   bg: string; border: string; text: string; icon: React.ElementType;

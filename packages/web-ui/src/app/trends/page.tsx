@@ -18,6 +18,7 @@ import type { TrendSeries } from '@/lib/echarts-helpers';
 import { alignByElapsedSeconds, generateSeriesPalette } from '@/lib/trend-utils';
 import { buildSampleScatterSeries, SAMPLE_ANALYTES } from '@/lib/sample-overlay';
 import { CusumHistoryPanel } from '@/components/trends/CusumHistoryPanel';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

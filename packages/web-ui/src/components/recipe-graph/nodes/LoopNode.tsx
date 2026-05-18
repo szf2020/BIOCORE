@@ -4,6 +4,7 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Repeat } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 export interface LoopNodeData extends Record<string, unknown> {
   exitExpression?: string;

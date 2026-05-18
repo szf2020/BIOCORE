@@ -8,6 +8,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+import { useLocale } from '@/i18n/useLocale';
   AuthUser, getToken, setToken, clearToken, getStoredUser, setStoredUser, apiFetch, installFetchInterceptor,
 } from '@/lib/auth';
 

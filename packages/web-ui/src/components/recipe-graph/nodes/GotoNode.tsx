@@ -4,6 +4,7 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import { CornerDownRight } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 export interface GotoNodeData extends Record<string, unknown> {
   target: string;

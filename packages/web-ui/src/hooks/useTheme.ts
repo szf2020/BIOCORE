@@ -4,6 +4,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useLocale } from '@/i18n/useLocale';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 

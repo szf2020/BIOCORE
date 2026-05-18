@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Building2, Save } from 'lucide-react';
 import { apiFetch } from '@/lib/auth';
 import { useAudit } from '@/hooks/useAudit';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

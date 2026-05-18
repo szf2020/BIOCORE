@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Download, RefreshCw, Search, ShieldCheck } from 'lucide-react';
 import { apiFetch } from '@/lib/auth';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

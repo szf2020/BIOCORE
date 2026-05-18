@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { StateUpdatePayload } from '@/types';
+import { useLocale } from '@/i18n/useLocale';
 
 interface PhaseStepTrackerProps {
   state: StateUpdatePayload | null;

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { TemplatePicker } from '@/components/scada/pages/TemplatePicker';
 import { useViewMutations } from '@/hooks/useViewMutations';
+import { useLocale } from '@/i18n/useLocale';
 
 export default function Page() {
   const router = useRouter();

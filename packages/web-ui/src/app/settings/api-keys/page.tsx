@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Plus, Trash2, Key, Copy, AlertTriangle, Check } from 'lucide-react';
 import { useAudit } from '@/hooks/useAudit';
 import { apiFetch } from '@/lib/auth';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

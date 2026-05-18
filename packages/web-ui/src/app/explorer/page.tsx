@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Database } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = 'http://localhost:3001';
 const RANGES = ['1h', '6h', '12h', '24h', '全程'] as const;

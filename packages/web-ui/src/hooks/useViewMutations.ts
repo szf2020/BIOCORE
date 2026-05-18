@@ -1,5 +1,6 @@
 'use client';
 import { useMemo } from 'react';
+import { useLocale } from '@/i18n/useLocale';
 
 export interface UseViewMutationsResult {
   create: (name: string, opts?: { cloneFrom?: string; isTemplate?: boolean }) => Promise<string>;

@@ -20,6 +20,7 @@ import {
   Plus, Trash2, Save, Edit2, AlertCircle, RefreshCw, Blocks, Copy,
 } from 'lucide-react';
 import { useAudit } from '@/hooks/useAudit';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

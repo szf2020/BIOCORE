@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import type { JSX } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useLocale } from '@/i18n/useLocale';
 
 export default function Page(): JSX.Element {
   const params = useParams<{ viewId: string }>();

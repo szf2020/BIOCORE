@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Info } from 'lucide-react';
 import type { Alarm } from '@/types';
+import { useLocale } from '@/i18n/useLocale';
 
 interface NoticeBannerProps {
   notices: Alarm[];

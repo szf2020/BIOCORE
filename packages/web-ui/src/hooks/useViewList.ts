@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
+import { useLocale } from '@/i18n/useLocale';
 
 export interface ViewMeta {
   view_id: string;

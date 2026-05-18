@@ -2,6 +2,7 @@
 import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ViewListPanel } from '@/components/scada/pages/ViewListPanel';
+import { useLocale } from '@/i18n/useLocale';
 
 function PageInner() {
   const search = useSearchParams();

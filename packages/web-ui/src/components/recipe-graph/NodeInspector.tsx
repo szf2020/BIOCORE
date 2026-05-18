@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { X, Beaker, GitBranch, Play, Square, CornerDownRight, Repeat } from 'lucide-react';
 import { ConditionExpressionEditor } from './ConditionExpressionEditor';
 import { phaseLabel } from '@/lib/utils';
+import { useLocale } from '@/i18n/useLocale';
 
 // 从 v1 编辑器复用的 Phase 模板类型
 export interface APIPhaseTemplate {

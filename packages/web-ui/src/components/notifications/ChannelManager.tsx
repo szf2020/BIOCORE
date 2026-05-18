@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { apiFetch } from '@/lib/auth';
+import { useLocale } from '@/i18n/useLocale';
 
 const TYPES = ['feishu', 'dingtalk', 'telegram', 'webhook'] as const;
 export type ChannelType = typeof TYPES[number];

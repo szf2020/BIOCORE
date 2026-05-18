@@ -18,6 +18,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Bell, Plus, RefreshCw, Edit2, Trash2, X, Save, AlertTriangle, AlertCircle, Info } from 'lucide-react';
 import { apiFetch } from '@/lib/auth';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

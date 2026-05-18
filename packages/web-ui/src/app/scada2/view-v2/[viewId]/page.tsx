@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { parseFuxaView } from '@/scada-engine/models/hmi';
 import { RuntimeShell } from '@/scada-engine/runtime/RuntimeShell';
 import type { FuxaView } from '@/scada-engine/models';
+import { useLocale } from '@/i18n/useLocale';
 
 type LoadState = 'loading' | 'ready' | 'error';
 

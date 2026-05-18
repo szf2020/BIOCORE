@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useLocale } from '@/i18n/useLocale';
 
 export interface Rule {
   id?: number;

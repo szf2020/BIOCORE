@@ -9,6 +9,7 @@ import React, { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/auth';
 import { ChannelManager, type Channel } from '@/components/notifications/ChannelManager';
 import { RuleTable, type Rule } from '@/components/notifications/RuleTable';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

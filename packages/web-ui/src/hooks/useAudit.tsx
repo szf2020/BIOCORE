@@ -15,6 +15,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { AuditConfirmDialog } from '@/components/ui/audit-confirm';
+import { useLocale } from '@/i18n/useLocale';
 
 export interface AuditRequest {
   description: string;        // 变更描述 (显示给用户)

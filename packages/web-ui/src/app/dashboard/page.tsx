@@ -21,6 +21,7 @@ import { FeedAdvisorCard } from '@/components/dashboard/FeedAdvisorCard';
 import { Server, Plus, Settings } from 'lucide-react';
 import { loadDashboardLayout } from '@/components/dashboard/dashboard-layout-config';
 import type { DashboardLayout } from '@/components/dashboard/dashboard-layout-config';
+import { useLocale } from '@/i18n/useLocale';
 
 // @dnd-kit 较重, 仅在用户打开布局编辑器时才加载
 const DashboardLayoutEditor = dynamic(
@@ -47,14 +48,14 @@ function getReactorLedClass(state: string): string {
   }
 }
 
-function getStateLabel(state: string): string {
+function getStateLabel(state: string, t: (key: string) => string): string {
   switch (state) {
-    case 'running': return '运行';
-    case 'held': return '保持';
-    case 'paused': return '暂停';
-    case 'stopped': return '停止';
-    case 'complete': return '完成';
-    default: return '空闲';
+    case 'running': return t('dashboard.state.running');
+    case 'held': return t('dashboard.state.held');
+    case 'paused': return t('dashboard.state.paused');
+    case 'stopped': return t('dashboard.state.stopped');
+    case 'complete': return t('dashboard.state.complete');
+    default: return t('dashboard.state.idle');
   }
 }
 
@@ -93,6 +94,7 @@ function BigParamCard({ label, value, unit, sv, precision = 1, color = 'text-for
 // ─── 主页面 ────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const { t } = useLocale();
   const [selectedReactor, setSelectedReactor] = useState('');
   // 多反应器隔离: 按 selectedReactor 从 reactorData[id] 取数据
   // selectedReactor 缺失时退化为顶层 (启动期未拉到 reactor 列表前)
@@ -157,13 +159,13 @@ export default function DashboardPage() {
           <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-5">
             <Server className="w-8 h-8 text-muted-foreground/50" />
           </div>
-          <h2 className="text-xl font-bold mb-2">尚未配置发酵罐</h2>
+          <h2 className="text-xl font-bold mb-2">{t('dashboard.no-reactor-title')}</h2>
           <p className="text-sm text-muted-foreground mb-6">
-            请先在系统设置中添加发酵罐设备，配置PLC连接参数后即可开始使用监控面板。
+            {t('dashboard.no-reactor-desc')}
           </p>
           <Link href="/settings/device-config"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/80 transition-colors">
-            <Plus className="w-4 h-4" /> 前往设备配置
+            <Plus className="w-4 h-4" /> {t('dashboard.go-device-config')}
           </Link>
         </div>
       </div>
@@ -197,14 +199,14 @@ export default function DashboardPage() {
               <div className={`status-led ${getReactorLedClass(reactor.state)}`} />
               <span className="font-mono font-semibold">{reactor.id}</span>
               <span className={`text-sm ${isSelected ? 'text-primary/70' : 'text-muted-foreground/70'}`}>
-                {getStateLabel(reactor.state)}
+                {getStateLabel(reactor.state, t)}
               </span>
             </button>
           );
         })}
         {/* 布局自定义按钮 */}
         <div className="ml-auto">
-          <button onClick={() => setLayoutEditorOpen(true)} title="自定义仪表盘布局"
+          <button onClick={() => setLayoutEditorOpen(true)} title={t('dashboard.customize-layout')}
             className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             <Settings className="w-4 h-4" />
           </button>

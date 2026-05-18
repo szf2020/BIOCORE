@@ -9,6 +9,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import type { CalculatedParams } from '@/types';
+import { useLocale } from '@/i18n/useLocale';
 
 interface ParamItem {
   label: string;

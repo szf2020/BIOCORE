@@ -4,6 +4,7 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Play, Square } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 export function StartNode({ selected }: NodeProps) {
   return (

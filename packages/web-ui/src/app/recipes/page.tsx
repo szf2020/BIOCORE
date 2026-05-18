@@ -10,6 +10,7 @@ import { Plus, Search, BookOpen, Edit, FlaskConical, Trash2, Unlock, Download, L
 import { useAudit } from '@/hooks/useAudit';
 import { apiFetch } from '@/lib/auth';
 import { RecipeHistoryDrawer } from '@/components/recipes/RecipeHistoryDrawer';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

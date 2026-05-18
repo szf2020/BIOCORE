@@ -10,6 +10,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ConfirmDialog } from '@/scada-engine/dialogs/ConfirmDialog';
 import { useAuth } from '@/hooks/useAuth';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

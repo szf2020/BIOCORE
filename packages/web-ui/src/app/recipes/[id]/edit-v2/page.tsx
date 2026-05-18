@@ -11,6 +11,7 @@ import { apiFetch } from '@/lib/auth';
 import { useAudit } from '@/hooks/useAudit';
 import dynamic from 'next/dynamic';
 import type { RecipeDAG } from '@/components/recipe-graph/RecipeGraphEditor';
+import { useLocale } from '@/i18n/useLocale';
 
 const RecipeGraphEditor = dynamic(
   () => import('@/components/recipe-graph/RecipeGraphEditor').then(m => ({ default: m.RecipeGraphEditor })),

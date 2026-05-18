@@ -12,6 +12,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { ShieldCheck, ShieldAlert, Activity, X } from 'lucide-react';
 import { apiFetch } from '@/lib/auth';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import type { ViewMeta } from './useViewList';
+import { useLocale } from '@/i18n/useLocale';
 
 export interface UseTemplatesResult {
   templates: ViewMeta[];

@@ -25,6 +25,7 @@ import { GripVertical, RotateCcw, Save, Eye, EyeOff } from 'lucide-react';
 
 // 类型和工具函数从轻量模块导入, 避免 @dnd-kit 污染其他页面 chunk
 import {
+import { useLocale } from '@/i18n/useLocale';
   type BigParamConfig, type DashboardLayout,
   DEFAULT_LAYOUT, loadDashboardLayout, saveDashboardLayout,
 } from './dashboard-layout-config';

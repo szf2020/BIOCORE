@@ -18,6 +18,7 @@ import { StartNode, EndNode } from './nodes/StartEndNode';
 import { NodeInspector, type APIPhaseTemplate } from './NodeInspector';
 import { applyDagreLayout } from './layout';
 import { phaseLabel } from '@/lib/utils';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

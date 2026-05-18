@@ -4,6 +4,7 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import { GitBranch } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 export interface BranchNodeData extends Record<string, unknown> {
   expression: string;

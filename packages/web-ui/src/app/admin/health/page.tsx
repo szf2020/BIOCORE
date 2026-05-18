@@ -14,6 +14,7 @@ import { HealthOverview, type HealthSnap } from '@/components/admin/HealthOvervi
 import { MemoryChart, type MemorySample } from '@/components/admin/MemoryChart';
 import { EventLoopChart, type EventLoopSample } from '@/components/admin/EventLoopChart';
 import { RestartHistory, type RestartSnap } from '@/components/admin/RestartHistory';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

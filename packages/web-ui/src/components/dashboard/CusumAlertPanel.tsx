@@ -9,6 +9,7 @@ import React, { useMemo } from 'react';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import { EChartsWrapper } from '@/components/charts/EChartsWrapperDynamic';
 import type { EChartsOption } from 'echarts';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

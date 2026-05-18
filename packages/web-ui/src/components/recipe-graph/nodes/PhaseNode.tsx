@@ -4,6 +4,7 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Beaker } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 export interface PhaseNodeData extends Record<string, unknown> {
   phase_id: string;

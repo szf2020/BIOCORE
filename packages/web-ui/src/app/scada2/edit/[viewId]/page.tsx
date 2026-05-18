@@ -8,6 +8,7 @@ import { useKeyboardShortcuts } from '@/components/scada/svg-editor/useKeyboardS
 import { WidgetLinkPanel } from '@/components/scada/pages/WidgetLinkPanel';
 import { WidgetWriteIntentPanel } from '@/components/scada/pages/WidgetWriteIntentPanel';
 import type { SvgViewJson } from '@/widgets/svg/types';
+import { useLocale } from '@/i18n/useLocale';
 
 ensureBuiltinSvgWidgetsRegistered();
 

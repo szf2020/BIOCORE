@@ -9,6 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Pencil, Eye } from 'lucide-react';
 import { useRealtimeStore } from '@/stores/realtime-store';
+import { useLocale } from '@/i18n/useLocale';
 
 const FUXA_URL = process.env.NEXT_PUBLIC_FUXA_URL || 'http://localhost:1881';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';

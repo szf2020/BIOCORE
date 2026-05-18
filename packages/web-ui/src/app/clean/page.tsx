@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, Square, RotateCcw, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { phaseLabel, phaseStateLabel } from '@/lib/utils';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -34,6 +35,7 @@ const stateColors: Record<string, string> = {
 };
 
 export default function CleanPage() {
+  const { t } = useLocale();
   const [reactorIds, setReactorIds] = useState<string[]>([]);
   const [selectedReactor, setSelectedReactor] = useState<string>('');
   const [reactorState, setReactorState] = useState<any>(null);
@@ -118,14 +120,14 @@ export default function CleanPage() {
           {prodRunning && (
             <div className="flex items-center gap-2 px-3 py-2 rounded bg-red-500/10 border border-red-500/20">
               <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
-              <span className="text-sm text-red-600">互锁: 主发酵运行中，禁止启动清洗/灭菌</span>
+              <span className="text-sm text-red-600">{t('clean.interlock-warning')}</span>
             </div>
           )}
 
           {/* 无Phase时的提示 */}
           {phases.length === 0 && (
             <div className="text-center py-8 text-muted-foreground text-sm">
-              当前配方未包含 {title} 阶段
+              {t('clean.no-phase', { title })}
             </div>
           )}
 
@@ -165,18 +167,18 @@ export default function CleanPage() {
                         ${prodRunning
                           ? 'bg-muted/30 text-muted-foreground/40 border-border cursor-not-allowed'
                           : 'bg-green-500/15 text-emerald-600 border-green-500/30 hover:bg-green-500/25'}`}>
-                      <Play className="w-3 h-3" /> 启动
+                      <Play className="w-3 h-3" /> {t('clean.start')}
                     </button>
                   )}
                   {ps.state === 'running' && (
                     <>
                       <button onClick={() => sendPhaseCmd(ps.phase_index, 'hold')}
                         className="flex items-center gap-1 h-7 px-3 rounded text-sm font-medium bg-yellow-500/15 text-amber-600 border border-yellow-500/30 hover:bg-yellow-500/25">
-                        <Pause className="w-3 h-3" /> 暂停
+                        <Pause className="w-3 h-3" /> {t('clean.pause')}
                       </button>
                       <button onClick={() => sendPhaseCmd(ps.phase_index, 'skip')}
                         className="flex items-center gap-1 h-7 px-3 rounded text-sm font-medium bg-red-500/15 text-red-600 border border-red-500/30 hover:bg-red-500/25">
-                        <Square className="w-3 h-3" /> 终止
+                        <Square className="w-3 h-3" /> {t('clean.abort')}
                       </button>
                     </>
                   )}
@@ -184,11 +186,11 @@ export default function CleanPage() {
                     <>
                       <button onClick={() => sendPhaseCmd(ps.phase_index, 'restart')}
                         className="flex items-center gap-1 h-7 px-3 rounded text-sm font-medium bg-green-500/15 text-emerald-600 border border-green-500/30 hover:bg-green-500/25">
-                        <RotateCcw className="w-3 h-3" /> 恢复
+                        <RotateCcw className="w-3 h-3" /> {t('clean.resume')}
                       </button>
                       <button onClick={() => sendPhaseCmd(ps.phase_index, 'skip')}
                         className="flex items-center gap-1 h-7 px-3 rounded text-sm font-medium bg-red-500/15 text-red-600 border border-red-500/30 hover:bg-red-500/25">
-                        <Square className="w-3 h-3" /> 终止
+                        <Square className="w-3 h-3" /> {t('clean.abort')}
                       </button>
                     </>
                   )}
@@ -206,7 +208,7 @@ export default function CleanPage() {
       {/* 罐选择 */}
       <div className="flex items-center gap-1 px-3 py-2 border-b border-border bg-card/50 overflow-x-auto">
         {reactorIds.length === 0 && (
-          <span className="text-sm text-muted-foreground px-2">无可用反应器</span>
+          <span className="text-sm text-muted-foreground px-2">{t('clean.no-reactor')}</span>
         )}
         {reactorIds.map(id => (
           <button key={id} onClick={() => setSelectedReactor(id)}
@@ -221,16 +223,16 @@ export default function CleanPage() {
 
       {/* 标题 */}
       <div className="px-4 py-3 border-b border-border bg-card/30">
-        <h1 className="text-sm font-semibold text-foreground">设备清洗与灭菌 (CIP / SIP)</h1>
+        <h1 className="text-sm font-semibold text-foreground">{t('clean.title')}</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          独立状态机控制。安全互锁: 主发酵运行中禁止启动清洗/灭菌，CIP和SIP不能同时运行。
+          {t('clean.subtitle')}
         </p>
       </div>
 
       {/* 双栏: CIP 和 SIP */}
       <div className="flex-1 grid grid-cols-2 gap-4 p-4 overflow-auto">
-        {renderPhaseCard('就地清洗 (CIP)', '🚿', 'bg-blue-500/15 text-blue-600', cipPhases)}
-        {renderPhaseCard('就地灭菌 (SIP)', '🔥', 'bg-red-500/15 text-red-600', sipPhases)}
+        {renderPhaseCard(t('clean.cip-title'), '🚿', 'bg-blue-500/15 text-blue-600', cipPhases)}
+        {renderPhaseCard(t('clean.sip-title'), '🔥', 'bg-red-500/15 text-red-600', sipPhases)}
       </div>
     </div>
   );

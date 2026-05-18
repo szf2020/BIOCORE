@@ -14,6 +14,7 @@ import { apiFetch } from '@/lib/auth';
 import type { RecipeDAG } from '@/types';
 import { useAudit } from '@/hooks/useAudit';
 import { SampleImportDialog } from '@/components/SampleImportDialog';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

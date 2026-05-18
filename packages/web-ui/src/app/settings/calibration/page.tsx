@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Save, RefreshCw, Layers } from 'lucide-react';
 import { useAudit } from '@/hooks/useAudit';
 import { BatchCalibrationWizard } from '@/components/BatchCalibrationWizard';
+import { useLocale } from '@/i18n/useLocale';
 
 const API = 'http://localhost:3001';
 const CHANNELS = [

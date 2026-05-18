@@ -8,6 +8,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import type { ProcessValues } from '@/types';
+import { useLocale } from '@/i18n/useLocale';
 
 interface ParamCardProps {
   label: string;

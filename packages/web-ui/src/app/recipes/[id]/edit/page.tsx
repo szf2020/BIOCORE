@@ -34,6 +34,7 @@ import {
 import { phaseLabel } from '@/lib/utils';
 import { useAudit } from '@/hooks/useAudit';
 import { copyPhases, readClipboard, preparePaste, type ClipboardPhase } from '@/lib/phase-clipboard';
+import { useLocale } from '@/i18n/useLocale';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Phase模板从API动态加载，不再使用硬编码
