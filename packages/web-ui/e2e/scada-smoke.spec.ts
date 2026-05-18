@@ -5,8 +5,9 @@ const ADMIN_PASS = process.env.E2E_PASS || 'admin123';
 
 async function login(page: import('@playwright/test').Page) {
   await page.goto('/login');
-  await page.getByLabel(/用户名|username/i).fill(ADMIN_USER);
-  await page.getByLabel(/密码|password/i).fill(ADMIN_PASS);
+  // SP-FX-12 T3: 使用 input type 选择器 (与其他 spec 一致), 登录页无 label 关联
+  await page.locator('input[type="text"], input[autocomplete="username"]').first().fill(ADMIN_USER);
+  await page.locator('input[type="password"]').fill(ADMIN_PASS);
   await page.getByRole('button', { name: /登录|sign in/i }).click();
   await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 10_000 });
 }
