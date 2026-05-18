@@ -1,6 +1,6 @@
 // ============================================================
-// migration-roll-forward.test.ts — SP-FX-30 (updated SP-FX-34)
-// fresh DB roll-forward 端到端验证: 001~036 全 migration 顺序执行
+// migration-roll-forward.test.ts — SP-FX-30 (updated SP-FX-42)
+// fresh DB roll-forward 端到端验证: 001~037 全 migration 顺序执行
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
@@ -16,20 +16,20 @@ async function rollForward(): Promise<Database.Database> {
   return db;
 }
 
-describe('migration roll-forward 001~036', () => {
-  it('T1: fresh DB 顺序执行全 36 migration 不抛异常', async () => {
+describe('migration roll-forward 001~037', () => {
+  it('T1: fresh DB 顺序执行全 37 migration 不抛异常', async () => {
     // Arrange: fresh in-memory DB
     // Act + Assert: 不应抛出异常
     await expect(rollForward()).resolves.toBeDefined();
   });
 
-  it('T2: _migrations 表记录恰好 35 条 (每个 migration 文件各一条; 006 未加入故为 35)', async () => {
-    // 注: migrations 目录含 001~036 号但 006 缺失, 实际共 35 个文件
+  it('T2: _migrations 表记录恰好 36 条 (每个 migration 文件各一条; 006 未加入故为 36)', async () => {
+    // 注: migrations 目录含 001~037 号但 006 缺失, 实际共 36 个文件
     const db = await rollForward();
     const row = db
       .prepare('SELECT count(*) AS cnt FROM _migrations')
       .get() as { cnt: number };
-    expect(row.cnt).toBe(35);
+    expect(row.cnt).toBe(36);
   });
 
   it('T3: 关键业务表全部存在', async () => {
@@ -89,5 +89,17 @@ describe('migration roll-forward 001~036', () => {
       .map((r: any) => r.name as string);
 
     expect(cols, 'scada_views 应含 svgcontent (036 加)').toContain('svgcontent');
+  });
+
+  it('T7: alert_channels / alert_rules / alert_history 三张表存在 (migration 037 SP-FX-42)', async () => {
+    const db = await rollForward();
+    const tables = db
+      .prepare(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`)
+      .all()
+      .map((r: any) => r.name as string);
+
+    expect(tables, 'alert_channels 表应存在').toContain('alert_channels');
+    expect(tables, 'alert_rules 表应存在').toContain('alert_rules');
+    expect(tables, 'alert_history 表应存在').toContain('alert_history');
   });
 });

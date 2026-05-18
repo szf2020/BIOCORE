@@ -68,6 +68,8 @@ import { createPlcWriter } from './engine/plc-writer';
 import { executeRecipePlcWrite } from './engine/recipe-plc-write';
 import { registerAuditLogRoutes } from './audit-log-routes';
 import { registerBackupRoutes } from './backup-routes';
+// SP-FX-42: Alert notification system
+import { registerAlertRoutes } from './alert-routes';
 import { createBackupSchedulerFromEnv, BackupScheduler } from './services/backup-scheduler';
 // SP-FX-28: Prometheus metrics
 import { registerMetricsRoutes } from './metrics-routes';
@@ -3129,6 +3131,8 @@ registerReactorRoutes(apiRouter, {
 // SCADA 项目 + 视图 REST API (broadcast 已在作用域内)
 registerScadaRoutes(apiRouter, { sqlite, broadcast });
 registerFuxaViewsRoutes(apiRouter, { sqlite });
+// SP-FX-42: 告警通知系统
+registerAlertRoutes(apiRouter, { db: sqlite.getDatabase() as any });
 
 // ── 趋势历史数据 (InfluxDB) ──
 
