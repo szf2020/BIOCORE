@@ -155,4 +155,23 @@ describe('RuntimeCanvas', () => {
     expect(mockGauge.onUnmount).toHaveBeenCalledOnce();
     expect(mockDestroy).toHaveBeenCalledOnce();
   });
+
+  // SP-FX-11: batch 2/3/4 widget mount verification.
+  // gaugeRegistry.create is mocked to return mockGauge for any type,
+  // so this test confirms RuntimeCanvas correctly calls onMount for all 3 widgets.
+  it('batch2/3/4 widget types: gauge.onMount called once per widget (3 widgets → 3 calls)', () => {
+    const makeTypedWidget = (id: string, type: string) => ({
+      id, type,
+      x: 0, y: 0, w: 100, h: 40, rotate: 0, lock: false, hide: false,
+      property: { variableId: 'TAG_01' },
+      svgcontent: '',
+    });
+    const view = makeView({
+      w_pipe: makeTypedWidget('w_pipe', 'svg-ext-pipe'),          // batch2
+      w_tank: makeTypedWidget('w_tank', 'svg-ext-tank'),          // batch3
+      w_valve: makeTypedWidget('w_valve', 'svg-ext-valve'),       // batch4
+    });
+    render(<RuntimeCanvas view={view} viewId="v1" reactorId="F01" />);
+    expect(mockGauge.onMount).toHaveBeenCalledTimes(3);
+  });
 });
