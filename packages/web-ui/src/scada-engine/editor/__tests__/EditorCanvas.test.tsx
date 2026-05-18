@@ -428,3 +428,144 @@ describe('EditorCanvas rotate (SP-FX-3b.2.2)', () => {
     expect(w.rotate).toBe(45);
   });
 });
+
+describe('EditorCanvas multi-select group operations (SP-FX-3b.2.3)', () => {
+  function makeViewWithItems(items: Record<string, FuxaWidget>): FuxaView {
+    return {
+      id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>',
+      width: 800, height: 600,
+      items,
+      schemaVersion: 1,
+    } as FuxaView;
+  }
+
+  function fireKey(key: string) {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  }
+
+  it('multi-select (2 widgets) bbox shows 8 resize + rotate handles visible', () => {
+    const { container } = render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 0, y: 0, w: 100, h: 60 } as any,
+        w2: { id: 'w2', type: 'svg-ext-value', property: {}, x: 200, y: 100, w: 100, h: 60 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1', 'w2']);
+    });
+    const handles = container.querySelectorAll('[data-handle]');
+    const visibleCount = Array.from(handles).filter((h) => h.getAttribute('visibility') !== 'hidden').length;
+    expect(visibleCount).toBe(9);
+  });
+
+  it('multi-select group-rotate: store widgets rotate field updates after commit', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 100, y: 100, w: 20, h: 20 } as any,
+        w2: { id: 'w2', type: 'svg-ext-value', property: {}, x: 200, y: 200, w: 20, h: 20 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1', 'w2']);
+    });
+    act(() => {
+      useEditorStore.getState().updateWidget('w1', { x: 100, y: 100, w: 20, h: 20, rotate: 90 } as any, { silent: true });
+      useEditorStore.getState().updateWidget('w2', { x: 200, y: 200, w: 20, h: 20, rotate: 90 } as any);
+    });
+    expect((useEditorStore.getState().currentView!.items.w1 as any).rotate).toBe(90);
+    expect((useEditorStore.getState().currentView!.items.w2 as any).rotate).toBe(90);
+  });
+
+  it('multi-select group-rotate commit produces 1 history entry (silent batch)', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 100, y: 100, w: 20, h: 20 } as any,
+        w2: { id: 'w2', type: 'svg-ext-value', property: {}, x: 200, y: 200, w: 20, h: 20 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1', 'w2']);
+    });
+    const past0 = useEditorStore.getState().history.past.length;
+    act(() => {
+      useEditorStore.getState().updateWidget('w1', { rotate: 45 } as any, { silent: true });
+      useEditorStore.getState().updateWidget('w2', { rotate: 45 } as any);
+    });
+    expect(useEditorStore.getState().history.past.length).toBe(past0 + 1);
+  });
+
+  it('multi-select group-resize SE: both widgets w/h scale via updateWidget batch', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 30, h: 20 } as any,
+        w2: { id: 'w2', type: 'svg-ext-value', property: {}, x: 60, y: 50, w: 30, h: 20 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1', 'w2']);
+    });
+    act(() => {
+      useEditorStore.getState().updateWidget('w1', { x: 10, y: 10, w: 60, h: 40 } as any, { silent: true });
+      useEditorStore.getState().updateWidget('w2', { x: 120, y: 90, w: 60, h: 40 } as any);
+    });
+    const w1 = useEditorStore.getState().currentView!.items.w1 as any;
+    const w2 = useEditorStore.getState().currentView!.items.w2 as any;
+    expect(w1.w).toBe(60);
+    expect(w2.w).toBe(60);
+    expect(w2.x).toBe(120);
+  });
+
+  it('single-select still uses single mode (4 bbox corners hidden, handles at widget box)', () => {
+    const { container } = render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 50, y: 50, w: 100, h: 60 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1']);
+    });
+    const corners = container.querySelectorAll('[data-bbox-corner]');
+    corners.forEach((c) => {
+      expect(c.getAttribute('visibility')).toBe('hidden');
+    });
+    const handles = container.querySelectorAll('[data-handle]');
+    expect(handles.length).toBe(9);
+  });
+
+  it('multi-select with 2 rotated widgets renders both transform attrs', () => {
+    const { container } = render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 0, y: 0, w: 100, h: 60, rotate: 30 } as any,
+        w2: { id: 'w2', type: 'svg-ext-value', property: {}, x: 200, y: 100, w: 100, h: 60, rotate: 45 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1', 'w2']);
+    });
+    const el1 = container.querySelector('[data-widget-id="w1"]') as SVGElement;
+    const el2 = container.querySelector('[data-widget-id="w2"]') as SVGElement;
+    expect(el1.getAttribute('transform')).toContain('rotate(30');
+    expect(el2.getAttribute('transform')).toContain('rotate(45');
+  });
+
+  it('ESC clears selection in idle when 2 widgets selected (regression of 3b.2.1 Tier 2)', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 0, y: 0, w: 100, h: 60 } as any,
+        w2: { id: 'w2', type: 'svg-ext-value', property: {}, x: 200, y: 100, w: 100, h: 60 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1', 'w2']);
+    });
+    act(() => { fireKey('Escape'); });
+    expect(useEditorStore.getState().selection).toEqual([]);
+  });
+
+  it('group operation commit strips rotate=0 in last entry (commitRotate(0) regression)', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 0, y: 0, w: 100, h: 60, rotate: 30 } as any,
+      }));
+    });
+    act(() => {
+      useEditorStore.getState().updateWidget('w1', { rotate: undefined } as any);
+    });
+    const w1 = useEditorStore.getState().currentView!.items.w1 as any;
+    expect('rotate' in w1).toBe(false);
+  });
+});

@@ -155,6 +155,34 @@ export function EditorCanvas() {
         if (deg === null || pivot === null) refs.current.rotateTooltip.hide();
         else refs.current.rotateTooltip.show(deg, pivot);
       },
+      getCurrentRotates: (ids) => {
+        const view = useEditorStore.getState().currentView;
+        const m = new Map<string, number>();
+        if (!view) return m;
+        for (const id of ids) {
+          const r = (view.items[id] as { rotate?: number } | undefined)?.rotate;
+          if (typeof r === 'number') m.set(id, r);
+        }
+        return m;
+      },
+      onGroupRotated: (entries) => {
+        if (entries.length === 0) return;
+        const store = useEditorStore.getState();
+        for (let i = 0; i < entries.length - 1; i++) {
+          const e = entries[i];
+          const patch = {
+            x: e.newBox.x, y: e.newBox.y, w: e.newBox.w, h: e.newBox.h,
+            rotate: e.newRotate === 0 ? undefined : e.newRotate,
+          };
+          store.updateWidget(e.id, patch as Partial<FuxaWidget>, { silent: true });
+        }
+        const last = entries[entries.length - 1];
+        const lastPatch = {
+          x: last.newBox.x, y: last.newBox.y, w: last.newBox.w, h: last.newBox.h,
+          rotate: last.newRotate === 0 ? undefined : last.newRotate,
+        };
+        store.updateWidget(last.id, lastPatch as Partial<FuxaWidget>);
+      },
     });
     refs.current = { canvas, handles, pointer, snapGuides, rubberBand, rotateTooltip };
     canvas.loadView(currentView);
