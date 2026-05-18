@@ -19,7 +19,8 @@
     "backup": "bash scripts/backup-db.sh",
     "backup:restore": "bash scripts/restore-db.sh",
     "seed:demo": "sqlite3 packages/server/data/biocore.db < scripts/seed-demo.sql",
-    "gen:shape-catalog": "tsx scripts/gen-shape-catalog.ts"
+    "gen:shape-catalog": "tsx scripts/gen-shape-catalog.ts",
+    "dev:shape-watch": "tsx scripts/watch-shapes.ts"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -37,6 +38,7 @@
     "playwright": "^1.59.1"
   },
   "devDependencies": {
+    "chokidar": "^3.6.0",
     "tsx": "^4.21.0"
   }
 }
