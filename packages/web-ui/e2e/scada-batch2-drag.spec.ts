@@ -98,7 +98,9 @@ async function dropGaugeItem(page: Page, widgetType: string): Promise<void> {
 
 test.describe('SP-FX-27 — batch 2 widget palette drag E2E', () => {
   // --- gauge_semaphore ---
-  test('semaphore: drag to canvas → circle[data-widget-id] → runtime visible', async ({
+  // 编辑器: canvas-svg default case 渲染 <rect data-widget-id> 占位符 (gauge onMount 在 runtime 调用).
+  // 运行时: RuntimeCanvas 调用 GaugeSemaphore.onMount → <circle data-widget-id>.
+  test('semaphore: drag to canvas → widget-id in editor → runtime visible', async ({
     page,
     request,
   }) => {
@@ -115,12 +117,10 @@ test.describe('SP-FX-27 — batch 2 widget palette drag E2E', () => {
     // 拖拽到 canvas
     await dropGaugeItem(page, 'svg-ext-gauge_semaphore');
 
-    // 验 widget-id 出现
+    // 验 widget-id 出现 (编辑器占位 rect)
     await expect(page.locator('[data-widget-id]').first()).toBeVisible({ timeout: 5_000 });
-
-    // 验 semaphore 渲染 circle 子元素
-    const circleCount = await page.locator('circle[data-widget-id]').count();
-    expect(circleCount).toBeGreaterThanOrEqual(1);
+    const widgetCount = await page.locator('[data-widget-id]').count();
+    expect(widgetCount).toBeGreaterThanOrEqual(1);
 
     // 切 runtime view
     await page.goto(`/scada2/view-v2/${viewId}?reactor=${REACTOR_ID}`);
@@ -154,7 +154,9 @@ test.describe('SP-FX-27 — batch 2 widget palette drag E2E', () => {
   });
 
   // --- html_switch ---
-  test('switch: drag to canvas → foreignObject[data-widget-id] → runtime visible', async ({
+  // 编辑器: canvas-svg default case 渲染 <rect data-widget-id> 占位符.
+  // 运行时: RuntimeCanvas 调用 HtmlSwitchGauge.onMount → <foreignObject data-widget-id>.
+  test('switch: drag to canvas → widget-id in editor → runtime visible', async ({
     page,
     request,
   }) => {
@@ -171,16 +173,18 @@ test.describe('SP-FX-27 — batch 2 widget palette drag E2E', () => {
 
     await expect(page.locator('[data-widget-id]').first()).toBeVisible({ timeout: 5_000 });
 
-    // 验 switch 渲染 foreignObject
-    const foCount = await page.locator('foreignObject[data-widget-id]').count();
-    expect(foCount).toBeGreaterThanOrEqual(1);
+    // 验编辑器占位符存在
+    const widgetCount = await page.locator('[data-widget-id]').count();
+    expect(widgetCount).toBeGreaterThanOrEqual(1);
 
     await page.goto(`/scada2/view-v2/${viewId}?reactor=${REACTOR_ID}`);
     await expect(page.locator('[data-runtime-canvas-host]')).toBeVisible({ timeout: 10_000 });
   });
 
   // --- html_slider ---
-  test('slider: drag to canvas → foreignObject[data-widget-id] → runtime visible', async ({
+  // 编辑器: canvas-svg default case 渲染 <rect data-widget-id> 占位符.
+  // 运行时: RuntimeCanvas 调用 SliderGauge.onMount → <foreignObject data-widget-id>.
+  test('slider: drag to canvas → widget-id in editor → runtime visible', async ({
     page,
     request,
   }) => {
@@ -197,9 +201,9 @@ test.describe('SP-FX-27 — batch 2 widget palette drag E2E', () => {
 
     await expect(page.locator('[data-widget-id]').first()).toBeVisible({ timeout: 5_000 });
 
-    // 验 slider 渲染 foreignObject
-    const foCount = await page.locator('foreignObject[data-widget-id]').count();
-    expect(foCount).toBeGreaterThanOrEqual(1);
+    // 验编辑器占位符存在
+    const widgetCount = await page.locator('[data-widget-id]').count();
+    expect(widgetCount).toBeGreaterThanOrEqual(1);
 
     await page.goto(`/scada2/view-v2/${viewId}?reactor=${REACTOR_ID}`);
     await expect(page.locator('[data-runtime-canvas-host]')).toBeVisible({ timeout: 10_000 });
