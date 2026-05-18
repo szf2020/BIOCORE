@@ -5,7 +5,7 @@ import { CanvasController } from './canvas-svg';
 import { TransformHandles, SnapGuides, RotateTooltip } from './transform-handles';
 import { PointerTools } from './pointer-tools';
 import { snapPoint, computeBbox, clientToSvg, type Box } from './geometry';
-import { makeWidget } from './palette/palette-items';
+import { makeWidget, makeShapeWidget } from './palette/palette-items';
 import type { FuxaWidget } from '../models';
 
 interface Refs {
@@ -326,12 +326,13 @@ export function EditorCanvas() {
       data-editor-canvas-host
       className="w-full h-full overflow-auto bg-white"
       onDragOver={(e) => {
-        if (e.dataTransfer.types.includes('palette-item')) e.preventDefault();
+        const types = e.dataTransfer.types;
+        if (types.includes('palette-item') || types.includes('palette-shape')) {
+          e.preventDefault();
+        }
       }}
       onDrop={(e) => {
         e.preventDefault();
-        const type = e.dataTransfer.getData('palette-item') as 'rect' | 'ellipse' | 'text' | '';
-        if (!type || !(['rect', 'ellipse', 'text'] as string[]).includes(type)) return;
         const host = e.currentTarget as HTMLElement;
         const svg = host.querySelector('svg') as SVGSVGElement | null;
         let ctm: DOMMatrix | null = null;
@@ -341,7 +342,26 @@ export function EditorCanvas() {
           ? clientToSvg({ x: e.clientX, y: e.clientY }, ctm.inverse())
           : { x: e.clientX - hostRect.left, y: e.clientY - hostRect.top };
         const store = useEditorStore.getState();
-        store.addWidget(makeWidget(type as 'rect' | 'ellipse' | 'text', local, store.gridSize));
+
+        const basicType = e.dataTransfer.getData('palette-item') as 'rect' | 'ellipse' | 'text' | '';
+        if (basicType && (['rect', 'ellipse', 'text'] as string[]).includes(basicType)) {
+          store.addWidget(makeWidget(basicType, local, store.gridSize));
+          return;
+        }
+
+        const shapeJson = e.dataTransfer.getData('palette-shape');
+        if (shapeJson) {
+          try {
+            const parsed = JSON.parse(shapeJson) as { id?: unknown; src?: unknown };
+            const id = parsed.id;
+            const src = parsed.src;
+            if (typeof id === 'string' && id && typeof src === 'string' && src) {
+              store.addWidget(makeShapeWidget(id, src, local, store.gridSize));
+            }
+          } catch {
+            // malformed JSON; silently ignore
+          }
+        }
       }}
     >
       {!currentView && <div className="p-8 text-center text-muted-foreground">无视图</div>}
