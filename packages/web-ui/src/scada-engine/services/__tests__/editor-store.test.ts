@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useEditorStore } from '../editor-store';
 import type { FuxaView } from '../../models/hmi';
 import type { FuxaWidget } from '../../models/widget';
@@ -323,5 +323,80 @@ describe('editorStore updateWidget multi-key + mixed patch (SP-FX-3b.2.3)', () =
     const w = useEditorStore.getState().currentView!.items.w1 as any;
     expect('rotate' in w).toBe(false);
     expect(w.x).toBe(100);
+  });
+});
+
+describe('editorStore SP-FX-4 actions', () => {
+  beforeEach(() => {
+    useEditorStore.setState({
+      currentView: null,
+      isDirty: false,
+      history: { past: [], future: [] },
+      selection: [],
+      snapEnabled: true,
+      gridSize: 10,
+    } as any, true);
+    useEditorStore.getState().openView({
+      id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>',
+      width: 800, height: 600,
+      items: {},
+      schemaVersion: 1,
+    } as any);
+  });
+
+  it('addWidget sets selection to [widget.id]', () => {
+    useEditorStore.getState().addWidget({ id: 'w_new', type: 'rect', property: {}, x: 0, y: 0, w: 50, h: 30 } as any);
+    expect(useEditorStore.getState().selection).toEqual(['w_new']);
+  });
+
+  it('addWidget sets isDirty true', () => {
+    useEditorStore.getState().addWidget({ id: 'w_new', type: 'rect', property: {}, x: 0, y: 0, w: 50, h: 30 } as any);
+    expect(useEditorStore.getState().isDirty).toBe(true);
+  });
+
+  it('addWidget pushes history.past entry', () => {
+    const past0 = useEditorStore.getState().history.past.length;
+    useEditorStore.getState().addWidget({ id: 'w_new', type: 'rect', property: {}, x: 0, y: 0, w: 50, h: 30 } as any);
+    expect(useEditorStore.getState().history.past.length).toBe(past0 + 1);
+  });
+
+  it('toggleGrid flips snapEnabled true→false', () => {
+    expect(useEditorStore.getState().snapEnabled).toBe(true);
+    useEditorStore.getState().toggleGrid();
+    expect(useEditorStore.getState().snapEnabled).toBe(false);
+  });
+
+  it('toggleGrid flips snapEnabled false→true', () => {
+    useEditorStore.setState({ snapEnabled: false });
+    useEditorStore.getState().toggleGrid();
+    expect(useEditorStore.getState().snapEnabled).toBe(true);
+  });
+
+  it('saveView calls fetch PUT /api/v1/fuxa-views/:id with currentView body', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+    await useEditorStore.getState().saveView('v1');
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/fuxa-views/v1');
+    expect(init.method).toBe('PUT');
+    expect(init.headers).toMatchObject({ 'Content-Type': 'application/json' });
+    expect(JSON.parse(init.body as string).id).toBe('v1');
+    fetchSpy.mockRestore();
+  });
+
+  it('saveView clears isDirty on 2xx', async () => {
+    useEditorStore.setState({ isDirty: true });
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+    await useEditorStore.getState().saveView('v1');
+    expect(useEditorStore.getState().isDirty).toBe(false);
+    fetchSpy.mockRestore();
+  });
+
+  it('saveView throws on non-2xx, retains isDirty', async () => {
+    useEditorStore.setState({ isDirty: true });
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response('err', { status: 500 }));
+    await expect(useEditorStore.getState().saveView('v1')).rejects.toThrow(/500/);
+    expect(useEditorStore.getState().isDirty).toBe(true);
+    fetchSpy.mockRestore();
   });
 });

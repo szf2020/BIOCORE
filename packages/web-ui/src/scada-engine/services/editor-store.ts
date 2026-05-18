@@ -48,6 +48,8 @@ export interface EditorActions {
   markClean: () => void;
   setSnapEnabled: (enabled: boolean) => void;
   setGridSize: (n: number) => void;
+  saveView: (viewId: string) => Promise<void>;
+  toggleGrid: () => void;
 }
 
 export type EditorState = EditorData & EditorActions;
@@ -99,6 +101,7 @@ const actions: EditorActions = {
       history: { past: pushHistory(s.history.past, s.currentView!), future: [] },
       currentView: produce(currentView, (draft) => { draft.items[widget.id] = widget; }),
       isDirty: true,
+      selection: [widget.id],
     }));
   },
 
@@ -178,6 +181,22 @@ const actions: EditorActions = {
   setGridSize: (n) => {
     if (![8, 10, 16, 20].includes(n)) return;
     _store.setState({ gridSize: n });
+  },
+
+  saveView: async (viewId) => {
+    const { currentView } = _store.getState();
+    if (!currentView) throw new Error('saveView: no currentView');
+    const r = await fetch(`/api/v1/fuxa-views/${viewId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(currentView),
+    });
+    if (!r.ok) throw new Error(`save failed: ${r.status}`);
+    _store.setState({ isDirty: false });
+  },
+
+  toggleGrid: () => {
+    _store.setState((s) => ({ snapEnabled: !s.snapEnabled }));
   },
 };
 
