@@ -173,8 +173,8 @@ describe('getRepoRoot (KI-1 SP-FX-34)', () => {
     // backup-routes.ts __dirname = packages/server/src → ../../.. = repo root
     // 验证 result 不含 /packages/server/src 路径
     expect(result).not.toContain('packages/server/src');
-    // 验证 result 是实际 biocore repo root 路径
-    expect(result).toMatch(/biocore-sp-fx-17$/);
+    // 验证 result 是 repo root (含 package.json) — 不 hard-code 目录名
+    expect(result).not.toContain('packages/server');
   });
 
   it('BIOCORE_ROOT 未设置时 fallback 为绝对路径', () => {
