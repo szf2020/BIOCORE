@@ -107,9 +107,11 @@ describe('/scada2/backup 页面 (SP-FX-20)', () => {
   });
 
   it('确认恢复 → 调 POST /admin/restore', async () => {
-    // fetch mock 顺序: GET backups → GET download (含 blob) → POST restore → GET backups refetch
+    // fetch mock 顺序: GET backups → GET schedule → GET download (含 blob) → POST restore → GET backups refetch
     fetchMock
       .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: { backups: mockBackups } }) })
+      // SP-FX-39: GET schedule
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ enabled: false, intervalHours: 24, retentionDays: 30, lastRunAt: null, nextRunAt: null }) })
       // download response 需要 .blob() 方法
       .mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['fake'], { type: 'application/octet-stream' }), json: async () => ({}) })
       // POST restore response
@@ -137,6 +139,96 @@ describe('/scada2/backup 页面 (SP-FX-20)', () => {
     render(<Page />);
     await waitFor(() => {
       expect(screen.getByText(/暂无备份/)).toBeTruthy();
+    });
+  });
+});
+
+// ─── SP-FX-39: Schedule UI 测试 ───────────────────────────────
+const mockScheduleState = {
+  enabled: true,
+  intervalHours: 24,
+  retentionDays: 30,
+  lastRunAt: '2026-05-18T06:00:00.000Z',
+  nextRunAt: '2026-05-19T06:00:00.000Z',
+};
+
+describe('/scada2/backup 调度 Schedule 区块 (SP-FX-39)', () => {
+  let fetchMockSched: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    fetchMockSched = vi.fn();
+    global.fetch = fetchMockSched as unknown as typeof fetch;
+    // 第一次 GET backups, 第二次 GET schedule
+    fetchMockSched
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: { backups: [] } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockScheduleState,
+      });
+  });
+
+  it('显示"自动备份调度"区块标题', async () => {
+    render(<Page />);
+    await waitFor(() => {
+      expect(screen.getByText(/自动备份调度/)).toBeTruthy();
+    });
+  });
+
+  it('显示 intervalHours 当前值 input', async () => {
+    render(<Page />);
+    await waitFor(() => {
+      // 有 input 显示当前间隔 24
+      const intervalInput = screen.getByDisplayValue('24');
+      expect(intervalInput).toBeTruthy();
+    });
+  });
+
+  it('点击"保存调度设置"调用 POST /admin/backup/schedule', async () => {
+    fetchMockSched
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: { backups: [] } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockScheduleState,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ...mockScheduleState, intervalHours: 12 }),
+      });
+
+    render(<Page />);
+    await waitFor(() => screen.getByText(/自动备份调度/));
+    const saveBtn = screen.getByRole('button', { name: /保存调度设置/ });
+    fireEvent.click(saveBtn);
+    await waitFor(() => {
+      const calls: any[][] = fetchMockSched.mock.calls;
+      const postCall = calls.find((c) => c[1]?.method === 'POST' && String(c[0]).includes('schedule'));
+      expect(postCall).toBeTruthy();
+    });
+  });
+
+  it('scheduler 未启用时显示"调度未启用"提示', async () => {
+    // 重置 mock，重新设置 503 返回
+    fetchMockSched.mockReset();
+    fetchMockSched
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: { backups: [] } }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => ({ error: 'Scheduler 未启用' }),
+      });
+
+    render(<Page />);
+    await waitFor(() => {
+      expect(screen.getByText(/调度未启用|Scheduler 未启用/)).toBeTruthy();
     });
   });
 });

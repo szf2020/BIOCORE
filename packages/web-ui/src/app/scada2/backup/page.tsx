@@ -20,6 +20,15 @@ interface BackupFile {
   mtime: string;
 }
 
+// SP-FX-39: Scheduler 状态
+interface SchedulerState {
+  enabled: boolean;
+  intervalHours: number;
+  retentionDays: number;
+  lastRunAt: string | null;
+  nextRunAt: string | null;
+}
+
 // 格式化字节数
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -49,6 +58,13 @@ export default function BackupPage() {
   // 恢复确认 dialog 状态
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
+
+  // SP-FX-39: schedule 状态
+  const [schedule, setSchedule] = useState<SchedulerState | null>(null);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [schedIntervalHours, setSchedIntervalHours] = useState<number>(24);
+  const [schedRetentionDays, setSchedRetentionDays] = useState<number>(30);
+  const [schedSaving, setSchedSaving] = useState(false);
 
   // 非 admin 阻断
   if (user && user.role !== 'admin') {
@@ -81,6 +97,52 @@ export default function BackupPage() {
   }, []);
 
   useEffect(() => { void fetchBackups(); }, [fetchBackups]);
+
+  // SP-FX-39: ─── 加载 schedule 状态 ───────────────────────────
+  const fetchSchedule = useCallback(async () => {
+    setScheduleError(null);
+    try {
+      const res = await fetch(`${API}/api/v1/admin/backup/schedule`);
+      const body = await res.json();
+      if (!res.ok) {
+        setScheduleError(body.error ?? '调度未启用');
+        return;
+      }
+      const state = body as SchedulerState;
+      setSchedule(state);
+      setSchedIntervalHours(state.intervalHours);
+      setSchedRetentionDays(state.retentionDays);
+    } catch (e) {
+      setScheduleError((e as Error).message);
+    }
+  }, []);
+
+  useEffect(() => { void fetchSchedule(); }, [fetchSchedule]);
+
+  // SP-FX-39: ─── 保存 schedule 设置 ──────────────────────────
+  const handleSaveSchedule = useCallback(async () => {
+    setSchedSaving(true);
+    setScheduleError(null);
+    try {
+      const res = await fetch(`${API}/api/v1/admin/backup/schedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intervalHours: schedIntervalHours, retentionDays: schedRetentionDays }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setScheduleError(body.error ?? '保存失败');
+        return;
+      }
+      setSchedule(body as SchedulerState);
+      setToast('调度设置已保存');
+      setTimeout(() => setToast(null), 3000);
+    } catch (e) {
+      setScheduleError((e as Error).message);
+    } finally {
+      setSchedSaving(false);
+    }
+  }, [schedIntervalHours, schedRetentionDays]);
 
   // ─── 立即备份 ─────────────────────────────────────────────
   const handleBackupNow = useCallback(async () => {
@@ -249,6 +311,74 @@ export default function BackupPage() {
         onConfirm={handleRestoreConfirm}
         onCancel={() => { setConfirmOpen(false); setConfirmTarget(null); }}
       />
+
+      {/* SP-FX-39: 自动备份调度 Section */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #e5e7eb' }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: 16 }}>自动备份调度</h3>
+
+        {scheduleError ? (
+          <p style={{ color: '#6b7280', fontSize: 14 }}>{scheduleError}</p>
+        ) : schedule ? (
+          <>
+            <div style={{ fontSize: 14, marginBottom: 12, color: '#374151' }}>
+              <span>状态: <strong>{schedule.enabled ? '运行中' : '已停止'}</strong></span>
+              {schedule.lastRunAt && (
+                <span style={{ marginLeft: 16 }}>
+                  上次运行: {new Date(schedule.lastRunAt).toLocaleString('zh-CN')}
+                </span>
+              )}
+              {schedule.nextRunAt && (
+                <span style={{ marginLeft: 16 }}>
+                  下次运行: {new Date(schedule.nextRunAt).toLocaleString('zh-CN')}
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+              <label style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                间隔 (小时):
+                <input
+                  type="number"
+                  min={1}
+                  max={168}
+                  value={schedIntervalHours}
+                  onChange={e => setSchedIntervalHours(Number(e.target.value))}
+                  style={{ width: 70, padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 4, fontSize: 14 }}
+                />
+              </label>
+              <label style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                保留天数:
+                <input
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={schedRetentionDays}
+                  onChange={e => setSchedRetentionDays(Number(e.target.value))}
+                  style={{ width: 70, padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 4, fontSize: 14 }}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={handleSaveSchedule}
+                disabled={schedSaving}
+                style={{
+                  padding: '6px 14px',
+                  background: '#10b981',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: schedSaving ? 'not-allowed' : 'pointer',
+                  opacity: schedSaving ? 0.7 : 1,
+                  fontSize: 14,
+                }}
+              >
+                {schedSaving ? '保存中…' : '保存调度设置'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <p style={{ color: '#6b7280', fontSize: 14 }}>加载调度信息中…</p>
+        )}
+      </div>
     </div>
   );
 }
