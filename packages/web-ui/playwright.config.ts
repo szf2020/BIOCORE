@@ -13,6 +13,13 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // SP-FX-18: soak project — 90s timeout for 1-minute FPS/memory measurement
+    {
+      name: 'soak',
+      testMatch: ['**/scada-soak.spec.ts'],
+      timeout: 90_000,
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
   webServer: [
     {
