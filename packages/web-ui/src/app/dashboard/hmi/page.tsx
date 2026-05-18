@@ -1,17 +1,17 @@
 // ============================================================
-// Dashboard 二级菜单: 工艺画面 (FUXA HMI 集成)
-// 顶部反应器选择栏与 /dashboard 一致, 切换时通过 iframe URL fragment 传给 FUXA
+// Dashboard 二级菜单: 工艺画面 — BIOCore 自写 SCADA (FUXA iframe 已退役)
+// SP-FX-48.1: 删 FUXA iframe (http://localhost:1881), 改嵌 BIOCore /scada2 view list
+// 保留 reactor selector 顶部栏
 // ============================================================
 
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Pencil, Eye } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import { useLocale } from '@/i18n/useLocale';
 
-const FUXA_URL = process.env.NEXT_PUBLIC_FUXA_URL || 'http://localhost:1881';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 interface ReactorInfo {
@@ -46,9 +46,7 @@ export default function HmiPage() {
   const reactorStates = useRealtimeStore(s => s.reactorStates);
   const [reactorIds, setReactorIds] = useState<string[]>([]);
   const [selectedReactor, setSelectedReactor] = useState<string>('');
-  const [editMode, setEditMode] = useState<boolean>(false);
 
-  // 拉取反应器配置 (与 dashboard 同源 /api/reactor-configs)
   useEffect(() => {
     fetch(`${API}/api/reactor-configs`)
       .then(r => r.ok ? r.json() : [])
@@ -60,7 +58,6 @@ export default function HmiPage() {
       .catch(() => { /* offline OK */ });
   }, []);
 
-  // 派生 reactor 列表 (state 来自 WS reactorStates map)
   const reactors: ReactorInfo[] = useMemo(() => {
     return reactorIds.map(id => ({
       id,
@@ -68,18 +65,13 @@ export default function HmiPage() {
     }));
   }, [reactorIds, reactorStates]);
 
-  // FUXA iframe URL 含 reactor 参数; editMode=true → /editor (编辑), false → / (运行视图)
-  const iframeSrc = useMemo(() => {
-    const path = editMode ? '/editor' : '/';
+  const scadaListUrl = useMemo(() => {
     const q = selectedReactor ? `?reactor=${encodeURIComponent(selectedReactor)}` : '';
-    return `${FUXA_URL}${path}${q}`;
-  }, [selectedReactor, editMode]);
-
-  const [showHelp, setShowHelp] = useState(false);
+    return `/scada2${q}`;
+  }, [selectedReactor]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-70px)] bg-slate-50">
-      {/* 顶部工具栏: 返回 + 反应器选择栏 (与 dashboard 一致) */}
       <header className="flex items-center gap-2 px-4 py-2 bg-white border-b shadow-sm overflow-x-auto">
         <Link
           href="/dashboard"
@@ -113,59 +105,21 @@ export default function HmiPage() {
           );
         })}
 
-        {/* 右上角: 切换 FUXA 编辑/查看模式 */}
-        <button
-          onClick={() => setEditMode(v => !v)}
-          title={editMode ? '切换到查看模式' : '切换到编辑模式'}
-          className={`ml-auto flex items-center gap-1.5 px-3 py-1 rounded text-sm shrink-0 border transition-colors ${
-            editMode
-              ? 'bg-blue-500 text-white border-blue-600 hover:bg-blue-600'
-              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-          }`}
+        <Link
+          href={scadaListUrl}
+          className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded text-sm shrink-0 border bg-blue-500 text-white border-blue-600 hover:bg-blue-600"
         >
-          {editMode ? <Pencil className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-          {editMode ? '编辑模式' : '查看模式'}
-        </button>
+          打开画面集
+        </Link>
       </header>
 
-      {/* FUXA iframe 主区 — key 含 editMode 让模式切换也强制 reload */}
       <main className="flex-1 relative bg-slate-100">
         <iframe
-          key={`${selectedReactor}-${editMode ? 'edit' : 'view'}`}
-          src={iframeSrc}
+          key={selectedReactor}
+          src={scadaListUrl}
           className="absolute inset-0 w-full h-full border-0"
-          title="FUXA HMI"
-          allow="clipboard-read; clipboard-write"
+          title="BIOCore SCADA"
         />
-
-        {/* FUXA 未启动? 右下角 help — iframe 显示 broken icon 时用户点这里看启动指南 */}
-        <button
-          type="button"
-          onClick={() => setShowHelp(v => !v)}
-          className="absolute bottom-3 right-3 px-3 py-1.5 bg-white border border-slate-300 rounded shadow-sm text-sm text-slate-700 hover:bg-slate-50"
-        >
-          画面未加载?
-        </button>
-        {showHelp && (
-          <div className="absolute bottom-14 right-3 max-w-sm bg-white border border-slate-300 rounded-lg shadow-lg p-4 space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <div className="font-semibold text-slate-800">FUXA HMI 未启动</div>
-              <button onClick={() => setShowHelp(false)} className="text-slate-400 hover:text-slate-700 text-lg leading-none">&times;</button>
-            </div>
-            <div className="text-sm text-slate-600">iframe 连接 <code className="font-mono bg-slate-100 px-1 rounded">{FUXA_URL}</code></div>
-            <div className="text-sm text-slate-500">
-              启动 (monorepo 方案 A):
-              <pre className="bg-slate-900 text-slate-100 p-2 mt-1 rounded font-mono text-sm overflow-x-auto whitespace-pre">pnpm --filter @biocore/fuxa dev</pre>
-            </div>
-            <button
-              type="button"
-              onClick={() => location.reload()}
-              className="w-full px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              FUXA 已启动 — 刷新页面
-            </button>
-          </div>
-        )}
       </main>
     </div>
   );
