@@ -87,7 +87,18 @@ export async function runMigrations(db: Database.Database, migrationsDir?: strin
       name,
       up: async () => {
         const sql = readFileSync(resolve(dir, file), 'utf8');
-        db.exec(sql);
+        try {
+          db.exec(sql);
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : String(e);
+          // SQLite ALTER TABLE ADD COLUMN 无 IF NOT EXISTS — 重跑同一 migration 会报
+          // "duplicate column name: <col>". 视为幂等成功 (列已存在即目标达成).
+          if (msg.includes('duplicate column name')) {
+            console.warn(`[Migrator] ${name}: duplicate column name — column 已存在, 跳过 (idempotent)`);
+            return;
+          }
+          throw e;
+        }
       },
       down: async () => {
         throw new Error(`Migration ${name} 不支持回滚 (向前迁移策略)`);
