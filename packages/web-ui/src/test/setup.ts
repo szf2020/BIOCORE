@@ -18,3 +18,35 @@ if (typeof window !== 'undefined' && !window.PointerEvent) {
   }
   Object.defineProperty(window, 'PointerEvent', { value: PointerEventPolyfill, writable: true });
 }
+
+if (typeof HTMLCanvasElement !== 'undefined' && !('__SP_FX_5_CANVAS_STUB__' in HTMLCanvasElement.prototype)) {
+  (HTMLCanvasElement.prototype as any).__SP_FX_5_CANVAS_STUB__ = true;
+  HTMLCanvasElement.prototype.getContext = (() => {
+    return {
+      clearRect: () => {},
+      fillRect: () => {},
+      strokeRect: () => {},
+      beginPath: () => {},
+      closePath: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      arc: () => {},
+      stroke: () => {},
+      fill: () => {},
+      save: () => {},
+      restore: () => {},
+      translate: () => {},
+      scale: () => {},
+      rotate: () => {},
+      setTransform: () => {},
+      drawImage: () => {},
+      measureText: () => ({ width: 0 }),
+      createLinearGradient: () => ({ addColorStop: () => {} }),
+      fillText: () => {},
+      strokeText: () => {},
+      getImageData: () => ({ data: new Uint8ClampedArray() }),
+      putImageData: () => {},
+      canvas: { width: 0, height: 0 },
+    };
+  }) as any;
+}
