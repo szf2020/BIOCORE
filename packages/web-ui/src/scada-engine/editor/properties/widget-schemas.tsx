@@ -163,18 +163,102 @@ export const gaugeSemaphoreSchema: WidgetPropertySchema = {
     const ranges = Array.isArray((property as any).ranges)
       ? ((property as any).ranges as Array<{ min: number; max: number; color: string }>)
       : [];
+    const options = ((property as any).options ?? {}) as { semaphoreActions?: Array<{ type: 'hide'|'show'|'blink'; range?: { min: number; max: number } }> };
+    const actions = Array.isArray(options.semaphoreActions) ? options.semaphoreActions : [];
+    const setActions = (next: typeof actions) =>
+      onChange({ options: { ...options, semaphoreActions: next } });
     return (
-      <div data-section="semaphore-ranges">
-        <p className="text-xs text-zinc-400 mb-1">颜色范围 ({ranges.length} 条)</p>
-        <button
-          className="text-xs text-blue-400 underline"
-          onClick={() => {
-            onChange({ ranges: [...ranges, { min: 0, max: 1, color: '#22c55e' }] });
-          }}
-        >
-          + 添加范围
-        </button>
-      </div>
+      <>
+        <div data-section="semaphore-ranges" className="mb-2">
+          <p className="text-xs text-zinc-400 mb-1">颜色范围 ({ranges.length} 条)</p>
+          {ranges.map((r, i) => (
+            <div key={i} className="flex items-center gap-1 mb-1 text-xs">
+              <input
+                type="number" value={r.min}
+                className="w-14 bg-zinc-800 border border-zinc-700 rounded px-1"
+                onChange={(e) => {
+                  const next = ranges.slice(); next[i] = { ...r, min: Number(e.target.value) };
+                  onChange({ ranges: next });
+                }}
+              />
+              <span>→</span>
+              <input
+                type="number" value={r.max}
+                className="w-14 bg-zinc-800 border border-zinc-700 rounded px-1"
+                onChange={(e) => {
+                  const next = ranges.slice(); next[i] = { ...r, max: Number(e.target.value) };
+                  onChange({ ranges: next });
+                }}
+              />
+              <input
+                type="color" value={r.color}
+                className="w-6 h-6 bg-transparent border-0"
+                onChange={(e) => {
+                  const next = ranges.slice(); next[i] = { ...r, color: e.target.value };
+                  onChange({ ranges: next });
+                }}
+              />
+              <button
+                className="text-red-400 hover:text-red-300 ml-auto"
+                onClick={() => {
+                  const next = ranges.slice(); next.splice(i, 1);
+                  onChange({ ranges: next });
+                }}
+              >×</button>
+            </div>
+          ))}
+          <button
+            className="text-xs text-blue-400 underline"
+            onClick={() => onChange({ ranges: [...ranges, { min: 0, max: 1, color: '#22c55e' }] })}
+          >+ 添加范围</button>
+        </div>
+        <div data-section="semaphore-actions">
+          <p className="text-xs text-zinc-400 mb-1">动作 ({actions.length} 条)</p>
+          {actions.map((a, i) => (
+            <div key={i} className="flex items-center gap-1 mb-1 text-xs">
+              <select
+                value={a.type}
+                className="bg-zinc-800 border border-zinc-700 rounded px-1"
+                onChange={(e) => {
+                  const next = actions.slice(); next[i] = { ...a, type: e.target.value as any };
+                  setActions(next);
+                }}
+              >
+                <option value="hide">隐藏</option>
+                <option value="show">显示</option>
+                <option value="blink">闪烁</option>
+              </select>
+              <input
+                type="number" placeholder="min" value={a.range?.min ?? 0}
+                className="w-14 bg-zinc-800 border border-zinc-700 rounded px-1"
+                onChange={(e) => {
+                  const next = actions.slice();
+                  next[i] = { ...a, range: { min: Number(e.target.value), max: a.range?.max ?? 0 } };
+                  setActions(next);
+                }}
+              />
+              <span>→</span>
+              <input
+                type="number" placeholder="max" value={a.range?.max ?? 0}
+                className="w-14 bg-zinc-800 border border-zinc-700 rounded px-1"
+                onChange={(e) => {
+                  const next = actions.slice();
+                  next[i] = { ...a, range: { min: a.range?.min ?? 0, max: Number(e.target.value) } };
+                  setActions(next);
+                }}
+              />
+              <button
+                className="text-red-400 hover:text-red-300 ml-auto"
+                onClick={() => { const next = actions.slice(); next.splice(i, 1); setActions(next); }}
+              >×</button>
+            </div>
+          ))}
+          <button
+            className="text-xs text-blue-400 underline"
+            onClick={() => setActions([...actions, { type: 'blink', range: { min: 0, max: 1 } }])}
+          >+ 添加动作</button>
+        </div>
+      </>
     );
   },
 };
@@ -325,6 +409,9 @@ export const htmlImageSchema: WidgetPropertySchema = {
       { value: 'cover', label: 'cover' },
       { value: 'fill', label: 'fill' },
     ]},
+    // SP-FX-48.10: optional color tint (mix-blend overlay)
+    { key: 'tintColor', label: '色调叠加', type: 'color', allowNone: true },
+    { key: 'tintOpacity', label: '叠加不透明度', type: 'number', min: 0, max: 1, step: 0.1 },
     { key: 'x', label: 'X', type: 'number', geometric: true },
     { key: 'y', label: 'Y', type: 'number', geometric: true },
     { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
@@ -452,6 +539,9 @@ export const htmlSelectSchema: WidgetPropertySchema = {
 export const panelSchema: WidgetPropertySchema = {
   entries: [
     { key: 'title', label: '标题', type: 'text', placeholder: '可留空' },
+    // SP-FX-48.10: viewName placeholder for future embedded-view feature
+    // (Currently informational only — full sub-view embed deferred per R11 boundary review.)
+    { key: 'viewName', label: '嵌入视图 (预留)', type: 'text', placeholder: '视图 ID' },
     { key: 'bgColor', label: '背景色', type: 'color', allowNone: true },
     { key: 'borderColor', label: '边框色', type: 'color', allowNone: true },
     { key: 'borderWidth', label: '边框宽度', type: 'number', min: 0, max: 10, step: 1 },

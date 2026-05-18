@@ -9,6 +9,9 @@ interface ImageProperty {
   src?: string;
   variableId?: string;
   fit?: 'contain' | 'cover' | 'fill';
+  // SP-FX-48.10: optional color tint applied as mix-blend overlay
+  tintColor?: string;
+  tintOpacity?: number; // 0-1
 }
 
 class HtmlImageGauge implements GaugeBase {
@@ -31,13 +34,33 @@ class HtmlImageGauge implements GaugeBase {
     fo.setAttribute('height', String(h));
     fo.setAttribute('data-widget-id', widget.id);
 
+    // Wrap img in a positioned container so we can layer a tint overlay
+    const wrap = document.createElement('div');
+    wrap.style.position = 'relative';
+    wrap.style.width = '100%';
+    wrap.style.height = '100%';
+
     const img = document.createElement('img');
     img.setAttribute('src', prop.src ?? '');
     img.style.width = '100%';
     img.style.height = '100%';
     img.style.objectFit = prop.fit ?? 'contain';
     img.setAttribute('data-widget-id', widget.id);
-    fo.appendChild(img);
+    wrap.appendChild(img);
+
+    if (prop.tintColor) {
+      const overlay = document.createElement('div');
+      overlay.dataset.tint = 'overlay';
+      overlay.style.position = 'absolute';
+      overlay.style.inset = '0';
+      overlay.style.backgroundColor = prop.tintColor;
+      overlay.style.opacity = String(Math.max(0, Math.min(1, prop.tintOpacity ?? 0.3)));
+      overlay.style.mixBlendMode = 'multiply';
+      overlay.style.pointerEvents = 'none';
+      wrap.appendChild(overlay);
+    }
+
+    fo.appendChild(wrap);
     ctx.parentGroup.appendChild(fo);
 
     this.foEl = fo;
@@ -67,6 +90,27 @@ class HtmlImageGauge implements GaugeBase {
       }
       if (prop.fit) {
         this.imgEl.style.objectFit = prop.fit;
+      }
+      // SP-FX-48.10: update tint overlay
+      const wrap = this.imgEl.parentElement;
+      const existing = wrap?.querySelector('[data-tint="overlay"]') as HTMLDivElement | null;
+      if (prop.tintColor) {
+        if (existing) {
+          existing.style.backgroundColor = prop.tintColor;
+          existing.style.opacity = String(Math.max(0, Math.min(1, prop.tintOpacity ?? 0.3)));
+        } else if (wrap) {
+          const overlay = document.createElement('div');
+          overlay.dataset.tint = 'overlay';
+          overlay.style.position = 'absolute';
+          overlay.style.inset = '0';
+          overlay.style.backgroundColor = prop.tintColor;
+          overlay.style.opacity = String(Math.max(0, Math.min(1, prop.tintOpacity ?? 0.3)));
+          overlay.style.mixBlendMode = 'multiply';
+          overlay.style.pointerEvents = 'none';
+          wrap.appendChild(overlay);
+        }
+      } else if (existing) {
+        existing.remove();
       }
     }
   }
