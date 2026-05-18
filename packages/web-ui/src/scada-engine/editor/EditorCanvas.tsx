@@ -4,7 +4,8 @@ import { useEditorStore } from '../services/editor-store';
 import { CanvasController } from './canvas-svg';
 import { TransformHandles, SnapGuides, RotateTooltip } from './transform-handles';
 import { PointerTools } from './pointer-tools';
-import { snapPoint, computeBbox, type Box } from './geometry';
+import { snapPoint, computeBbox, clientToSvg, type Box } from './geometry';
+import { makeWidget } from './palette/palette-items';
 import type { FuxaWidget } from '../models';
 
 interface Refs {
@@ -316,7 +317,29 @@ export function EditorCanvas() {
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full h-full overflow-auto bg-white">
+    <div
+      ref={containerRef}
+      data-editor-canvas-host
+      className="w-full h-full overflow-auto bg-white"
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes('palette-item')) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        const type = e.dataTransfer.getData('palette-item') as 'rect' | 'ellipse' | 'text' | '';
+        if (!type || !(['rect', 'ellipse', 'text'] as string[]).includes(type)) return;
+        const host = e.currentTarget as HTMLElement;
+        const svg = host.querySelector('svg') as SVGSVGElement | null;
+        let ctm: DOMMatrix | null = null;
+        try { ctm = svg ? svg.getScreenCTM() : null; } catch { ctm = null; }
+        const hostRect = host.getBoundingClientRect();
+        const local = ctm
+          ? clientToSvg({ x: e.clientX, y: e.clientY }, ctm.inverse())
+          : { x: e.clientX - hostRect.left, y: e.clientY - hostRect.top };
+        const store = useEditorStore.getState();
+        store.addWidget(makeWidget(type as 'rect' | 'ellipse' | 'text', local, store.gridSize));
+      }}
+    >
       {!currentView && <div className="p-8 text-center text-muted-foreground">无视图</div>}
     </div>
   );

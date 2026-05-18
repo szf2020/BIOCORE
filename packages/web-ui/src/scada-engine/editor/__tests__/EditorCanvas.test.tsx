@@ -1,6 +1,6 @@
 import React from 'react';
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import { EditorCanvas } from '../EditorCanvas';
 import { useEditorStore } from '../../services/editor-store';
 import type { FuxaView, FuxaWidget } from '../../models';
@@ -567,5 +567,104 @@ describe('EditorCanvas multi-select group operations (SP-FX-3b.2.3)', () => {
     });
     const w1 = useEditorStore.getState().currentView!.items.w1 as any;
     expect('rotate' in w1).toBe(false);
+  });
+});
+
+describe('EditorCanvas drop wire (SP-FX-4)', () => {
+  beforeEach(() => {
+    useEditorStore.getState().setGridSize(10);
+  });
+
+  function makeDragEvent(type: string, paletteType?: string, extra?: { clientX?: number; clientY?: number }) {
+    const dataStore: Record<string, string> = {};
+    if (paletteType !== undefined) dataStore['palette-item'] = paletteType;
+    else dataStore['text/plain'] = 'hello';
+    const fakeDataTransfer = {
+      types: Object.keys(dataStore),
+      getData: (key: string) => dataStore[key] ?? '',
+    };
+    const e = new Event(type, { bubbles: true, cancelable: true }) as any;
+    Object.defineProperty(e, 'dataTransfer', { value: fakeDataTransfer });
+    if (extra?.clientX !== undefined) Object.defineProperty(e, 'clientX', { value: extra.clientX });
+    if (extra?.clientY !== undefined) Object.defineProperty(e, 'clientY', { value: extra.clientY });
+    return e as DragEvent;
+  }
+
+  it('onDragOver with palette-item type calls preventDefault', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView({
+        id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>', width: 800, height: 600,
+        items: {}, schemaVersion: 1,
+      } as any);
+    });
+    const host = document.querySelector('[data-editor-canvas-host]') as HTMLElement;
+    expect(host).not.toBeNull();
+    const e = makeDragEvent('dragover', 'rect');
+    const prevented = !host.dispatchEvent(e);
+    expect(prevented).toBe(true);
+  });
+
+  it('onDragOver without palette-item does NOT preventDefault', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView({
+        id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>', width: 800, height: 600,
+        items: {}, schemaVersion: 1,
+      } as any);
+    });
+    const host = document.querySelector('[data-editor-canvas-host]') as HTMLElement;
+    const e = makeDragEvent('dragover');
+    const prevented = !host.dispatchEvent(e);
+    expect(prevented).toBe(false);
+  });
+
+  it('onDrop with type=rect calls store.addWidget with snapped coords', () => {
+    const addSpy = vi.spyOn(useEditorStore.getState(), 'addWidget' as any);
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView({
+        id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>', width: 800, height: 600,
+        items: {}, schemaVersion: 1,
+      } as any);
+    });
+    const host = document.querySelector('[data-editor-canvas-host]') as HTMLElement;
+    fireEvent(host, makeDragEvent('drop', 'rect', { clientX: 23, clientY: 47 }));
+    expect(addSpy).toHaveBeenCalledTimes(1);
+    const widget = addSpy.mock.calls[0][0];
+    expect(widget.type).toBe('rect');
+    expect(widget.x % 10).toBe(0);
+    expect(widget.y % 10).toBe(0);
+    addSpy.mockRestore();
+  });
+
+  it('onDrop with non-palette dataTransfer is no-op', () => {
+    const addSpy = vi.spyOn(useEditorStore.getState(), 'addWidget' as any);
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView({
+        id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>', width: 800, height: 600,
+        items: {}, schemaVersion: 1,
+      } as any);
+    });
+    const host = document.querySelector('[data-editor-canvas-host]') as HTMLElement;
+    fireEvent(host, makeDragEvent('drop', undefined, { clientX: 23, clientY: 47 }));
+    expect(addSpy).not.toHaveBeenCalled();
+    addSpy.mockRestore();
+  });
+
+  it('onDrop uses widget.type=ellipse for palette ellipse drop', () => {
+    const addSpy = vi.spyOn(useEditorStore.getState(), 'addWidget' as any);
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView({
+        id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>', width: 800, height: 600,
+        items: {}, schemaVersion: 1,
+      } as any);
+    });
+    const host = document.querySelector('[data-editor-canvas-host]') as HTMLElement;
+    fireEvent(host, makeDragEvent('drop', 'ellipse', { clientX: 0, clientY: 0 }));
+    expect(addSpy.mock.calls[0][0].type).toBe('ellipse');
+    addSpy.mockRestore();
   });
 });
