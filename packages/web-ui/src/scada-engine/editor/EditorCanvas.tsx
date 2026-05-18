@@ -198,9 +198,13 @@ export function EditorCanvas() {
     };
   }, [currentView?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // (b) DOM sync: re-upsert widgets when items change
+  // (b) DOM sync: re-upsert widgets when items change; remove widgets deleted by undo/redo
   useEffect(() => {
     if (!refs.current || !currentView) return;
+    const storeIds = new Set(Object.keys(currentView.items));
+    for (const domId of refs.current.canvas.getWidgetIds()) {
+      if (!storeIds.has(domId)) refs.current.canvas.removeWidget(domId);
+    }
     for (const id in currentView.items) {
       refs.current.canvas.upsertWidget(currentView.items[id]);
     }

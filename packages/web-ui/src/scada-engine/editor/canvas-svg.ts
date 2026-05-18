@@ -143,6 +143,10 @@ export class CanvasController {
     return this.widgetMap.get(id);
   }
 
+  getWidgetIds(): string[] {
+    return Array.from(this.widgetMap.keys());
+  }
+
   // SP-FX-3b.2.2: live rotate transform applied during drag-rotate FSM.
   applyRotate(id: string, deg: number, pivot: { x: number; y: number }): void {
     if (this.destroyed) return;
