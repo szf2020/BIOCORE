@@ -45,10 +45,17 @@ vi.mock('../../services/animation-engine', () => ({
   evalAnimations: vi.fn().mockReturnValue([]),
 }));
 
+// subscribe mock: captures (selector, listener) calls; returns mockStoreUnsubscribe
+const { mockStoreUnsubscribe, mockRealtimeStore } = vi.hoisted(() => {
+  const mockStoreUnsubscribe = vi.fn();
+  const mockRealtimeStore = {
+    subscribe: vi.fn().mockReturnValue(mockStoreUnsubscribe),
+  };
+  return { mockStoreUnsubscribe, mockRealtimeStore };
+});
+
 vi.mock('@/stores/realtime-store', () => ({
-  useRealtimeStore: {
-    getState: vi.fn().mockReturnValue({ reactorData: {} }),
-  },
+  useRealtimeStore: mockRealtimeStore,
 }));
 
 vi.mock('@/components/scada/runtime/WriteIntentDialog', () => ({
@@ -61,9 +68,8 @@ vi.mock('@/components/scada/runtime/WriteIntentDialog', () => ({
 
 vi.mock('../../gauges/controls/index', () => ({}));
 
-vi.useFakeTimers();
-
 import { bindGaugesToRealtime } from '../../services/tag-binding-bridge';
+import { evalAnimations } from '../../services/animation-engine';
 
 function makeView(items: FuxaView['items'] = {}): FuxaView {
   return {
@@ -115,15 +121,30 @@ describe('RuntimeCanvas', () => {
     expect(queryByTestId('write-intent-dialog')).not.toBeNull();
   });
 
-  it('animation tick -> evalAnimations called; applyPatch updates element attribute', async () => {
-    const { evalAnimations } = await import('../../services/animation-engine');
-    (evalAnimations as ReturnType<typeof vi.fn>).mockReturnValue([
-      { widgetId: 'w1', target: 'color', value: 'red' } satisfies AnimationPatch,
-    ]);
+  it('subscribe callback called -> evalAnimations called once', async () => {
     const view = makeView({ w1: makeWidget('w1') });
     render(<RuntimeCanvas view={view} viewId="v1" reactorId="F01" />);
-    await act(async () => { vi.advanceTimersByTime(16); });
-    expect(evalAnimations).toHaveBeenCalled();
+    // Capture the subscribe listener (2nd arg of subscribe call)
+    const subscribeCalls = (mockRealtimeStore.subscribe as ReturnType<typeof vi.fn>).mock.calls;
+    expect(subscribeCalls.length).toBeGreaterThan(0);
+    const listener = subscribeCalls[subscribeCalls.length - 1]![1] as (pv: Record<string, unknown>) => void;
+    await act(async () => {
+      listener({ TEMP: 80 });
+    });
+    expect(evalAnimations).toHaveBeenCalledOnce();
+  });
+
+  it('subscribe callback NOT called -> evalAnimations NOT called', () => {
+    const view = makeView({ w1: makeWidget('w1') });
+    render(<RuntimeCanvas view={view} viewId="v1" reactorId="F01" />);
+    expect(evalAnimations).not.toHaveBeenCalled();
+  });
+
+  it('unmount -> store unsubscribe called', () => {
+    const view = makeView({ w1: makeWidget('w1') });
+    const { unmount } = render(<RuntimeCanvas view={view} viewId="v1" reactorId="F01" />);
+    unmount();
+    expect(mockStoreUnsubscribe).toHaveBeenCalled();
   });
 
   it('unmount cleanup -> gauges destroyed, subscription unbound, canvas destroyed', () => {

@@ -1,6 +1,7 @@
 'use client';
 // SP-FX-7 T3: Read-only runtime canvas.
-// 3 effects: A=mount gauges + bind realtime, B=click delegation, C=rAF animation tick.
+// SP-FX-8 T1: Effect C (rAF) replaced by Effect D (subscribe-driven, fires only on processValues change).
+// Effects: A=mount gauges + bind realtime, B=click delegation, D=subscribe animation eval.
 import React, { useRef, useState, useEffect } from 'react';
 import type { JSX } from 'react';
 import { CanvasController } from '../editor/canvas-svg';
@@ -97,25 +98,24 @@ export function RuntimeCanvas({ view, viewId, reactorId }: RuntimeCanvasProps): 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view.id]);
 
-  // Effect C: rAF animation tick
+  // Effect D: subscribe-driven animation eval — fires only when processValues changes (SP-FX-8 T1).
+  // Replaces 60Hz rAF polling with Zustand store subscription, matching PLC tag update rate (~1Hz).
   useEffect(() => {
-    let rafId = 0;
     const resolved = resolveAnimations(view.items as Record<string, FuxaWidget>);
-    const tick = () => {
-      const state = (useRealtimeStore as any).getState();
-      const pv: Record<string, unknown> =
-        state?.reactorData?.[reactorId]?.processValues ?? {};
-      const patches = evalAnimations(resolved, pv);
-      for (const p of patches) {
-        const el = canvasRef.current?.root?.node?.querySelector(
-          `[data-widget-id="${p.widgetId}"]`,
-        );
-        if (el) applyPatch(el as Element, p);
-      }
-      rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+    const unsubscribe = (useRealtimeStore as any).subscribe(
+      (s: any) => s?.reactorData?.[reactorId]?.processValues,
+      (pv: Record<string, unknown> | null | undefined) => {
+        if (!pv || !canvasRef.current) return;
+        const patches = evalAnimations(resolved, pv);
+        for (const p of patches) {
+          const el = canvasRef.current?.root?.node?.querySelector(
+            `[data-widget-id="${p.widgetId}"]`,
+          );
+          if (el) applyPatch(el as Element, p);
+        }
+      },
+    );
+    return unsubscribe;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view.id, reactorId]);
 
