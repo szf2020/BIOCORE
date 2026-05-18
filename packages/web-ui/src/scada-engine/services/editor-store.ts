@@ -203,6 +203,23 @@ const actions: EditorActions = {
 // ---------- public store (data + actions merged) ----------
 // getState() returns data + stable action refs. setState/subscribe forward
 // to the underlying data store so tests can reset state via {...EditorData}.
+//
+// _stateProxy is a persistent object whose action fields can be vi.spyOn'd
+// in tests. Data fields are defined as dynamic getters so they always reflect
+// the current _store state without caching (preserves immutability of values).
+
+const _DATA_KEYS: ReadonlyArray<keyof EditorData> = [
+  'currentView', 'isDirty', 'history', 'selection', 'snapEnabled', 'gridSize',
+];
+
+const _stateProxy = { ...actions } as EditorState;
+for (const key of _DATA_KEYS) {
+  Object.defineProperty(_stateProxy, key, {
+    get() { return _store.getState()[key]; },
+    configurable: true,
+    enumerable: true,
+  });
+}
 
 interface EditorStoreApi {
   getState: () => EditorState;
@@ -221,7 +238,7 @@ export const useEditorStore: EditorStoreApi & {
     return _store((d) => selector({ ...d, ...actions }));
   },
   {
-    getState: (): EditorState => ({ ..._store.getState(), ...actions }),
+    getState: (): EditorState => _stateProxy,
     setState: (
       partial: Partial<EditorData> | ((s: EditorData) => Partial<EditorData>),
       replace?: boolean,
