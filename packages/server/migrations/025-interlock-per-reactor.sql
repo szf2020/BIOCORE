@@ -4,7 +4,7 @@
 
 ALTER TABLE interlock_configs RENAME TO interlock_configs_old;
 
-CREATE TABLE interlock_configs (
+CREATE TABLE IF NOT EXISTS interlock_configs (
   id            TEXT NOT NULL,
   reactor_id    TEXT,
   category      TEXT NOT NULL CHECK(category IN ('IL','RF')),
@@ -34,5 +34,5 @@ FROM interlock_configs_old;
 DROP TABLE interlock_configs_old;
 
 -- 唯一索引: (id, reactor_id) 元组唯一. IFNULL 让 NULL 也能参与唯一性
-CREATE UNIQUE INDEX idx_il_id_reactor ON interlock_configs(id, IFNULL(reactor_id, '__global__'));
-CREATE INDEX idx_il_reactor ON interlock_configs(reactor_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_il_id_reactor ON interlock_configs(id, IFNULL(reactor_id, '__global__'));
+CREATE INDEX IF NOT EXISTS idx_il_reactor ON interlock_configs(reactor_id);
