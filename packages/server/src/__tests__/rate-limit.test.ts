@@ -4,7 +4,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
 
 // 延迟 import 以便每次测试重置模块状态
-let rateLimit: (config?: import('../middlewares/rate-limit').RateLimitConfig) => import('express').RequestHandler;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let rateLimit: (config?: any) => import('express').RequestHandler;
 let stopCleanup: () => void;
 
 // ── helpers ────────────────────────────────────────────────
@@ -39,8 +40,10 @@ function makeRes(): ResCtx {
       ctx.body = data;
       return ctx.res as Response;
     },
-    set(name: string, value: string) {
-      ctx.headers[name] = value;
+    // Express Response.set 有多个重载，使用 any 避免 mock 类型冲突
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    set(name: any, value?: any) {
+      if (typeof name === 'string' && value !== undefined) ctx.headers[name] = value;
       return ctx.res as Response;
     },
     setHeader(name: string, value: string | number) {

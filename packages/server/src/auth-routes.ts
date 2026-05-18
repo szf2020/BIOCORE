@@ -21,6 +21,10 @@
 import type { Router } from 'express';
 import type { SQLiteService } from '@biocore/data-service';
 import { requireRole } from './middlewares/auth';
+// SP-FX-40: brute-force 防护 — login 限 5 req/min per ip:path
+import { rateLimit } from './middlewares/rate-limit';
+
+const loginRateLimit = rateLimit({ limit: 5, windowMs: 60_000, keyStrategy: 'ip:path' });
 
 export interface AuthRoutesDeps {
   sqlite: SQLiteService;
@@ -81,7 +85,7 @@ export function registerAuthRoutes(
    *       401: { description: 用户名或密码错误 }
    *       400: { description: 缺少必填字段 }
    */
-  apiRouter.post('/auth/login', async (req, res) => {
+  apiRouter.post('/auth/login', loginRateLimit, async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: '缺少用户名或密码' });
     const user: any = sqlite.getDatabase().prepare('SELECT * FROM users WHERE username = ? AND is_active = 1').get(username);

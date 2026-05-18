@@ -1,0 +1,153 @@
+# BIOCore — 生产专用 Compose
+# SP-FX-37 新建, 不覆盖 docker-compose.yml (开发/FUXA 使用)
+#
+# 启动: docker compose -f docker-compose.prod.yml up -d
+# 停止: docker compose -f docker-compose.prod.yml down
+#
+# 服务栈:
+#   mosquitto (MQTT) → biocore-server (API) → nginx (反代 + TLS)
+#
+# SSL 证书: 挂载到 nginx 容器 ./nginx/ssl/cert.pem + ./nginx/ssl/key.pem
+# 详见 docs/deployment.md
+#
+# 环境变量: 复制 .env.example → .env 并设置 prod 值
+
+services:
+
+  # ─── MQTT Broker ─────────────────────────────────────────────
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: biocore-mosquitto-prod
+    restart: unless-stopped
+    networks:
+      - biocore-prod-net
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+      - mosquitto_prod_data:/mosquitto/data
+      - mosquitto_prod_log:/mosquitto/log
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/#' -C 1 -W 3 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ─── BIOCore Server (REST API + WS) ──────────────────────────
+  biocore-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: biocore-server:prod
+    container_name: biocore-server-prod
+    restart: unless-stopped
+    networks:
+      - biocore-prod-net
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      # SQLite 持久路径 (映射到 host volume)
+      - DATA_DIR=/app/data
+      - SQLITE_PATH=/app/data/biocore.db
+      # InfluxDB (生产使用真实 token)
+      - INFLUX_URL=${INFLUX_URL:-http://influxdb:8086}
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - INFLUX_ORG=${INFLUX_ORG:-biocore}
+      - INFLUX_BUCKET=${INFLUX_BUCKET:-fermentation}
+      # MQTT
+      - MQTT_BROKER_URL=${MQTT_BROKER_URL:-mqtt://mosquitto:1883}
+      # 安全: 生产必须为 false
+      - MOCK_PLC=${MOCK_PLC:-false}
+      # JWT (生产必须设置强密钥)
+      - JWT_SECRET=${JWT_SECRET}
+      # Runtime-guard
+      - NODE_OPTIONS=--max-old-space-size=2048
+      - BIOCORE_OOM_THRESHOLD_MB=${BIOCORE_OOM_THRESHOLD_MB:-auto}
+      - BIOCORE_OOM_GRACE_SAMPLES=${BIOCORE_OOM_GRACE_SAMPLES:-3}
+      - BIOCORE_DIAGNOSTIC_DUMP_DIR=/app/crashes
+      - BIOCORE_DIAGNOSTIC_KEEP_LAST=50
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      # CORS
+      - CORS_ORIGIN=${CORS_ORIGIN:-}
+      # Metrics auth
+      - METRICS_AUTH_TOKEN=${METRICS_AUTH_TOKEN:-}
+    volumes:
+      - biocore_prod_data:/app/data
+      - biocore_prod_logs:/app/logs
+      - biocore_prod_crashes:/app/crashes
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3001/api/v1/health/live || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+          cpus: "1.0"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+  # ─── nginx 反代 + TLS ─────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: biocore-nginx-prod
+    restart: unless-stopped
+    networks:
+      - biocore-prod-net
+    depends_on:
+      biocore-server:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_prod_logs:/var/log/nginx
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost/__nginx_health || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.25"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  biocore-prod-net:
+    name: biocore-prod-net
+    driver: bridge
+
+volumes:
+  mosquitto_prod_data:
+  mosquitto_prod_log:
+  biocore_prod_data:
+  biocore_prod_logs:
+  biocore_prod_crashes:
+  nginx_prod_logs:

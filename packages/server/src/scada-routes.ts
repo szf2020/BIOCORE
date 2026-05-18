@@ -20,6 +20,10 @@ import type { SQLiteService } from '@biocore/data-service';
 import { SCADA_ITEMS_MAX_BYTES } from '@biocore/data-service';
 import { requireRole } from './middlewares/auth';
 import { enforceViewAccess } from './middlewares/view-acl';
+// SP-FX-40: 写入轰炸防护 — write-intents 限 30 req/min per ip:path
+import { rateLimit } from './middlewares/rate-limit';
+
+const writeIntentRateLimit = rateLimit({ limit: 30, windowMs: 60_000, keyStrategy: 'ip:path' });
 
 export interface ScadaRoutesDeps {
   sqlite: SQLiteService;
@@ -390,7 +394,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
   });
 
   // ─── 写意图 (建议缓冲区入口, 永不直写 PLC) ──────────────────
-  apiRouter.post('/scada/write-intents', requireRole('admin', 'engineer', 'operator'), (req, res) => {
+  apiRouter.post('/scada/write-intents', writeIntentRateLimit, requireRole('admin', 'engineer', 'operator'), (req, res) => {
     const { tag, value, reason, view_id, widget_id, batch_id } = req.body ?? {};
     if (isBlankString(tag) || isBlankString(view_id) || isBlankString(widget_id) || isBlankString(reason)) {
       return res.status(400).json({ error: 'missing_required_fields' });
