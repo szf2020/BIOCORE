@@ -39,4 +39,13 @@ export interface GaugeMeta {
   widgetType: string;
   create: () => GaugeBase;
   getSignals: GetSignalsFn;
+  /** semver-like 版本号, 默认 '1.0.0' */
+  version?: string;
+}
+
+export interface GaugeReplaceEvent {
+  widgetType: string;
+  oldMeta: GaugeMeta;
+  newMeta: GaugeMeta;
+  timestamp: number;
 }
