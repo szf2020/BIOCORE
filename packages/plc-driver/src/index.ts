@@ -36,6 +36,34 @@ import {
   parseAddr, byteLen, decode, encode, scale, unscale, groupByRegion, validateAddr,
 } from './utils';
 
+// ─── Mock PLC 适配器 (MOCK_PLC=true 时使用, 内存级 mock) ────
+
+export class MockPlcClient implements IProtocolAdapter {
+  // key = `${db ?? 0}:${start}` → Buffer
+  private store = new Map<string, Buffer>();
+
+  connect(): Promise<void> { return Promise.resolve(); }
+  disconnect(): Promise<void> { return Promise.resolve(); }
+  isConnected(): boolean { return true; }
+
+  readBytes(start: number, length: number, db?: number): Promise<Buffer> {
+    const key = `${db ?? 0}:${start}`;
+    const stored = this.store.get(key);
+    if (stored) {
+      const out = Buffer.alloc(length, 0);
+      stored.copy(out, 0, 0, Math.min(stored.length, length));
+      return Promise.resolve(out);
+    }
+    return Promise.resolve(Buffer.alloc(length, 0));
+  }
+
+  writeBytes(start: number, buffer: Buffer, db?: number): Promise<void> {
+    const key = `${db ?? 0}:${start}`;
+    this.store.set(key, Buffer.from(buffer));
+    return Promise.resolve();
+  }
+}
+
 // ─── Snap7 适配器 ───────────────────────────────────────────
 
 class Snap7Adapter implements IProtocolAdapter {
@@ -181,12 +209,14 @@ export class PLCConnectionManager extends EventEmitter {
   private lastHbTime: Date | null = null;
   private latencyMs = 0;
 
-  constructor(config: PLCConnectionConfig) {
+  constructor(config: PLCConnectionConfig, adapter?: IProtocolAdapter) {
     super();
     this.config = config;
-    this.adapter = config.protocol === 's7'
-      ? new Snap7Adapter(config)
-      : new ModbusAdapter(config);
+    this.adapter = adapter ?? (
+      config.protocol === 's7'
+        ? new Snap7Adapter(config)
+        : new ModbusAdapter(config)
+    );
   }
 
   // ── 连接 ──
@@ -305,27 +335,47 @@ export class PLCConnectionManager extends EventEmitter {
     if (this.hbTimer) { clearInterval(this.hbTimer); this.hbTimer = null; }
   }
 
-  private async tryReconnect(): Promise<void> {
+  // 指数退避 reconnect: 最多 5 次尝试, delay = 2^attempt 秒 (上限 30s)
+  // 超限 → emit('max_reconnect_exceeded') + 停止
+  tryReconnect(): void {
     if (this.reconnecting) return;
     this.reconnecting = true;
     this.emit('reconnecting', { id: this.config.id });
 
+    const MAX_ATTEMPTS = 5;
+    let attempt = 0;
+
     const loop = async () => {
       if (!this.reconnecting) return;
-      try {
-        await this.adapter.disconnect().catch(() => {});
-        await this.adapter.connect();
-        this._connected = true;
+
+      if (attempt >= MAX_ATTEMPTS) {
         this.reconnecting = false;
         this.reconnectTimerHandle = null;
-        this.staleCount = 0;
-        this.emit('reconnected', { id: this.config.id });
-      } catch {
-        if (!this.reconnecting) return;
-        this.reconnectTimerHandle = setTimeout(loop, this.config.reconnect_interval_ms || 5000);
+        this.emit('max_reconnect_exceeded', { id: this.config.id, attempts: MAX_ATTEMPTS });
+        return;
       }
+
+      const delayMs = Math.min(1000 * Math.pow(2, attempt), 30_000);
+      attempt++;
+
+      this.reconnectTimerHandle = setTimeout(async () => {
+        if (!this.reconnecting) return;
+        try {
+          await this.adapter.disconnect().catch(() => {});
+          await this.adapter.connect();
+          this._connected = true;
+          this.reconnecting = false;
+          this.reconnectTimerHandle = null;
+          this.staleCount = 0;
+          this.emit('reconnected', { id: this.config.id, attempts: attempt });
+        } catch {
+          if (!this.reconnecting) return;
+          loop();
+        }
+      }, delayMs);
     };
-    this.reconnectTimerHandle = setTimeout(loop, this.config.reconnect_interval_ms || 5000);
+
+    loop();
   }
 
   // ── 变量读写 ──
@@ -402,16 +452,28 @@ export class PLCConnectionManager extends EventEmitter {
     return snapshot;
   }
 
-  async readTag(tag: string): Promise<number> {
+  // 读取失败 → log + 触发 reconnect + 返回 null (不崩 server)
+  async readTag(tag: string): Promise<number | null> {
     const v = this.variables.find(x => x.tag_name === tag);
     if (!v) throw new Error(`变量 "${tag}" 未找到`);
-    const parsed = parseAddr(v.plc_address);
-    const buf = await this.adapter.readBytes(parsed.byte, byteLen(v.data_type), parsed.db);
-    const raw = decode(buf, v.data_type, parsed.bit);
-    return v.scaling_enabled ? scale(raw, v) : raw;
+    try {
+      const parsed = parseAddr(v.plc_address);
+      const buf = await this.adapter.readBytes(parsed.byte, byteLen(v.data_type), parsed.db);
+      const raw = decode(buf, v.data_type, parsed.bit);
+      return v.scaling_enabled ? scale(raw, v) : raw;
+    } catch (err) {
+      console.error(`[plc-driver] readTag "${tag}" 失败:`, (err as Error).message);
+      this.errCnt++;
+      this.tryReconnect();
+      return null;
+    }
   }
 
-  async writeTag(tag: string, value: number): Promise<void> {
+  // opts.confirmed===true 严格 gate: AI/自动化路径严禁直接调用
+  async writeTag(tag: string, value: number, opts?: { confirmed?: boolean }): Promise<void> {
+    if (opts?.confirmed !== true) {
+      throw new Error(`writeTag "${tag}" 需要显式确认: 传入 opts.confirmed=true`);
+    }
     const v = this.variables.find(x => x.tag_name === tag);
     if (!v) throw new Error(`变量 "${tag}" 未找到`);
     if (v.direction === 'READ') throw new Error(`变量 "${tag}" 为只读`);
@@ -474,6 +536,17 @@ export class PLCConnectionManager extends EventEmitter {
   readBytesRaw(start: number, length: number, db?: number): Promise<Buffer> {
     return this.adapter.readBytes(start, length, db);
   }
+}
+
+// ─── 工厂函数 ───────────────────────────────────────────────
+// MOCK_PLC=true → MockPlcClient (开发/测试, 不需真 PLC)
+// MOCK_PLC 未设/false → Snap7Adapter (真实 PLC)
+
+export function createPlcDriver(config: PLCConnectionConfig): PLCConnectionManager {
+  if (process.env.MOCK_PLC === 'true') {
+    return new PLCConnectionManager(config, new MockPlcClient());
+  }
+  return new PLCConnectionManager(config);
 }
 
 // ─── 轮询调度器 ────────────────────────────────────────────
