@@ -974,21 +974,44 @@ export class SQLiteService {
   }
 
   // ─── SCADA 视图 ───────────────────────────────────────────
+
+  // sort 白名单: 防止 SQL 注入
+  private static SCADA_VIEW_SORT_MAP: Record<string, string> = {
+    name_asc: 'name ASC',
+    name_desc: 'name DESC',
+    mtime_asc: 'updated_at ASC',
+    mtime_desc: 'updated_at DESC',
+  };
+
   listScadaViewsByProject(projectId: string): ScadaViewMeta[];
-  listScadaViewsByProject(projectId: string, opts: { limit: number; offset: number }): { views: ScadaViewMeta[]; total: number };
+  listScadaViewsByProject(projectId: string, opts: { limit: number; offset: number; q?: string; sort?: string }): { views: ScadaViewMeta[]; total: number };
   listScadaViewsByProject(
     projectId: string,
-    opts?: { limit: number; offset: number },
+    opts?: { limit: number; offset: number; q?: string; sort?: string },
   ): ScadaViewMeta[] | { views: ScadaViewMeta[]; total: number } {
-    const SELECT = `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at
-       FROM scada_views WHERE project_id = ? ORDER BY display_order ASC, name ASC`;
+    const BASE_SELECT = `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at
+       FROM scada_views`;
+
     if (!opts) {
-      return this.db.prepare(SELECT).all(projectId) as ScadaViewMeta[];
+      const sql = `${BASE_SELECT} WHERE project_id = ? ORDER BY display_order ASC, name ASC`;
+      return this.db.prepare(sql).all(projectId) as ScadaViewMeta[];
     }
-    const total = (this.db.prepare(
-      `SELECT COUNT(*) AS cnt FROM scada_views WHERE project_id = ?`
-    ).get(projectId) as { cnt: number }).cnt;
-    const views = this.db.prepare(`${SELECT} LIMIT ? OFFSET ?`).all(projectId, opts.limit, opts.offset) as ScadaViewMeta[];
+
+    const { limit, offset, q, sort } = opts;
+    const orderBy = SQLiteService.SCADA_VIEW_SORT_MAP[sort ?? ''] ?? 'display_order ASC, name ASC';
+    const binds: unknown[] = [projectId];
+
+    let where = 'WHERE project_id = ?';
+    if (q && q.trim()) {
+      where += ' AND name LIKE ?';
+      binds.push(`%${q.trim()}%`);
+    }
+
+    const countSql = `SELECT COUNT(*) AS cnt FROM scada_views ${where}`;
+    const total = (this.db.prepare(countSql).get(...binds) as { cnt: number }).cnt;
+
+    const dataSql = `${BASE_SELECT} ${where} ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
+    const views = this.db.prepare(dataSql).all(...binds, limit, offset) as ScadaViewMeta[];
     return { views, total };
   }
 

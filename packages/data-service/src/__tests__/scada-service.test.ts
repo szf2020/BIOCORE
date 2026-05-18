@@ -136,6 +136,37 @@ describe('SCADA view CRUD', () => {
   });
 });
 
+describe('listScadaViewsByProject q/sort filter (SP-FX-21)', () => {
+  let svc: SQLiteService;
+  beforeEach(() => {
+    svc = makeDb();
+    svc.createScadaProject({ project_id: 'p1', name: 'P' });
+    svc.createScadaView({ view_id: 'v1', project_id: 'p1', name: 'demo_alpha', display_order: 0 });
+    svc.createScadaView({ view_id: 'v2', project_id: 'p1', name: 'prod_beta', display_order: 1 });
+    svc.createScadaView({ view_id: 'v3', project_id: 'p1', name: 'demo_gamma', display_order: 2 });
+  });
+
+  it('q filter returns only matching views', () => {
+    const { views } = svc.listScadaViewsByProject('p1', { limit: 10, offset: 0, q: 'demo' });
+    expect(views.map(v => v.view_id).sort()).toEqual(['v1', 'v3']);
+  });
+
+  it('sort=name_desc returns views in descending name order', () => {
+    const { views } = svc.listScadaViewsByProject('p1', { limit: 10, offset: 0, sort: 'name_desc' });
+    expect(views[0].name > views[1].name).toBe(true);
+  });
+
+  it('q + sort combined: filter then sort', () => {
+    const { views } = svc.listScadaViewsByProject('p1', { limit: 10, offset: 0, q: 'demo', sort: 'name_desc' });
+    expect(views.map(v => v.view_id)).toEqual(['v3', 'v1']);
+  });
+
+  it('total reflects filtered count when q provided', () => {
+    const { total } = svc.listScadaViewsByProject('p1', { limit: 10, offset: 0, q: 'prod' });
+    expect(total).toBe(1);
+  });
+});
+
 describe('reorderScadaViews', () => {
   let svc: SQLiteService;
   beforeEach(() => {
