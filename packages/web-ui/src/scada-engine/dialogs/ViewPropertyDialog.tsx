@@ -81,9 +81,33 @@ export function ViewPropertyDialog({ open, view, onSave, onCancel }: ViewPropert
           </div>
           <div>
             <label htmlFor="vp-bg" className="block text-sm font-medium mb-1">背景色 (可选)</label>
-            <input id="vp-bg" aria-label="背景色" type="text" placeholder="#ffffff"
-              value={bg} onChange={(e) => setBg(e.target.value)}
-              className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm font-mono" />
+            <div className="flex items-center gap-2">
+              <input
+                id="vp-bg-picker"
+                aria-label="背景色选择器"
+                type="color"
+                value={/^#[0-9a-fA-F]{6}$/.test(bg) ? bg : '#ffffff'}
+                onChange={(e) => setBg(e.target.value)}
+                className="w-10 h-9 rounded border border-border bg-background cursor-pointer"
+              />
+              <input
+                id="vp-bg"
+                aria-label="背景色"
+                type="text"
+                placeholder="#ffffff"
+                value={bg}
+                onChange={(e) => setBg(e.target.value)}
+                className="flex-1 px-3 py-1.5 rounded border border-border bg-background text-sm font-mono"
+              />
+              {bg && (
+                <button
+                  type="button"
+                  aria-label="清除背景色"
+                  className="px-2 py-1 rounded border border-border text-xs hover:bg-muted"
+                  onClick={() => setBg('')}
+                >清除</button>
+              )}
+            </div>
           </div>
           {!isValid && (
             <div className="text-xs text-red-600">{validation.error.issues[0]?.message}</div>
