@@ -14,6 +14,11 @@ interface PipeAction {
 
 interface PipeProperty {
   variableId?: string;
+  // SP-FX-48.9: flat keys mirror nested options for schema-driven PropertyPanel
+  flowDirection?: 'cw' | 'ccw' | 'none';
+  flowSpeed?: number;
+  pipeColor?: string;
+  contentColor?: string;
   options?: {
     pipe?: string;
     content?: string;
@@ -41,7 +46,7 @@ class PipeGauge implements GaugeBase {
     const w = (widget as any).w ?? 120;
     const h = (widget as any).h ?? 20;
     const prop = widget.property as PipeProperty;
-    const pipeColor = prop.options?.pipe ?? DEFAULT_PIPE_COLOR;
+    const pipeColor = (prop.pipeColor ?? prop.options?.pipe ?? DEFAULT_PIPE_COLOR);
     this.defaultColor = pipeColor;
 
     // Background rect
@@ -50,7 +55,7 @@ class PipeGauge implements GaugeBase {
     bg.setAttribute('y', String(y));
     bg.setAttribute('width', String(w));
     bg.setAttribute('height', String(h));
-    bg.setAttribute('fill', prop.options?.content ?? '#DADADA');
+    bg.setAttribute('fill', prop.contentColor ?? prop.options?.content ?? '#DADADA');
     bg.setAttribute('data-widget-id', widget.id);
     ctx.parentGroup.appendChild(bg);
     this.bgRect = bg;
@@ -73,10 +78,11 @@ class PipeGauge implements GaugeBase {
 
   private startFlowAnimation(w: number): void {
     const prop = this.widget.property as PipeProperty;
-    const dir = prop.options?.flowDirection;
+    // SP-FX-48.9: prefer flat schema keys, fall back to legacy nested options
+    const dir = prop.flowDirection ?? prop.options?.flowDirection;
     if (this.ctxMode !== 'runtime' || !dir || dir === 'none') return;
 
-    const speed = prop.options?.flowSpeed ?? 2;
+    const speed = prop.flowSpeed ?? prop.options?.flowSpeed ?? 2;
     const dashLen = Math.max(10, w * 0.5);
     this.dashOffset = 0;
     this.pipeEl?.setAttribute('stroke-dasharray', `${dashLen} ${dashLen}`);
@@ -127,18 +133,18 @@ class PipeGauge implements GaugeBase {
     this.stopFlowAnimation();
     this.widget = change.nextWidget;
     const prop = this.widget.property as PipeProperty;
-    const pipeColor = prop.options?.pipe ?? DEFAULT_PIPE_COLOR;
+    const pipeColor = (prop.pipeColor ?? prop.options?.pipe ?? DEFAULT_PIPE_COLOR);
     this.defaultColor = pipeColor;
     if (this.pipeEl) {
       this.pipeEl.setAttribute('stroke', pipeColor);
     }
-    if (this.bgRect && prop.options?.content) {
-      this.bgRect.setAttribute('fill', prop.options.content);
+    if (this.bgRect && (prop.contentColor || prop.options?.content)) {
+      this.bgRect.setAttribute('fill', prop.contentColor ?? prop.options!.content!);
     }
     // Restart animation with potentially new flowDirection/flowSpeed
     const w = (this.widget as any).w ?? 120;
     if (this.pipeEl) {
-      const dir = prop.options?.flowDirection;
+      const dir = prop.flowDirection ?? prop.options?.flowDirection;
       if (!dir || dir === 'none') {
         this.pipeEl.removeAttribute('stroke-dasharray');
         this.pipeEl.removeAttribute('stroke-dashoffset');

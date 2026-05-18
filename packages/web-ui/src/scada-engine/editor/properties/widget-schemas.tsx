@@ -72,7 +72,11 @@ export const htmlInputSchema: WidgetPropertySchema = {
   entries: [
     { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
     { key: 'inputType', label: '输入类型', type: 'select', options: [
-      { value: 'number', label: '数值' }, { value: 'text', label: '文本' },
+      { value: 'number', label: '数值' },
+      { value: 'text', label: '文本' },
+      { value: 'date', label: '日期' },
+      { value: 'time', label: '时间' },
+      { value: 'datetime-local', label: '日期时间' },
     ]},
     { key: 'placeholder', label: '占位文本', type: 'text', placeholder: '请输入' },
     { key: 'min', label: '最小值', type: 'number' },
@@ -221,6 +225,13 @@ export const pipeSchema: WidgetPropertySchema = {
     { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
     { key: 'pipeColor', label: '管道颜色', type: 'color' },
     { key: 'contentColor', label: '内容颜色', type: 'color' },
+    // SP-FX-48.9: expose runtime-supported flow animation options (impl reads property.options.flowDirection/flowSpeed)
+    { key: 'flowDirection', label: '流向', type: 'select', options: [
+      { value: 'none', label: '静止' },
+      { value: 'cw', label: '正向 →' },
+      { value: 'ccw', label: '反向 ←' },
+    ]},
+    { key: 'flowSpeed', label: '流速 (ms/frame)', type: 'number', min: 16, max: 1000, step: 16 },
     { key: 'x', label: 'X', type: 'number', geometric: true },
     { key: 'y', label: 'Y', type: 'number', geometric: true },
     { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },

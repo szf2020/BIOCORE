@@ -37,10 +37,14 @@ class HtmlButtonGauge implements GaugeBase {
 
     this.clickHandler = () => {
       if (this.ctx.mode !== 'runtime') return;
-      const events = (this.widget.property as any).events ?? [];
+      const prop = this.widget.property as any;
+      const events = prop.events ?? [];
       const evt = events.find((x: any) => x?.type === 'click');
-      if (!evt?.actparam) return;
-      this.ctx.onWriteIntent?.({ tag: evt.actparam, value: evt.value, widgetId: this.widget.id });
+      // SP-FX-48.9: prefer FUXA-style events array; fall back to schema flat keys
+      const tag = evt?.actparam ?? prop.variableId;
+      const value = evt?.value ?? prop.writeValue;
+      if (!tag) return;
+      this.ctx.onWriteIntent?.({ tag, value, widgetId: this.widget.id });
     };
     btn.addEventListener('click', this.clickHandler);
     fo.appendChild(btn);
@@ -80,10 +84,14 @@ class HtmlButtonGauge implements GaugeBase {
 
   onClick(_e: MouseEvent, c: GaugeClickContext): void {
     if (c.ctx.mode !== 'runtime') return;
-    const events = (c.widget.property as any).events ?? [];
+    const prop = c.widget.property as any;
+    const events = prop.events ?? [];
     const evt = events.find((x: any) => x?.type === 'click');
-    if (!evt?.actparam) return;
-    c.ctx.onWriteIntent?.({ tag: evt.actparam, value: evt.value, widgetId: c.widget.id });
+    // SP-FX-48.9: prefer events[], fall back to flat variableId + writeValue
+    const tag = evt?.actparam ?? prop.variableId;
+    const value = evt?.value ?? prop.writeValue;
+    if (!tag) return;
+    c.ctx.onWriteIntent?.({ tag, value, widgetId: c.widget.id });
   }
 }
 
