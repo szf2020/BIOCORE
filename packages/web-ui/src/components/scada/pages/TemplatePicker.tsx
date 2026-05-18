@@ -1,6 +1,8 @@
 'use client';
+// SP-FX-41: 加入内置模板分组 (BUILTIN_TEMPLATES 静态打包)
 import React from 'react';
 import { useTemplates } from '@/hooks/useTemplates';
+import { BUILTIN_TEMPLATES } from '@/scada-engine/templates';
 
 interface Props {
   projectId: string;
@@ -18,6 +20,20 @@ export function TemplatePicker({ projectId, onPick, onCancel }: Props) {
     }}>
       <div style={{ background: '#fff', padding: 16, minWidth: 320, borderRadius: 4 }}>
         <h3 style={{ margin: '0 0 8px 0' }}>选择模板</h3>
+
+        {/* SP-FX-41: 内置模板分组 */}
+        <div data-testid="builtin-templates-section" style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 500, marginBottom: 6 }}>内置模板</div>
+          {BUILTIN_TEMPLATES.map(tpl => (
+            <button
+              key={tpl.id}
+              data-testid="builtin-template-btn"
+              onClick={() => onPick(`__builtin__:${tpl.id}`)}
+              style={{ width: '100%', textAlign: 'left', padding: 8, border: '1px solid #ddd', marginBottom: 4, background: '#f0f9ff', cursor: 'pointer', borderRadius: 3 }}
+            >{tpl.name}</button>
+          ))}
+        </div>
+
         {error && (
           <div
             data-testid="templates-error-banner"

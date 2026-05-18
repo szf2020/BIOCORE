@@ -1,0 +1,61 @@
+{
+  "id": "builtin-pfr",
+  "name": "PFR 活塞流反应器",
+  "type": "svg",
+  "svgcontent": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"900\" height=\"600\"></svg>",
+  "width": 900,
+  "height": 600,
+  "items": {
+    "w1": {
+      "id": "w1",
+      "type": "label",
+      "name": "标题",
+      "property": { "options": { "text": "PFR 活塞流反应器", "fontSize": 18, "bold": true, "align": "center" } },
+      "x": 260, "y": 20, "w": 360, "h": 40
+    },
+    "w2": {
+      "id": "w2",
+      "type": "label",
+      "name": "管道示意",
+      "property": { "options": { "text": "→ 进料 → [反应管] → 出料 →", "fontSize": 14, "align": "center" } },
+      "x": 140, "y": 260, "w": 580, "h": 40
+    },
+    "w3": {
+      "id": "w3",
+      "type": "pump",
+      "name": "进料泵",
+      "property": { "options": { "label": "进料泵", "unit": "mL/min" } },
+      "x": 60, "y": 200, "w": 120, "h": 100
+    },
+    "w4": {
+      "id": "w4",
+      "type": "valve",
+      "name": "背压阀",
+      "property": { "options": { "label": "背压阀" } },
+      "x": 720, "y": 220, "w": 80, "h": 60
+    },
+    "w5": {
+      "id": "w5",
+      "type": "indicator",
+      "name": "入口温度",
+      "property": { "options": { "label": "入口温度", "unit": "°C", "precision": 1 } },
+      "x": 200, "y": 360, "w": 160, "h": 80
+    },
+    "w6": {
+      "id": "w6",
+      "type": "indicator",
+      "name": "出口温度",
+      "property": { "options": { "label": "出口温度", "unit": "°C", "precision": 1 } },
+      "x": 520, "y": 360, "w": 160, "h": 80
+    },
+    "w7": {
+      "id": "w7",
+      "type": "indicator",
+      "name": "流量",
+      "property": { "options": { "label": "流量", "unit": "mL/min", "precision": 1 } },
+      "x": 360, "y": 440, "w": 160, "h": 80
+    }
+  },
+  "variables": {},
+  "schemaVersion": 1
+}

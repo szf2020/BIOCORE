@@ -3,6 +3,26 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { TemplatePicker } from '../TemplatePicker';
 
+// SP-FX-41: mock BUILTIN_TEMPLATES for TemplatePicker builtin section tests
+vi.mock('@/scada-engine/templates', () => ({
+  BUILTIN_TEMPLATES: [
+    {
+      id: 'builtin-cstr',
+      name: 'CSTR 连续搅拌反应器',
+      description: 'CSTR 模板',
+      widgetCount: 8,
+      view: { id: 'builtin-cstr', name: 'CSTR', type: 'svg', svgcontent: '<svg></svg>', width: 900, height: 680, items: {}, variables: {}, schemaVersion: 1 },
+    },
+    {
+      id: 'builtin-pfr',
+      name: 'PFR 活塞流反应器',
+      description: 'PFR 模板',
+      widgetCount: 7,
+      view: { id: 'builtin-pfr', name: 'PFR', type: 'svg', svgcontent: '<svg></svg>', width: 900, height: 600, items: {}, variables: {}, schemaVersion: 1 },
+    },
+  ],
+}));
+
 const mocks = {
   templates: [
     { view_id: 't1', name: 'Plant Template', is_template: 1, display_order: 0 },
@@ -82,6 +102,44 @@ describe('TemplatePicker', () => {
       render(<TemplatePicker projectId="p1" onPick={onPick} onCancel={() => {}} />);
       await act(async () => { fireEvent.click(screen.getByText('空白')); });
       expect(onPick).toHaveBeenCalledWith(null);
+    });
+  });
+
+  // SP-FX-41: builtin templates section tests
+  describe('builtin templates section', () => {
+    it('显示 "内置模板" 分组标题', () => {
+      render(<TemplatePicker projectId="p1" onPick={vi.fn()} onCancel={() => {}} />);
+      expect(screen.getByTestId('builtin-templates-section')).toBeTruthy();
+    });
+
+    it('渲染 2 个内置模板按钮（mock 数据有 2 个）', () => {
+      render(<TemplatePicker projectId="p1" onPick={vi.fn()} onCancel={() => {}} />);
+      const btns = screen.getAllByTestId('builtin-template-btn');
+      expect(btns).toHaveLength(2);
+    });
+
+    it('点击内置模板按钮 → onPick 含 __builtin__: 前缀', async () => {
+      const onPick = vi.fn();
+      render(<TemplatePicker projectId="p1" onPick={onPick} onCancel={() => {}} />);
+      const btns = screen.getAllByTestId('builtin-template-btn');
+      await act(async () => { fireEvent.click(btns[0]); });
+      expect(onPick).toHaveBeenCalledWith('__builtin__:builtin-cstr');
+    });
+
+    it('"空白" button 在内置模板存在时仍可用', async () => {
+      const onPick = vi.fn();
+      render(<TemplatePicker projectId="p1" onPick={onPick} onCancel={() => {}} />);
+      await act(async () => { fireEvent.click(screen.getByText('空白')); });
+      expect(onPick).toHaveBeenCalledWith(null);
+    });
+
+    it('server 模板分组与内置模板分组共存', () => {
+      render(<TemplatePicker projectId="p1" onPick={vi.fn()} onCancel={() => {}} />);
+      // server templates
+      expect(screen.getByText('Plant Template')).toBeTruthy();
+      // builtin templates section
+      expect(screen.getByTestId('builtin-templates-section')).toBeTruthy();
+      expect(screen.getByText('CSTR 连续搅拌反应器')).toBeTruthy();
     });
   });
 });

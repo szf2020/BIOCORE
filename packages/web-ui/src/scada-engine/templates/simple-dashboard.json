@@ -1,0 +1,47 @@
+{
+  "id": "builtin-simple-dashboard",
+  "name": "简单仪表盘",
+  "type": "svg",
+  "svgcontent": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\"></svg>",
+  "width": 800,
+  "height": 500,
+  "items": {
+    "w1": {
+      "id": "w1",
+      "type": "label",
+      "name": "标题",
+      "property": { "options": { "text": "过程参数仪表盘", "fontSize": 18, "bold": true, "align": "center" } },
+      "x": 200, "y": 20, "w": 360, "h": 40
+    },
+    "w2": {
+      "id": "w2",
+      "type": "indicator",
+      "name": "温度",
+      "property": { "options": { "label": "温度", "unit": "°C", "precision": 1 } },
+      "x": 60, "y": 100, "w": 200, "h": 100
+    },
+    "w3": {
+      "id": "w3",
+      "type": "indicator",
+      "name": "流量",
+      "property": { "options": { "label": "流量", "unit": "L/h", "precision": 1 } },
+      "x": 300, "y": 100, "w": 200, "h": 100
+    },
+    "w4": {
+      "id": "w4",
+      "type": "indicator",
+      "name": "pH",
+      "property": { "options": { "label": "pH", "precision": 2 } },
+      "x": 540, "y": 100, "w": 200, "h": 100
+    },
+    "w5": {
+      "id": "w5",
+      "type": "trend",
+      "name": "实时趋势",
+      "property": { "options": { "windowSec": 1800, "yMin": 0, "yMax": 100 } },
+      "x": 60, "y": 240, "w": 680, "h": 220
+    }
+  },
+  "variables": {},
+  "schemaVersion": 1
+}

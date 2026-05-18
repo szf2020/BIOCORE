@@ -1,0 +1,110 @@
+{
+  "id": "builtin-bioreactor",
+  "name": "Bioreactor 生物反应器",
+  "type": "svg",
+  "svgcontent": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1100\" height=\"780\"></svg>",
+  "width": 1100,
+  "height": 780,
+  "items": {
+    "w1": {
+      "id": "w1",
+      "type": "label",
+      "name": "标题",
+      "property": { "options": { "text": "Bioreactor 生物反应器监控", "fontSize": 20, "bold": true, "align": "center" } },
+      "x": 250, "y": 16, "w": 560, "h": 44
+    },
+    "w2": {
+      "id": "w2",
+      "type": "tank",
+      "name": "主发酵罐",
+      "property": { "options": { "label": "主发酵罐", "unit": "L", "max": 10 } },
+      "x": 400, "y": 120, "w": 240, "h": 340
+    },
+    "w3": {
+      "id": "w3",
+      "type": "pump",
+      "name": "空气泵",
+      "property": { "options": { "label": "空气泵", "unit": "vvm" } },
+      "x": 80, "y": 380, "w": 120, "h": 100
+    },
+    "w4": {
+      "id": "w4",
+      "type": "pump",
+      "name": "补液泵",
+      "property": { "options": { "label": "补液泵", "unit": "mL/h" } },
+      "x": 80, "y": 220, "w": 120, "h": 100
+    },
+    "w5": {
+      "id": "w5",
+      "type": "valve",
+      "name": "进气阀",
+      "property": { "options": { "label": "进气阀" } },
+      "x": 220, "y": 400, "w": 80, "h": 60
+    },
+    "w6": {
+      "id": "w6",
+      "type": "valve",
+      "name": "排气阀",
+      "property": { "options": { "label": "排气阀" } },
+      "x": 700, "y": 120, "w": 80, "h": 60
+    },
+    "w7": {
+      "id": "w7",
+      "type": "valve",
+      "name": "出料阀",
+      "property": { "options": { "label": "出料阀" } },
+      "x": 700, "y": 380, "w": 80, "h": 60
+    },
+    "w8": {
+      "id": "w8",
+      "type": "indicator",
+      "name": "温度",
+      "property": { "options": { "label": "温度", "unit": "°C", "precision": 1 } },
+      "x": 820, "y": 120, "w": 200, "h": 80
+    },
+    "w9": {
+      "id": "w9",
+      "type": "indicator",
+      "name": "pH",
+      "property": { "options": { "label": "pH", "precision": 2 } },
+      "x": 820, "y": 220, "w": 200, "h": 80
+    },
+    "w10": {
+      "id": "w10",
+      "type": "indicator",
+      "name": "溶氧",
+      "property": { "options": { "label": "溶氧 DO", "unit": "%", "precision": 1 } },
+      "x": 820, "y": 320, "w": 200, "h": 80
+    },
+    "w11": {
+      "id": "w11",
+      "type": "indicator",
+      "name": "搅拌转速",
+      "property": { "options": { "label": "搅拌转速", "unit": "rpm", "precision": 0 } },
+      "x": 820, "y": 420, "w": 200, "h": 80
+    },
+    "w12": {
+      "id": "w12",
+      "type": "lamp",
+      "name": "搅拌运行",
+      "property": { "options": { "label": "搅拌运行" } },
+      "x": 460, "y": 60, "w": 60, "h": 60
+    },
+    "w13": {
+      "id": "w13",
+      "type": "lamp",
+      "name": "报警状态",
+      "property": { "options": { "label": "报警", "colorOn": "#ef4444", "colorOff": "#22c55e" } },
+      "x": 560, "y": 60, "w": 60, "h": 60
+    },
+    "w14": {
+      "id": "w14",
+      "type": "trend",
+      "name": "过程曲线",
+      "property": { "options": { "windowSec": 7200, "yMin": 0, "yMax": 100 } },
+      "x": 60, "y": 560, "w": 960, "h": 180
+    }
+  },
+  "variables": {},
+  "schemaVersion": 1
+}

@@ -1,0 +1,68 @@
+{
+  "id": "builtin-cstr",
+  "name": "CSTR 连续搅拌反应器",
+  "type": "svg",
+  "svgcontent": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"900\" height=\"680\"></svg>",
+  "width": 900,
+  "height": 680,
+  "items": {
+    "w1": {
+      "id": "w1",
+      "type": "tank",
+      "name": "主反应槽",
+      "property": { "options": { "label": "主反应槽", "unit": "L", "max": 500 } },
+      "x": 320, "y": 160, "w": 200, "h": 280
+    },
+    "w2": {
+      "id": "w2",
+      "type": "pump",
+      "name": "进料泵",
+      "property": { "options": { "label": "进料泵", "unit": "L/h" } },
+      "x": 80, "y": 220, "w": 120, "h": 100
+    },
+    "w3": {
+      "id": "w3",
+      "type": "valve",
+      "name": "进料阀",
+      "property": { "options": { "label": "进料阀" } },
+      "x": 220, "y": 240, "w": 80, "h": 60
+    },
+    "w4": {
+      "id": "w4",
+      "type": "valve",
+      "name": "出料阀",
+      "property": { "options": { "label": "出料阀" } },
+      "x": 540, "y": 340, "w": 80, "h": 60
+    },
+    "w5": {
+      "id": "w5",
+      "type": "indicator",
+      "name": "温度显示",
+      "property": { "options": { "label": "温度", "unit": "°C", "precision": 1 } },
+      "x": 600, "y": 160, "w": 160, "h": 80
+    },
+    "w6": {
+      "id": "w6",
+      "type": "indicator",
+      "name": "pH 显示",
+      "property": { "options": { "label": "pH", "precision": 2 } },
+      "x": 600, "y": 260, "w": 160, "h": 80
+    },
+    "w7": {
+      "id": "w7",
+      "type": "lamp",
+      "name": "搅拌运行",
+      "property": { "options": { "label": "搅拌运行" } },
+      "x": 370, "y": 80, "w": 60, "h": 60
+    },
+    "w8": {
+      "id": "w8",
+      "type": "label",
+      "name": "标题",
+      "property": { "options": { "text": "CSTR 连续搅拌反应器", "fontSize": 18, "bold": true, "align": "center" } },
+      "x": 240, "y": 20, "w": 380, "h": 40
+    }
+  },
+  "variables": {},
+  "schemaVersion": 1
+}

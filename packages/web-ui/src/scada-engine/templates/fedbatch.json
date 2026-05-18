@@ -1,0 +1,89 @@
+{
+  "id": "builtin-fedbatch",
+  "name": "Fed-batch 流加批式",
+  "type": "svg",
+  "svgcontent": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1000\" height=\"700\"></svg>",
+  "width": 1000,
+  "height": 700,
+  "items": {
+    "w1": {
+      "id": "w1",
+      "type": "label",
+      "name": "标题",
+      "property": { "options": { "text": "Fed-batch 流加批式反应器", "fontSize": 18, "bold": true, "align": "center" } },
+      "x": 250, "y": 20, "w": 460, "h": 40
+    },
+    "w2": {
+      "id": "w2",
+      "type": "tank",
+      "name": "主反应槽",
+      "property": { "options": { "label": "主反应槽", "unit": "L", "max": 200 } },
+      "x": 380, "y": 140, "w": 200, "h": 280
+    },
+    "w3": {
+      "id": "w3",
+      "type": "tank",
+      "name": "补料槽",
+      "property": { "options": { "label": "补料槽", "unit": "L", "max": 50 } },
+      "x": 60, "y": 160, "w": 140, "h": 180
+    },
+    "w4": {
+      "id": "w4",
+      "type": "pump",
+      "name": "补料泵",
+      "property": { "options": { "label": "补料泵", "unit": "mL/min" } },
+      "x": 220, "y": 240, "w": 120, "h": 100
+    },
+    "w5": {
+      "id": "w5",
+      "type": "pump",
+      "name": "收获泵",
+      "property": { "options": { "label": "收获泵", "unit": "mL/min" } },
+      "x": 680, "y": 340, "w": 120, "h": 100
+    },
+    "w6": {
+      "id": "w6",
+      "type": "valve",
+      "name": "补料阀",
+      "property": { "options": { "label": "补料阀" } },
+      "x": 350, "y": 260, "w": 80, "h": 60
+    },
+    "w7": {
+      "id": "w7",
+      "type": "valve",
+      "name": "出料阀",
+      "property": { "options": { "label": "出料阀" } },
+      "x": 600, "y": 340, "w": 80, "h": 60
+    },
+    "w8": {
+      "id": "w8",
+      "type": "indicator",
+      "name": "温度",
+      "property": { "options": { "label": "温度", "unit": "°C", "precision": 1 } },
+      "x": 640, "y": 140, "w": 160, "h": 80
+    },
+    "w9": {
+      "id": "w9",
+      "type": "indicator",
+      "name": "溶氧",
+      "property": { "options": { "label": "溶氧 DO", "unit": "%", "precision": 1 } },
+      "x": 640, "y": 240, "w": 160, "h": 80
+    },
+    "w10": {
+      "id": "w10",
+      "type": "lamp",
+      "name": "搅拌状态",
+      "property": { "options": { "label": "搅拌" } },
+      "x": 450, "y": 80, "w": 60, "h": 60
+    },
+    "w11": {
+      "id": "w11",
+      "type": "trend",
+      "name": "过程趋势",
+      "property": { "options": { "windowSec": 3600, "yMin": 0, "yMax": 100 } },
+      "x": 60, "y": 480, "w": 860, "h": 160
+    }
+  },
+  "variables": {},
+  "schemaVersion": 1
+}
