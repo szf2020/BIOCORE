@@ -14,44 +14,49 @@ import {
   ChevronUp, X, Menu,
 } from 'lucide-react';
 import { useTheme, type ThemeMode } from '@/hooks/useTheme';
+import { LocaleSwitcher } from './LocaleSwitcher';
+import { useLocale } from '@/i18n/useLocale';
 
-const NAV_ITEMS = [
-  { href: '/dashboard', icon: LayoutDashboard, label: '监控面板', children: [
-    { href: '/dashboard/hmi', icon: Workflow, label: '工艺画面' },
-    { href: '/clean', icon: Droplets, label: '清洗灭菌' },
-    { href: '/trends', icon: LineChart, label: '趋势图表' },
-  ]},
-  { href: '/recipes', icon: BookOpen, label: '配方管理', children: [
-    { href: '/recipes/review-queue', icon: ShieldCheck, label: '审核队列' },
-    { href: '/doe', icon: Sigma, label: 'DoE 实验设计' },
-  ]},
-  { href: '/analysis', icon: LineChart, label: '数据分析', children: [
-    { href: '/batches', icon: History, label: '批次历史' },
-    { href: '/analysis/alarm-history', icon: Bell, label: '报警历史' },
-    { href: '/analysis/cusum-history', icon: TrendingUp, label: 'CUSUM 历史' },
-    { href: '/explorer', icon: Database, label: '数据浏览' },
-    { href: '/analysis/kpi', icon: Gauge, label: 'KPI 仪表盘' },
-    { href: '/analysis/spc', icon: BarChart3, label: 'SPC 控制图' },
-    { href: '/analysis/audit-logs', icon: FileText, label: '审计追踪' },
-    { href: '/analysis/soft-sensor', icon: Brain, label: '软测量模型' },
-  ]},
-  { href: '/ai', icon: Bot, label: 'AI助手' },
-  { href: '/settings', icon: Settings, label: '系统设置', children: [
-    { href: '/settings/site-meta', icon: Building2, label: '站点元数据' },
-    { href: '/settings/device-config', icon: Activity, label: '设备配置' },
-    { href: '/settings/plc-config', icon: Wifi, label: 'PLC通讯配置' },
-    { href: '/settings/phase-templates', icon: Blocks, label: 'Phase模板配置' },
-    { href: '/settings/calibration', icon: Gauge, label: '传感器校准' },
-    { href: '/settings/formula-config', icon: Activity, label: '公式配置' },
-    { href: '/settings/interlock-config', icon: Shield, label: '连锁/故障配置' },
-    { href: '/settings/alarm-config', icon: Bell, label: '报警设置' },
-    { href: '/settings/users', icon: Users, label: '用户管理' },
-    { href: '/settings/permissions', icon: Shield, label: '权限管理' },
-    { href: '/settings/api-keys', icon: Key, label: 'API 密钥' },
-    { href: '/settings/ai-config', icon: Bot, label: 'AI配置' },
-    { href: '/settings/data-maintenance', icon: Database, label: '数据维护' },
-  ]},
-];
+// NAV_ITEMS 改为函数以支持 i18n — SP-FX-26
+function buildNavItems(t: (key: string) => string) {
+  return [
+    { href: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard'), children: [
+      { href: '/dashboard/hmi', icon: Workflow, label: t('nav.hmi') },
+      { href: '/clean', icon: Droplets, label: t('nav.clean') },
+      { href: '/trends', icon: LineChart, label: t('nav.trends') },
+    ]},
+    { href: '/recipes', icon: BookOpen, label: t('nav.recipes'), children: [
+      { href: '/recipes/review-queue', icon: ShieldCheck, label: t('nav.review-queue') },
+      { href: '/doe', icon: Sigma, label: t('nav.doe') },
+    ]},
+    { href: '/analysis', icon: LineChart, label: t('nav.analysis'), children: [
+      { href: '/batches', icon: History, label: t('nav.batches') },
+      { href: '/analysis/alarm-history', icon: Bell, label: t('nav.alarm-history') },
+      { href: '/analysis/cusum-history', icon: TrendingUp, label: t('nav.cusum-history') },
+      { href: '/explorer', icon: Database, label: t('nav.explorer') },
+      { href: '/analysis/kpi', icon: Gauge, label: t('nav.kpi') },
+      { href: '/analysis/spc', icon: BarChart3, label: t('nav.spc') },
+      { href: '/analysis/audit-logs', icon: FileText, label: t('nav.audit-logs') },
+      { href: '/analysis/soft-sensor', icon: Brain, label: t('nav.soft-sensor') },
+    ]},
+    { href: '/ai', icon: Bot, label: t('nav.ai') },
+    { href: '/settings', icon: Settings, label: t('nav.settings'), children: [
+      { href: '/settings/site-meta', icon: Building2, label: t('nav.site-meta') },
+      { href: '/settings/device-config', icon: Activity, label: t('nav.device-config') },
+      { href: '/settings/plc-config', icon: Wifi, label: t('nav.plc-config') },
+      { href: '/settings/phase-templates', icon: Blocks, label: t('nav.phase-templates') },
+      { href: '/settings/calibration', icon: Gauge, label: t('nav.calibration') },
+      { href: '/settings/formula-config', icon: Activity, label: t('nav.formula-config') },
+      { href: '/settings/interlock-config', icon: Shield, label: t('nav.interlock-config') },
+      { href: '/settings/alarm-config', icon: Bell, label: t('nav.alarm-config') },
+      { href: '/settings/users', icon: Users, label: t('nav.users') },
+      { href: '/settings/permissions', icon: Shield, label: t('nav.permissions') },
+      { href: '/settings/api-keys', icon: Key, label: t('nav.api-keys') },
+      { href: '/settings/ai-config', icon: Bot, label: t('nav.ai-config') },
+      { href: '/settings/data-maintenance', icon: Database, label: t('nav.data-maintenance') },
+    ]},
+  ];
+}
 
 // 判断父菜单 href 是否对应真实可导航页面 (例如 /dashboard, /analysis 是页面; /settings 也是页面)
 // 注: /analysis 是新增的聚合落地页, 需要创建 (或者不创建, 让点击父菜单仅展开子菜单)
@@ -107,6 +112,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
+  const { t } = useLocale();
+  const NAV_ITEMS = buildNavItems(t);
   // 用 selector 拿稳定的 state, 不解构 actions (避免 hot reload 时函数引用变化触发 deps 警告)
   const wsConnected = useRealtimeStore(s => s.wsConnected);
   const stateUpdate = useRealtimeStore(s => s.stateUpdate);
@@ -220,7 +227,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-sm text-muted-foreground">{authLoading ? '加载中...' : '正在跳转登录页...'}</div>
+        <div className="text-sm text-muted-foreground">{authLoading ? t('app-layout.loading') : t('app-layout.redirecting')}</div>
       </div>
     );
   }
@@ -263,7 +270,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               type="button"
               className="md:hidden p-1 rounded hover:bg-accent text-muted-foreground"
               onClick={() => setSidebarOpen(false)}
-              aria-label="关闭侧边栏"
+              aria-label={t('app-layout.close-sidebar')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -302,7 +309,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         selfActive ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                       }`}
                       aria-expanded={!isCollapsed}
-                      aria-label={isCollapsed ? `展开 ${item.label}` : `折叠 ${item.label}`}
+                      aria-label={isCollapsed ? `${t('app-layout.expand-menu')} ${item.label}` : `${t('app-layout.collapse-menu')} ${item.label}`}
                     >
                       <ChevronDown className={`w-3 h-3 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
                     </button>
@@ -354,7 +361,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="px-4 py-3 text-sm text-muted-foreground space-y-2 border-t border-border/30">
           <div className="flex items-center gap-2">
             <div className={`status-led ${wsConnected ? 'status-led-running' : 'status-led-stopped'}`} />
-            <span className="font-mono text-[12px]">WS {wsConnected ? '已连接' : '未连接'}</span>
+            <span className="font-mono text-[12px]">WS {wsConnected ? t('app-layout.ws-connected') : t('app-layout.ws-disconnected')}</span>
             <div className="ml-auto"><LiveClock /></div>
           </div>
           <div className="flex items-center gap-2">
@@ -369,7 +376,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </span>
             <button
               onClick={logout}
-              title="退出登录"
+              title={t('app-layout.logout')}
               className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -388,18 +395,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             type="button"
             className="md:hidden mr-3 p-1.5 rounded hover:bg-accent text-muted-foreground shrink-0"
             onClick={() => setSidebarOpen(true)}
-            aria-label="展开侧边栏"
+            aria-label={t('app-layout.open-sidebar')}
           >
             <Menu className="w-5 h-5" />
           </button>
           {/* Left: MES breadcrumb */}
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">{siteMeta?.facility_name || process.env.NEXT_PUBLIC_FACILITY_NAME || '生产车间'}</span>
+            <span className="text-muted-foreground">{siteMeta?.facility_name || process.env.NEXT_PUBLIC_FACILITY_NAME || t('app-layout.default-facility')}</span>
             <span className="text-muted-foreground/40">/</span>
-            <span className="text-muted-foreground">{siteMeta?.line_name || process.env.NEXT_PUBLIC_LINE_NAME || '发酵产线 #1'}</span>
+            <span className="text-muted-foreground">{siteMeta?.line_name || process.env.NEXT_PUBLIC_LINE_NAME || t('app-layout.default-line')}</span>
             <span className="text-muted-foreground/40">/</span>
             <span className="text-foreground font-semibold tracking-tight">
-              {siteMeta?.reactor_group_name || process.env.NEXT_PUBLIC_REACTOR_GROUP_NAME || '反应器组未配置'}
+              {siteMeta?.reactor_group_name || process.env.NEXT_PUBLIC_REACTOR_GROUP_NAME || t('app-layout.default-reactor-group')}
             </span>
 
             {/* Per-reactor PLC indicators (1 chip per reactor; independent state). */}
@@ -414,7 +421,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   return (
                     <span
                       key={rid}
-                      title={`${rid} · PLC ${alive ? '在线' : '离线'}`}
+                      title={`${rid} · PLC ${alive ? t('app-layout.plc-online') : t('app-layout.plc-offline')}`}
                       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-border/40 text-[12px] font-mono"
                     >
                       <div className={`status-led ${alive ? 'status-led-running' : 'status-led-idle'}`} />
@@ -429,7 +436,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <>
                 <span className="ml-3 text-muted-foreground/30">·</span>
                 <span className={`mes-badge ${getStateBadgeClass(currentState)}`}>
-                  {({ idle: '空闲', running: '运行中', held: '保持', paused: '暂停', stopped: '已停止', complete: '已完成' } as Record<string,string>)[currentState] || currentState}
+                  {({
+                    idle: t('app-layout.state-idle'),
+                    running: t('app-layout.state-running'),
+                    held: t('app-layout.state-held'),
+                    paused: t('app-layout.state-paused'),
+                    stopped: t('app-layout.state-stopped'),
+                    complete: t('app-layout.state-complete'),
+                  } as Record<string,string>)[currentState] || currentState}
                 </span>
                 {currentState !== 'idle' && (
                   <span className="text-muted-foreground text-sm font-mono tabular-nums">
@@ -442,6 +456,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* Middle: 报警信息条 (撑满中部, 至 max-w-5xl) — theme/user/clock moved to sidebar bottom. */}
           <TopBarAlarmStrip alarms={alarms} />
+          {/* SP-FX-26: locale switcher */}
+          <LocaleSwitcher />
         </header>
 
         {/* Page Content — on surface-base (lightest layer) */}
@@ -460,6 +476,7 @@ function isNoticeAlarm(a: any): boolean {
 
 // TopBar 报警信息条 — 显示最新一条操作性报警, 上/下翻 (过滤掉 CUSUM 提示)
 function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
+  const { t } = useLocale();
   const unack = React.useMemo(
     () => alarms.filter(a => !a.acknowledged && !isNoticeAlarm(a)),
     [alarms]
@@ -475,17 +492,17 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
         {/* Label chip — separate box from the message strip */}
         <div className="shrink-0 flex items-center gap-1.5 px-2.5 h-full rounded-md border border-border bg-muted">
           <Bell className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
-          <span className="text-sm text-muted-foreground shrink-0">报警信息</span>
+          <span className="text-sm text-muted-foreground shrink-0">{t('app-layout.alarm-label')}</span>
           <span className="shrink-0 px-1.5 py-0.5 rounded text-sm font-bold border border-muted-foreground/40 text-muted-foreground/70">0</span>
         </div>
         {/* Message + nav strip */}
         <div className="flex-1 flex items-center gap-2 px-3 h-full rounded-md border border-border bg-muted min-w-0">
-          <span className="flex-1 text-sm text-muted-foreground truncate">无未确认报警</span>
+          <span className="flex-1 text-sm text-muted-foreground truncate">{t('app-layout.no-alarms')}</span>
           <span className="shrink-0 text-sm text-muted-foreground/60 font-mono tabular-nums">0/0</span>
-          <button disabled className="shrink-0 p-1 rounded text-muted-foreground/30 cursor-not-allowed" title="上一条">
+          <button disabled className="shrink-0 p-1 rounded text-muted-foreground/30 cursor-not-allowed" title={t('app-layout.prev-alarm')}>
             <ChevronUp className="w-3 h-3" />
           </button>
-          <button disabled className="shrink-0 p-1 rounded text-muted-foreground/30 cursor-not-allowed" title="下一条">
+          <button disabled className="shrink-0 p-1 rounded text-muted-foreground/30 cursor-not-allowed" title={t('app-layout.next-alarm')}>
             <ChevronDown className="w-3 h-3" />
           </button>
         </div>
@@ -504,7 +521,7 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
       {/* Label chip — separate box, mirrors empty-state layout */}
       <div className="shrink-0 flex items-center gap-1.5 px-2.5 h-full rounded-md border border-red-500/40 bg-red-500/10 dark:bg-red-500/15">
         <Bell className="w-3.5 h-3.5 text-mes-red shrink-0" />
-        <span className="text-sm font-medium text-red-700 dark:text-red-300 shrink-0">报警信息</span>
+        <span className="text-sm font-medium text-red-700 dark:text-red-300 shrink-0">{t('app-layout.alarm-label')}</span>
         <span className={`shrink-0 px-1.5 py-0.5 rounded text-sm font-bold border ${sevColor}`}>
           {unack.length}
         </span>
@@ -512,7 +529,7 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
       {/* Message + nav strip */}
       <div className="flex-1 flex items-center gap-2 px-3 h-full rounded-md border border-red-500/40 bg-red-500/10 dark:bg-red-500/15 min-w-0">
         <span className="flex-1 text-sm font-medium text-red-700 dark:text-red-300 truncate" title={cur.message}>
-          {cur.message || '(无消息)'}
+          {cur.message || t('app-layout.no-message')}
         </span>
         <span className="shrink-0 text-sm text-muted-foreground font-mono tabular-nums">
           {idx + 1}/{unack.length}
@@ -521,7 +538,7 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
           onClick={() => setIdx(i => (i - 1 + unack.length) % unack.length)}
           disabled={unack.length < 2}
           className="shrink-0 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          title="上一条"
+          title={t('app-layout.prev-alarm')}
         >
           <ChevronUp className="w-3 h-3" />
         </button>
@@ -529,7 +546,7 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
           onClick={() => setIdx(i => (i + 1) % unack.length)}
           disabled={unack.length < 2}
           className="shrink-0 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          title="下一条"
+          title={t('app-layout.next-alarm')}
         >
           <ChevronDown className="w-3 h-3" />
         </button>
@@ -541,12 +558,17 @@ function TopBarAlarmStrip({ alarms }: { alarms: any[] }) {
 // 主题切换按钮 — 循环 light → dark → system
 function ThemeToggle() {
   const { mode, cycle } = useTheme();
-  const LABEL: Record<ThemeMode, string> = { light: '浅色', dark: '深色', system: '跟随系统' };
+  const { t } = useLocale();
+  const LABEL: Record<ThemeMode, string> = {
+    light: t('app-layout.theme-light'),
+    dark: t('app-layout.theme-dark'),
+    system: t('app-layout.theme-system'),
+  };
   const Icon = mode === 'light' ? Sun : mode === 'dark' ? Moon : Monitor;
   return (
     <button
       onClick={cycle}
-      title={`主题: ${LABEL[mode]} (点击切换)`}
+      title={t('app-layout.theme-title', { mode: LABEL[mode] })}
       className="p-1.5 rounded-md hover:bg-accent transition-colors"
     >
       <Icon className="w-4 h-4 text-muted-foreground" />

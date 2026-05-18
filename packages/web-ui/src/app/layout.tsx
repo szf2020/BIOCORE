@@ -1,6 +1,7 @@
 import './globals.css';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthProvider } from '@/hooks/useAuth';
+import { LocaleProvider } from '@/i18n/useLocale';
 
 export const metadata = { title: 'BIOCore MES -- 发酵控制平台', description: '实验室R&D发酵智能控制系统' };
 
@@ -24,9 +25,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="antialiased">
-        <AuthProvider>
-          <AppLayout>{children}</AppLayout>
-        </AuthProvider>
+        <LocaleProvider>
+          <AuthProvider>
+            <AppLayout>{children}</AppLayout>
+          </AuthProvider>
+        </LocaleProvider>
       </body>
     </html>
   );
