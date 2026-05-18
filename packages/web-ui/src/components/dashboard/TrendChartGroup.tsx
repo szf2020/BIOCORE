@@ -8,7 +8,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { useLocale } from '@/i18n/useLocale';
 
 interface SparklineProps {
   label: string;
@@ -111,7 +110,6 @@ interface TrendChartGroupProps {
 }
 
 export function TrendChartGroup({
-  const { t } = useLocale();
   tempHistory,
   phHistory,
   doHistory,

@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
-import { useLocale } from '@/i18n/useLocale';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -15,7 +14,6 @@ interface RootCauseResult {
 }
 
 export function RootCausePanel({ alarmId, alarmCode, onClose }: {
-  const { t } = useLocale();
   alarmId: string | number;
   alarmCode?: string;
   onClose: () => void;

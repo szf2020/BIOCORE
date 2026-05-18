@@ -6,7 +6,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useLocale } from '@/i18n/useLocale';
 
 export interface Rule {
   id?: number;
@@ -19,7 +18,6 @@ export interface Rule {
 interface ChannelRef { id: string }
 
 export function RuleTable({
-  const { t } = useLocale();
   rules: initial, channels, eventTypes, onSave,
 }: {
   rules: Rule[];

@@ -117,8 +117,8 @@ function makeWidget(id: string, type = 'svg-ext-gauge'): any {
 }
 
 function makeReplaceEvent(widgetType: string): GaugeReplaceEvent {
-  const oldMeta = { widgetType, create: () => mockOldGauge, getSignals: () => [] };
-  const newMeta = { widgetType, create: () => mockNewGauge, getSignals: () => [] };
+  const oldMeta = { widgetType, create: () => mockOldGauge, getSignals: () => [] } as unknown as import('../../gauges/gauge-base').GaugeMeta;
+  const newMeta = { widgetType, create: () => mockNewGauge, getSignals: () => [] } as unknown as import('../../gauges/gauge-base').GaugeMeta;
   return { widgetType, oldMeta, newMeta, timestamp: Date.now() };
 }
 
