@@ -50,15 +50,10 @@ export class CanvasController {
     }
     let el = this.widgetMap.get(widget.id);
     if (!el) {
-      el = this.widgetLayer
-        .rect(widget.w, widget.h)
-        .attr({ x: widget.x, y: widget.y })
-        .attr('data-widget-id', widget.id)
-        .attr('fill', '#3b82f6')
-        .attr('stroke', '#1e40af');
+      el = this.createElementForType(widget);
       this.widgetMap.set(widget.id, el);
     } else {
-      el.attr({ x: widget.x, y: widget.y, width: widget.w, height: widget.h });
+      this.updateElementForType(el, widget);
     }
     // SP-FX-3b.2.2: apply rotate transform on render. Omits transform when 0/undefined.
     const r = (widget as { rotate?: number }).rotate;
@@ -68,6 +63,71 @@ export class CanvasController {
       (el.node as SVGElement).setAttribute('transform', `rotate(${r} ${cx} ${cy})`);
     } else {
       (el.node as SVGElement).removeAttribute('transform');
+    }
+  }
+
+  private createElementForType(widget: FuxaWidget & { x: number; y: number; w: number; h: number }): SvgElement {
+    switch (widget.type) {
+      case 'ellipse': {
+        const cx = widget.x + widget.w / 2;
+        const cy = widget.y + widget.h / 2;
+        const rx = widget.w / 2;
+        const ry = widget.h / 2;
+        return this.widgetLayer
+          .ellipse(widget.w, widget.h)
+          .attr({ cx, cy, rx, ry })
+          .attr('data-widget-id', widget.id)
+          .attr('fill', '#3b82f6')
+          .attr('stroke', '#1e40af');
+      }
+      case 'text': {
+        const cx = widget.x + widget.w / 2;
+        const cy = widget.y + widget.h / 2;
+        const content = ((widget.property as { text?: string }).text) ?? '文本';
+        // Use raw DOM to avoid svg.js Text.bbox() which fails in jsdom.
+        const node = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        node.setAttribute('x', String(cx));
+        node.setAttribute('y', String(cy));
+        node.setAttribute('text-anchor', 'middle');
+        node.setAttribute('dominant-baseline', 'middle');
+        node.setAttribute('data-widget-id', widget.id);
+        node.setAttribute('fill', '#111827');
+        node.setAttribute('font-size', '14');
+        node.textContent = content;
+        this.widgetLayer.node.appendChild(node);
+        return SVG(node) as SvgElement;
+      }
+      default: {
+        // 'rect' and any legacy type (e.g. 'svg-ext-value') → rect render
+        return this.widgetLayer
+          .rect(widget.w, widget.h)
+          .attr({ x: widget.x, y: widget.y })
+          .attr('data-widget-id', widget.id)
+          .attr('fill', '#3b82f6')
+          .attr('stroke', '#1e40af');
+      }
+    }
+  }
+
+  private updateElementForType(el: SvgElement, widget: FuxaWidget & { x: number; y: number; w: number; h: number }): void {
+    switch (widget.type) {
+      case 'ellipse': {
+        const cx = widget.x + widget.w / 2;
+        const cy = widget.y + widget.h / 2;
+        el.attr({ cx, cy, rx: widget.w / 2, ry: widget.h / 2 });
+        break;
+      }
+      case 'text': {
+        const cx = widget.x + widget.w / 2;
+        const cy = widget.y + widget.h / 2;
+        const content = ((widget.property as { text?: string }).text) ?? '文本';
+        el.attr({ x: cx, y: cy });
+        (el.node as SVGTextElement).textContent = content;
+        break;
+      }
+      default: {
+        el.attr({ x: widget.x, y: widget.y, width: widget.w, height: widget.h });
+      }
     }
   }
 

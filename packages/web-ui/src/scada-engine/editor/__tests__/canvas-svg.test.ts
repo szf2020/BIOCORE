@@ -196,3 +196,50 @@ describe('CanvasController.upsertWidget rotate regression (SP-FX-3b.2.3)', () =>
     c.destroy();
   });
 });
+
+describe('CanvasController.upsertWidget type rendering (SP-FX-4)', () => {
+  it('type="rect" renders <rect> element with x/y/w/h attrs', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 'r1', type: 'rect', property: {}, x: 10, y: 20, w: 100, h: 60 } as any);
+    const el = container.querySelector('[data-widget-id="r1"]') as SVGElement;
+    expect(el).not.toBeNull();
+    expect(el.tagName.toLowerCase()).toBe('rect');
+    expect(el.getAttribute('x')).toBe('10');
+    expect(el.getAttribute('y')).toBe('20');
+    expect(el.getAttribute('width')).toBe('100');
+    expect(el.getAttribute('height')).toBe('60');
+    c.destroy();
+  });
+
+  it('type="ellipse" renders <ellipse> element with cx/cy/rx/ry attrs', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 'e1', type: 'ellipse', property: {}, x: 10, y: 20, w: 80, h: 40 } as any);
+    const el = container.querySelector('[data-widget-id="e1"]') as SVGElement;
+    expect(el).not.toBeNull();
+    expect(el.tagName.toLowerCase()).toBe('ellipse');
+    expect(el.getAttribute('cx')).toBe('50');
+    expect(el.getAttribute('cy')).toBe('40');
+    expect(el.getAttribute('rx')).toBe('40');
+    expect(el.getAttribute('ry')).toBe('20');
+    c.destroy();
+  });
+
+  it('type="text" renders <text> element with content from property.text or fallback', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 't1', type: 'text', property: { text: 'Hello' }, x: 10, y: 20, w: 120, h: 30 } as any);
+    const el = container.querySelector('[data-widget-id="t1"]') as SVGElement;
+    expect(el).not.toBeNull();
+    expect(el.tagName.toLowerCase()).toBe('text');
+    expect(el.textContent).toBe('Hello');
+
+    // fallback when property.text missing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 't2', type: 'text', property: {}, x: 10, y: 20, w: 120, h: 30 } as any);
+    const el2 = container.querySelector('[data-widget-id="t2"]') as SVGElement;
+    expect(el2.textContent).toBe('文本');
+    c.destroy();
+  });
+});
