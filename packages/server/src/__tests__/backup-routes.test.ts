@@ -183,3 +183,106 @@ describe('getRepoRoot (KI-1 SP-FX-34)', () => {
     expect(result.startsWith('/')).toBe(true);
   });
 });
+
+// ─── SP-FX-39: schedule endpoints ────────────────────────────
+import { BackupScheduler } from '../services/backup-scheduler';
+
+function makeAppWithScheduler(dataDir: string, scheduler: BackupScheduler, role: 'admin' | 'engineer' = 'admin') {
+  const app = express();
+  app.use(express.json());
+  app.use((req, _res, next) => {
+    (req as any).user = { user_id: 'test-user', role };
+    next();
+  });
+  const router = express.Router();
+  registerBackupRoutes(router, { dataDir, scheduler });
+  app.use('/api/v1', router);
+  return app;
+}
+
+describe('GET /admin/backup/schedule (SP-FX-39)', () => {
+  let tmpDir: string;
+  let scheduler: BackupScheduler;
+
+  beforeEach(() => {
+    tmpDir = join(tmpdir(), `sp-fx-39-schedule-${Date.now()}`);
+    mkdirSync(join(tmpDir, 'backups'), { recursive: true });
+    scheduler = new BackupScheduler({
+      intervalHours: 24,
+      retentionDays: 30,
+      minKeepCount: 5,
+      backupDir: join(tmpDir, 'backups'),
+      dataDir: tmpDir,
+    });
+  });
+
+  afterEach(() => {
+    scheduler.stop();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('返回 scheduler 状态 JSON', async () => {
+    const app = makeAppWithScheduler(tmpDir, scheduler);
+    const res = await request(app).get('/api/v1/admin/backup/schedule');
+    expect(res.status).toBe(200);
+    expect(typeof res.body.intervalHours).toBe('number');
+    expect(typeof res.body.retentionDays).toBe('number');
+    expect('enabled' in res.body).toBe(true);
+    expect('lastRunAt' in res.body).toBe(true);
+    expect('nextRunAt' in res.body).toBe(true);
+  });
+
+  it('非 admin → 403', async () => {
+    const app = makeAppWithScheduler(tmpDir, scheduler, 'engineer');
+    const res = await request(app).get('/api/v1/admin/backup/schedule');
+    expect(res.status).toBe(403);
+  });
+});
+
+describe('POST /admin/backup/schedule (SP-FX-39)', () => {
+  let tmpDir: string;
+  let scheduler: BackupScheduler;
+
+  beforeEach(() => {
+    tmpDir = join(tmpdir(), `sp-fx-39-update-${Date.now()}`);
+    mkdirSync(join(tmpDir, 'backups'), { recursive: true });
+    scheduler = new BackupScheduler({
+      intervalHours: 24,
+      retentionDays: 30,
+      minKeepCount: 5,
+      backupDir: join(tmpDir, 'backups'),
+      dataDir: tmpDir,
+    });
+  });
+
+  afterEach(() => {
+    scheduler.stop();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('更新 intervalHours 和 retentionDays → 200 + 新状态', async () => {
+    const app = makeAppWithScheduler(tmpDir, scheduler);
+    const res = await request(app)
+      .post('/api/v1/admin/backup/schedule')
+      .send({ intervalHours: 12, retentionDays: 14 });
+    expect(res.status).toBe(200);
+    expect(res.body.intervalHours).toBe(12);
+    expect(res.body.retentionDays).toBe(14);
+  });
+
+  it('intervalHours 越界 (0) → 400', async () => {
+    const app = makeAppWithScheduler(tmpDir, scheduler);
+    const res = await request(app)
+      .post('/api/v1/admin/backup/schedule')
+      .send({ intervalHours: 0 });
+    expect(res.status).toBe(400);
+  });
+
+  it('非 admin → 403', async () => {
+    const app = makeAppWithScheduler(tmpDir, scheduler, 'engineer');
+    const res = await request(app)
+      .post('/api/v1/admin/backup/schedule')
+      .send({ intervalHours: 12 });
+    expect(res.status).toBe(403);
+  });
+});

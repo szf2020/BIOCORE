@@ -32,10 +32,17 @@ import { spawn } from 'node:child_process';
 import multer from 'multer';
 import Database from 'better-sqlite3';
 import { requireRole } from './middlewares/auth';
+// SP-FX-40: backup 触发轰炸防护 — 1 req/min per ip:path
+import { rateLimit } from './middlewares/rate-limit';
+import type { BackupScheduler } from './services/backup-scheduler';
+
+const backupRateLimit = rateLimit({ limit: 1, windowMs: 60_000, keyStrategy: 'ip:path' });
 
 export interface BackupRoutesDeps {
   /** 数据目录, 默认 DATA_DIR = './data'. backups 子目录在此下创建. */
   dataDir: string;
+  /** 可选: BackupScheduler 实例. 提供时启用 schedule endpoints (SP-FX-39). */
+  scheduler?: BackupScheduler;
 }
 
 // KI-1 SP-FX-34: repo root 计算，优先 BIOCORE_ROOT env，fallback __dirname/../../../..
@@ -84,7 +91,7 @@ function listBackupFiles(backupDir: string): Array<{ filename: string; size: num
 }
 
 export function registerBackupRoutes(router: Router, deps: BackupRoutesDeps): void {
-  const { dataDir } = deps;
+  const { dataDir, scheduler } = deps;
   const backupDir = join(dataDir, 'backups');
   const mainDbPath = join(dataDir, 'biocore.db');
 
@@ -92,7 +99,7 @@ export function registerBackupRoutes(router: Router, deps: BackupRoutesDeps): vo
   mkdirSync(backupDir, { recursive: true });
 
   // ─── POST /admin/backup ────────────────────────────────
-  router.post('/admin/backup', requireRole('admin'), (req, res) => {
+  router.post('/admin/backup', backupRateLimit, requireRole('admin'), (req, res) => {
     const scriptPath = 'scripts/backup-db.sh';
     const env: NodeJS.ProcessEnv = {
       ...process.env,
@@ -221,4 +228,47 @@ export function registerBackupRoutes(router: Router, deps: BackupRoutesDeps): vo
       }
     },
   );
+
+  // ─── SP-FX-39: GET /admin/backup/schedule ─────────────────
+  router.get('/admin/backup/schedule', requireRole('admin'), (_req, res) => {
+    if (!scheduler) {
+      res.status(503).json({ error: 'Scheduler 未启用 (未设置 BACKUP_INTERVAL_HOURS)' });
+      return;
+    }
+    res.json(scheduler.getState());
+  });
+
+  // ─── SP-FX-39: POST /admin/backup/schedule ────────────────
+  router.post('/admin/backup/schedule', requireRole('admin'), (req, res) => {
+    if (!scheduler) {
+      res.status(503).json({ error: 'Scheduler 未启用 (未设置 BACKUP_INTERVAL_HOURS)' });
+      return;
+    }
+
+    const { intervalHours, retentionDays } = req.body as {
+      intervalHours?: number;
+      retentionDays?: number;
+    };
+
+    // 参数验证
+    if (intervalHours !== undefined) {
+      if (typeof intervalHours !== 'number' || intervalHours < 1 || intervalHours > 168) {
+        res.status(400).json({ error: 'intervalHours 必须为 1–168 之间的整数' });
+        return;
+      }
+    }
+    if (retentionDays !== undefined) {
+      if (typeof retentionDays !== 'number' || retentionDays < 1 || retentionDays > 365) {
+        res.status(400).json({ error: 'retentionDays 必须为 1–365 之间的整数' });
+        return;
+      }
+    }
+
+    scheduler.updateConfig({
+      ...(intervalHours !== undefined ? { intervalHours } : {}),
+      ...(retentionDays !== undefined ? { retentionDays } : {}),
+    });
+
+    res.json(scheduler.getState());
+  });
 }
