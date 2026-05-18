@@ -2,6 +2,7 @@
 import React from 'react';
 import { ExternalLink, Pencil, Copy, Trash2 } from 'lucide-react';
 import type { ViewMeta } from '@/hooks/useViewList';
+import { ThumbnailRenderer } from './ThumbnailRenderer';
 
 interface Props {
   view: ViewMeta;
@@ -25,7 +26,6 @@ function relativeTime(iso?: string): string {
 
 export function ViewCard({ view, onEdit, onOpen, onDuplicate, onDelete }: Props) {
   const hasSvg = typeof view.svgcontent === 'string' && view.svgcontent.trim().length > 0;
-  const svgSnippet = hasSvg ? view.svgcontent!.slice(0, 400) : '';
 
   return (
     <div
@@ -43,15 +43,14 @@ export function ViewCard({ view, onEdit, onOpen, onDuplicate, onDelete }: Props)
       {/* Thumbnail */}
       <div style={{ height: 80, background: '#f3f4f6', position: 'relative', overflow: 'hidden' }}>
         {hasSvg ? (
-          <svg
-            data-testid="view-card-thumbnail-svg"
-            width="100%"
-            height="80"
-            viewBox="0 0 800 600"
-            style={{ pointerEvents: 'none' }}
-            aria-hidden="true"
-            dangerouslySetInnerHTML={{ __html: svgSnippet }}
-          />
+          <div data-testid="view-card-thumbnail-svg">
+            <ThumbnailRenderer
+              svgcontent={view.svgcontent!}
+              viewWidth={800}
+              viewHeight={600}
+              height={80}
+            />
+          </div>
         ) : (
           <div
             data-testid="view-card-thumbnail-placeholder"
