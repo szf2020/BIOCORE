@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS doe_studies_backup AS SELECT * FROM doe_studies;
 DROP TABLE IF EXISTS doe_studies;
 
 -- 3. 重建表 (扩展 CHECK 约束)
-CREATE TABLE doe_studies (
+CREATE TABLE IF NOT EXISTS doe_studies (
   study_id              TEXT PRIMARY KEY,
   name                  TEXT NOT NULL,
   description           TEXT,
