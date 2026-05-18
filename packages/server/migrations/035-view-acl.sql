@@ -7,4 +7,4 @@
 -- ============================================================
 
 ALTER TABLE scada_views ADD COLUMN owner_id TEXT;
-ALTER TABLE scada_views ADD COLUMN acl TEXT NOT NULL DEFAULT '{"users":[],"roles":["admin","operator"]}';
+ALTER TABLE scada_views ADD COLUMN acl TEXT DEFAULT NULL;

@@ -14,8 +14,8 @@
 import type { RequestHandler } from 'express';
 import type { SQLiteService, ScadaViewAcl } from '@biocore/data-service';
 
-function parseAcl(raw: string | undefined): ScadaViewAcl {
-  if (!raw) return { users: [], roles: ['admin', 'operator'] };
+function parseAcl(raw: string | null | undefined): ScadaViewAcl {
+  if (!raw) return { users: [], roles: [] };
   try {
     const parsed = JSON.parse(raw);
     return {
@@ -23,7 +23,7 @@ function parseAcl(raw: string | undefined): ScadaViewAcl {
       roles: Array.isArray(parsed.roles) ? parsed.roles : [],
     };
   } catch {
-    return { users: [], roles: ['admin', 'operator'] };
+    return { users: [], roles: [] };
   }
 }
 
@@ -61,6 +61,13 @@ export function enforceViewAccess(sqlite: SQLiteService): RequestHandler {
 
     // 检查 acl.users / acl.roles
     const acl = parseAcl(view.acl);
+
+    // default-allow: legacy view (无 owner 且 acl 为空) → 向后兼容直接放行
+    if (!view.owner_id && acl.users.length === 0 && acl.roles.length === 0) {
+      next();
+      return;
+    }
+
     if (acl.users.includes(user.user_id) || acl.roles.includes(user.role)) {
       next();
       return;
