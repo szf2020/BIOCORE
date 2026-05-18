@@ -3,6 +3,40 @@
 import React from 'react';
 import type { WidgetPropertySchema } from './property-schema';
 
+// SP-FX-48.5: basic shape schemas. Rect / ellipse / text — geometry + fill +
+// stroke so PropertyPanel exposes editable position/size and visual style
+// instead of showing "无属性面板".
+const GEOMETRY_ENTRIES = [
+  { key: 'x', label: 'X', type: 'number' as const, geometric: true },
+  { key: 'y', label: 'Y', type: 'number' as const, geometric: true },
+  { key: 'w', label: '宽', type: 'number' as const, geometric: true, min: 0 },
+  { key: 'h', label: '高', type: 'number' as const, geometric: true, min: 0 },
+];
+
+export const rectSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'fill', label: '填充色', type: 'color', allowNone: true },
+    { key: 'stroke', label: '边框色', type: 'color', allowNone: true },
+    ...GEOMETRY_ENTRIES,
+  ],
+};
+
+export const ellipseSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'fill', label: '填充色', type: 'color', allowNone: true },
+    { key: 'stroke', label: '边框色', type: 'color', allowNone: true },
+    ...GEOMETRY_ENTRIES,
+  ],
+};
+
+export const textSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'text', label: '文字内容', type: 'text', placeholder: '文本' },
+    { key: 'color', label: '文字颜色', type: 'color', allowNone: true },
+    ...GEOMETRY_ENTRIES,
+  ],
+};
+
 export const valueSchema: WidgetPropertySchema = {
   entries: [
     { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
@@ -404,6 +438,10 @@ export const htmlSelectSchema: WidgetPropertySchema = {
 
 /** Lookup map: widget.type → WidgetPropertySchema */
 export const WIDGET_SCHEMAS: Record<string, WidgetPropertySchema> = {
+  // SP-FX-48.5: basic shapes (geometry + style only)
+  'rect': rectSchema,
+  'ellipse': ellipseSchema,
+  'text': textSchema,
   'svg-ext-value': valueSchema,
   'svg-ext-html_button': htmlButtonSchema,
   'svg-ext-html_input': htmlInputSchema,
