@@ -11,7 +11,7 @@ import {
   Database, Bot, Settings, Wifi, WifiOff, Blocks, ChevronDown,
   Gauge, Users, Bell, User, Activity, Droplets, LogOut, Key, FileText, FlaskConical,
   ShieldCheck, Sigma, Shield, TrendingUp, Brain, Workflow, Building2, Sun, Moon, Monitor, BarChart3,
-  ChevronUp, X,
+  ChevronUp, X, Menu,
 } from 'lucide-react';
 import { useTheme, type ThemeMode } from '@/hooks/useTheme';
 
@@ -115,6 +115,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const heartbeatByReactor = useRealtimeStore(s => s.heartbeatByReactor);
   const [elapsed, setElapsed] = useState(0);
   const isLoginPage = pathname === '/login';
+
+  // SP-FX-25: mobile sidebar 折叠状态 (< md = 768px 默认关闭)
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSidebarOpen(window.innerWidth >= 768);
+    }
+  }, []);
 
   // Reactor list for per-reactor PLC indicators in the header breadcrumb.
   const [reactorIds, setReactorIds] = useState<string[]>([]);
@@ -222,8 +230,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen surface-base">
-      {/* SideNav — no borders, uses surface-container-low for tonal separation */}
-      <nav className="w-[224px] surface-low flex flex-col">
+      {/* SP-FX-25: mobile sidebar overlay backdrop */}
+      {sidebarOpen && (
+        <div
+          data-testid="sidebar-backdrop"
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* SideNav — fixed on mobile (overlay), static on md+ */}
+      <nav
+        data-testid="sidebar-nav"
+        className={`w-[224px] surface-low flex flex-col fixed inset-y-0 left-0 z-50 transition-transform duration-200
+          md:static md:z-auto md:translate-x-0
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
         <div className="px-5 py-5">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -235,6 +257,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wider">v0.1.0 · MES</p>
             </div>
             <ThemeToggle />
+            {/* SP-FX-25: mobile close sidebar button */}
+            <button
+              data-testid="close-sidebar-btn"
+              type="button"
+              className="md:hidden p-1 rounded hover:bg-accent text-muted-foreground"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="关闭侧边栏"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
         <div className="flex-1 px-2 py-1 overflow-y-auto mes-scroll">
@@ -346,10 +378,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main Content — SP-FX-25: full width (sidebar is overlay on mobile) */}
+      <div data-testid="main-content" className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Clinical TopBar — no border, uses subtle bg shift */}
         <header className="h-14 surface-base flex items-center justify-between px-6 flex-shrink-0">
+          {/* SP-FX-25: hamburger button (mobile only) */}
+          <button
+            data-testid="hamburger-btn"
+            type="button"
+            className="md:hidden mr-3 p-1.5 rounded hover:bg-accent text-muted-foreground shrink-0"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="展开侧边栏"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
           {/* Left: MES breadcrumb */}
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">{siteMeta?.facility_name || process.env.NEXT_PUBLIC_FACILITY_NAME || '生产车间'}</span>
