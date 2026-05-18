@@ -1,5 +1,7 @@
 # BIOCore — 实验室R&D发酵控制平台
 
+[![CI](https://github.com/biocore-org/biocore/actions/workflows/ci.yml/badge.svg)](https://github.com/biocore-org/biocore/actions/workflows/ci.yml)
+
 > 以竞品1/5的成本,提供覆盖发酵全生命周期的智能控制与数据分析平台
 
 ## 架构概览

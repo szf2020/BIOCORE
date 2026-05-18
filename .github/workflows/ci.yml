@@ -1,0 +1,120 @@
+# BIOCore 主 CI Workflow — SP-FX-29
+#
+# 覆盖: lint + typecheck → vitest (全包) → Playwright E2E (chromium)
+#
+# trigger: push to main + 所有 PR
+# Node: 20.x | pnpm: 10 | cache: pnpm store
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # ── Job 1: 类型检查 + Lint ────────────────────────────────────────────────
+  lint-typecheck:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 编译所有包 (生成 dist/)
+        run: pnpm -r build
+
+      - name: TypeScript noEmit 检查
+        run: |
+          # 逐包检查，收集错误后一次性输出
+          FAILED=0
+          for pkg in packages/*/; do
+            if [ -f "${pkg}tsconfig.json" ]; then
+              echo "→ tsc ${pkg}"
+              pnpm --filter "./${pkg}" exec tsc --noEmit || FAILED=1
+            fi
+          done
+          exit $FAILED
+
+      - name: Lint (web-ui next lint)
+        run: pnpm --filter @biocore/web-ui run lint
+
+  # ── Job 2: Vitest 全包单元测试 ────────────────────────────────────────────
+  vitest:
+    name: Vitest (all packages)
+    runs-on: ubuntu-latest
+    needs: lint-typecheck
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 编译所有包
+        run: pnpm -r build
+
+      - name: 运行全部 vitest 套件
+        run: pnpm -r test
+
+  # ── Job 3: Playwright E2E (chromium) ─────────────────────────────────────
+  playwright:
+    name: Playwright E2E (chromium)
+    runs-on: ubuntu-latest
+    needs: vitest
+    env:
+      CI: 'true'
+      MOCK_PLC: 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 编译所有包
+        run: pnpm -r build
+
+      - name: 安装 Playwright 浏览器 (chromium only)
+        run: pnpm --filter @biocore/web-ui exec playwright install --with-deps chromium
+
+      - name: 运行 Playwright 测试 (chromium project)
+        run: pnpm --filter @biocore/web-ui exec playwright test --project=chromium
+
+      - name: 上传测试报告 (失败时)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: packages/web-ui/playwright-report/
+          retention-days: 7
