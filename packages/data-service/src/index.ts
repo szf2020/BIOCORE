@@ -218,7 +218,7 @@ export { validateExpression, evaluateExpression, AVAILABLE_VARS } from './formul
 export {
   SCADA_ITEMS_MAX_BYTES,
 } from './sqlite-service';
-export type { ScadaProjectMeta, ScadaViewMeta, ScadaView } from './sqlite-service';
+export type { ScadaProjectMeta, ScadaViewMeta, ScadaView, ScadaViewAcl } from './sqlite-service';
 
 // SP-FX-19: 审计日志服务
 export { insertAuditLog, queryAuditLog } from './audit-log-service';

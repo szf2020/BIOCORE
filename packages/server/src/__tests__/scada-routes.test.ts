@@ -17,6 +17,8 @@ function makeApp(): {
   db.exec(m030);
   const m031 = readFileSync(join(__dirname, '../../migrations/031-scada-view-template-flag.sql'), 'utf8');
   db.exec(m031);
+  const m035 = readFileSync(join(__dirname, '../../migrations/035-view-acl.sql'), 'utf8');
+  db.exec(m035);
   db.exec(`
     CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -989,7 +989,7 @@ export class SQLiteService {
     projectId: string,
     opts?: { limit: number; offset: number; q?: string; sort?: string },
   ): ScadaViewMeta[] | { views: ScadaViewMeta[]; total: number } {
-    const BASE_SELECT = `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at
+    const BASE_SELECT = `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at, owner_id, acl
        FROM scada_views`;
 
     if (!opts) {
@@ -1017,14 +1017,14 @@ export class SQLiteService {
 
   listScadaViewsByReactor(reactorId: string): ScadaViewMeta[] {
     return this.db.prepare(
-      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at
+      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at, owner_id, acl
        FROM scada_views WHERE reactor_id = ? OR reactor_id IS NULL ORDER BY display_order ASC, name ASC`
     ).all(reactorId) as ScadaViewMeta[];
   }
 
   getScadaView(viewId: string): ScadaView | null {
     const row = this.db.prepare(
-      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, items_json, updated_at
+      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, items_json, updated_at, owner_id, acl
        FROM scada_views WHERE view_id = ?`
     ).get(viewId) as (ScadaViewMeta & { items_json: string }) | undefined;
     if (!row) return null;
@@ -1116,7 +1116,7 @@ export class SQLiteService {
 
   listScadaTemplates(projectId: string): ScadaViewMeta[] {
     return this.db.prepare(
-      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at
+      `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at, owner_id, acl
        FROM scada_views WHERE project_id = ? AND is_template = 1
        ORDER BY display_order ASC, name ASC`
     ).all(projectId) as ScadaViewMeta[];
@@ -1141,6 +1141,20 @@ export class SQLiteService {
   deleteScadaView(viewId: string): boolean {
     const r = this.db.prepare('DELETE FROM scada_views WHERE view_id = ?').run(viewId);
     return r.changes > 0;
+  }
+
+  // ─── scada_views ACL (SP-FX-24) ────────────────────────────
+
+  updateScadaViewAcl(viewId: string, acl: ScadaViewAcl): void {
+    this.db.prepare(
+      `UPDATE scada_views SET acl = ? WHERE view_id = ?`,
+    ).run(JSON.stringify(acl), viewId);
+  }
+
+  updateScadaViewOwner(viewId: string, newOwnerId: string): void {
+    this.db.prepare(
+      `UPDATE scada_views SET owner_id = ? WHERE view_id = ?`,
+    ).run(newOwnerId, viewId);
   }
 
   // ─── 工具 ─────────────────────────────────────────────────
@@ -1509,10 +1523,17 @@ export interface ScadaViewMeta {
   is_svg: number;
   is_template: number;
   updated_at: string;
+  owner_id: string | null;
+  acl: string; // JSON: { users: string[], roles: string[] }
 }
 
 export interface ScadaView extends ScadaViewMeta {
   items: Record<string, any>;
+}
+
+export interface ScadaViewAcl {
+  users: string[];
+  roles: string[];
 }
 
 export const SCADA_ITEMS_MAX_BYTES = 500 * 1024;
