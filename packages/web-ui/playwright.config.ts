@@ -14,4 +14,25 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
+  webServer: [
+    {
+      // Next.js dev server (web-ui)
+      command: 'pnpm dev',
+      url: 'http://localhost:3000',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+    {
+      // BIOCore REST API server — MOCK_PLC=true 避免依赖真 PLC
+      // 从 web-ui 目录向上两层到 repo root 后用 --filter 启动 server 包
+      command: 'cd ../../ && MOCK_PLC=true pnpm --filter server dev',
+      url: 'http://localhost:3001/api/v1/status',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+  ],
 });
