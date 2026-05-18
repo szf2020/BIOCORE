@@ -6,7 +6,7 @@ import type { FuxaView } from '../../models';
 import type { AnimationPatch } from '../../services/animation-engine';
 
 // Use vi.hoisted so mock factory closures can reference these vars safely.
-const { mockLoadView, mockCanvasCtrl, mockGauge, mockUnbind } = vi.hoisted(() => {
+const { mockLoadView, mockCanvasCtrl, mockGauge, mockUnbind, mockDestroy } = vi.hoisted(() => {
   const mockLoadView = vi.fn();
   const mockGauge = {
     onMount: vi.fn(),
@@ -15,12 +15,14 @@ const { mockLoadView, mockCanvasCtrl, mockGauge, mockUnbind } = vi.hoisted(() =>
     onClick: vi.fn(),
   };
   const mockUnbind = vi.fn();
+  const mockDestroy = vi.fn();
   const mockCanvasCtrl = {
     loadView: mockLoadView,
+    destroy: mockDestroy,
     widgetLayer: { node: document.createElementNS('http://www.w3.org/2000/svg', 'g') },
     root: { node: document.createElementNS('http://www.w3.org/2000/svg', 'svg') },
   };
-  return { mockLoadView, mockCanvasCtrl, mockGauge, mockUnbind };
+  return { mockLoadView, mockCanvasCtrl, mockGauge, mockUnbind, mockDestroy };
 });
 
 vi.mock('../../editor/canvas-svg', () => ({
@@ -124,11 +126,12 @@ describe('RuntimeCanvas', () => {
     expect(evalAnimations).toHaveBeenCalled();
   });
 
-  it('unmount cleanup -> gauges destroyed, subscription unbound, rAF cancelled', () => {
+  it('unmount cleanup -> gauges destroyed, subscription unbound, canvas destroyed', () => {
     const view = makeView({ w1: makeWidget('w1') });
     const { unmount } = render(<RuntimeCanvas view={view} viewId="v1" reactorId="F01" />);
     unmount();
     expect(mockUnbind).toHaveBeenCalledOnce();
     expect(mockGauge.onUnmount).toHaveBeenCalledOnce();
+    expect(mockDestroy).toHaveBeenCalledOnce();
   });
 });

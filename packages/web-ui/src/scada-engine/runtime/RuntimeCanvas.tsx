@@ -68,6 +68,7 @@ export function RuntimeCanvas({ view, viewId, reactorId }: RuntimeCanvasProps): 
       unbind();
       for (const [, g] of gaugeMapRef.current) g.onUnmount();
       gaugeMapRef.current.clear();
+      canvas.destroy();
       canvasRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
