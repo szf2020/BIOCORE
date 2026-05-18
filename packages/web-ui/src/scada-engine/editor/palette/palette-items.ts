@@ -35,3 +35,22 @@ export function makeWidget(
     h: item.defaultH,
   } as FuxaWidget;
 }
+
+export function makeShapeWidget(
+  shapeId: string,
+  src: string,
+  pt: { x: number; y: number },
+  gridSize: number,
+): FuxaWidget {
+  const id = `w_${Date.now()}_${Math.random().toString(36).slice(2, 8).padEnd(6, '0')}`;
+  const step = gridSize > 0 ? gridSize : 1;
+  return {
+    id,
+    type: 'shape',
+    property: { src, shapeId } as Record<string, unknown>,
+    x: Math.round(pt.x / step) * step,
+    y: Math.round(pt.y / step) * step,
+    w: 80,
+    h: 80,
+  } as FuxaWidget;
+}

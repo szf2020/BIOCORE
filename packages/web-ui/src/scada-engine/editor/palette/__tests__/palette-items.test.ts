@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PALETTE_ITEMS, makeWidget } from '../palette-items';
+import { PALETTE_ITEMS, makeWidget, makeShapeWidget } from '../palette-items';
 
 describe('palette-items PALETTE_ITEMS', () => {
   it('has 3 items (rect, ellipse, text) with required fields', () => {
@@ -53,5 +53,31 @@ describe('palette-items makeWidget', () => {
   it('property is empty object placeholder', () => {
     const w = makeWidget('rect', { x: 0, y: 0 }, 10);
     expect(w.property).toEqual({});
+  });
+});
+
+describe('palette-items makeShapeWidget', () => {
+  it('defaults w=80 h=80', () => {
+    const w = makeShapeWidget('tank1', '/scada-shapes/tank1.svg', { x: 0, y: 0 }, 10);
+    expect(w.type).toBe('shape');
+    expect(w.w).toBe(80);
+    expect(w.h).toBe(80);
+  });
+
+  it('snaps x/y to gridSize', () => {
+    const w = makeShapeWidget('tank1', '/scada-shapes/tank1.svg', { x: 23, y: 47 }, 10);
+    expect(w.x).toBe(20);
+    expect(w.y).toBe(50);
+  });
+
+  it('stores src and shapeId in property', () => {
+    const w = makeShapeWidget('valve-3way', '/scada-shapes/valve-3way.svg', { x: 0, y: 0 }, 1);
+    expect((w.property as { src: string }).src).toBe('/scada-shapes/valve-3way.svg');
+    expect((w.property as { shapeId: string }).shapeId).toBe('valve-3way');
+  });
+
+  it('id matches w_<digits>_<6chars> regex', () => {
+    const w = makeShapeWidget('tank1', '/scada-shapes/tank1.svg', { x: 0, y: 0 }, 1);
+    expect(w.id).toMatch(/^w_\d+_[a-z0-9]{6}$/);
   });
 });
