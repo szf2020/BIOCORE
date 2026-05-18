@@ -4,6 +4,14 @@
 
 import { SVG, type Svg, type G, type Element as SvgElement } from '@svgdotjs/svg.js';
 import type { FuxaView, FuxaWidget } from '../models';
+import { gaugeRegistry } from '../gauges/gauge-registry';
+import type { GaugeBase, GaugeContext, GaugeValue } from '../gauges/gauge-base';
+// SP-FX-48.4: side-effect import — registers all 4 batches of gauges so the
+// editor canvas can mount real widget visuals (matches runtime).
+import '../gauges/controls/index';
+
+// SP-FX-48.4: design-time stub for GaugeContext.readValue (no live data).
+const EDITOR_GAUGE_VALUE: GaugeValue = { value: null, isStale: true };
 
 export interface CanvasOpts {
   width: number;
@@ -22,6 +30,10 @@ export class CanvasController {
   readonly widgetLayer: G;
   readonly overlayLayer: G;
   private widgetMap = new Map<string, SvgElement>();
+  // SP-FX-48.4: track gauge instances mounted in design mode so we can unmount
+  // on remove and re-mount on update (lighter than implementing diff-based
+  // gauge property propagation in the editor canvas).
+  private gaugeMap = new Map<string, GaugeBase>();
   private destroyed = false;
 
   constructor(container: HTMLElement, opts: CanvasOpts) {
@@ -35,6 +47,8 @@ export class CanvasController {
 
   loadView(view: FuxaView): void {
     if (this.destroyed) return;
+    for (const [, g] of this.gaugeMap) g.onUnmount();
+    this.gaugeMap.clear();
     for (const [, el] of this.widgetMap) el.remove();
     this.widgetMap.clear();
     for (const id in view.items) {
@@ -49,6 +63,13 @@ export class CanvasController {
       return;
     }
     let el = this.widgetMap.get(widget.id);
+    // SP-FX-48.4: gauge widgets must be re-created on every upsert so geometry
+    // updates flow through gauge.onMount. Remove via the public path first so
+    // the rotate-transform code below always sees the fresh wrapper.
+    if (el && this.gaugeMap.has(widget.id)) {
+      this.removeWidget(widget.id);
+      el = undefined;
+    }
     if (!el) {
       el = this.createElementForType(widget);
       this.widgetMap.set(widget.id, el);
@@ -111,7 +132,33 @@ export class CanvasController {
         return SVG(node) as SvgElement;
       }
       default: {
-        // 'rect' and any legacy type (e.g. 'svg-ext-value') → rect render
+        // SP-FX-48.4: real gauge widgets (svg-ext-*) — delegate to GaugeRegistry
+        // so the editor canvas matches runtime visuals (no more generic blocks).
+        const gauge = gaugeRegistry.create(widget);
+        if (gauge) {
+          const groupNode = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          groupNode.setAttribute('data-widget-id', widget.id);
+          this.widgetLayer.node.appendChild(groupNode);
+          const ctx: GaugeContext = {
+            parentGroup: groupNode as SVGGElement,
+            readValue: () => EDITOR_GAUGE_VALUE,
+            canvasSize: { width: 0, height: 0 },
+            mode: 'editor',
+          };
+          gauge.onMount(widget, ctx);
+          // SP-FX-48.4: gauges set data-widget-id on their inner elements for
+          // runtime click delegation. In the editor, the wrapper <g> is the
+          // canonical selection anchor — strip inner duplicates so selection
+          // queries return exactly one element per widget. Re-apply wrapper id
+          // last (defensive against any gauge code that touches the parent).
+          for (const inner of Array.from(groupNode.querySelectorAll('[data-widget-id]'))) {
+            inner.removeAttribute('data-widget-id');
+          }
+          groupNode.setAttribute('data-widget-id', widget.id);
+          this.gaugeMap.set(widget.id, gauge);
+          return SVG(groupNode) as SvgElement;
+        }
+        // legacy / unknown types → rect render
         return this.widgetLayer
           .rect(widget.w, widget.h)
           .attr({ x: widget.x, y: widget.y })
@@ -146,6 +193,17 @@ export class CanvasController {
         break;
       }
       default: {
+        // SP-FX-48.4: gauge widget update — unmount old, recreate at new geometry.
+        const gauge = this.gaugeMap.get(widget.id);
+        if (gauge) {
+          gauge.onUnmount();
+          this.gaugeMap.delete(widget.id);
+          el.remove();
+          this.widgetMap.delete(widget.id);
+          const replacement = this.createElementForType(widget);
+          this.widgetMap.set(widget.id, replacement);
+          break;
+        }
         el.attr({ x: widget.x, y: widget.y, width: widget.w, height: widget.h });
       }
     }
@@ -153,6 +211,11 @@ export class CanvasController {
 
   removeWidget(id: string): void {
     if (this.destroyed) return;
+    const gauge = this.gaugeMap.get(id);
+    if (gauge) {
+      gauge.onUnmount();
+      this.gaugeMap.delete(id);
+    }
     const el = this.widgetMap.get(id);
     if (!el) return;
     el.remove();
@@ -225,6 +288,8 @@ export class CanvasController {
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
+    for (const [, g] of this.gaugeMap) g.onUnmount();
+    this.gaugeMap.clear();
     this.widgetMap.clear();
     this.root.remove();
   }

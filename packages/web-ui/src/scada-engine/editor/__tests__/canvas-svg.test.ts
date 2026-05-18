@@ -10,7 +10,10 @@ function makeView(items: Record<string, FuxaWidget> = {}): FuxaView {
 }
 
 function makeWidget(id: string, x = 10, y = 10, w = 50, h = 30): FuxaWidget {
-  return { id, type: 'svg-ext-value', property: {}, x, y, w, h } as FuxaWidget;
+  // SP-FX-48.4: use type 'rect' which falls through to plain rect render;
+  // svg-ext-* types now mount via GaugeRegistry and produce <g> wrappers
+  // rather than direct rect attrs, breaking these unit-level assertions.
+  return { id, type: 'rect', property: {}, x, y, w, h } as FuxaWidget;
 }
 
 let container: HTMLDivElement;
