@@ -13,6 +13,7 @@
 // ============================================================
 
 import type { Router } from 'express';
+import type Database from 'better-sqlite3';
 import type { SQLiteService } from '@biocore/data-service';
 
 export function registerAuditLogRoutes(
@@ -21,6 +22,28 @@ export function registerAuditLogRoutes(
 ): void {
   apiRouter.get('/audit-logs', (req, res) => {
     res.json(sqlite.getAuditLogs(req.query.batch_id as string | undefined));
+  });
+
+  // SP-FX-19: 管理员操作审计日志 (audit_log 表)
+  apiRouter.get('/audit-log', (req: any, res) => {
+    if (req.user?.role !== 'admin') return res.status(403).json({ error: '仅管理员可访问' });
+    const db = sqlite.getDatabase() as unknown as Database;
+    const { userId, resourceType, limit = '20', offset = '0' } = req.query as Record<string, string>;
+    try {
+      const conditions: string[] = [];
+      const params: Record<string, string | number> = {
+        limit: Math.min(Number(limit) || 20, 100),
+        offset: Number(offset) || 0,
+      };
+      if (userId) { conditions.push('user_id = @userId'); params.userId = userId; }
+      if (resourceType) { conditions.push('resource_type = @resourceType'); params.resourceType = resourceType; }
+      const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+      const sql = 'SELECT id, user_id, action, resource_type, resource_id, payload, ip, timestamp FROM audit_log ' + where + ' ORDER BY timestamp DESC LIMIT @limit OFFSET @offset';
+      const rows = db.prepare(sql).all(params);
+      res.json(rows);
+    } catch (e) {
+      res.status(500).json({ error: (e as Error).message });
+    }
   });
 
   apiRouter.post('/audit-logs', (req: any, res) => {
