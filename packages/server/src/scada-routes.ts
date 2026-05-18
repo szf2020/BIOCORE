@@ -47,6 +47,9 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
     res.json({ items: sqlite.listScadaProjects() });
   });
 
+  // SP-FX-21: sort 白名单
+  const VALID_SORTS = new Set(['name_asc', 'name_desc', 'mtime_asc', 'mtime_desc']);
+
   apiRouter.get('/scada/projects/:projectId', (req, res) => {
     const meta = sqlite.getScadaProject(req.params.projectId);
     if (!meta) return res.status(404).json({ error: 'project_not_found' });
@@ -63,7 +66,16 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
       if (!Number.isInteger(offset) || offset < 0) {
         return res.status(400).json({ error: 'offset must be a non-negative integer' });
       }
-      const { views, total } = sqlite.listScadaViewsByProject(req.params.projectId, { limit, offset });
+
+      // SP-FX-21: q / sort 查询参数
+      const rawSort = req.query.sort;
+      if (rawSort !== undefined && !VALID_SORTS.has(rawSort as string)) {
+        return res.status(400).json({ error: 'invalid_sort' });
+      }
+      const q = typeof req.query.q === 'string' ? req.query.q.trim() : undefined;
+      const sort = typeof rawSort === 'string' ? rawSort : undefined;
+
+      const { views, total } = sqlite.listScadaViewsByProject(req.params.projectId, { limit, offset, q, sort });
       return res.json({ ...meta, views, total });
     }
 

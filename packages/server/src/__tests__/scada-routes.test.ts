@@ -667,3 +667,45 @@ describe('SCADA REST API — GET project pagination', () => {
     expect(r.body.error).toBeTruthy();
   });
 });
+
+describe('SCADA REST API — GET project q/sort filter (SP-FX-21)', () => {
+  async function seedFilterViews() {
+    const { app } = makeApp();
+    await request(app).post('/api/v1/scada/projects').set('X-Test-Role', 'engineer')
+      .send({ project_id: 'fp1', name: 'Filter Project' }).expect(201);
+    for (const [id, name] of [['fv1', 'demo_alpha'], ['fv2', 'prod_beta'], ['fv3', 'demo_gamma']]) {
+      await request(app).post('/api/v1/scada/projects/fp1/views').set('X-Test-Role', 'engineer')
+        .send({ view_id: id, name }).expect(201);
+    }
+    return app;
+  }
+
+  it('q param filters by name (limit required)', async () => {
+    const app = await seedFilterViews();
+    const r = await request(app).get('/api/v1/scada/projects/fp1?limit=10&offset=0&q=demo').expect(200);
+    expect(r.body.views).toHaveLength(2);
+    expect(r.body.views.map((v: any) => v.name).every((n: string) => n.includes('demo'))).toBe(true);
+  });
+
+  it('sort=name_desc returns views sorted by name descending', async () => {
+    const app = await seedFilterViews();
+    const r = await request(app).get('/api/v1/scada/projects/fp1?limit=10&offset=0&sort=name_desc').expect(200);
+    const names: string[] = r.body.views.map((v: any) => v.name);
+    expect(names[0] >= names[1]).toBe(true);
+  });
+
+  it('invalid sort value → 400', async () => {
+    const app = await seedFilterViews();
+    const r = await request(app).get('/api/v1/scada/projects/fp1?limit=10&offset=0&sort=injected--').expect(400);
+    expect(r.body.error).toBe('invalid_sort');
+  });
+
+  it('q + sort combined reduces and orders results', async () => {
+    const app = await seedFilterViews();
+    const r = await request(app).get('/api/v1/scada/projects/fp1?limit=10&offset=0&q=demo&sort=name_desc').expect(200);
+    const names: string[] = r.body.views.map((v: any) => v.name);
+    expect(names).toHaveLength(2);
+    expect(names[0]).toBe('demo_gamma');
+    expect(names[1]).toBe('demo_alpha');
+  });
+});
