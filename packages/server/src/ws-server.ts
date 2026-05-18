@@ -15,11 +15,22 @@
 // ============================================================
 
 import http from 'http';
+import { timingSafeEqual } from 'crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import type Database from 'better-sqlite3';
 
 import { hashApiKey } from './middlewares/auth';
 import type { MqttPublisher } from './mqtt-publisher';
+
+// SP-FX-47 F-06 (HIGH): timing-safe API Key hash 比较，防止 timing attack。
+// hashApiKey 输出固定 64-char hex (SHA-256)；防御性处理长度不等情况。
+export function safeCompareApiKeyHash(computed: string, stored: string): boolean {
+  if (!computed || !stored) return false;
+  const bufA = Buffer.from(computed);
+  const bufB = Buffer.from(stored);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
 
 export type BroadcastFn = (
   channel: string,
@@ -106,7 +117,8 @@ export function createWsServer(opts: CreateWsServerOptions): WsServerHandles {
             const row: any = sqlite.getDatabase().prepare(
               'SELECT key_hash, salt, scopes FROM api_keys WHERE key_id = ? AND revoked = 0'
             ).get(keyId);
-            if (row && hashApiKey(rawKey, row.salt) === row.key_hash) {
+            // SP-FX-47 F-06: 使用 timingSafeEqual 防止 timing attack
+            if (row && safeCompareApiKeyHash(hashApiKey(rawKey, row.salt), row.key_hash)) {
               user = { user_id: `apikey:${keyId}`, role: 'service' };
               sqlite.getDatabase().prepare('UPDATE api_keys SET last_used_at = datetime("now") WHERE key_id = ?').run(keyId);
             }

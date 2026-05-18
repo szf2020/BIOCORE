@@ -811,18 +811,19 @@ apiRouter.get('/plc/connections', (_req, res) => {
   res.json(varManager.getConnections());
 });
 
-apiRouter.post('/plc/connections', (req, res) => {
+// SP-FX-47 F-04 (HIGH): PLC 拓扑写操作 admin only
+apiRouter.post('/plc/connections', requireRole('admin'), (req, res) => {
   const conn = { id: crypto.randomUUID(), ...req.body };
   varManager.upsertConnection(conn);
   res.json(conn);
 });
 
-apiRouter.put('/plc/connections/:id', (req, res) => {
+apiRouter.put('/plc/connections/:id', requireRole('admin'), (req, res) => {
   varManager.upsertConnection({ ...req.body, id: req.params.id });
   res.json({ success: true });
 });
 
-apiRouter.delete('/plc/connections/:id', (req, res) => {
+apiRouter.delete('/plc/connections/:id', requireRole('admin'), (req, res) => {
   stopHeartbeat(req.params.id);
   varManager.deleteConnection(req.params.id);
   res.json({ success: true });
@@ -873,7 +874,8 @@ apiRouter.get('/plc/variables', (req, res) => {
   res.json(varManager.getVariables(req.query.connection_id as string | undefined));
 });
 
-apiRouter.post('/plc/variables', (req, res) => {
+// SP-FX-47 F-04 (HIGH): PLC 变量写操作 admin only
+apiRouter.post('/plc/variables', requireRole('admin'), (req, res) => {
   const v = { id: crypto.randomUUID(), ...req.body };
   const check = validateAddr(v.plc_address, v.data_type);
   if (!check.valid) return res.status(400).json({ error: `地址无效: ${check.error}` });
@@ -881,12 +883,12 @@ apiRouter.post('/plc/variables', (req, res) => {
   res.json(v);
 });
 
-apiRouter.put('/plc/variables/:id', (req, res) => {
+apiRouter.put('/plc/variables/:id', requireRole('admin'), (req, res) => {
   varManager.upsertVariable({ ...req.body, id: req.params.id });
   res.json({ success: true });
 });
 
-apiRouter.delete('/plc/variables/:id', (req, res) => {
+apiRouter.delete('/plc/variables/:id', requireRole('admin'), (req, res) => {
   varManager.deleteVariable(req.params.id);
   res.json({ success: true });
 });
@@ -2933,7 +2935,8 @@ apiRouter.get('/ai/suggestions', (req, res) => {
   return res.json(sqlite.getDatabase().prepare(sql).all(...params));
 });
 
-apiRouter.post('/ai/suggestions/:id/accept', (req: any, res) => {
+// SP-FX-47 F-01 (CRITICAL): operator/admin only — viewer 不可触发 dispatcher 写 PLC
+apiRouter.post('/ai/suggestions/:id/accept', requireRole('operator', 'admin'), (req: any, res) => {
   try {
     sqlite.acceptSuggestion(parseInt(req.params.id), req.user?.user_id || 'admin-001');
     sqlite.setDispatchPending(parseInt(req.params.id));
@@ -2955,7 +2958,8 @@ apiRouter.post('/ai/suggestions/:id/accept', (req: any, res) => {
   }
 });
 
-apiRouter.post('/ai/suggestions/:id/reject', (req: any, res) => {
+// SP-FX-47 F-01 (CRITICAL): operator/admin only
+apiRouter.post('/ai/suggestions/:id/reject', requireRole('operator', 'admin'), (req: any, res) => {
   try {
     sqlite.rejectSuggestion(parseInt(req.params.id), req.user?.user_id || 'admin-001');
     sqlite.writeAuditLog({
@@ -2976,7 +2980,8 @@ apiRouter.post('/ai/suggestions/:id/reject', (req: any, res) => {
 
 // Manual retry for failed SCADA dispatches: resets dispatch_status='failed' → 'pending_dispatch'
 // (retry_count reset to 0) so dispatcher picks it up again on next tick.
-apiRouter.post('/ai/suggestions/:id/retry-dispatch', (req: any, res) => {
+// SP-FX-47 F-01 (CRITICAL): operator/admin only
+apiRouter.post('/ai/suggestions/:id/retry-dispatch', requireRole('operator', 'admin'), (req: any, res) => {
   try {
     const id = parseInt(req.params.id);
     const ok = sqlite.retryFailedDispatch(id);
