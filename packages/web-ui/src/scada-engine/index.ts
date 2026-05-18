@@ -13,3 +13,7 @@ export * from './dialogs';
 
 // SP-FX-3a additions
 export * from './editor';
+
+// SP-FX-6 additions
+export { gaugeRegistry, GaugeRegistry } from './gauges/gauge-registry';
+export type { GaugeBase, GaugeValue, GaugeContext, GaugeMeta, GaugePropChange, GaugeClickContext } from './gauges/gauge-base';

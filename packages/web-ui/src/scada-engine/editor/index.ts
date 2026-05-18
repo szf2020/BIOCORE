@@ -24,3 +24,8 @@ export { PropertiesPlaceholder } from './properties/PropertiesPlaceholder';
 export { ShapePicker } from './palette/ShapePicker';
 export { makeShapeWidget } from './palette/palette-items';
 export { SHAPE_CATALOG, type PaletteShape } from './palette/shape-catalog';
+
+// SP-FX-6 additions
+export { PropertyPanel, type PropertyPanelProps } from './properties/PropertyPanel';
+export { WIDGET_SCHEMAS, valueSchema, htmlButtonSchema, htmlInputSchema, htmlChartSchema, htmlTableSchema } from './properties/widget-schemas';
+export type { WidgetPropertySchema, PropertySchemaEntry } from './properties/property-schema';
