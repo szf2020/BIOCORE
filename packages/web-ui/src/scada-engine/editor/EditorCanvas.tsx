@@ -327,7 +327,11 @@ export function EditorCanvas() {
       className="w-full h-full overflow-auto bg-white"
       onDragOver={(e) => {
         const types = e.dataTransfer.types;
-        if (types.includes('palette-item') || types.includes('palette-shape')) {
+        if (
+          types.includes('palette-item') ||
+          types.includes('palette-shape') ||
+          types.includes('palette-gauge')
+        ) {
           e.preventDefault();
         }
       }}

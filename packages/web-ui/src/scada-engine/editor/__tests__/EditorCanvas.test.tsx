@@ -738,3 +738,43 @@ describe('EditorCanvas shape drop', () => {
     expect(addWidgetSpy).not.toHaveBeenCalled();
   });
 });
+
+// SP-FX-48.3: dragover must preventDefault for palette-gauge type, else drop
+// never fires for 信号灯/进度条/开关/滑块/管道 widgets (SP-FX-27 batch 2).
+describe('EditorCanvas gauge drop (SP-FX-48.3)', () => {
+  it('onDragOver with palette-gauge type calls preventDefault', () => {
+    render(<EditorCanvas />);
+    const host = document.querySelector('[data-editor-canvas-host]') as HTMLElement;
+    const ev = new Event('dragover', { bubbles: true, cancelable: true });
+    Object.defineProperty(ev, 'dataTransfer', { value: { types: ['palette-gauge'] } });
+    host.dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(true);
+  });
+
+  it('onDrop with palette-gauge calls addWidget(type=svg-ext-gauge_semaphore)', () => {
+    const addWidgetSpy = vi.fn();
+    vi.spyOn(useEditorStore, 'getState').mockReturnValue({
+      addWidget: addWidgetSpy,
+      gridSize: 10,
+      currentView: { items: {} },
+      selection: [],
+      snapEnabled: true,
+    } as any);
+
+    render(<EditorCanvas />);
+    const host = document.querySelector('[data-editor-canvas-host]') as HTMLElement;
+    const ev = new Event('drop', { bubbles: true, cancelable: true });
+    Object.defineProperty(ev, 'clientX', { value: 50 });
+    Object.defineProperty(ev, 'clientY', { value: 50 });
+    Object.defineProperty(ev, 'dataTransfer', {
+      value: {
+        types: ['palette-gauge'],
+        getData: (k: string) => (k === 'palette-gauge' ? 'svg-ext-gauge_semaphore' : ''),
+      },
+    });
+    host.dispatchEvent(ev);
+    expect(addWidgetSpy).toHaveBeenCalled();
+    const arg = addWidgetSpy.mock.calls[0][0];
+    expect(arg.type).toBe('svg-ext-gauge_semaphore');
+  });
+});
