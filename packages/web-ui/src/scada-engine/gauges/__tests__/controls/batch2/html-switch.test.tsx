@@ -95,3 +95,73 @@ describe('HtmlSwitchGauge', () => {
     expect(() => gauge.onUnmount()).not.toThrow();
   });
 });
+
+// SP-FX-14: bitmask mode tests
+describe('HtmlSwitchGauge — bitmask mode', () => {
+  const makeBitmaskWidget = (bitmask: number) =>
+    makeWidget({
+      property: {
+        variableId: 'r1.DO-0',
+        onValue: '1',
+        offValue: '0',
+        bitmask,
+      },
+    } as Partial<FuxaWidget>);
+
+  it('bitmask=0, tag value=1: checkbox checked (bit 0 is set)', async () => {
+    const { htmlSwitchMeta } = await import('../../../controls/batch2/html-switch');
+    const ctx = makeCtx();
+    const gauge = htmlSwitchMeta.create();
+    gauge.onMount(makeBitmaskWidget(0), ctx);
+    gauge.onProcess({ value: 1, isStale: false });
+    const checkbox = ctx.parentGroup.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+  });
+
+  it('bitmask=0, tag value=0: checkbox unchecked (bit 0 is clear)', async () => {
+    const { htmlSwitchMeta } = await import('../../../controls/batch2/html-switch');
+    const ctx = makeCtx();
+    const gauge = htmlSwitchMeta.create();
+    gauge.onMount(makeBitmaskWidget(0), ctx);
+    gauge.onProcess({ value: 0, isStale: false });
+    const checkbox = ctx.parentGroup.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+  });
+
+  it('bitmask=1, tag value=2 (0b10): checkbox checked (bit 1 is set)', async () => {
+    const { htmlSwitchMeta } = await import('../../../controls/batch2/html-switch');
+    const ctx = makeCtx();
+    const gauge = htmlSwitchMeta.create();
+    gauge.onMount(makeBitmaskWidget(1), ctx);
+    gauge.onProcess({ value: 2, isStale: false });
+    const checkbox = ctx.parentGroup.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+  });
+
+  it('bitmask=1, tag value=1 (0b01): checkbox unchecked (bit 1 is clear)', async () => {
+    const { htmlSwitchMeta } = await import('../../../controls/batch2/html-switch');
+    const ctx = makeCtx();
+    const gauge = htmlSwitchMeta.create();
+    gauge.onMount(makeBitmaskWidget(1), ctx);
+    gauge.onProcess({ value: 1, isStale: false });
+    const checkbox = ctx.parentGroup.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+  });
+
+  it('bitmask=1 runtime: check=true fires onWriteIntent with bit 1 set in current value', async () => {
+    const { htmlSwitchMeta } = await import('../../../controls/batch2/html-switch');
+    const ctx = makeCtx('runtime');
+    // readValue returns current tag = 4 (0b100), setting bit 1 → 6 (0b110)
+    (ctx.readValue as ReturnType<typeof vi.fn>).mockReturnValue({ value: 4, isStale: false });
+    const gauge = htmlSwitchMeta.create();
+    gauge.onMount(makeBitmaskWidget(1), ctx);
+    const checkbox = ctx.parentGroup.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event('change'));
+    expect(ctx.onWriteIntent).toHaveBeenCalledWith({
+      tag: 'r1.DO-0',
+      value: 6, // 4 | (1 << 1) = 4 | 2 = 6
+      widgetId: 'w3',
+    });
+  });
+});

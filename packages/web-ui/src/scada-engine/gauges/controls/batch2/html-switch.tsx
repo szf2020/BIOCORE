@@ -8,6 +8,7 @@ interface SwitchProperty {
   variableId?: string;
   onValue?: number | string;
   offValue?: number | string;
+  bitmask?: number; // bit 位号 0-31，存在时启用 bitmask 模式
 }
 
 class HtmlSwitchGauge implements GaugeBase {
@@ -43,8 +44,22 @@ class HtmlSwitchGauge implements GaugeBase {
       const prop = this.widget.property as SwitchProperty;
       const tag = prop.variableId;
       if (!tag) return;
-      const val = input.checked ? (prop.onValue ?? 1) : (prop.offValue ?? 0);
-      this.ctx.onWriteIntent?.({ tag, value: val, widgetId: this.widget.id });
+
+      if (prop.bitmask !== undefined) {
+        // bitmask 模式: read-modify-write
+        const bit = prop.bitmask;
+        const current = this.ctx.readValue(tag);
+        const currentNum = typeof current.value === 'number'
+          ? current.value
+          : parseInt(String(current.value ?? '0'), 10);
+        const newVal = input.checked
+          ? currentNum | (1 << bit)
+          : currentNum & ~(1 << bit);
+        this.ctx.onWriteIntent?.({ tag, value: newVal, widgetId: this.widget.id });
+      } else {
+        const val = input.checked ? (prop.onValue ?? 1) : (prop.offValue ?? 0);
+        this.ctx.onWriteIntent?.({ tag, value: val, widgetId: this.widget.id });
+      }
     };
     input.addEventListener('change', this.changeHandler);
 
@@ -71,8 +86,18 @@ class HtmlSwitchGauge implements GaugeBase {
       return;
     }
     const prop = this.widget.property as SwitchProperty;
-    const onVal = String(prop.onValue ?? '1');
-    this.checkbox.checked = String(value.value) === onVal;
+
+    if (prop.bitmask !== undefined) {
+      // bitmask 模式: (numVal >> bit) & 1
+      const bit = prop.bitmask;
+      const numVal = typeof value.value === 'number'
+        ? value.value
+        : parseInt(String(value.value), 10);
+      this.checkbox.checked = ((numVal >> bit) & 1) === 1;
+    } else {
+      const onVal = String(prop.onValue ?? '1');
+      this.checkbox.checked = String(value.value) === onVal;
+    }
   }
 
   onPropertyChange(change: GaugePropChange): void {
