@@ -24,6 +24,10 @@ export class GaugeRegistry {
   has(widgetType: string): boolean {
     return this.map.has(widgetType);
   }
+
+  get size(): number {
+    return this.map.size;
+  }
 }
 
 export const gaugeRegistry = new GaugeRegistry();
