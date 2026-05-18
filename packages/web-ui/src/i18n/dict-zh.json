@@ -123,7 +123,7 @@
   "view-list-panel.new-template": "新建模板",
   "view-list-panel.delete-confirm": "确认删除",
   "view-list-panel.search-placeholder": "搜索视图...",
-  "view-list-panel.no-views": "暂无视图",
+  "view-list-panel.no-views": "没有画面",
   "view-list-panel.loading": "加载中...",
   "view-list-panel.view-count": "共 {{count}} 个视图",
   "view-list-toolbar.views": "视图",
@@ -277,5 +277,10 @@
   "shape-picker.search": "搜索形状...",
   "locale-switcher.zh": "中文",
   "locale-switcher.en": "EN",
-  "locale-switcher.label": "语言"
+  "locale-switcher.label": "语言",
+  "toolbar.save": "保存",
+  "view-list-search-bar.sort-name-asc": "名称 A→Z",
+  "view-list-search-bar.sort-name-desc": "名称 Z→A",
+  "view-list-search-bar.sort-mtime-asc": "修改时间 旧→新",
+  "view-list-search-bar.sort-mtime-desc": "修改时间 新→旧"
 }

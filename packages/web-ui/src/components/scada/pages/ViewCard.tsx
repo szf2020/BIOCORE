@@ -1,4 +1,5 @@
 'use client';
+import { useLocale } from '@/i18n/useLocale';
 import React from 'react';
 import { ExternalLink, Pencil, Copy, Trash2, Shield } from 'lucide-react';
 import type { ViewMeta } from '@/hooks/useViewList';
@@ -22,7 +23,7 @@ function relativeTime(iso?: string): string {
   if (!iso) return '';
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return '刚刚';
+  if (mins < 1) return '刚刚';  // keep for fallback
   if (mins < 60) return `${mins} 分钟前`;
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours} 小时前`;
@@ -31,6 +32,7 @@ function relativeTime(iso?: string): string {
 }
 
 export function ViewCard({ view, onEdit, onOpen, onDuplicate, onDelete, currentUserId, currentUserRole, onAcl }: Props) {
+  const { t } = useLocale();
   const hasSvg = typeof view.svgcontent === 'string' && view.svgcontent.trim().length > 0;
 
   const isAdmin = currentUserRole === 'admin';
@@ -96,7 +98,7 @@ export function ViewCard({ view, onEdit, onOpen, onDuplicate, onDelete, currentU
         <button
           data-testid="view-card-open-btn"
           onClick={() => onOpen(view.view_id)}
-          title="查看"
+          title={t('view-card.preview')}
           style={{ flex: 1, padding: '3px 0', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6b7280' }}
         >
           <ExternalLink size={14} />
@@ -104,7 +106,7 @@ export function ViewCard({ view, onEdit, onOpen, onDuplicate, onDelete, currentU
         <button
           data-testid="view-card-edit-btn"
           onClick={() => onEdit(view.view_id)}
-          title="编辑"
+          title={t('view-card.edit')}
           style={{ flex: 1, padding: '3px 0', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6b7280' }}
         >
           <Pencil size={14} />
@@ -112,7 +114,7 @@ export function ViewCard({ view, onEdit, onOpen, onDuplicate, onDelete, currentU
         <button
           data-testid="view-card-duplicate-btn"
           onClick={() => onDuplicate(view.view_id)}
-          title="复制"
+          title={t('view-card.duplicate')}
           style={{ flex: 1, padding: '3px 0', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6b7280' }}
         >
           <Copy size={14} />
@@ -120,7 +122,7 @@ export function ViewCard({ view, onEdit, onOpen, onDuplicate, onDelete, currentU
         <button
           data-testid="view-card-delete-btn"
           onClick={() => onDelete(view)}
-          title="删除"
+          title={t('view-card.delete')}
           style={{ flex: 1, padding: '3px 0', border: 'none', background: 'transparent', cursor: 'pointer', color: '#dc2626' }}
         >
           <Trash2 size={14} />
@@ -129,7 +131,7 @@ export function ViewCard({ view, onEdit, onOpen, onDuplicate, onDelete, currentU
           <button
             data-testid="view-card-acl-btn"
             onClick={() => onAcl!(view.view_id)}
-            title="权限"
+            title={t('view-card.acl')}
             style={{ flex: 1, padding: '3px 0', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6b7280' }}
           >
             <Shield size={14} />

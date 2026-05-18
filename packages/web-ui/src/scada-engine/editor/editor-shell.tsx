@@ -5,6 +5,7 @@ import { Toolbar } from './toolbar/Toolbar';
 import { PropertyPanel } from './properties/PropertyPanel';
 import { WIDGET_SCHEMAS } from './properties/widget-schemas';
 import { useEditorStore } from '../services/editor-store';
+import { useLocale } from '@/i18n/useLocale';
 
 export interface EditorShellProps {
   viewId: string;
@@ -13,6 +14,7 @@ export interface EditorShellProps {
 }
 
 export function EditorShell({ viewId, windowWidth }: EditorShellProps): JSX.Element {
+  const { t } = useLocale();
   const selection = useEditorStore((s) => s.selection);
   const items = useEditorStore((s) => s.currentView?.items);
 
@@ -39,7 +41,7 @@ export function EditorShell({ viewId, windowWidth }: EditorShellProps): JSX.Elem
           data-testid="editor-mobile-warning"
           className="m-4 p-4 rounded-lg bg-yellow-900/50 border border-yellow-600 text-yellow-200 text-sm"
         >
-          请使用 &ge; 768px 屏幕编辑 SCADA 画面
+          {t('editor-shell.title')} — please use &ge; 768px screen
         </div>
         {/* read-only preview canvas (pointer-events-none) */}
         <div className="flex-1 overflow-hidden pointer-events-none opacity-50">

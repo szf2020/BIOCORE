@@ -3,10 +3,12 @@
 import React, { useEffect, useCallback } from 'react';
 import { useEditorStore } from '../../services/editor-store';
 import { executeSave } from './commands';
+import { useLocale } from '@/i18n/useLocale';
 
 export interface ToolbarProps { viewId: string; }
 
 export function Toolbar({ viewId }: ToolbarProps): JSX.Element {
+  const { t } = useLocale();
   const snapEnabled = useEditorStore((s) => s.snapEnabled);
   const canUndo = useEditorStore((s) => s.history.past.length > 0);
   const canRedo = useEditorStore((s) => s.history.future.length > 0);
@@ -55,7 +57,7 @@ export function Toolbar({ viewId }: ToolbarProps): JSX.Element {
         onClick={runSave}
         className="px-3 py-1 text-sm rounded bg-blue-600 hover:bg-blue-500 text-white"
       >
-        保存
+        {t('toolbar.save')}
       </button>
       <button
         data-cmd="undo"
@@ -63,7 +65,7 @@ export function Toolbar({ viewId }: ToolbarProps): JSX.Element {
         disabled={!canUndo}
         className="px-3 py-1 text-sm rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-100 disabled:opacity-40"
       >
-        撤销
+        {t('toolbar.undo')}
       </button>
       <button
         data-cmd="redo"
@@ -71,7 +73,7 @@ export function Toolbar({ viewId }: ToolbarProps): JSX.Element {
         disabled={!canRedo}
         className="px-3 py-1 text-sm rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-100 disabled:opacity-40"
       >
-        重做
+        {t('toolbar.redo')}
       </button>
       <button
         data-cmd="grid"
@@ -79,7 +81,7 @@ export function Toolbar({ viewId }: ToolbarProps): JSX.Element {
         onClick={onToggleGrid}
         className={`px-3 py-1 text-sm rounded text-zinc-100 ${snapEnabled ? 'bg-emerald-700' : 'bg-zinc-800 hover:bg-zinc-700'}`}
       >
-        网格
+        {t('toolbar.grid')}
       </button>
     </header>
   );

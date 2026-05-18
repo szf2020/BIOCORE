@@ -9,6 +9,7 @@ import { ViewCardGrid } from './ViewCardGrid';
 import { ViewListRows } from './ViewListRows';
 import { ViewPaginator } from './ViewPaginator';
 import { ViewListSearchBar, type SortKey, type FilterState } from './ViewListSearchBar';
+import { useLocale } from '@/i18n/useLocale';
 
 const LS_KEY = 'biocore.scada.viewListMode';
 const VALID_SIZES = [12, 24, 48];
@@ -39,6 +40,7 @@ export function ViewListPanel({ projectId }: Props) {
     }
   });
 
+  const { t } = useLocale();
   const [mutationError, setMutationError] = useState<string | null>(null);
 
   const { views, total, loading, error, refetch } = useViewList(projectId, { page, size, q, sort });
@@ -92,15 +94,15 @@ export function ViewListPanel({ projectId }: Props) {
     return [...prefixes].sort();
   }
 
-  if (loading) return <div style={{ padding: 8 }}>加载中…</div>;
-  if (error) return <div style={{ padding: 8, color: '#dc2626' }}>错误: {error.message}</div>;
+  if (loading) return <div style={{ padding: 8 }}>{t('view-list-panel.loading')}</div>;
+  if (error) return <div style={{ padding: 8, color: '#dc2626' }}>{t('common.error')}: {error.message}</div>;
   if (views.length === 0 && page === 1 && !q && tags.length === 0) return (
     <>
       <div data-testid="sticky-toolbar-container" className="sticky top-0 z-10 bg-background border-b">
         <ViewListSearchBar q={q} sort={sort} tags={tags} availableTags={[]} onChange={handleFilterChange} />
         <ViewListToolbar viewMode={viewMode} onModeChange={handleModeChange} pageSize={size} onPageSizeChange={setSize} />
       </div>
-      <div style={{ padding: 8, color: '#666' }}>没有画面</div>
+      <div style={{ padding: 8, color: '#666' }}>{t('view-list-panel.no-views')}</div>
     </>
   );
 
@@ -124,7 +126,7 @@ export function ViewListPanel({ projectId }: Props) {
   }
 
   async function handleDelete(view: ViewMeta) {
-    if (!window.confirm(`确认删除画面 "${view.name}"?`)) return;
+    if (!window.confirm(`${t('view-list-panel.delete-confirm')}: "${view.name}"?`)) return;
     try {
       await mut.delete(view.view_id);
       setMutationError(null);
@@ -151,7 +153,7 @@ export function ViewListPanel({ projectId }: Props) {
 
   async function handleDuplicate(viewId: string) {
     const original = views.find(v => v.view_id === viewId);
-    const newName = original ? `${original.name} (副本)` : '副本';
+    const newName = original ? `${original.name} (copy)` : 'copy';
     try {
       await mut.create(newName, { cloneFrom: viewId });
       setMutationError(null);
@@ -176,12 +178,12 @@ export function ViewListPanel({ projectId }: Props) {
           data-testid="mutation-error-banner"
           style={{ padding: 8, marginBottom: 4, background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', gap: 8 }}
         >
-          <span style={{ flex: 1 }}>操作失败: {mutationError}</span>
+          <span style={{ flex: 1 }}>{t('common.error')}: {mutationError}</span>
           <button
             data-testid="dismiss-error-btn"
             onClick={() => setMutationError(null)}
             style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16, color: '#dc2626' }}
-            aria-label="关闭"
+            aria-label={t("common.close")}
           >
             ×
           </button>

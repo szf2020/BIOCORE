@@ -8,10 +8,12 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Activity, LogIn, AlertCircle } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 export default function LoginPage() {
   const router = useRouter();
   const { user, loading, login } = useAuth();
+  const { t } = useLocale();
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -26,7 +28,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     if (!username.trim() || !password) {
-      setError('请输入用户名和密码');
+      setError(t('login.error-empty'));
       return;
     }
     setSubmitting(true);
@@ -35,7 +37,7 @@ export default function LoginPage() {
     if (result.ok) {
       router.replace('/dashboard');
     } else {
-      setError(result.error || '登录失败');
+      setError(result.error || t('login.error-failed'));
     }
   };
 
@@ -48,7 +50,7 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">BIOCore</h1>
         </div>
         <p className="text-center text-sm text-muted-foreground mb-6 font-mono">
-          v0.1.0 | 发酵控制平台
+          v0.1.0 | {t('login.subtitle')}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -60,7 +62,7 @@ export default function LoginPage() {
           )}
 
           <div>
-            <label className="text-sm font-medium text-muted-foreground mb-1.5 block">用户名</label>
+            <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('login.username')}</label>
             <input
               type="text"
               value={username}
@@ -73,7 +75,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-muted-foreground mb-1.5 block">密码</label>
+            <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('login.password')}</label>
             <input
               type="password"
               value={password}
@@ -90,13 +92,13 @@ export default function LoginPage() {
             className="w-full flex items-center justify-center gap-2 h-10 rounded text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <LogIn className="w-4 h-4" />
-            {submitting ? '登录中...' : '登录'}
+            {submitting ? t('login.submitting') : t('login.submit')}
           </button>
         </form>
 
         <div className="mt-6 pt-4 border-t border-border text-center">
           <p className="text-[12px] text-muted-foreground">
-            默认账号: <span className="font-mono text-foreground">admin / admin123</span>
+            {t('login.hint')} <span className="font-mono text-foreground">admin / admin123</span>
           </p>
         </div>
       </div>

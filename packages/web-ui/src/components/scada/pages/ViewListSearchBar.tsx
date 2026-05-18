@@ -1,6 +1,7 @@
 'use client';
 // SP-FX-21: ViewList 搜索栏 — q/sort/tag 过滤控件
 import React from 'react';
+import { useLocale } from '@/i18n/useLocale';
 
 export type SortKey = 'name_asc' | 'name_desc' | 'mtime_asc' | 'mtime_desc';
 
@@ -19,6 +20,7 @@ interface ViewListSearchBarProps {
 }
 
 export function ViewListSearchBar({ q, sort, tags, availableTags, onChange }: ViewListSearchBarProps) {
+  const { t } = useLocale();
   function handleQChange(e: React.ChangeEvent<HTMLInputElement>) {
     onChange({ q: e.target.value });
   }
@@ -43,11 +45,11 @@ export function ViewListSearchBar({ q, sort, tags, availableTags, onChange }: Vi
       <input
         data-testid="view-search-input"
         type="text"
-        placeholder="搜索画面名称…"
+        placeholder={t('view-list-search-bar.placeholder')}
         value={q}
         onChange={handleQChange}
         style={{ flex: '1 1 160px', minWidth: 120, padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 4 }}
-        aria-label="搜索画面"
+        aria-label={t('view-list-search-bar.placeholder')}
       />
 
       {/* 排序下拉 */}
@@ -56,12 +58,12 @@ export function ViewListSearchBar({ q, sort, tags, availableTags, onChange }: Vi
         value={sort}
         onChange={handleSortChange}
         style={{ padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 4 }}
-        aria-label="排序方式"
+        aria-label={t('view-list-toolbar.sort')}
       >
-        <option value="name_asc">名称 A→Z</option>
-        <option value="name_desc">名称 Z→A</option>
-        <option value="mtime_asc">修改时间 旧→新</option>
-        <option value="mtime_desc">修改时间 新→旧</option>
+        <option value="name_asc">{t('view-list-search-bar.sort-name-asc') || '名称 A→Z'}</option>
+        <option value="name_desc">{t('view-list-search-bar.sort-name-desc') || '名称 Z→A'}</option>
+        <option value="mtime_asc">{t('view-list-search-bar.sort-mtime-asc') || '修改时间 旧→新'}</option>
+        <option value="mtime_desc">{t('view-list-search-bar.sort-mtime-desc') || '修改时间 新→旧'}</option>
       </select>
 
       {/* Tag chip 多选 */}

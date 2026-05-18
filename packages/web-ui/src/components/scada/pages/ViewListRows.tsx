@@ -1,4 +1,5 @@
 'use client';
+import { useLocale } from '@/i18n/useLocale';
 import React, { useState } from 'react';
 import type { ViewMeta } from '@/hooks/useViewList';
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function ViewListRows({ sorted, onRename, onDelete, onMove }: Props) {
+  const { t } = useLocale();
   const [renamingId, setRenamingId] = useState<string | null>(null);
 
   return (
@@ -26,15 +28,15 @@ export function ViewListRows({ sorted, onRename, onDelete, onMove }: Props) {
           ) : (
             <span style={{ flex: 1 }}>
               {v.name}
-              {v.is_template ? <span style={{ marginLeft: 6, fontSize: 10, color: '#3b82f6' }}>[模板]</span> : null}
+              {v.is_template ? <span style={{ marginLeft: 6, fontSize: 10, color: '#3b82f6' }}>[{t('view-list-toolbar.templates')}]</span> : null}
             </span>
           )}
           <button data-testid="move-up-btn" onClick={() => void onMove(v.view_id, -1)} disabled={i === 0}>↑</button>
           <button data-testid="move-down-btn" onClick={() => void onMove(v.view_id, 1)} disabled={i === sorted.length - 1}>↓</button>
-          <button data-testid="rename-btn" onClick={() => setRenamingId(v.view_id)}>重命名</button>
-          <button data-testid="delete-btn" onClick={() => void onDelete(v)}>删除</button>
-          <a href={`/scada2/${v.view_id}`}>查看</a>
-          <a href={`/scada2/edit/${v.view_id}`} data-testid={`edit-link-${v.view_id}`}>编辑</a>
+          <button data-testid="rename-btn" onClick={() => setRenamingId(v.view_id)}>{t('view-list-rows.edit')}</button>
+          <button data-testid="delete-btn" onClick={() => void onDelete(v)}>{t('view-list-rows.delete')}</button>
+          <a href={`/scada2/${v.view_id}`}>{t('view-list-rows.view')}</a>
+          <a href={`/scada2/edit/${v.view_id}`} data-testid={`edit-link-${v.view_id}`}>{t('view-list-rows.edit')}</a>
         </li>
       ))}
     </ul>

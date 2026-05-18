@@ -277,5 +277,10 @@
   "shape-picker.search": "Search shapes...",
   "locale-switcher.zh": "中文",
   "locale-switcher.en": "EN",
-  "locale-switcher.label": "Language"
+  "locale-switcher.label": "Language",
+  "toolbar.save": "Save",
+  "view-list-search-bar.sort-name-asc": "Name A→Z",
+  "view-list-search-bar.sort-name-desc": "Name Z→A",
+  "view-list-search-bar.sort-mtime-asc": "Modified (Oldest)",
+  "view-list-search-bar.sort-mtime-desc": "Modified (Newest)"
 }

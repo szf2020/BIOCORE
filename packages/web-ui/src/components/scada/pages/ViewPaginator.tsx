@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { useLocale } from '@/i18n/useLocale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Props {
@@ -40,6 +41,7 @@ function buildPageNumbers(current: number, totalPages: number): (number | '...')
 }
 
 export function ViewPaginator({ page, total, size, onPageChange, onSizeChange }: Props) {
+  const { t } = useLocale();
   const totalPages = Math.max(1, Math.ceil(total / size));
   const pageNumbers = buildPageNumbers(page, totalPages);
 
@@ -87,7 +89,7 @@ export function ViewPaginator({ page, total, size, onPageChange, onSizeChange }:
       </button>
 
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 12, color: '#6b7280' }}>共 {total} 个</span>
+        <span style={{ fontSize: 12, color: '#6b7280' }}>{t('common.total')} {total}</span>
         <select
           data-testid="page-size-select"
           value={size}
@@ -95,7 +97,7 @@ export function ViewPaginator({ page, total, size, onPageChange, onSizeChange }:
           style={{ padding: '2px 6px', border: '1px solid #ccc', borderRadius: 4 }}
         >
           {PAGE_SIZES.map((s) => (
-            <option key={s} value={s}>{s} / 页</option>
+            <option key={s} value={s}>{s} / {t('common.page')}</option>
           ))}
         </select>
       </div>
