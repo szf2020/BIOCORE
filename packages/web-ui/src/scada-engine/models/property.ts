@@ -33,6 +33,8 @@ export const FuxaActionSchema = z.object({
   variableId: z.string(),
   range: z.object({ min: z.number(), max: z.number() }).optional(),
   output: z.object({ from: z.any(), to: z.any() }).optional(),
+  conditionExpr: z.string().max(500).optional(),
+  valueExpr: z.string().max(500).optional(),
 });
 export type FuxaAction = z.infer<typeof FuxaActionSchema>;
 
