@@ -243,6 +243,8 @@ import { createNotificationsRouter } from './routes/notifications';
 import { listChannels as listNotifChannels, listRules as listNotifRules } from '@biocore/data-service';
 // SP-FX-37: 生产健康检查端点
 import { registerHealthRoutes } from './health-routes';
+// SP-FX-43: Analytics Dashboard
+import { registerAnalyticsRoutes } from './analytics-routes';
 
 // JWT 认证
 import { createHash, randomBytes, timingSafeEqual } from 'crypto';
@@ -643,6 +645,8 @@ apiRouter.use('/notifications', createNotificationsRouter({
 
 // SP-FX-28: Prometheus metrics endpoint (admin only)
 registerMetricsRoutes(apiRouter, metricsRegistry);
+// SP-FX-43: Analytics Dashboard (admin only)
+registerAnalyticsRoutes(apiRouter, sqlite.getDatabase());
 // SP-FX-40: 全局 rate-limit (cors/json/traceMw 之后, auth 之前)
 // 100 req/min per IP; /health /liveness /metrics 豁免
 app.use(rateLimit(defaultRateLimitConfig));
