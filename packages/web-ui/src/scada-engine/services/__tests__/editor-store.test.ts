@@ -291,3 +291,37 @@ describe('editorStore updateWidget undefined-value deletes key (SP-FX-3b.2.2)', 
     expect('rotate' in w).toBe(false);
   });
 });
+
+describe('editorStore updateWidget multi-key + mixed patch (SP-FX-3b.2.3)', () => {
+  beforeEach(() => {
+    useEditorStore.setState({
+      currentView: null,
+      isDirty: false,
+      history: { past: [], future: [] },
+      selection: [],
+      snapEnabled: true,
+      gridSize: 10,
+    } as any, true);
+    useEditorStore.getState().openView({
+      id: 'v1', name: 'V', type: 'svg', svgcontent: '<svg/>',
+      width: 800, height: 600,
+      items: { w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 50, h: 30, rotate: 30 } },
+      schemaVersion: 1,
+    } as any);
+  });
+
+  it('updateWidget multi-key {x, y, rotate}: all 3 fields set', () => {
+    useEditorStore.getState().updateWidget('w1', { x: 100, y: 200, rotate: 90 } as any);
+    const w = useEditorStore.getState().currentView!.items.w1 as any;
+    expect(w.x).toBe(100);
+    expect(w.y).toBe(200);
+    expect(w.rotate).toBe(90);
+  });
+
+  it('updateWidget mixed {rotate: undefined, x: 100}: deletes rotate + sets x', () => {
+    useEditorStore.getState().updateWidget('w1', { rotate: undefined, x: 100 } as any);
+    const w = useEditorStore.getState().currentView!.items.w1 as any;
+    expect('rotate' in w).toBe(false);
+    expect(w.x).toBe(100);
+  });
+});
