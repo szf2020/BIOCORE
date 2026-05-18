@@ -21,3 +21,5 @@ export { valueMeta, htmlButtonMeta, htmlInputMeta, htmlChartMeta, htmlTableMeta 
 import './batch2/index';
 import './batch3/index';
 import './batch4/index';
+// SP-FX-48.7: batch5 (FUXA parity — panel/video/scheduler)
+import './batch5/index';

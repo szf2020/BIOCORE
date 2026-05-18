@@ -57,8 +57,24 @@ export class CanvasController {
     this.widgetSnapshot.clear();
     for (const [, el] of this.widgetMap) el.remove();
     this.widgetMap.clear();
+    // SP-FX-48.8: apply view-level background color to SVG root + container.
+    // Reads from FuxaView.background_color (preferred) or profile.bkcolor (legacy).
+    const bg = (view as any).background_color
+      ?? ((view as any).profile && (view as any).profile.bkcolor)
+      ?? '';
+    this.setBackgroundColor(bg);
     for (const id in view.items) {
       this.upsertWidget(view.items[id]);
+    }
+  }
+
+  setBackgroundColor(color: string): void {
+    if (this.destroyed) return;
+    const node = this.root.node as SVGSVGElement;
+    if (color) {
+      node.style.background = color;
+    } else {
+      node.style.removeProperty('background');
     }
   }
 

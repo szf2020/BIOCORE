@@ -89,6 +89,10 @@ export const GAUGE_PALETTE_ITEMS: GaugePaletteItem[] = [
   { widgetType: 'svg-ext-valve',           label: '阀门',      defaultW: 60,  defaultH: 60  },
   { widgetType: 'svg-ext-pump',            label: '水泵',      defaultW: 80,  defaultH: 80  },
   { widgetType: 'svg-ext-html_select',     label: '下拉选择',  defaultW: 140, defaultH: 32  },
+  // Batch 5: FUXA parity (SP-FX-48.7)
+  { widgetType: 'svg-ext-panel',           label: '面板容器',  defaultW: 200, defaultH: 120 },
+  { widgetType: 'svg-ext-html_video',      label: '视频',      defaultW: 320, defaultH: 180 },
+  { widgetType: 'svg-ext-html_scheduler',  label: '日程表',    defaultW: 480, defaultH: 200 },
 ];
 
 export function makeGaugeWidget(

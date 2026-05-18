@@ -237,6 +237,16 @@ export function EditorCanvas() {
     refs.current.canvas.setGridVisible(snapEnabled ?? true, gridSize ?? 10);
   }, [snapEnabled, gridSize]);
 
+  // SP-FX-48.8: sync view-level background color → canvas SVG bg.
+  // Reads FuxaView.background_color (preferred) or profile.bkcolor (legacy).
+  useEffect(() => {
+    if (!refs.current) return;
+    const bg = (currentView as any)?.background_color
+      ?? ((currentView as any)?.profile && (currentView as any).profile.bkcolor)
+      ?? '';
+    refs.current.canvas.setBackgroundColor(bg);
+  }, [currentView?.background_color, (currentView as any)?.profile?.bkcolor]);
+
   // SP-FX-3b.2.1: extended keyboard handler — Ctrl+A, ESC 3-tier, Arrow nudge coalesce.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

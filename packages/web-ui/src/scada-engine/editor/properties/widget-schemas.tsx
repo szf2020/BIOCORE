@@ -437,11 +437,47 @@ export const htmlSelectSchema: WidgetPropertySchema = {
 };
 
 /** Lookup map: widget.type → WidgetPropertySchema */
+// SP-FX-48.7: Batch 5 — FUXA parity (panel/video/scheduler)
+export const panelSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'title', label: '标题', type: 'text', placeholder: '可留空' },
+    { key: 'bgColor', label: '背景色', type: 'color', allowNone: true },
+    { key: 'borderColor', label: '边框色', type: 'color', allowNone: true },
+    { key: 'borderWidth', label: '边框宽度', type: 'number', min: 0, max: 10, step: 1 },
+    { key: 'titleColor', label: '标题颜色', type: 'color', allowNone: true },
+    ...GEOMETRY_ENTRIES,
+  ],
+};
+
+export const htmlVideoSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'src', label: '视频 URL (https://)', type: 'text', placeholder: 'https://example.com/video.mp4' },
+    { key: 'autoplay', label: '自动播放', type: 'boolean' },
+    { key: 'loop', label: '循环播放', type: 'boolean' },
+    { key: 'muted', label: '静音', type: 'boolean' },
+    { key: 'controls', label: '显示控制条', type: 'boolean' },
+    ...GEOMETRY_ENTRIES,
+  ],
+};
+
+export const htmlSchedulerSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'blockColor', label: '时段颜色', type: 'color' },
+    { key: 'gridColor', label: '网格颜色', type: 'color' },
+    { key: 'labelColor', label: '标签颜色', type: 'color' },
+    ...GEOMETRY_ENTRIES,
+  ],
+};
+
 export const WIDGET_SCHEMAS: Record<string, WidgetPropertySchema> = {
   // SP-FX-48.5: basic shapes (geometry + style only)
   'rect': rectSchema,
   'ellipse': ellipseSchema,
   'text': textSchema,
+  // SP-FX-48.7: FUXA parity batch 5
+  'svg-ext-panel': panelSchema,
+  'svg-ext-html_video': htmlVideoSchema,
+  'svg-ext-html_scheduler': htmlSchedulerSchema,
   'svg-ext-value': valueSchema,
   'svg-ext-html_button': htmlButtonSchema,
   'svg-ext-html_input': htmlInputSchema,
