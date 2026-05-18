@@ -1041,10 +1041,11 @@ export class SQLiteService {
     display_order?: number;
     items?: Record<string, any>;
     is_template?: number;
+    owner_id?: string | null;
   }): void {
     this.db.prepare(
-      `INSERT INTO scada_views (view_id, project_id, name, reactor_id, display_order, width, height, background, items_json, is_template)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO scada_views (view_id, project_id, name, reactor_id, display_order, width, height, background, items_json, is_template, owner_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       v.view_id, v.project_id, v.name,
       v.reactor_id ?? null,
@@ -1054,6 +1055,7 @@ export class SQLiteService {
       v.background ?? '#ffffff',
       JSON.stringify(v.items ?? {}),
       v.is_template ?? 0,
+      v.owner_id ?? null,
     );
   }
 

@@ -19,6 +19,7 @@ import type { Router, Request } from 'express';
 import type { SQLiteService } from '@biocore/data-service';
 import { SCADA_ITEMS_MAX_BYTES } from '@biocore/data-service';
 import { requireRole } from './middlewares/auth';
+import { enforceViewAccess } from './middlewares/view-acl';
 
 export interface ScadaRoutesDeps {
   sqlite: SQLiteService;
@@ -161,7 +162,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
     return null;
   }
 
-  apiRouter.get('/scada/views/:viewId', (req, res) => {
+  apiRouter.get('/scada/views/:viewId', enforceViewAccess(sqlite), (req, res) => {
     const view = sqlite.getScadaView(req.params.viewId);
     if (!view) return res.status(404).json({ error: 'view_not_found' });
     res.json(view);
@@ -210,6 +211,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
       const err = checkItemsSize(items);
       if (err) return res.status(400).json({ error: err });
     }
+    const userId = getUserId(req);
     try {
       sqlite.createScadaView({
         view_id, project_id: projectId, name,
@@ -217,6 +219,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
         width, height, background, display_order,
         items: items ?? {},
         is_template: typeof is_template === 'number' ? is_template : 0,
+        owner_id: userId !== 'unknown' ? userId : null,
       });
     } catch (e: any) {
       if (e?.code === 'SQLITE_CONSTRAINT_PRIMARYKEY' || /UNIQUE/i.test(e?.message ?? '')) {
@@ -225,7 +228,6 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
       throw e;
     }
     const after = sqlite.getScadaView(view_id)!;
-    const userId = getUserId(req);
     sqlite.writeAuditLog({
       user_id: userId,
       action: 'scada_view_create',
@@ -240,7 +242,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
     res.status(201).json({ success: true, view_id });
   });
 
-  apiRouter.put('/scada/views/:viewId', requireRole('admin', 'engineer'), (req, res) => {
+  apiRouter.put('/scada/views/:viewId', enforceViewAccess(sqlite), requireRole('admin', 'engineer'), (req, res) => {
     const { viewId } = req.params;
     const old = sqlite.getScadaView(viewId);
     if (!old) return res.status(404).json({ error: 'view_not_found' });
@@ -287,7 +289,7 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
     res.json({ success: true, updated_at: r.updated_at });
   });
 
-  apiRouter.delete('/scada/views/:viewId', requireRole('admin', 'engineer'), (req, res) => {
+  apiRouter.delete('/scada/views/:viewId', enforceViewAccess(sqlite), requireRole('admin', 'engineer'), (req, res) => {
     const { viewId } = req.params;
     const old = sqlite.getScadaView(viewId);
     if (!old) return res.status(404).json({ error: 'view_not_found' });
@@ -302,6 +304,59 @@ export function registerScadaRoutes(apiRouter: Router, deps: ScadaRoutesDeps): v
       ip_address: getIp(req),
     });
     broadcast('scada:view:deleted', { view_id: viewId, project_id: old.project_id });
+    res.json({ success: true });
+  });
+
+  // ─── ACL 管理 (SP-FX-24) ─────────────────────────────────
+
+  // PATCH /scada/views/:viewId/acl — owner OR admin 更新 ACL
+  apiRouter.patch('/scada/views/:viewId/acl', (req, res) => {
+    const user = (req as any).user as { user_id: string; role: string } | undefined;
+    if (!user) return res.status(401).json({ error: 'unauthorized' });
+    const { viewId } = req.params;
+    const view = sqlite.getScadaView(viewId);
+    if (!view) return res.status(404).json({ error: 'view_not_found' });
+    // 仅 owner 或 admin 可修改 ACL
+    const isAdmin = user.role === 'admin';
+    const isOwner = view.owner_id === user.user_id;
+    if (!isAdmin && !isOwner) return res.status(403).json({ error: 'forbidden' });
+    const { users, roles } = req.body ?? {};
+    if (!Array.isArray(users) || !Array.isArray(roles)) {
+      return res.status(400).json({ error: 'users_and_roles_must_be_arrays' });
+    }
+    sqlite.updateScadaViewAcl(viewId, { users, roles });
+    const userId = getUserId(req);
+    sqlite.writeAuditLog({
+      user_id: userId,
+      action: 'scada_view_acl_update',
+      target_type: 'scada_view',
+      target_id: viewId,
+      new_value: JSON.stringify({ users, roles }),
+      ip_address: getIp(req),
+    });
+    res.json({ success: true });
+  });
+
+  // PATCH /scada/views/:viewId/owner — admin only 转让 owner
+  apiRouter.patch('/scada/views/:viewId/owner', requireRole('admin'), (req, res) => {
+    const { viewId } = req.params;
+    const view = sqlite.getScadaView(viewId);
+    if (!view) return res.status(404).json({ error: 'view_not_found' });
+    const { new_owner_id } = req.body ?? {};
+    if (isBlankString(new_owner_id)) {
+      return res.status(400).json({ error: 'new_owner_id_required' });
+    }
+    sqlite.updateScadaViewOwner(viewId, new_owner_id);
+    const userId = getUserId(req);
+    sqlite.writeAuditLog({
+      user_id: userId,
+      action: 'scada_view_owner_transfer',
+      target_type: 'scada_view',
+      target_id: viewId,
+      old_value: JSON.stringify({ owner_id: view.owner_id }),
+      new_value: JSON.stringify({ owner_id: new_owner_id }),
+      ip_address: getIp(req),
+    });
     res.json({ success: true });
   });
 

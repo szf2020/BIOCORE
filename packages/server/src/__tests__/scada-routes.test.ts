@@ -114,7 +114,7 @@ describe('SCADA REST API — view CRUD + conflict', () => {
     const items = { t1: { type: 'tank', x: 0, y: 0, w: 100, h: 100, props: {} } };
     await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
       .send({ view_id: 'v1', name: 'V', items }).expect(201);
-    const g = await request(app).get('/api/v1/scada/views/v1').expect(200);
+    const g = await request(app).get('/api/v1/scada/views/v1').set('X-Test-Role', 'engineer').expect(200);
     expect(g.body.items).toEqual(items);
   });
 
@@ -174,12 +174,12 @@ describe('SCADA REST API — view CRUD + conflict', () => {
       .send({ view_id: 'v1', name: 'V' }).expect(201);
     const d = await request(app).delete('/api/v1/scada/projects/p1').set('X-Test-Role', 'engineer').expect(200);
     expect(d.body.deleted_views).toBe(1);
-    await request(app).get('/api/v1/scada/views/v1').expect(404);
+    await request(app).get('/api/v1/scada/views/v1').set('X-Test-Role', 'admin').expect(404);
   });
 
   it('missing view → 404', async () => {
     const { app } = makeApp();
-    await request(app).get('/api/v1/scada/views/missing').expect(404);
+    await request(app).get('/api/v1/scada/views/missing').set('X-Test-Role', 'admin').expect(404);
   });
 
   it('PUT view with empty body → 400 empty_patch', async () => {
@@ -199,7 +199,7 @@ describe('SCADA REST API — view CRUD + conflict', () => {
       .send({ project_id: 'p1', name: 'P' }).expect(201);
     await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
       .send({ view_id: 'v1', name: 'V' }).expect(201);
-    const cur = (await request(app).get('/api/v1/scada/views/v1').expect(200)).body.updated_at;
+    const cur = (await request(app).get('/api/v1/scada/views/v1').set('X-Test-Role', 'engineer').expect(200)).body.updated_at;
     const r = await request(app).put('/api/v1/scada/views/v1').set('X-Test-Role', 'engineer')
       .send({ expected_updated_at: cur });
     expect(r.status).toBe(400);
@@ -484,7 +484,7 @@ describe('SCADA REST API — templates', () => {
     const r = await request(app).post('/api/v1/scada/projects/p1/views').set('X-Test-Role', 'engineer')
       .send({ view_id: 'clone1', name: 'Clone', clone_from: 't1' });
     expect(r.status).toBe(201);
-    const got = await request(app).get('/api/v1/scada/views/clone1').expect(200);
+    const got = await request(app).get('/api/v1/scada/views/clone1').set('X-Test-Role', 'admin').expect(200);
     expect((got.body.items as any).items).toHaveLength(1);
     expect((got.body.items as any).items[0].id).toBe('a');
     expect(got.body.is_template).toBe(0);
@@ -519,7 +519,7 @@ describe('SCADA REST API — templates', () => {
       .send({ view_id: 'v2', name: 'V2' }).expect(201);
     await request(app).put('/api/v1/scada/views/v2').set('X-Test-Role', 'engineer')
       .send({ is_template: 1 }).expect(200);
-    const got = await request(app).get('/api/v1/scada/views/v2').expect(200);
+    const got = await request(app).get('/api/v1/scada/views/v2').set('X-Test-Role', 'engineer').expect(200);
     expect(got.body.is_template).toBe(1);
   });
 
