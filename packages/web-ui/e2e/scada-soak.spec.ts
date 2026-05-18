@@ -120,7 +120,12 @@ test.describe('SP-FX-18 — Performance soak: 1000 widget / 1min', () => {
   test('soak: render<5s, FPS≥30, mem<50MB, 0 errors, canvas mounted', async ({
     page,
     request,
-  }) => {
+  }, testInfo) => {
+    // SP-FX-32: soak test 仅在 --project=soak 下运行 (需要 90s timeout).
+    // chromium project 默认 30s, 会在 page.evaluate FPS 测量时超时.
+    // 运行命令: pnpm playwright test --project=soak
+    test.skip(testInfo.project.name !== 'soak', 'soak test 仅在 --project=soak 运行 (需 90s timeout); 用 chromium project 时自动跳过');
+
     // 全程收集 console errors
     const consoleErrors: string[] = [];
     page.on('console', (msg) => {
