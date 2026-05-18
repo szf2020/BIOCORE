@@ -71,4 +71,26 @@ describe('useViewList', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.total).toBe(1);
   });
+
+  it('passes q param when provided (SP-FX-21)', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ project_id: 'p1', name: 'P', views: [], total: 0 }),
+    });
+    const { result } = renderHook(() => useViewList('p1', { page: 1, size: 12, q: 'demo' }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const calledUrl: string = fetchMock.mock.calls[0][0];
+    expect(calledUrl).toContain('q=demo');
+  });
+
+  it('passes sort param when non-default (SP-FX-21)', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ project_id: 'p1', name: 'P', views: [], total: 0 }),
+    });
+    const { result } = renderHook(() => useViewList('p1', { page: 1, size: 12, sort: 'name_desc' }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const calledUrl: string = fetchMock.mock.calls[0][0];
+    expect(calledUrl).toContain('sort=name_desc');
+  });
 });

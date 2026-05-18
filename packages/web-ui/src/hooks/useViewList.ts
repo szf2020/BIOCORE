@@ -16,6 +16,10 @@ export interface ViewMeta {
 export interface UseViewListOpts {
   page?: number;
   size?: number;
+  /** SP-FX-21: name 模糊搜索关键词 */
+  q?: string;
+  /** SP-FX-21: 排序方式 (name_asc | name_desc | mtime_asc | mtime_desc) */
+  sort?: string;
 }
 
 export interface UseViewListResult {
@@ -34,6 +38,8 @@ export function useViewList(projectId: string, opts?: UseViewListOpts): UseViewL
 
   const page = opts?.page ?? 1;
   const size = opts?.size ?? 0;
+  const q = opts?.q ?? '';
+  const sort = opts?.sort ?? '';
 
   const refetch = useCallback(async () => {
     if (!projectId) { setLoading(false); return; }
@@ -44,6 +50,9 @@ export function useViewList(projectId: string, opts?: UseViewListOpts): UseViewL
       if (size > 0) {
         const offset = (page - 1) * size;
         url += `?limit=${size}&offset=${offset}`;
+        // SP-FX-21: 追加 q / sort 参数
+        if (q) url += `&q=${encodeURIComponent(q)}`;
+        if (sort) url += `&sort=${encodeURIComponent(sort)}`;
       }
       const r = await fetch(url, { credentials: 'include' });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -58,7 +67,7 @@ export function useViewList(projectId: string, opts?: UseViewListOpts): UseViewL
     } finally {
       setLoading(false);
     }
-  }, [projectId, page, size]);
+  }, [projectId, page, size, q, sort]);
 
   useEffect(() => { void refetch(); }, [refetch]);
 
