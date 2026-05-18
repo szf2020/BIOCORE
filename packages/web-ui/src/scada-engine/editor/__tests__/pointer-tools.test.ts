@@ -25,6 +25,9 @@ let onBoxSelectMove: ReturnType<typeof vi.fn>;
 let getCurrentRotate: ReturnType<typeof vi.fn<any[], any>>;
 let onRotated: ReturnType<typeof vi.fn>;
 let onRotateMove: ReturnType<typeof vi.fn>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let getCurrentRotates: ReturnType<typeof vi.fn<any[], any>>;
+let onGroupRotated: ReturnType<typeof vi.fn>;
 let tools: PointerTools;
 
 beforeEach(() => {
@@ -45,6 +48,8 @@ beforeEach(() => {
   getCurrentRotate = vi.fn(() => undefined);
   onRotated = vi.fn();
   onRotateMove = vi.fn();
+  getCurrentRotates = vi.fn(() => new Map<string, number>());
+  onGroupRotated = vi.fn();
   tools = new PointerTools(canvas as any, handles as any, {
     getWidgetAt: (pt) => getWidgetAt(pt) as { id: string; box: Box } | null,
     onWidgetTransformed: (id, box) => onWidgetTransformed(id, box),
@@ -60,6 +65,8 @@ beforeEach(() => {
     getCurrentRotate: (id) => getCurrentRotate(id) as number | undefined,
     onRotated: (id, rotate) => onRotated(id, rotate),
     onRotateMove: (deg, pivot) => onRotateMove(deg, pivot),
+    getCurrentRotates: (ids) => getCurrentRotates(ids) as Map<string, number>,
+    onGroupRotated: (entries) => onGroupRotated(entries),
   });
 });
 
@@ -453,5 +460,211 @@ describe('PointerTools drag-rotate (SP-FX-3b.2.2)', () => {
       expect(tools.state.startBox).toEqual(box);
       expect(tools.state.startRotate).toBe(15);
     }
+  });
+});
+
+describe('PointerTools group-rotate + group-resize (SP-FX-3b.2.3)', () => {
+  it('mousedown rotate handle in bbox mode (selectedIds≥2): state=group-rotate with pivot=bbox center', () => {
+    handles.hitTest.mockReturnValue('rotate');
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    getWidgetBoxes.mockReturnValue(new Map<string, Box>([
+      ['w1', { x: 0, y: 0, w: 100, h: 60 }],
+      ['w2', { x: 200, y: 100, w: 100, h: 60 }],
+    ]));
+    getCurrentRotates.mockReturnValue(new Map<string, number>([['w1', 10], ['w2', 20]]));
+    tools.handleMouseDown(md(150, 60));
+    expect(tools.state.kind).toBe('group-rotate');
+    if (tools.state.kind === 'group-rotate') {
+      expect(tools.state.pivot).toEqual({ x: 150, y: 80 });
+      expect(tools.state.widgetIds).toEqual(['w1', 'w2']);
+      expect(tools.state.startRotates.get('w1')).toBe(10);
+      expect(tools.state.startRotates.get('w2')).toBe(20);
+    }
+  });
+
+  it('mousedown SE corner in bbox mode: state=group-resize with anchor at NW', () => {
+    handles.hitTest.mockReturnValue('se');
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    getWidgetBoxes.mockReturnValue(new Map<string, Box>([
+      ['w1', { x: 0, y: 0, w: 100, h: 60 }],
+      ['w2', { x: 200, y: 100, w: 100, h: 60 }],
+    ]));
+    tools.handleMouseDown(md(300, 160));
+    expect(tools.state.kind).toBe('group-resize');
+    if (tools.state.kind === 'group-resize') {
+      expect(tools.state.handle).toBe('se');
+      expect(tools.state.anchor).toEqual({ x: 0, y: 0 });
+    }
+  });
+
+  it('mousedown N edge in bbox mode: state=group-resize with anchor at S edge midpoint', () => {
+    handles.hitTest.mockReturnValue('n');
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    getWidgetBoxes.mockReturnValue(new Map<string, Box>([
+      ['w1', { x: 0, y: 0, w: 100, h: 60 }],
+      ['w2', { x: 200, y: 100, w: 100, h: 60 }],
+    ]));
+    tools.handleMouseDown(md(150, 0));
+    expect(tools.state.kind).toBe('group-resize');
+    if (tools.state.kind === 'group-resize') {
+      expect(tools.state.handle).toBe('n');
+      expect(tools.state.anchor).toEqual({ x: 150, y: 160 });
+    }
+  });
+
+  it('group-rotate mousemove 90°: canvas.upsertWidget fires per widget with rotated coords + rotate field', () => {
+    handles.hitTest.mockReturnValue('rotate');
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    getWidgetBoxes.mockReturnValue(new Map<string, Box>([
+      ['w1', { x: 100, y: 100, w: 20, h: 20 }],
+      ['w2', { x: 200, y: 200, w: 20, h: 20 }],
+    ]));
+    getCurrentRotates.mockReturnValue(new Map<string, number>());
+    tools.handleMouseDown(md(220, 160));
+    canvas.upsertWidget.mockClear();
+    tools.handleMouseMove(mm(160, 220));
+    expect(canvas.upsertWidget.mock.calls.length).toBeGreaterThanOrEqual(2);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w1Call = canvas.upsertWidget.mock.calls.find((c: any[]) => c[0].id === 'w1');
+    expect(w1Call).toBeDefined();
+    expect(w1Call![0].rotate).toBeCloseTo(90, 0);
+  });
+
+  it('group-rotate mouseup commits via onGroupRotated with N entries', () => {
+    handles.hitTest.mockReturnValue('rotate');
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    getWidgetBoxes.mockReturnValue(new Map<string, Box>([
+      ['w1', { x: 100, y: 100, w: 20, h: 20 }],
+      ['w2', { x: 200, y: 200, w: 20, h: 20 }],
+    ]));
+    getCurrentRotates.mockReturnValue(new Map<string, number>());
+    tools.handleMouseDown(md(220, 160));
+    tools.handleMouseUp(mu(160, 220));
+    expect(onGroupRotated).toHaveBeenCalledTimes(1);
+    const entries = onGroupRotated.mock.calls[0][0];
+    expect(entries.length).toBe(2);
+    expect(entries[0].newRotate).toBeCloseTo(90, 0);
+    expect(tools.state.kind).toBe('idle');
+  });
+
+  it('cancel() in group-rotate restores all widget startBoxes + startRotates; no onGroupRotated', () => {
+    handles.hitTest.mockReturnValue('rotate');
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    const startBoxes = new Map<string, Box>([
+      ['w1', { x: 100, y: 100, w: 20, h: 20 }],
+      ['w2', { x: 200, y: 200, w: 20, h: 20 }],
+    ]);
+    getWidgetBoxes.mockReturnValue(startBoxes);
+    getCurrentRotates.mockReturnValue(new Map<string, number>([['w1', 15], ['w2', 0]]));
+    tools.handleMouseDown(md(220, 160));
+    tools.handleMouseMove(mm(160, 220));
+    canvas.upsertWidget.mockClear();
+    tools.cancel();
+    expect(onGroupRotated).not.toHaveBeenCalled();
+    expect(canvas.upsertWidget.mock.calls.length).toBe(2);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w1Restore = canvas.upsertWidget.mock.calls.find((c: any[]) => c[0].id === 'w1');
+    expect(w1Restore![0].x).toBe(100);
+    expect(w1Restore![0].rotate).toBe(15);
+    expect(tools.state.kind).toBe('idle');
+  });
+
+  it('group-resize SE corner drag 2x: all widgets x/y/w/h scale from NW anchor', () => {
+    handles.hitTest.mockReturnValue('se');
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    getWidgetBoxes.mockReturnValue(new Map<string, Box>([
+      ['w1', { x: 10, y: 10, w: 30, h: 20 }],
+      ['w2', { x: 60, y: 50, w: 30, h: 20 }],
+    ]));
+    tools.handleMouseDown(md(90, 70));
+    canvas.upsertWidget.mockClear();
+    tools.handleMouseMove(mm(170, 130));
+    expect(canvas.upsertWidget.mock.calls.length).toBeGreaterThanOrEqual(2);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w1Call = canvas.upsertWidget.mock.calls.find((c: any[]) => c[0].id === 'w1');
+    expect(w1Call![0].x).toBe(10);
+    expect(w1Call![0].y).toBe(10);
+    expect(w1Call![0].w).toBe(60);
+    expect(w1Call![0].h).toBe(40);
+  });
+
+  it('group-resize Shift on NE corner: aspect-lock applied (uniform scale = min)', () => {
+    handles.hitTest.mockReturnValue('ne');
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    getWidgetBoxes.mockReturnValue(new Map<string, Box>([
+      ['w1', { x: 0, y: 0, w: 100, h: 100 }],
+      ['w2', { x: 110, y: 110, w: 10, h: 10 }],
+    ]));
+    const shiftDown = new MouseEvent('mousedown', { clientX: 120, clientY: 0, shiftKey: true, bubbles: true });
+    tools.handleMouseDown(shiftDown);
+    canvas.upsertWidget.mockClear();
+    const shiftMove = new MouseEvent('mousemove', { clientX: 320, clientY: -60, shiftKey: true, bubbles: true });
+    tools.handleMouseMove(shiftMove);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w1Call = canvas.upsertWidget.mock.calls.find((c: any[]) => c[0].id === 'w1');
+    expect(w1Call![0].w).toBe(150);
+    expect(w1Call![0].h).toBe(150);
+  });
+
+  it('group-resize any widget projects w<5: handleMouseMove no canvas.upsertWidget call', () => {
+    handles.hitTest.mockReturnValue('e');
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    getWidgetBoxes.mockReturnValue(new Map<string, Box>([
+      ['w1', { x: 0, y: 0, w: 100, h: 60 }],
+      ['w2', { x: 110, y: 10, w: 50, h: 40 }],
+    ]));
+    tools.handleMouseDown(md(160, 30));
+    canvas.upsertWidget.mockClear();
+    tools.handleMouseMove(mm(2, 30));
+    expect(canvas.upsertWidget).not.toHaveBeenCalled();
+  });
+
+  it('cancel() in group-resize restores all widget startBoxes; no commit', () => {
+    handles.hitTest.mockReturnValue('se');
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    const startBoxes = new Map<string, Box>([
+      ['w1', { x: 10, y: 10, w: 30, h: 20 }],
+      ['w2', { x: 60, y: 50, w: 30, h: 20 }],
+    ]);
+    getWidgetBoxes.mockReturnValue(startBoxes);
+    tools.handleMouseDown(md(90, 70));
+    tools.handleMouseMove(mm(170, 130));
+    canvas.upsertWidget.mockClear();
+    tools.cancel();
+    expect(onWidgetTransformedBatch).not.toHaveBeenCalled();
+    expect(canvas.upsertWidget.mock.calls.length).toBe(2);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w1Restore = canvas.upsertWidget.mock.calls.find((c: any[]) => c[0].id === 'w1');
+    expect(w1Restore![0].x).toBe(10);
+    expect(w1Restore![0].w).toBe(30);
+    expect(tools.state.kind).toBe('idle');
+  });
+
+  it('group-rotate mousedown→mouseup with no movement: onGroupRotated NOT called', () => {
+    handles.hitTest.mockReturnValue('rotate');
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    getWidgetBoxes.mockReturnValue(new Map<string, Box>([
+      ['w1', { x: 100, y: 100, w: 20, h: 20 }],
+      ['w2', { x: 200, y: 200, w: 20, h: 20 }],
+    ]));
+    getCurrentRotates.mockReturnValue(new Map<string, number>());
+    tools.handleMouseDown(md(220, 160));
+    tools.handleMouseUp(mu(220, 160));
+    expect(onGroupRotated).not.toHaveBeenCalled();
+    expect(tools.state.kind).toBe('idle');
+  });
+
+  it('group-resize mouseup when applyGroupResize returns null (min-size freeze): onWidgetTransformedBatch NOT called', () => {
+    handles.hitTest.mockReturnValue('e');
+    getSelectedIds.mockReturnValue(['w1', 'w2']);
+    getWidgetBoxes.mockReturnValue(new Map<string, Box>([
+      ['w1', { x: 0, y: 0, w: 100, h: 60 }],
+      ['w2', { x: 110, y: 10, w: 50, h: 40 }],
+    ]));
+    tools.handleMouseDown(md(160, 30));
+    onWidgetTransformedBatch.mockClear();
+    tools.handleMouseUp(mu(2, 30));
+    expect(onWidgetTransformedBatch).not.toHaveBeenCalled();
+    expect(tools.state.kind).toBe('idle');
   });
 });

@@ -5,7 +5,7 @@
 
 import type { CanvasController } from './canvas-svg';
 import type { TransformHandles } from './transform-handles';
-import { clientToSvg, applyHandleDrag, snap, computeBbox, intersectsBox, applyRotate, type HandleId, type Box, type Point } from './geometry';
+import { clientToSvg, applyHandleDrag, snap, computeBbox, intersectsBox, applyRotate, applyMultiRotate, applyGroupResize, anchorOf, type HandleId, type Box, type Point } from './geometry';
 import { useEditorStore } from '../services/editor-store';
 
 export type PointerState =
@@ -13,7 +13,9 @@ export type PointerState =
   | { kind: 'drag-body'; widgetIds: string[]; startPt: Point; startBoxes: Map<string, Box> }
   | { kind: 'drag-handle'; widgetId: string; handle: HandleId; startPt: Point; startBox: Box }
   | { kind: 'box-select'; startPt: Point; currentPt: Point; shiftKey: boolean }
-  | { kind: 'drag-rotate'; widgetId: string; startPt: Point; pivot: Point; startBox: Box; startRotate: number };
+  | { kind: 'drag-rotate'; widgetId: string; startPt: Point; pivot: Point; startBox: Box; startRotate: number }
+  | { kind: 'group-rotate'; widgetIds: string[]; startPt: Point; pivot: Point; startBboxes: Map<string, Box>; startRotates: Map<string, number>; startBbox: Box }
+  | { kind: 'group-resize'; widgetIds: string[]; handle: HandleId; startPt: Point; startBbox: Box; startBoxes: Map<string, Box>; anchor: Point };
 
 export interface PointerToolsCallbacks {
   getWidgetAt: (pt: Point) => { id: string; box: Box } | null;
@@ -30,6 +32,8 @@ export interface PointerToolsCallbacks {
   getCurrentRotate: (id: string) => number | undefined;
   onRotated: (id: string, rotate: number) => void;
   onRotateMove: (deg: number | null, pivot: Point | null) => void;
+  getCurrentRotates: (ids: string[]) => Map<string, number>;
+  onGroupRotated: (entries: { id: string; newBox: Box; newRotate: number }[]) => void;
 }
 
 const CLICK_DRAG_THRESHOLD = 3;
@@ -74,18 +78,51 @@ export class PointerTools {
       // Handles can be outside widget bbox (e.g. rotate is 20px above top edge),
       // so resolve widget from the current single-selection rather than getWidgetAt(pt).
       const selectedIds = this.cb.getSelectedIds();
+
+      // Multi-select bbox mode (SP-FX-3b.2.3)
+      if (selectedIds.length >= 2) {
+        const startBoxes = this.cb.getWidgetBoxes(selectedIds);
+        if (startBoxes.size === 0) return;
+        const startBbox = computeBbox(Array.from(startBoxes.values()));
+        if (handle === 'rotate') {
+          const pivot: Point = { x: startBbox.x + startBbox.w / 2, y: startBbox.y + startBbox.h / 2 };
+          const startRotates = this.cb.getCurrentRotates(selectedIds);
+          this.state = {
+            kind: 'group-rotate',
+            widgetIds: selectedIds,
+            startPt: pt,
+            pivot,
+            startBboxes: startBoxes,
+            startRotates,
+            startBbox,
+          };
+        } else {
+          const anchor = anchorOf(handle, startBbox);
+          this.state = {
+            kind: 'group-resize',
+            widgetIds: selectedIds,
+            handle,
+            startPt: pt,
+            startBbox,
+            startBoxes,
+            anchor,
+          };
+        }
+        return;
+      }
+
+      // Single-select (existing 3b.2.2 path)
       if (selectedIds.length !== 1) return;
       const widgetId = selectedIds[0];
       const boxes = this.cb.getWidgetBoxes([widgetId]);
       const box = boxes.get(widgetId);
       if (!box) return;
-      const widgetHit = { id: widgetId, box };
       if (handle === 'rotate') {
-        const pivot: Point = { x: widgetHit.box.x + widgetHit.box.w / 2, y: widgetHit.box.y + widgetHit.box.h / 2 };
-        const startRotate = this.cb.getCurrentRotate(widgetHit.id) ?? 0;
-        this.state = { kind: 'drag-rotate', widgetId: widgetHit.id, startPt: pt, pivot, startBox: widgetHit.box, startRotate };
+        const pivot: Point = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
+        const startRotate = this.cb.getCurrentRotate(widgetId) ?? 0;
+        this.state = { kind: 'drag-rotate', widgetId, startPt: pt, pivot, startBox: box, startRotate };
       } else {
-        this.state = { kind: 'drag-handle', widgetId: widgetHit.id, handle, startPt: pt, startBox: widgetHit.box };
+        this.state = { kind: 'drag-handle', widgetId, handle, startPt: pt, startBox: box };
       }
       return;
     }
@@ -115,6 +152,40 @@ export class PointerTools {
     if (this.destroyed) return;
     if (this.state.kind === 'idle') return;
     const pt = this.clientPt(e);
+
+    if (this.state.kind === 'group-rotate') {
+      const snapStep = e.shiftKey ? 15 : 0;
+      const result = applyMultiRotate(this.state.startBboxes, this.state.startRotates, this.state.pivot, this.state.startPt, pt, snapStep);
+      for (const [id, { box, rotate }] of result) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.canvas.upsertWidget({ id, type: 'svg-ext-value' as any, property: {} as any, x: box.x, y: box.y, w: box.w, h: box.h, rotate } as any);
+      }
+      const newBbox = computeBbox(Array.from(result.values()).map((v) => v.box));
+      this.handles.updateBox(newBbox);
+      const a0 = Math.atan2(this.state.startPt.y - this.state.pivot.y, this.state.startPt.x - this.state.pivot.x);
+      const a1 = Math.atan2(pt.y - this.state.pivot.y, pt.x - this.state.pivot.x);
+      let delta = (a1 - a0) * 180 / Math.PI;
+      if (snapStep > 0) delta = Math.round(delta / snapStep) * snapStep;
+      delta = ((delta % 360) + 360) % 360;
+      this.cb.onRotateMove(delta, this.state.pivot);
+      return;
+    }
+
+    if (this.state.kind === 'group-resize') {
+      const dx = pt.x - this.state.startPt.x;
+      const dy = pt.y - this.state.startPt.y;
+      const newBbox = applyHandleDrag(this.state.startBbox, this.state.handle, dx, dy);
+      const aspectLock = e.shiftKey;
+      const result = applyGroupResize(this.state.startBbox, newBbox, this.state.handle, this.state.startBoxes, aspectLock);
+      if (!result) return;
+      for (const [id, box] of result.widgets) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.canvas.upsertWidget({ id, type: 'svg-ext-value' as any, property: {} as any, x: box.x, y: box.y, w: box.w, h: box.h } as any);
+      }
+      this.handles.updateBox(result.bbox);
+      this.cb.onDragVisualUpdate(result.bbox);
+      return;
+    }
 
     if (this.state.kind === 'drag-rotate') {
       const snapStep = e.shiftKey ? 15 : 0;
@@ -175,6 +246,43 @@ export class PointerTools {
     if (this.destroyed) return;
     if (this.state.kind === 'idle') return;
     const pt = this.clientPt(e);
+
+    if (this.state.kind === 'group-rotate') {
+      const snapStep = e.shiftKey ? 15 : 0;
+      const result = applyMultiRotate(this.state.startBboxes, this.state.startRotates, this.state.pivot, this.state.startPt, pt, snapStep);
+      let changed = false;
+      const entries: { id: string; newBox: Box; newRotate: number }[] = [];
+      for (const [id, { box, rotate }] of result) {
+        const sb = this.state.startBboxes.get(id)!;
+        const sr = this.state.startRotates.get(id) ?? 0;
+        if (box.x !== sb.x || box.y !== sb.y || rotate !== sr) changed = true;
+        entries.push({ id, newBox: box, newRotate: rotate });
+      }
+      if (changed) this.cb.onGroupRotated(entries);
+      this.state = { kind: 'idle' };
+      this.cb.onRotateMove(null, null);
+      return;
+    }
+
+    if (this.state.kind === 'group-resize') {
+      const dx = pt.x - this.state.startPt.x;
+      const dy = pt.y - this.state.startPt.y;
+      if (dx === 0 && dy === 0) {
+        this.state = { kind: 'idle' };
+        this.cb.onDragVisualUpdate(null);
+        return;
+      }
+      const newBbox = applyHandleDrag(this.state.startBbox, this.state.handle, dx, dy);
+      const aspectLock = e.shiftKey;
+      const result = applyGroupResize(this.state.startBbox, newBbox, this.state.handle, this.state.startBoxes, aspectLock);
+      if (result) {
+        const entries = Array.from(result.widgets, ([id, box]) => ({ id, newBox: box }));
+        this.cb.onWidgetTransformedBatch(entries);
+      }
+      this.state = { kind: 'idle' };
+      this.cb.onDragVisualUpdate(null);
+      return;
+    }
 
     if (this.state.kind === 'drag-rotate') {
       const snapStep = e.shiftKey ? 15 : 0;
@@ -250,6 +358,29 @@ export class PointerTools {
       const widgetId = this.state.widgetId;
       this.canvas.upsertWidget({ id: widgetId, type: 'svg-ext-value' as any, property: {} as any, x: startBox.x, y: startBox.y, w: startBox.w, h: startBox.h });
       this.handles.updateBox(startBox);
+      this.state = { kind: 'idle' };
+      this.cb.onDragVisualUpdate(null);
+      return;
+    }
+
+    if (this.state.kind === 'group-rotate') {
+      for (const [id, sb] of this.state.startBboxes) {
+        const sr = this.state.startRotates.get(id) ?? 0;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.canvas.upsertWidget({ id, type: 'svg-ext-value' as any, property: {} as any, x: sb.x, y: sb.y, w: sb.w, h: sb.h, rotate: sr } as any);
+      }
+      this.handles.updateBox(this.state.startBbox);
+      this.state = { kind: 'idle' };
+      this.cb.onRotateMove(null, null);
+      return;
+    }
+
+    if (this.state.kind === 'group-resize') {
+      for (const [id, sb] of this.state.startBoxes) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.canvas.upsertWidget({ id, type: 'svg-ext-value' as any, property: {} as any, x: sb.x, y: sb.y, w: sb.w, h: sb.h } as any);
+      }
+      this.handles.updateBox(this.state.startBbox);
       this.state = { kind: 'idle' };
       this.cb.onDragVisualUpdate(null);
       return;
