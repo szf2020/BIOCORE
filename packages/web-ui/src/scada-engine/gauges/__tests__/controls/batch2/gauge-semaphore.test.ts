@@ -1,5 +1,6 @@
 // SP-FX-6.2 T1: RED tests for GaugeSemaphore — run BEFORE impl exists.
-import { describe, it, expect, vi } from 'vitest';
+// SP-FX-14: added blink/hide/show action tests
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { GaugeContext } from '../../../gauge-base';
 import type { FuxaWidget } from '../../../../models';
 
@@ -90,5 +91,88 @@ describe('GaugeSemaphore', () => {
     gauge.onUnmount();
     expect(ctx.parentGroup.childElementCount).toBe(0);
     expect(() => gauge.onUnmount()).not.toThrow();
+  });
+});
+
+// SP-FX-14: blink/hide/show action tests
+describe('GaugeSemaphore — blink/hide/show actions', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  const makeActionWidget = (actionType: 'blink' | 'hide' | 'show', rangeMatch: boolean) =>
+    makeWidget({
+      property: {
+        variableId: 'r1.AI-0',
+        ranges: [{ min: 0, max: 100, color: '#00ff00' }],
+        options: {
+          semaphoreActions: [
+            {
+              type: actionType,
+              variableId: 'r1.AI-0',
+              range: rangeMatch ? { min: 0, max: 100 } : { min: 200, max: 300 },
+            },
+          ],
+        },
+      },
+    } as Partial<FuxaWidget>);
+
+  it('hide action with range match: circleEl style.display = "none"', async () => {
+    const { gaugeSemaphoreMeta } = await import('../../../controls/batch2/gauge-semaphore');
+    const ctx = makeCtx();
+    const gauge = gaugeSemaphoreMeta.create();
+    gauge.onMount(makeActionWidget('hide', true), ctx);
+    gauge.onProcess({ value: 50, isStale: false });
+    const el = ctx.parentGroup.querySelector('[data-widget-id="w1"]') as SVGCircleElement | null;
+    expect(el).toBeTruthy();
+    expect((el as HTMLElement).style.display).toBe('none');
+  });
+
+  it('show action with range match: circleEl style.display = ""', async () => {
+    const { gaugeSemaphoreMeta } = await import('../../../controls/batch2/gauge-semaphore');
+    const ctx = makeCtx();
+    const gauge = gaugeSemaphoreMeta.create();
+    gauge.onMount(makeActionWidget('show', true), ctx);
+    gauge.onProcess({ value: 50, isStale: false });
+    const el = ctx.parentGroup.querySelector('[data-widget-id="w1"]') as SVGCircleElement | null;
+    expect(el).toBeTruthy();
+    expect((el as HTMLElement).style.display).toBe('');
+  });
+
+  it('blink action with range match: blinkInterval starts and toggles visibility', async () => {
+    const { gaugeSemaphoreMeta } = await import('../../../controls/batch2/gauge-semaphore');
+    const ctx = makeCtx();
+    const gauge = gaugeSemaphoreMeta.create();
+    gauge.onMount(makeActionWidget('blink', true), ctx);
+    gauge.onProcess({ value: 50, isStale: false });
+    const el = ctx.parentGroup.querySelector('[data-widget-id="w1"]') as SVGCircleElement | null;
+    const visibilityBefore = (el as HTMLElement).style.visibility;
+    vi.advanceTimersByTime(500);
+    const visibilityAfter = (el as HTMLElement).style.visibility;
+    // visibility should have toggled
+    expect(visibilityAfter).not.toBe(visibilityBefore);
+  });
+
+  it('blink action with no range match: no interval, visibility unchanged', async () => {
+    const { gaugeSemaphoreMeta } = await import('../../../controls/batch2/gauge-semaphore');
+    const ctx = makeCtx();
+    const gauge = gaugeSemaphoreMeta.create();
+    gauge.onMount(makeActionWidget('blink', false), ctx);
+    gauge.onProcess({ value: 50, isStale: false });
+    const el = ctx.parentGroup.querySelector('[data-widget-id="w1"]') as SVGCircleElement | null;
+    const visibilityBefore = (el as HTMLElement).style.visibility;
+    vi.advanceTimersByTime(600);
+    const visibilityAfter = (el as HTMLElement).style.visibility;
+    expect(visibilityAfter).toBe(visibilityBefore);
+  });
+
+  it('onUnmount clears blinkInterval and does not throw', async () => {
+    const { gaugeSemaphoreMeta } = await import('../../../controls/batch2/gauge-semaphore');
+    const ctx = makeCtx();
+    const gauge = gaugeSemaphoreMeta.create();
+    gauge.onMount(makeActionWidget('blink', true), ctx);
+    gauge.onProcess({ value: 50, isStale: false });
+    expect(() => gauge.onUnmount()).not.toThrow();
+    // interval cleared — advancing time should not throw
+    vi.advanceTimersByTime(1000);
   });
 });

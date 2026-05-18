@@ -4,10 +4,19 @@
 import type { GaugeBase, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } from '../../gauge-base';
 import type { FuxaWidget } from '../../../models';
 
+interface SemaphoreAction {
+  type: 'blink' | 'hide' | 'show';
+  variableId?: string;
+  range?: { min: number; max: number };
+}
+
 interface SemaphoreProperty {
   variableId?: string;
   ranges?: Array<{ min: number; max: number; color: string }>;
   bitmask?: number;
+  options?: {
+    semaphoreActions?: SemaphoreAction[];
+  };
 }
 
 const STALE_COLOR = '#9ca3af';
@@ -15,6 +24,7 @@ const STALE_COLOR = '#9ca3af';
 class GaugeSemaphore implements GaugeBase {
   private circleEl: SVGCircleElement | null = null;
   private widget!: FuxaWidget;
+  private blinkInterval: ReturnType<typeof setInterval> | null = null;
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -35,8 +45,48 @@ class GaugeSemaphore implements GaugeBase {
   }
 
   onUnmount(): void {
+    this.stopBlink();
     this.circleEl?.remove();
     this.circleEl = null;
+  }
+
+  private stopBlink(): void {
+    if (this.blinkInterval !== null) {
+      clearInterval(this.blinkInterval);
+      this.blinkInterval = null;
+    }
+  }
+
+  private evalSemaphoreActions(numVal: number): void {
+    if (!this.circleEl) return;
+    const prop = this.widget.property as SemaphoreProperty;
+    const actions = prop.options?.semaphoreActions ?? [];
+    if (actions.length === 0) return;
+
+    // 先清除 blink（每次 process 重新评估）
+    this.stopBlink();
+
+    for (const action of actions) {
+      const matched = action.range
+        ? numVal >= action.range.min && numVal <= action.range.max
+        : false;
+
+      if (!matched) continue;
+
+      if (action.type === 'hide') {
+        (this.circleEl as unknown as HTMLElement).style.display = 'none';
+      } else if (action.type === 'show') {
+        (this.circleEl as unknown as HTMLElement).style.display = '';
+      } else if (action.type === 'blink') {
+        let visible = true;
+        this.blinkInterval = setInterval(() => {
+          if (!this.circleEl) return;
+          visible = !visible;
+          (this.circleEl as unknown as HTMLElement).style.visibility = visible ? 'visible' : 'hidden';
+        }, 500);
+      }
+      break; // 只执行第一个匹配的 action
+    }
   }
 
   onProcess(value: GaugeValue): void {
@@ -55,6 +105,9 @@ class GaugeSemaphore implements GaugeBase {
     }
     const matched = (prop.ranges ?? []).find(r => r.min <= numVal && r.max >= numVal);
     this.circleEl.setAttribute('fill', matched?.color ?? STALE_COLOR);
+
+    // 评估 blink/hide/show actions
+    this.evalSemaphoreActions(numVal);
   }
 
   onPropertyChange(change: GaugePropChange): void {
