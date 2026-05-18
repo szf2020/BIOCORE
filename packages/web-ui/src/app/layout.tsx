@@ -2,6 +2,8 @@ import './globals.css';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthProvider } from '@/hooks/useAuth';
 import { LocaleProvider } from '@/i18n/useLocale';
+import { InstallPrompt } from '@/components/layout/InstallPrompt';
+import { UpdateToast } from '@/components/layout/UpdateToast';
 
 export const metadata = { title: 'BIOCore MES -- 发酵控制平台', description: '实验室R&D发酵智能控制系统' };
 
@@ -23,6 +25,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-CN">
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {/* SP-FX-44: PWA manifest */}
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#0F766E" />
       </head>
       <body className="antialiased">
         <LocaleProvider>
@@ -30,6 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AppLayout>{children}</AppLayout>
           </AuthProvider>
         </LocaleProvider>
+        {/* SP-FX-44: PWA install prompt + update notification */}
+        <InstallPrompt />
+        <UpdateToast />
       </body>
     </html>
   );

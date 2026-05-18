@@ -28,7 +28,7 @@ function makeMockRegistration(opts: {
 
 function makeMockServiceWorker() {
   return {
-    state: 'installed',
+    state: 'installed' as ServiceWorkerState,
     postMessage: vi.fn(),
     addEventListener: vi.fn(),
   };
