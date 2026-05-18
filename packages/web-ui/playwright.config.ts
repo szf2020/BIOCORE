@@ -12,7 +12,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // KI-2 SP-FX-34: testIgnore 防止 soak spec 在 chromium 30s timeout 下运行
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: ['**/scada-soak.spec.ts'] },
     // SP-FX-18: soak project — 90s timeout for 1-minute FPS/memory measurement
     {
       name: 'soak',
