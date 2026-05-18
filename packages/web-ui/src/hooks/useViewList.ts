@@ -10,38 +10,57 @@ export interface ViewMeta {
   is_template: number;
   is_svg?: number;
   updated_at?: string;
+  svgcontent?: string | null;
+}
+
+export interface UseViewListOpts {
+  page?: number;
+  size?: number;
 }
 
 export interface UseViewListResult {
   views: ViewMeta[];
+  total: number;
   loading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
 }
 
-export function useViewList(projectId: string): UseViewListResult {
+export function useViewList(projectId: string, opts?: UseViewListOpts): UseViewListResult {
   const [views, setViews] = useState<ViewMeta[]>([]);
+  const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+
+  const page = opts?.page ?? 1;
+  const size = opts?.size ?? 0;
 
   const refetch = useCallback(async () => {
     if (!projectId) { setLoading(false); return; }
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch(`/api/v1/scada/projects/${encodeURIComponent(projectId)}`, { credentials: 'include' });
+      let url = `/api/v1/scada/projects/${encodeURIComponent(projectId)}`;
+      if (size > 0) {
+        const offset = (page - 1) * size;
+        url += `?limit=${size}&offset=${offset}`;
+      }
+      const r = await fetch(url, { credentials: 'include' });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const body = await r.json();
-      setViews((body.views ?? []) as ViewMeta[]);
+      const fetched = (body.views ?? []) as ViewMeta[];
+      setViews(fetched);
+      setTotal(typeof body.total === 'number' ? body.total : fetched.length);
     } catch (e) {
       setError(e instanceof Error ? e : new Error(String(e)));
       setViews([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, page, size]);
 
   useEffect(() => { void refetch(); }, [refetch]);
 
-  return { views, loading, error, refetch };
+  return { views, total, loading, error, refetch };
 }

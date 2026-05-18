@@ -1,9 +1,9 @@
 'use client';
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ViewListPanel } from '@/components/scada/pages/ViewListPanel';
 
-export default function Page() {
+function PageInner() {
   const search = useSearchParams();
   const projectId = search?.get('project') ?? 'default';
 
@@ -18,5 +18,13 @@ export default function Page() {
       </div>
       <ViewListPanel projectId={projectId} />
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div style={{ padding: 16 }}>加载中…</div>}>
+      <PageInner />
+    </Suspense>
   );
 }

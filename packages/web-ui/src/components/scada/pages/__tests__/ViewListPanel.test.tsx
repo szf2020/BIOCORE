@@ -3,6 +3,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ViewListPanel } from '../ViewListPanel';
 
+const mockReplace = vi.fn();
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => ({ get: (_k: string) => null }),
+  useRouter: () => ({ replace: mockReplace }),
+}));
+
 const mockViews = [
   { view_id: 'v1', name: 'Plant Overview', is_template: 0, display_order: 0 },
   { view_id: 'v2', name: 'Reactor 3', is_template: 0, display_order: 1 },
@@ -23,7 +29,7 @@ const mocks = {
 };
 
 vi.mock('@/hooks/useViewList', () => ({
-  useViewList: () => ({ views: mocks.views, loading: mocks.loading, error: mocks.error, refetch: mocks.refetch }),
+  useViewList: () => ({ views: mocks.views, total: mocks.views.length, loading: mocks.loading, error: mocks.error, refetch: mocks.refetch }),
 }));
 vi.mock('@/hooks/useTemplates', () => ({
   useTemplates: () => ({ templates: mocks.templates, loading: false, error: null, refetch: vi.fn() }),
@@ -44,6 +50,8 @@ beforeEach(() => {
   mocks.rename.mockClear();
   mocks.delete.mockClear();
   mocks.reorder.mockClear();
+  // Default to list mode for existing tests that use [data-testid="view-row"]
+  localStorage.setItem('biocore.scada.viewListMode', 'list');
 });
 
 describe('ViewListPanel', () => {
@@ -155,6 +163,38 @@ describe('ViewListPanel', () => {
         fireEvent.keyDown(input, { key: 'Enter' });
       });
       expect(screen.queryByTestId('mutation-error-banner')).toBeNull();
+    });
+  });
+
+  describe('view mode toggle', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('defaults to cards mode', () => {
+      render(<ViewListPanel projectId="p1" />);
+      expect(screen.getByTestId('view-mode-cards')).toBeTruthy();
+    });
+
+    it('restores list mode from localStorage', () => {
+      localStorage.setItem('biocore.scada.viewListMode', 'list');
+      render(<ViewListPanel projectId="p1" />);
+      expect(screen.getAllByTestId('view-row').length).toBeGreaterThan(0);
+    });
+
+    it('clicking list toggle switches to list mode', async () => {
+      render(<ViewListPanel projectId="p1" />);
+      await act(async () => { fireEvent.click(screen.getByTestId('view-mode-list')); });
+      expect(screen.getAllByTestId('view-row').length).toBeGreaterThan(0);
+      expect(localStorage.getItem('biocore.scada.viewListMode')).toBe('list');
+    });
+
+    it('clicking cards toggle from list switches to cards mode', async () => {
+      localStorage.setItem('biocore.scada.viewListMode', 'list');
+      render(<ViewListPanel projectId="p1" />);
+      await act(async () => { fireEvent.click(screen.getByTestId('view-mode-cards')); });
+      expect(screen.getAllByTestId('view-card').length).toBeGreaterThan(0);
+      expect(localStorage.getItem('biocore.scada.viewListMode')).toBe('cards');
     });
   });
 });

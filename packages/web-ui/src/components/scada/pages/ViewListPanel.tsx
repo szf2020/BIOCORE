@@ -1,35 +1,85 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useViewList } from '@/hooks/useViewList';
 import { useViewMutations } from '@/hooks/useViewMutations';
 import type { ViewMeta } from '@/hooks/useViewList';
+import { ViewListToolbar, type ViewMode } from './ViewListToolbar';
+import { ViewCardGrid } from './ViewCardGrid';
+import { ViewListRows } from './ViewListRows';
+import { ViewPaginator } from './ViewPaginator';
+
+const LS_KEY = 'biocore.scada.viewListMode';
+const VALID_SIZES = [12, 24, 48];
 
 interface Props {
   projectId: string;
 }
 
 export function ViewListPanel({ projectId }: Props) {
-  const { views, loading, error, refetch } = useViewList(projectId);
-  const mut = useViewMutations(projectId);
-  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const page = Math.max(1, Number(searchParams?.get('page') ?? '1') || 1);
+  const sizeParam = Number(searchParams?.get('size') ?? '12');
+  const size = VALID_SIZES.includes(sizeParam) ? sizeParam : 12;
+
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem(LS_KEY) : null;
+      return (stored === 'list' || stored === 'cards') ? stored : 'cards';
+    } catch {
+      return 'cards';
+    }
+  });
+
   const [mutationError, setMutationError] = useState<string | null>(null);
+
+  const { views, total, loading, error, refetch } = useViewList(projectId, { page, size });
+  const mut = useViewMutations(projectId);
+
+  const handleModeChange = useCallback((mode: ViewMode) => {
+    setViewMode(mode);
+    try { localStorage.setItem(LS_KEY, mode); } catch { /* ignore */ }
+  }, []);
+
+  const setPage = useCallback((p: number) => {
+    const params = new URLSearchParams({ page: String(p), size: String(size) });
+    router.replace(`?${params.toString()}`);
+  }, [router, size]);
+
+  const setSize = useCallback((s: number) => {
+    const params = new URLSearchParams({ page: '1', size: String(s) });
+    router.replace(`?${params.toString()}`);
+  }, [router]);
+
+  // Sync localStorage viewMode on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(LS_KEY);
+      if (stored === 'list' || stored === 'cards') setViewMode(stored);
+    } catch { /* ignore */ }
+  }, []);
 
   if (loading) return <div style={{ padding: 8 }}>加载中…</div>;
   if (error) return <div style={{ padding: 8, color: '#dc2626' }}>错误: {error.message}</div>;
-  if (views.length === 0) return <div style={{ padding: 8, color: '#666' }}>没有画面</div>;
+  if (views.length === 0 && page === 1) return (
+    <>
+      <ViewListToolbar viewMode={viewMode} onModeChange={handleModeChange} pageSize={size} onPageSizeChange={setSize} />
+      <div style={{ padding: 8, color: '#666' }}>没有画面</div>
+    </>
+  );
 
   const sorted = [...views].sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name));
 
   async function handleRename(viewId: string, newName: string) {
-    if (newName.trim().length === 0) { setRenamingId(null); return; }
+    if (newName.trim().length === 0) return;
     try {
       await mut.rename(viewId, newName.trim());
       setMutationError(null);
-      setRenamingId(null);
       await refetch();
     } catch (err) {
       setMutationError(err instanceof Error ? err.message : String(err));
-      setRenamingId(null);
     }
   }
 
@@ -59,6 +109,26 @@ export function ViewListPanel({ projectId }: Props) {
     }
   }
 
+  async function handleDuplicate(viewId: string) {
+    const original = views.find(v => v.view_id === viewId);
+    const newName = original ? `${original.name} (副本)` : '副本';
+    try {
+      await mut.create(newName, { cloneFrom: viewId });
+      setMutationError(null);
+      await refetch();
+    } catch (err) {
+      setMutationError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  function handleOpen(viewId: string) {
+    window.location.href = `/scada2/${viewId}`;
+  }
+
+  function handleEdit(viewId: string) {
+    window.location.href = `/scada2/edit/${viewId}`;
+  }
+
   return (
     <>
       {mutationError && (
@@ -77,45 +147,27 @@ export function ViewListPanel({ projectId }: Props) {
           </button>
         </div>
       )}
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-      {sorted.map((v, i) => (
-        <li key={v.view_id} data-testid="view-row"
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 8, borderBottom: '1px solid #eee' }}>
-          {renamingId === v.view_id ? (
-            <RenameInput initial={v.name} onSubmit={(name) => handleRename(v.view_id, name)} onCancel={() => setRenamingId(null)} />
-          ) : (
-            <span style={{ flex: 1 }}>
-              {v.name}
-              {v.is_template ? <span style={{ marginLeft: 6, fontSize: 10, color: '#3b82f6' }}>[模板]</span> : null}
-            </span>
-          )}
-          <button data-testid="move-up-btn" onClick={() => handleMove(v.view_id, -1)} disabled={i === 0}>↑</button>
-          <button data-testid="move-down-btn" onClick={() => handleMove(v.view_id, 1)} disabled={i === sorted.length - 1}>↓</button>
-          <button data-testid="rename-btn" onClick={() => setRenamingId(v.view_id)}>重命名</button>
-          <button data-testid="delete-btn" onClick={() => handleDelete(v)}>删除</button>
-          <a href={`/scada2/${v.view_id}`}>查看</a>
-          <a href={`/scada2/edit/${v.view_id}`}>编辑</a>
-        </li>
-      ))}
-    </ul>
-    </>
-  );
-}
 
-function RenameInput({ initial, onSubmit, onCancel }: { initial: string; onSubmit: (name: string) => void; onCancel: () => void }) {
-  const [val, setVal] = useState(initial);
-  return (
-    <input
-      data-testid="rename-input"
-      value={val}
-      autoFocus
-      onChange={(e) => setVal(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') onSubmit(val);
-        else if (e.key === 'Escape') onCancel();
-      }}
-      onBlur={() => onSubmit(val)}
-      style={{ flex: 1 }}
-    />
+      <ViewListToolbar viewMode={viewMode} onModeChange={handleModeChange} pageSize={size} onPageSizeChange={setSize} />
+
+      {viewMode === 'cards' ? (
+        <ViewCardGrid
+          views={sorted}
+          onEdit={handleEdit}
+          onOpen={handleOpen}
+          onDuplicate={handleDuplicate}
+          onDelete={handleDelete}
+        />
+      ) : (
+        <ViewListRows
+          sorted={sorted}
+          onRename={handleRename}
+          onDelete={handleDelete}
+          onMove={handleMove}
+        />
+      )}
+
+      <ViewPaginator page={page} total={total} size={size} onPageChange={setPage} onSizeChange={setSize} />
+    </>
   );
 }
