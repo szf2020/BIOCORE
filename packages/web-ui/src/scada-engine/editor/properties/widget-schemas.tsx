@@ -110,6 +110,90 @@ export const htmlTableSchema: WidgetPropertySchema = {
   },
 };
 
+// SP-FX-6.2: Batch 2 schemas
+
+export const gaugeSemaphoreSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'bitmask', label: '位掩码', type: 'number', min: 0 },
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+  renderCustomSection: (property, onChange) => {
+    const ranges = Array.isArray((property as any).ranges)
+      ? ((property as any).ranges as Array<{ min: number; max: number; color: string }>)
+      : [];
+    return (
+      <div data-section="semaphore-ranges">
+        <p className="text-xs text-zinc-400 mb-1">颜色范围 ({ranges.length} 条)</p>
+        <button
+          className="text-xs text-blue-400 underline"
+          onClick={() => {
+            onChange({ ranges: [...ranges, { min: 0, max: 1, color: '#22c55e' }] });
+          }}
+        >
+          + 添加范围
+        </button>
+      </div>
+    );
+  },
+};
+
+export const gaugeProgressSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'min', label: '最小值', type: 'number' },
+    { key: 'max', label: '最大值', type: 'number' },
+    { key: 'barColor', label: '进度条颜色', type: 'color' },
+    { key: 'showLabel', label: '显示数值标签', type: 'boolean' },
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+};
+
+export const htmlSwitchSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'onValue', label: 'ON 值', type: 'text', placeholder: '1' },
+    { key: 'offValue', label: 'OFF 值', type: 'text', placeholder: '0' },
+    { key: 'onColor', label: 'ON 颜色', type: 'color' },
+    { key: 'offColor', label: 'OFF 颜色', type: 'color' },
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+};
+
+export const sliderSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'min', label: '最小值', type: 'number' },
+    { key: 'max', label: '最大值', type: 'number' },
+    { key: 'step', label: '步进值', type: 'number', min: 0 },
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+};
+
+export const pipeSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'pipeColor', label: '管道颜色', type: 'color' },
+    { key: 'contentColor', label: '内容颜色', type: 'color' },
+    { key: 'x', label: 'X', type: 'number', geometric: true },
+    { key: 'y', label: 'Y', type: 'number', geometric: true },
+    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
+    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
+  ],
+};
+
 /** Lookup map: widget.type → WidgetPropertySchema */
 export const WIDGET_SCHEMAS: Record<string, WidgetPropertySchema> = {
   'svg-ext-value': valueSchema,
@@ -117,4 +201,9 @@ export const WIDGET_SCHEMAS: Record<string, WidgetPropertySchema> = {
   'svg-ext-html_input': htmlInputSchema,
   'svg-ext-html_chart': htmlChartSchema,
   'svg-ext-own_ctrl-table': htmlTableSchema,
+  'svg-ext-gauge_semaphore': gaugeSemaphoreSchema,
+  'svg-ext-gauge_progress': gaugeProgressSchema,
+  'svg-ext-html_switch': htmlSwitchSchema,
+  'svg-ext-html_slider': sliderSchema,
+  'svg-ext-pipe': pipeSchema,
 };
