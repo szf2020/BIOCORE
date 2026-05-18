@@ -11,10 +11,10 @@ test.describe('SCADA Runtime view-v2', () => {
       .isVisible()
       .catch(() => false);
     if (!isLoggedIn) {
-      await page.fill('[name="username"]', process.env.E2E_USER ?? 'admin');
-      await page.fill('[name="password"]', process.env.E2E_PASS ?? 'admin');
-      await page.click('[type="submit"]');
-      await page.waitForURL(/dashboard/);
+      await page.locator('input[type="text"], input[autocomplete="username"]').first().fill(process.env.E2E_USER ?? 'admin');
+      await page.locator('input[type="password"]').fill(process.env.E2E_PASS ?? 'admin');
+      await page.getByRole('button', { name: /登录|sign in/i }).click();
+      await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 10_000 });
     }
   });
 
