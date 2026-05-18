@@ -301,3 +301,79 @@ describe('fuxa-views-routes POST /:id/duplicate (SP-FX-1)', () => {
     expect(res.body.field).toBe('newId');
   });
 });
+
+// SP-FX-48.2 bridge: GET + PUT /fuxa-views/:id falls back to scada_views
+describe('fuxa-views-routes scada_views bridge (SP-FX-48.2)', () => {
+  function makeAppWithScada(): { app: express.Express; sqlite: SQLiteService } {
+    const db = new Database(':memory:');
+    const migrationFiles = [
+      '001-baseline-schema.sql',
+      '028-scada-schema.sql',
+      '029-scada-dispatch.sql',
+      '030-scada-view-svg-flag.sql',
+      '031-scada-view-template-flag.sql',
+      '033-fuxa-views.sql',
+      '035-view-acl.sql',
+      '036-scada-views-svgcontent.sql',
+    ];
+    for (const m of migrationFiles) {
+      db.exec(readFileSync(join(__dirname, '../../migrations', m), 'utf8'));
+    }
+    db.exec(`PRAGMA foreign_keys = ON`);
+    const sqlite = new SQLiteService(db);
+    const app = express();
+    app.use(express.json({ limit: '10mb' }));
+    app.use((req, _res, next) => { (req as any).user = { user_id: 'test-user' }; next(); });
+    const router = express.Router();
+    registerFuxaViewsRoutes(router, { sqlite });
+    app.use('/api/v1', router);
+    return { app, sqlite };
+  }
+
+  function seedScada(sqlite: SQLiteService): void {
+    sqlite.createScadaProject({ project_id: 'default', name: 'Default' });
+    sqlite.createScadaView({
+      view_id: 'v_scada_only', project_id: 'default', name: 'Scada Only',
+      width: 1280, height: 720, items: { w1: { type: 'gauge' } },
+    });
+  }
+
+  it('GET bridges scada_views row when fuxa_views miss', async () => {
+    const { app, sqlite } = makeAppWithScada();
+    seedScada(sqlite);
+    const res = await request(app).get('/api/v1/fuxa-views/v_scada_only');
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe('v_scada_only');
+    expect(res.body.name).toBe('Scada Only');
+    const payloadObj = JSON.parse(res.body.payload);
+    expect(payloadObj.items.w1.type).toBe('gauge');
+    expect(payloadObj.schemaVersion).toBe(1);
+  });
+
+  it('GET still returns 404 when neither table has the id', async () => {
+    const { app } = makeAppWithScada();
+    const res = await request(app).get('/api/v1/fuxa-views/nope');
+    expect(res.status).toBe(404);
+  });
+
+  it('PUT writes through to scada_views when id only exists there', async () => {
+    const { app, sqlite } = makeAppWithScada();
+    seedScada(sqlite);
+    const body = {
+      name: 'Renamed', type: 'svg' as const, width: 800, height: 600,
+      payload: {
+        id: 'v_scada_only', name: 'Renamed', type: 'svg' as const,
+        svgcontent: '<svg/>', width: 800, height: 600,
+        items: { w2: { type: 'label' } }, schemaVersion: 1,
+      },
+    };
+    const res = await request(app)
+      .put('/api/v1/fuxa-views/v_scada_only')
+      .set('If-Match', '1')
+      .send(body);
+    expect(res.status).toBe(200);
+    const after = sqlite.getScadaView('v_scada_only')!;
+    expect(after.name).toBe('Renamed');
+    expect(after.items.w2.type).toBe('label');
+  });
+});

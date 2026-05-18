@@ -74,6 +74,39 @@ function getUserId(req: Request): string {
   return (req as any).user?.user_id || 'unknown';
 }
 
+// SP-FX-48.2: bridge — surface scada_views rows through fuxa-views GET/PUT so
+// the editor can open + save views created via the cards-view (scada/views API).
+// Two tables exist for historical reasons (SP-FX-1 created fuxa_views, SP-FX-13
+// added scada_views for cards/list/paginator). IDs are disjoint; this bridge
+// makes them addressable from a single endpoint.
+function scadaRowToFuxaShape(scada: any) {
+  const fuxaPayload = {
+    id: scada.view_id,
+    name: scada.name,
+    type: scada.is_svg ? 'svg' : 'cards',
+    svgcontent: '',
+    width: scada.width ?? 1280,
+    height: scada.height ?? 720,
+    items: scada.items ?? {},
+    schemaVersion: 1,
+  };
+  return {
+    id: scada.view_id,
+    name: scada.name,
+    type: scada.is_svg ? 'svg' : 'cards',
+    payload: JSON.stringify(fuxaPayload),
+    width: scada.width ?? 1280,
+    height: scada.height ?? 720,
+    parent_view_id: null,
+    is_template: scada.is_template ?? 0,
+    version: 1,
+    created_at: scada.updated_at,
+    updated_at: scada.updated_at,
+    created_by: scada.owner_id ?? 'unknown',
+    updated_by: scada.owner_id ?? 'unknown',
+  };
+}
+
 export function registerFuxaViewsRoutes(apiRouter: Router, deps: FuxaViewsRoutesDeps): void {
   const { sqlite } = deps;
 
@@ -90,8 +123,13 @@ export function registerFuxaViewsRoutes(apiRouter: Router, deps: FuxaViewsRoutes
   // ─── Get by id ───────────────────────────────────────────
   apiRouter.get('/fuxa-views/:id', (req, res) => {
     const row = sqlite.getFuxaView(req.params.id);
-    if (!row) return res.status(404).json({ error: '视图不存在' });
-    res.json(row);
+    if (row) return res.json(row);
+    // SP-FX-48.2 bridge: fall back to scada_views table (tolerate missing table)
+    try {
+      const scada = sqlite.getScadaView(req.params.id);
+      if (scada) return res.json(scadaRowToFuxaShape(scada));
+    } catch { /* scada_views table absent in test envs — ignore */ }
+    return res.status(404).json({ error: '视图不存在' });
   });
 
   // ─── Create ──────────────────────────────────────────────
@@ -134,7 +172,27 @@ export function registerFuxaViewsRoutes(apiRouter: Router, deps: FuxaViewsRoutes
     const parsed = UpdateBodySchema.safeParse(req.body);
     if (!parsed.success) return zodFail(res, parsed.error);
     const existing = sqlite.getFuxaView(req.params.id);
-    if (!existing) return res.status(404).json({ error: '视图不存在' });
+    if (!existing) {
+      // SP-FX-48.2 bridge: write through to scada_views if the ID lives there
+      try {
+        const scada = sqlite.getScadaView(req.params.id);
+        if (scada) {
+          const parsedBody = parsed.data;
+          const r = sqlite.updateScadaView(req.params.id, {
+            name: parsedBody.name,
+            width: parsedBody.width,
+            height: parsedBody.height,
+            items: parsedBody.payload.items,
+          });
+          if ('ok' in r && r.ok) {
+            const after = sqlite.getScadaView(req.params.id)!;
+            return res.json(scadaRowToFuxaShape(after));
+          }
+          return res.status(500).json({ error: 'scada_view update failed' });
+        }
+      } catch { /* scada_views table absent — fall through to 404 */ }
+      return res.status(404).json({ error: '视图不存在' });
+    }
     const v = parsed.data;
     const force = req.query.force === 'true';
     const ok = sqlite.updateFuxaView(req.params.id, {
