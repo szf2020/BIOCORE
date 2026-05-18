@@ -197,6 +197,63 @@ describe('CanvasController.upsertWidget rotate regression (SP-FX-3b.2.3)', () =>
   });
 });
 
+describe('canvas-svg shape widget', () => {
+  it('creates <image> with href/x/y/width/height/preserveAspectRatio', () => {
+    const host = document.createElement('div');
+    const c = new CanvasController(host, { width: 800, height: 600 });
+    c.upsertWidget({
+      id: 'w1',
+      type: 'shape',
+      property: { src: '/scada-shapes/tank1.svg', shapeId: 'tank1' },
+      x: 100, y: 50, w: 80, h: 80,
+    } as any);
+    const img = host.querySelector('image[data-widget-id="w1"]') as SVGImageElement;
+    expect(img).toBeTruthy();
+    expect(img.getAttribute('href') || img.getAttribute('xlink:href')).toBe('/scada-shapes/tank1.svg');
+    expect(img.getAttribute('x')).toBe('100');
+    expect(img.getAttribute('y')).toBe('50');
+    expect(img.getAttribute('width')).toBe('80');
+    expect(img.getAttribute('height')).toBe('80');
+    expect(img.getAttribute('preserveAspectRatio')).toBe('xMidYMid meet');
+  });
+
+  it('resize updates width and height attrs in place', () => {
+    const host = document.createElement('div');
+    const c = new CanvasController(host, { width: 800, height: 600 });
+    c.upsertWidget({
+      id: 'w1', type: 'shape',
+      property: { src: '/scada-shapes/tank1.svg', shapeId: 'tank1' },
+      x: 0, y: 0, w: 80, h: 80,
+    } as any);
+    c.upsertWidget({
+      id: 'w1', type: 'shape',
+      property: { src: '/scada-shapes/tank1.svg', shapeId: 'tank1' },
+      x: 0, y: 0, w: 160, h: 120,
+    } as any);
+    const img = host.querySelector('image[data-widget-id="w1"]') as SVGImageElement;
+    expect(img.getAttribute('width')).toBe('160');
+    expect(img.getAttribute('height')).toBe('120');
+    expect(host.querySelectorAll('image[data-widget-id="w1"]').length).toBe(1);
+  });
+
+  it('src change updates href attr in place', () => {
+    const host = document.createElement('div');
+    const c = new CanvasController(host, { width: 800, height: 600 });
+    c.upsertWidget({
+      id: 'w1', type: 'shape',
+      property: { src: '/scada-shapes/tank1.svg', shapeId: 'tank1' },
+      x: 0, y: 0, w: 80, h: 80,
+    } as any);
+    c.upsertWidget({
+      id: 'w1', type: 'shape',
+      property: { src: '/scada-shapes/valve.svg', shapeId: 'valve' },
+      x: 0, y: 0, w: 80, h: 80,
+    } as any);
+    const img = host.querySelector('image[data-widget-id="w1"]') as SVGImageElement;
+    expect(img.getAttribute('href') || img.getAttribute('xlink:href')).toBe('/scada-shapes/valve.svg');
+  });
+});
+
 describe('CanvasController.upsertWidget type rendering (SP-FX-4)', () => {
   it('type="rect" renders <rect> element with x/y/w/h attrs', () => {
     const c = new CanvasController(container, { width: 800, height: 600 });
