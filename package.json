@@ -18,7 +18,8 @@
     "healthcheck": "node scripts/healthcheck.mjs",
     "backup": "bash scripts/backup-db.sh",
     "backup:restore": "bash scripts/restore-db.sh",
-    "seed:demo": "sqlite3 packages/server/data/biocore.db < scripts/seed-demo.sql"
+    "seed:demo": "sqlite3 packages/server/data/biocore.db < scripts/seed-demo.sql",
+    "gen:shape-catalog": "node_modules/.pnpm/node_modules/.bin/tsx scripts/gen-shape-catalog.ts"
   },
   "engines": {
     "node": ">=20.0.0",
