@@ -80,10 +80,22 @@ describe('TransformHandles (SP-FX-3a)', () => {
     expect(h.hitTest({ x: 100, y: 100 })).toBe('nw');
   });
 
-  it('hitTest returns rotate handle at widget center (SP-FX-48.25)', () => {
+  it('hitTest returns rotate handle above bbox top center (SP-FX-48.27)', () => {
     const h = new TransformHandles(canvas.overlayLayer);
     h.show({ x: 100, y: 100, w: 80, h: 60 });
-    expect(h.hitTest({ x: 140, y: 130 })).toBe('rotate');
+    // top center = (140, 100); rotate offset = 20 → (140, 80)
+    expect(h.hitTest({ x: 140, y: 80 })).toBe('rotate');
+  });
+
+  it('rotate handle renders as <circle> with green fill (SP-FX-48.27)', () => {
+    const h = new TransformHandles(canvas.overlayLayer);
+    h.show({ x: 100, y: 100, w: 80, h: 60 });
+    const rotateEl = container.querySelector('[data-handle="rotate"]') as SVGCircleElement;
+    expect(rotateEl).not.toBeNull();
+    expect(rotateEl.tagName.toLowerCase()).toBe('circle');
+    expect(rotateEl.getAttribute('fill')).toBe('#22c55e');
+    expect(Number(rotateEl.getAttribute('cx'))).toBe(140);
+    expect(Number(rotateEl.getAttribute('cy'))).toBe(80);
   });
 
   it('hitTest returns null when hidden', () => {
@@ -196,16 +208,17 @@ describe('TransformHandles.showBbox SP-FX-3b.2.3 group-resize handles', () => {
     expect(Math.abs(seY + 4 - 180)).toBeLessThanOrEqual(5);
   });
 
-  it('showBbox positions rotate handle at bbox center (SP-FX-48.25)', () => {
+  it('showBbox positions rotate handle above bbox top center (SP-FX-48.27)', () => {
     const h = new TransformHandles(canvas.overlayLayer);
     h.showBbox({ x: 100, y: 100, w: 200, h: 80 });
-    const rotate = container.querySelector('[data-handle="rotate"]') as SVGRectElement;
+    const rotate = container.querySelector('[data-handle="rotate"]') as SVGCircleElement;
     expect(rotate).not.toBeNull();
-    const rX = Number(rotate.getAttribute('x'));
-    const rY = Number(rotate.getAttribute('y'));
-    // bbox center = (200, 140); handle center = position - HANDLE_HALF(4)
-    expect(Math.abs(rX + 4 - 200)).toBeLessThanOrEqual(5);
-    expect(Math.abs(rY + 4 - 140)).toBeLessThanOrEqual(5);
+    expect(rotate.tagName.toLowerCase()).toBe('circle');
+    const cx = Number(rotate.getAttribute('cx'));
+    const cy = Number(rotate.getAttribute('cy'));
+    // bbox top center = (200, 100); rotate floats 20px above → (200, 80)
+    expect(Math.abs(cx - 200)).toBeLessThanOrEqual(5);
+    expect(Math.abs(cy - 80)).toBeLessThanOrEqual(5);
   });
 
   it('showBbox→show(single) transition: corners hidden, handles re-layout to single widget', () => {
@@ -223,10 +236,11 @@ describe('TransformHandles.showBbox SP-FX-3b.2.3 group-resize handles', () => {
     expect(Math.abs(seY + 4 - 110)).toBeLessThanOrEqual(5);
   });
 
-  it('showBbox hitTest finds rotate handle at bbox center (SP-FX-48.25)', () => {
+  it('showBbox hitTest finds rotate handle above bbox top center (SP-FX-48.27)', () => {
     const h = new TransformHandles(canvas.overlayLayer);
     h.showBbox({ x: 100, y: 100, w: 200, h: 80 });
-    const hit = h.hitTest({ x: 200, y: 140 });
+    // bbox top center = (200, 100); rotate floats 20px above → (200, 80)
+    const hit = h.hitTest({ x: 200, y: 80 });
     expect(hit).toBe('rotate');
   });
 });

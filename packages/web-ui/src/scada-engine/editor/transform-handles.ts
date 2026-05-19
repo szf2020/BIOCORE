@@ -1,11 +1,20 @@
 // SP-FX-3a: selection overlay — 8 resize handles + 1 rotate placeholder + dashed
 // selection rect. Owned by an svg.js group passed in by the canvas.
 
-import type { G, Rect, Line } from '@svgdotjs/svg.js';
+import type { G, Rect, Circle, Line } from '@svgdotjs/svg.js';
 import { handlePositions, handleFromPoint, type Box, type HandleId } from './geometry';
 
 const HANDLE_SIZE = 8;
 const HANDLE_HALF = HANDLE_SIZE / 2;
+
+// SP-FX-48.27: rotate handle = circle (FUXA fidelity), diameter slightly larger
+// than resize handles so the green dot reads clearly above the bbox.
+const ROTATE_HANDLE_DIAMETER = 10;
+const ROTATE_HANDLE_RADIUS = ROTATE_HANDLE_DIAMETER / 2;
+
+const RESIZE_HANDLE_IDS: Exclude<HandleId, 'rotate'>[] = [
+  'nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se',
+];
 
 const BBOX_CORNER_SIZE = 4;
 const BBOX_DASH = '6 3';
@@ -13,7 +22,8 @@ const BBOX_DASH = '6 3';
 export class TransformHandles {
   private group: G;
   private selectionRect: Rect;
-  private handles: Record<HandleId, Rect>;
+  private handles: Record<Exclude<HandleId, 'rotate'>, Rect>;
+  private rotateHandle: Circle;
   private bboxCorners: Rect[];
   private currentBox: Box | null = null;
   private currentRotate: number | undefined = undefined;
@@ -27,14 +37,18 @@ export class TransformHandles {
       .attr('fill', 'none')
       .attr('stroke', '#3b82f6')
       .attr('stroke-dasharray', '4 2');
-    this.handles = {} as Record<HandleId, Rect>;
-    for (const id of ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se', 'rotate'] as HandleId[]) {
+    this.handles = {} as Record<Exclude<HandleId, 'rotate'>, Rect>;
+    for (const id of RESIZE_HANDLE_IDS) {
       const r = this.group.rect(HANDLE_SIZE, HANDLE_SIZE)
         .attr('data-handle', id)
-        .attr('fill', id === 'rotate' ? '#10b981' : '#ffffff')
+        .attr('fill', '#ffffff')
         .attr('stroke', '#3b82f6');
       this.handles[id] = r;
     }
+    this.rotateHandle = this.group.circle(ROTATE_HANDLE_DIAMETER)
+      .attr('data-handle', 'rotate')
+      .attr('fill', '#22c55e')
+      .attr('stroke', '#15803d');
     this.bboxCorners = [];
     for (let i = 0; i < 4; i++) {
       const r = this.group.rect(BBOX_CORNER_SIZE, BBOX_CORNER_SIZE)
@@ -53,9 +67,10 @@ export class TransformHandles {
     this.mode = 'single';
     this.group.attr('visibility', 'visible');
     this.selectionRect.attr('stroke-dasharray', '4 2');
-    for (const id of ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se', 'rotate'] as HandleId[]) {
+    for (const id of RESIZE_HANDLE_IDS) {
       this.handles[id].attr('visibility', 'visible');
     }
+    this.rotateHandle.attr('visibility', 'visible');
     for (const c of this.bboxCorners) c.attr('visibility', 'hidden');
     this.layout(box);
     this.applyRotation(box, rotate);
@@ -69,9 +84,10 @@ export class TransformHandles {
     this.group.attr('visibility', 'visible');
     this.selectionRect.attr('stroke-dasharray', BBOX_DASH);
     // SP-FX-3b.2.3: all 9 handles visible in bbox mode for group-resize / group-rotate
-    for (const id of ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se', 'rotate'] as HandleId[]) {
+    for (const id of RESIZE_HANDLE_IDS) {
       this.handles[id].attr('visibility', 'visible');
     }
+    this.rotateHandle.attr('visibility', 'visible');
     for (const c of this.bboxCorners) c.attr('visibility', 'visible');
     this.layoutBbox(bbox);
     // SP-FX-48.23: bbox mode = axis-aligned multi-selection; clear any prior
@@ -86,12 +102,14 @@ export class TransformHandles {
     this.bboxCorners[1].attr('x', bbox.x + bbox.w - half).attr('y', bbox.y - half);
     this.bboxCorners[2].attr('x', bbox.x - half).attr('y', bbox.y + bbox.h - half);
     this.bboxCorners[3].attr('x', bbox.x + bbox.w - half).attr('y', bbox.y + bbox.h - half);
-    // SP-FX-3b.2.3: position 9 handles (8 resize + rotate) at bbox edges
+    // SP-FX-3b.2.3: position 8 resize handles at bbox edges + rotate above
     const positions = handlePositions(bbox);
-    for (const id in positions) {
-      const p = positions[id as HandleId];
-      this.handles[id as HandleId].attr('x', p.x - HANDLE_HALF).attr('y', p.y - HANDLE_HALF);
+    for (const id of RESIZE_HANDLE_IDS) {
+      const p = positions[id];
+      this.handles[id].attr('x', p.x - HANDLE_HALF).attr('y', p.y - HANDLE_HALF);
     }
+    const rp = positions.rotate;
+    this.rotateHandle.attr('cx', rp.x).attr('cy', rp.y);
   }
 
   hide(): void {
@@ -104,9 +122,10 @@ export class TransformHandles {
     // SVG visibility="visible" on a child overrides "hidden" on its parent,
     // so the group attr alone won't conceal handles that were previously
     // shown via show()/showBbox(). Reset every individual handle + corner.
-    for (const id in this.handles) {
-      this.handles[id as HandleId].attr('visibility', 'hidden');
+    for (const id of RESIZE_HANDLE_IDS) {
+      this.handles[id].attr('visibility', 'hidden');
     }
+    this.rotateHandle.attr('visibility', 'hidden');
     for (const c of this.bboxCorners) c.attr('visibility', 'hidden');
   }
 
@@ -157,12 +176,17 @@ export class TransformHandles {
   private layout(box: Box): void {
     this.selectionRect.attr('x', box.x).attr('y', box.y).attr('width', box.w).attr('height', box.h);
     const positions = handlePositions(box);
-    for (const id in positions) {
-      const p = positions[id as HandleId];
-      this.handles[id as HandleId].attr('x', p.x - HANDLE_HALF).attr('y', p.y - HANDLE_HALF);
+    for (const id of RESIZE_HANDLE_IDS) {
+      const p = positions[id];
+      this.handles[id].attr('x', p.x - HANDLE_HALF).attr('y', p.y - HANDLE_HALF);
     }
+    const rp = positions.rotate;
+    this.rotateHandle.attr('cx', rp.x).attr('cy', rp.y);
   }
 }
+
+// Re-exported for tests / external geometry probes that care about handle dot size.
+export const ROTATE_HANDLE_RADIUS_PX = ROTATE_HANDLE_RADIUS;
 
 // SP-FX-3b.2.1: drag-time visual hint — H/V dashed lines through snapped corner.
 

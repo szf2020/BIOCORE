@@ -11,6 +11,10 @@ export type HandleId =
 
 const MIN_BOX = 5;
 
+// SP-FX-48.27: rotate handle floats above bbox top center (FUXA convention).
+// Distance from bbox top edge to handle center, in canvas units.
+const ROTATE_HANDLE_OFFSET = 20;
+
 export function clientToSvg(pt: Point, ctm: { a: number; b: number; c: number; d: number; e: number; f: number }): Point {
   return {
     x: ctm.a * pt.x + ctm.c * pt.y + ctm.e,
@@ -32,9 +36,8 @@ export function handlePositions(box: Box): Record<HandleId, Point> {
     sw: { x, y: y + h },
     s:  { x: x + w / 2, y: y + h },
     se: { x: x + w, y: y + h },
-    // SP-FX-48.25: rotate handle sits at widget center (not floating above
-    // top edge) — matches user's mental model of "rotation point".
-    rotate: { x: x + w / 2, y: y + h / 2 },
+    // SP-FX-48.27: rotate handle floats above bbox top center (FUXA fidelity).
+    rotate: { x: x + w / 2, y: y - ROTATE_HANDLE_OFFSET },
   };
 }
 

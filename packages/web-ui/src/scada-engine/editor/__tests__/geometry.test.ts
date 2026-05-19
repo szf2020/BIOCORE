@@ -41,9 +41,9 @@ describe('geometry.handlePositions (SP-FX-3a)', () => {
     expect(p.sw).toEqual({ x: 0, y: 80 });
     expect(p.s).toEqual({ x: 50, y: 80 });
     expect(p.se).toEqual({ x: 100, y: 80 });
-    // SP-FX-48.25: rotate handle now sits at widget center (was above top edge)
+    // SP-FX-48.27: rotate handle floats above bbox top center (FUXA fidelity)
     expect(p.rotate.x).toBe(50);
-    expect(p.rotate.y).toBe(40);
+    expect(p.rotate.y).toBe(-20);
   });
 
   it('handles offset box', () => {
@@ -82,9 +82,13 @@ describe('geometry.handleFromPoint (SP-FX-3a)', () => {
   });
 
   it('returns null for point well inside body (no handle near)', () => {
-    // SP-FX-48.25: rotate handle now at widget center (140,130). Probe an
-    // off-center body point instead.
-    expect(handleFromPoint(box, { x: 120, y: 115 })).toBeNull();
+    // SP-FX-48.27: rotate handle floats above bbox top center; widget body is clear.
+    expect(handleFromPoint(box, { x: 140, y: 130 })).toBeNull();
+  });
+
+  it('detects rotate handle above bbox top center (SP-FX-48.27)', () => {
+    // box top center = (140, 100); rotate offset = 20 → (140, 80)
+    expect(handleFromPoint(box, { x: 140, y: 80 })).toBe('rotate');
   });
 
   it('returns null for points far outside', () => {
