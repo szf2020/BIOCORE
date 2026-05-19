@@ -181,10 +181,10 @@ export const GAUGE_PALETTE_ITEMS: GaugePaletteItem[] = [
 ];
 
 export const PALETTE_CATEGORY_LABELS: Record<PaletteCategory, string> = {
-  general: 'General',
-  animation: 'Animation',
-  shape: 'Shape',
-  procEng: 'Proc. Eng.',
+  general: '通用',
+  animation: '动画',
+  shape: '外观',
+  procEng: '工艺设备',
 };
 
 export function makeGaugeWidget(

@@ -108,7 +108,7 @@ export function Palette(): JSX.Element {
   return (
     <div data-panel="palette" className="w-[148px] flex-shrink-0 flex flex-col border-r border-zinc-700 bg-zinc-900 overflow-auto">
       <details open data-section="basic" className="border-b border-zinc-700">
-        <summary className="px-2 py-1 text-xs uppercase tracking-wider text-zinc-400 cursor-pointer hover:text-zinc-200">Basic</summary>
+        <summary className="px-2 py-1 text-xs uppercase tracking-wider text-zinc-400 cursor-pointer hover:text-zinc-200">基础</summary>
         <ul className="p-2 grid grid-cols-3 gap-1">
           {PALETTE_ITEMS.map((item) => {
             const Icon = BASIC_ICONS[item.id] ?? HelpCircle;
@@ -128,8 +128,6 @@ export function Palette(): JSX.Element {
               </li>
             );
           })}
-        </ul>
-        <ul className="px-2 pb-2 grid grid-cols-3 gap-1 border-t border-zinc-800 pt-2" data-section="basic-tools">
           {DRAW_TOOL_ITEMS.map((tool) => {
             const Icon = DRAW_ICONS[tool.id] ?? HelpCircle;
             const active = drawTool === tool.id;
