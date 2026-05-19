@@ -32,6 +32,7 @@ export function EditorCanvas() {
   const snapEnabled = useEditorStore((s) => s.snapEnabled);
   const gridSize = useEditorStore((s) => s.gridSize);
   const drawTool = useEditorStore((s) => s.drawTool);
+  const armedPlacement = useEditorStore((s) => s.armedPlacement);
 
   // (a) Lifecycle: mount/unmount on currentView.id change
   useEffect(() => {
@@ -379,6 +380,49 @@ export function EditorCanvas() {
     refs.current.canvas.setBackgroundColor(bg);
   }, [currentView?.background_color, (currentView as any)?.profile?.bkcolor]);
 
+  // SP-FX-48.26: armed-placement click handler — when a palette item is armed,
+  // intercept the next canvas mousedown, spawn the widget at the click point,
+  // and clear arm. Capture-phase + stopImmediatePropagation blocks pointer-tools
+  // from running selection logic on the same click.
+  useEffect(() => {
+    if (!refs.current || !armedPlacement) return;
+    const canvas = refs.current.canvas;
+    const svg = canvas.getSvgRoot();
+    const host = containerRef.current;
+    if (host) host.style.cursor = 'copy';
+
+    const toSvg = (e: MouseEvent): { x: number; y: number } => {
+      const ctm = (svg as any).getScreenCTM?.();
+      if (!ctm || typeof (ctm as any).inverse !== 'function') return { x: e.clientX, y: e.clientY };
+      return clientToSvg({ x: e.clientX, y: e.clientY }, (ctm as any).inverse());
+    };
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const arm = useEditorStore.getState().armedPlacement;
+      if (!arm) return;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      const pt = toSvg(e);
+      const store = useEditorStore.getState();
+      if (arm.kind === 'basic') {
+        const id = arm.itemId as 'rect' | 'ellipse' | 'text' | 'line';
+        store.addWidget(makeWidget(id, pt, store.gridSize));
+      } else if (arm.kind === 'gauge') {
+        store.addWidget(makeGaugeWidget(arm.widgetType, pt, store.gridSize));
+      } else if (arm.kind === 'shape') {
+        store.addWidget(makeShapeWidget(arm.shapeName, arm.bbox, pt, store.gridSize));
+      }
+      store.clearArmedPlacement();
+    };
+
+    svg.addEventListener('mousedown', onMouseDown, true);
+    return () => {
+      svg.removeEventListener('mousedown', onMouseDown, true);
+      if (host) host.style.cursor = '';
+    };
+  }, [armedPlacement]);
+
   // SP-FX-3b.2.1: extended keyboard handler — Ctrl+A, ESC 3-tier, Arrow nudge coalesce.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -393,6 +437,12 @@ export function EditorCanvas() {
           e.preventDefault();
           refs.current?.canvas.hideDrawPreview();
           useEditorStore.getState().cancelDraw();
+          return;
+        }
+        // SP-FX-48.26: then armed placement
+        if (useEditorStore.getState().armedPlacement) {
+          e.preventDefault();
+          useEditorStore.getState().clearArmedPlacement();
           return;
         }
         if (refs.current?.pointer.state.kind !== 'idle') {

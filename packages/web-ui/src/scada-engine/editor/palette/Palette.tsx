@@ -105,6 +105,37 @@ const SHAPE_GROUP_ORDER: ShapeGroup[] = ['basic', 'process', 'compressor', 'pump
 
 export function Palette(): JSX.Element {
   const drawTool = useEditorStore((s) => s.drawTool);
+  const armed = useEditorStore((s) => s.armedPlacement);
+  // SP-FX-48.26: unified click-to-arm — clicking a palette icon toggles
+  // armedPlacement; the next canvas click spawns the widget there. Drag still
+  // works for users who prefer drag-drop.
+  const toggleArmBasic = (id: string) => {
+    const s = useEditorStore.getState();
+    if (s.armedPlacement?.kind === 'basic' && s.armedPlacement.itemId === id) {
+      s.clearArmedPlacement();
+    } else {
+      s.setArmedPlacement({ kind: 'basic', itemId: id });
+    }
+  };
+  const toggleArmGauge = (widgetType: string) => {
+    const s = useEditorStore.getState();
+    if (s.armedPlacement?.kind === 'gauge' && s.armedPlacement.widgetType === widgetType) {
+      s.clearArmedPlacement();
+    } else {
+      s.setArmedPlacement({ kind: 'gauge', widgetType });
+    }
+  };
+  const toggleArmShape = (name: string, bbox: { w: number; h: number }) => {
+    const s = useEditorStore.getState();
+    if (s.armedPlacement?.kind === 'shape' && s.armedPlacement.shapeName === name) {
+      s.clearArmedPlacement();
+    } else {
+      s.setArmedPlacement({ kind: 'shape', shapeName: name, bbox });
+    }
+  };
+  const isArmedBasic = (id: string) => armed?.kind === 'basic' && armed.itemId === id;
+  const isArmedGauge = (t: string) => armed?.kind === 'gauge' && armed.widgetType === t;
+  const isArmedShape = (n: string) => armed?.kind === 'shape' && armed.shapeName === n;
   return (
     <div data-panel="palette" className="w-[148px] flex-shrink-0 flex flex-col border-r border-zinc-700 bg-zinc-900 overflow-auto">
       <details open data-section="basic" className="border-b border-zinc-700">
@@ -112,19 +143,22 @@ export function Palette(): JSX.Element {
         <ul className="p-2 grid grid-cols-3 gap-1">
           {PALETTE_ITEMS.map((item) => {
             const Icon = BASIC_ICONS[item.id] ?? HelpCircle;
+            const active = isArmedBasic(item.id);
             return (
               <li
                 key={item.id}
                 draggable
                 data-palette-item={item.id}
+                data-active={active ? 'true' : 'false'}
                 title={item.label}
                 onDragStart={(e) => {
                   e.dataTransfer.setData('palette-item', item.id);
                   e.dataTransfer.effectAllowed = 'copy';
                 }}
-                className="cursor-grab flex items-center justify-center aspect-square text-zinc-100 hover:bg-zinc-800 rounded"
+                onClick={() => toggleArmBasic(item.id)}
+                className={`cursor-grab flex items-center justify-center aspect-square rounded ${active ? 'bg-blue-600' : 'text-zinc-100 hover:bg-zinc-800'}`}
               >
-                <IconCell Icon={Icon} label={item.label} />
+                <IconCell Icon={Icon} label={item.label} active={active} />
               </li>
             );
           })}
@@ -161,19 +195,22 @@ export function Palette(): JSX.Element {
             <ul className="p-2 grid grid-cols-3 gap-1">
               {items.map((item) => {
                 const Icon = GAUGE_ICONS[item.widgetType] ?? HelpCircle;
+                const active = isArmedGauge(item.widgetType);
                 return (
                   <li
                     key={item.widgetType}
                     draggable
                     data-palette-gauge={item.widgetType}
+                    data-active={active ? 'true' : 'false'}
                     title={item.label}
                     onDragStart={(e) => {
                       e.dataTransfer.setData('palette-gauge', item.widgetType);
                       e.dataTransfer.effectAllowed = 'copy';
                     }}
-                    className="cursor-grab flex items-center justify-center aspect-square text-zinc-100 hover:bg-zinc-800 rounded"
+                    onClick={() => toggleArmGauge(item.widgetType)}
+                    className={`cursor-grab flex items-center justify-center aspect-square rounded ${active ? 'bg-blue-600' : 'text-zinc-100 hover:bg-zinc-800'}`}
                   >
-                    <IconCell Icon={Icon} label={item.label} />
+                    <IconCell Icon={Icon} label={item.label} active={active} />
                   </li>
                 );
               })}
@@ -191,23 +228,28 @@ export function Palette(): JSX.Element {
               形状 · {SHAPE_GROUP_LABELS[grp]} <span className="ml-1 opacity-50">({items.length})</span>
             </summary>
             <ul className="p-2 grid grid-cols-3 gap-1 max-h-[280px] overflow-y-auto">
-              {items.map((shape) => (
-                <li
-                  key={shape.name}
-                  draggable
-                  data-palette-shape={shape.name}
-                  title={shape.name}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('palette-shape', shape.name);
-                    e.dataTransfer.setData('palette-shape-bbox', `${shape.bbox.w},${shape.bbox.h}`);
-                    e.dataTransfer.effectAllowed = 'copy';
-                  }}
-                  className="cursor-grab flex items-center justify-center aspect-square text-zinc-100 hover:bg-zinc-800 rounded"
-                >
-                  <ShapeThumb shape={shape} />
-                  <span className="sr-only">{shape.name}</span>
-                </li>
-              ))}
+              {items.map((shape) => {
+                const active = isArmedShape(shape.name);
+                return (
+                  <li
+                    key={shape.name}
+                    draggable
+                    data-palette-shape={shape.name}
+                    data-active={active ? 'true' : 'false'}
+                    title={shape.name}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('palette-shape', shape.name);
+                      e.dataTransfer.setData('palette-shape-bbox', `${shape.bbox.w},${shape.bbox.h}`);
+                      e.dataTransfer.effectAllowed = 'copy';
+                    }}
+                    onClick={() => toggleArmShape(shape.name, { w: shape.bbox.w, h: shape.bbox.h })}
+                    className={`cursor-grab flex items-center justify-center aspect-square rounded ${active ? 'bg-blue-600' : 'text-zinc-100 hover:bg-zinc-800'}`}
+                  >
+                    <ShapeThumb shape={shape} />
+                    <span className="sr-only">{shape.name}</span>
+                  </li>
+                );
+              })}
             </ul>
           </details>
         );

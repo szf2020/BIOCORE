@@ -24,6 +24,15 @@ const HISTORY_LIMIT = 50;
 
 export type DrawToolKind = 'pencil' | 'path' | 'ellipse-draw' | null;
 
+// SP-FX-48.26: armed-placement state — when set, the next canvas click spawns
+// a widget of this kind at the click point. Cleared on ESC, on spawn, or when
+// the user clicks another palette icon.
+export type ArmedPlacement =
+  | { kind: 'basic'; itemId: string }
+  | { kind: 'gauge'; widgetType: string }
+  | { kind: 'shape'; shapeName: string; bbox: { w: number; h: number } }
+  | null;
+
 export interface EditorData {
   currentView: FuxaView | null;
   isDirty: boolean;
@@ -33,6 +42,7 @@ export interface EditorData {
   gridSize: number;
   drawTool: DrawToolKind;
   drawPoints: number[];
+  armedPlacement: ArmedPlacement;
 }
 
 // ---------- actions shape ----------
@@ -58,6 +68,8 @@ export interface EditorActions {
   appendDrawPoint: (x: number, y: number) => void;
   resetDrawPoints: () => void;
   cancelDraw: () => void;
+  setArmedPlacement: (a: ArmedPlacement) => void;
+  clearArmedPlacement: () => void;
 }
 
 export type EditorState = EditorData & EditorActions;
@@ -81,6 +93,7 @@ const _store = create<EditorData>(() => ({
   gridSize: 10,
   drawTool: null,
   drawPoints: [],
+  armedPlacement: null,
 }));
 
 // ---------- module-level actions (survive setState replace) ----------
@@ -95,6 +108,7 @@ const actions: EditorActions = {
     gridSize: s.gridSize,
     drawTool: null,
     drawPoints: [],
+    armedPlacement: null,
   })),
 
   closeView: () => _store.setState((s) => ({
@@ -106,6 +120,7 @@ const actions: EditorActions = {
     gridSize: s.gridSize,
     drawTool: null,
     drawPoints: [],
+    armedPlacement: null,
   })),
 
   addWidget: (widget) => {
@@ -228,6 +243,15 @@ const actions: EditorActions = {
   cancelDraw: () => {
     _store.setState({ drawTool: null, drawPoints: [] });
   },
+
+  setArmedPlacement: (a) => {
+    // Arming a placement clears any active draw tool (mutually exclusive)
+    _store.setState({ armedPlacement: a, drawTool: null, drawPoints: [] });
+  },
+
+  clearArmedPlacement: () => {
+    _store.setState({ armedPlacement: null });
+  },
 };
 
 // ---------- public store (data + actions merged) ----------
@@ -240,7 +264,7 @@ const actions: EditorActions = {
 
 const _DATA_KEYS: ReadonlyArray<keyof EditorData> = [
   'currentView', 'isDirty', 'history', 'selection', 'snapEnabled', 'gridSize',
-  'drawTool', 'drawPoints',
+  'drawTool', 'drawPoints', 'armedPlacement',
 ];
 
 const _stateProxy = { ...actions } as EditorState;
