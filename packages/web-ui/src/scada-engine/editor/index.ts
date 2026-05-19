@@ -20,11 +20,6 @@ export { Toolbar, type ToolbarProps } from './toolbar/Toolbar';
 export { executeSave, type CommandContext } from './toolbar/commands';
 export { PropertiesPlaceholder } from './properties/PropertiesPlaceholder';
 
-// SP-FX-5
-export { ShapePicker } from './palette/ShapePicker';
-export { makeShapeWidget } from './palette/palette-items';
-export { SHAPE_CATALOG, type PaletteShape } from './palette/shape-catalog';
-
 // SP-FX-6 additions
 export { PropertyPanel, type PropertyPanelProps } from './properties/PropertyPanel';
 export { WIDGET_SCHEMAS, valueSchema, htmlButtonSchema, htmlInputSchema, htmlChartSchema, htmlTableSchema } from './properties/widget-schemas';

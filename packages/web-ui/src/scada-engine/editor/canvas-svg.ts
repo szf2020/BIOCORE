@@ -153,19 +153,6 @@ export class CanvasController {
         this.widgetLayer.node.appendChild(node);
         return SVG(node) as SvgElement;
       }
-      case 'shape': {
-        const src = (widget.property as { src?: string }).src ?? '';
-        const node = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-        node.setAttribute('href', src);
-        node.setAttribute('x', String(widget.x));
-        node.setAttribute('y', String(widget.y));
-        node.setAttribute('width', String(widget.w));
-        node.setAttribute('height', String(widget.h));
-        node.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-        node.setAttribute('data-widget-id', widget.id);
-        this.widgetLayer.node.appendChild(node);
-        return SVG(node) as SvgElement;
-      }
       default: {
         // SP-FX-48.4: real gauge widgets (svg-ext-*) — delegate to GaugeRegistry
         // so the editor canvas matches runtime visuals (no more generic blocks).
@@ -218,13 +205,6 @@ export class CanvasController {
         const content = ((widget.property as { text?: string }).text) ?? '文本';
         el.attr({ x: cx, y: cy });
         (el.node as SVGTextElement).textContent = content;
-        break;
-      }
-      case 'shape': {
-        const src = (widget.property as { src?: string }).src ?? '';
-        const node = el.node as SVGImageElement;
-        node.setAttribute('href', src);
-        el.attr({ x: widget.x, y: widget.y, width: widget.w, height: widget.h });
         break;
       }
       default: {

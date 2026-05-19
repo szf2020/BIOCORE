@@ -5,7 +5,7 @@ import { CanvasController } from './canvas-svg';
 import { TransformHandles, SnapGuides, RotateTooltip } from './transform-handles';
 import { PointerTools } from './pointer-tools';
 import { snapPoint, computeBbox, clientToSvg, type Box } from './geometry';
-import { makeWidget, makeShapeWidget, makeGaugeWidget } from './palette/palette-items';
+import { makeWidget, makeGaugeWidget } from './palette/palette-items';
 import type { FuxaWidget } from '../models';
 
 interface Refs {
@@ -339,7 +339,6 @@ export function EditorCanvas() {
         const types = e.dataTransfer.types;
         if (
           types.includes('palette-item') ||
-          types.includes('palette-shape') ||
           types.includes('palette-gauge')
         ) {
           e.preventDefault();
@@ -360,21 +359,6 @@ export function EditorCanvas() {
         const basicType = e.dataTransfer.getData('palette-item') as 'rect' | 'ellipse' | 'text' | '';
         if (basicType && (['rect', 'ellipse', 'text'] as string[]).includes(basicType)) {
           store.addWidget(makeWidget(basicType, local, store.gridSize));
-          return;
-        }
-
-        const shapeJson = e.dataTransfer.getData('palette-shape');
-        if (shapeJson) {
-          try {
-            const parsed = JSON.parse(shapeJson) as { id?: unknown; src?: unknown };
-            const id = parsed.id;
-            const src = parsed.src;
-            if (typeof id === 'string' && id && typeof src === 'string' && src) {
-              store.addWidget(makeShapeWidget(id, src, local, store.gridSize));
-            }
-          } catch {
-            // malformed JSON; silently ignore
-          }
           return;
         }
 

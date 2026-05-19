@@ -59,7 +59,6 @@ type MockCaches = ReturnType<typeof makeMockCaches>;
 const STATIC_PATTERNS = [
   /^\/_next\/static\//,
   /^\/icons\//,
-  /^\/scada-shapes\//,
 ];
 const STATIC_EXTENSIONS = /\.(js|css|woff2|woff|ttf|otf|png|jpg|jpeg|svg|ico|webp)$/i;
 const API_CACHEABLE_PATTERNS = [

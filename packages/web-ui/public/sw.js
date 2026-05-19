@@ -24,7 +24,6 @@ const OFFLINE_URL = '/offline';
 const STATIC_PATTERNS = [
   /^\/_next\/static\//,
   /^\/icons\//,
-  /^\/scada-shapes\//,
 ];
 
 // 静态资源扩展名
