@@ -174,7 +174,84 @@ describe('PipeGauge — flow animation', () => {
     gauge.onUnmount();
     const offsetAfterUnmount = pipeEl?.getAttribute('stroke-dashoffset') ?? null;
     vi.advanceTimersByTime(200);
-    // interval 已清除，offset 不再变化（元素已 remove，无法查询）
     expect(() => gauge.onUnmount()).not.toThrow();
+  });
+
+  // SP-FX-48.21 phase 3: bitmask per action + hidecontent + image overlay
+  it('action with bitmask masks value before range match', async () => {
+    const { pipeMeta } = await import('../../../controls/batch2/pipe');
+    const ctx = makeCtx();
+    const gauge = pipeMeta.create();
+    gauge.onMount(makeWidget({
+      property: {
+        variableId: 'r1.AI-2',
+        options: { pipe: '#E79180', content: '#DADADA' },
+        actions: [
+          { variableId: 'r1.AI-2', range: { min: 1, max: 1 }, bitmask: 1,
+            options: { fillA: '#00aa00' }, type: 'fillpipe' },
+        ],
+      },
+    } as any), ctx);
+    gauge.onProcess({ value: 3, isStale: false });
+    const pipeEl = ctx.parentGroup.querySelector('[data-pipe="true"]') as SVGElement | null;
+    expect(pipeEl?.getAttribute('stroke')).toBe('#00aa00');
+  });
+
+  it("'hidecontent' action hides the background rect when in range", async () => {
+    const { pipeMeta } = await import('../../../controls/batch2/pipe');
+    const ctx = makeCtx();
+    const gauge = pipeMeta.create();
+    gauge.onMount(makeWidget({
+      property: {
+        variableId: 'r1.AI-2',
+        options: { pipe: '#E79180', content: '#DADADA' },
+        actions: [
+          { variableId: 'r1.AI-2', range: { min: 1, max: 5 }, options: {}, type: 'hidecontent' },
+        ],
+      },
+    } as any), ctx);
+    gauge.onProcess({ value: 3, isStale: false });
+    const bg = ctx.parentGroup.querySelector('rect[data-widget-id="w5"]') as SVGRectElement | null;
+    expect(bg?.getAttribute('visibility')).toBe('hidden');
+  });
+
+  it("'image' action with valid http url adds <image> overlay", async () => {
+    const { pipeMeta } = await import('../../../controls/batch2/pipe');
+    const ctx = makeCtx();
+    const gauge = pipeMeta.create();
+    gauge.onMount(makeWidget({
+      property: {
+        variableId: 'r1.AI-2',
+        options: { pipe: '#E79180', content: '#DADADA' },
+        actions: [
+          { variableId: 'r1.AI-2', range: { min: 1, max: 5 },
+            options: { image: 'https://example.com/x.png' }, type: 'image' },
+        ],
+      },
+    } as any), ctx);
+    gauge.onProcess({ value: 3, isStale: false });
+    const img = ctx.parentGroup.querySelector('image[data-pipe-image="true"]') as SVGImageElement | null;
+    expect(img).not.toBeNull();
+    expect(img?.getAttribute('href')).toBe('https://example.com/x.png');
+    expect(img?.getAttribute('visibility')).toBe('visible');
+  });
+
+  it("'image' action with javascript: scheme is rejected (visibility hidden)", async () => {
+    const { pipeMeta } = await import('../../../controls/batch2/pipe');
+    const ctx = makeCtx();
+    const gauge = pipeMeta.create();
+    gauge.onMount(makeWidget({
+      property: {
+        variableId: 'r1.AI-2',
+        options: { pipe: '#E79180', content: '#DADADA' },
+        actions: [
+          { variableId: 'r1.AI-2', range: { min: 1, max: 5 },
+            options: { image: 'javascript:alert(1)' }, type: 'image' },
+        ],
+      },
+    } as any), ctx);
+    gauge.onProcess({ value: 3, isStale: false });
+    const img = ctx.parentGroup.querySelector('image[data-pipe-image="true"]') as SVGImageElement | null;
+    expect(img?.getAttribute('visibility')).toBe('hidden');
   });
 });

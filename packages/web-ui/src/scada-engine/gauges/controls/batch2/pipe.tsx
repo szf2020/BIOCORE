@@ -1,15 +1,21 @@
 // SP-FX-6.2: PipeGauge — SVG pipe visualization with action-range color control.
 // FUXA equivalent: svg-ext-pipe
 // Animation (clockwise/anticlockwise) deferred to SP-FX-8.
+// SP-FX-48.21 (phase 3): bitmask per action, 'hidecontent' action type,
+// 'image' action type (SVG <image> overlay).
 
 import type { GaugeBase, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } from '../../gauge-base';
 import type { FuxaWidget } from '../../../models';
 
+type PipeActionType = 'fillpipe' | 'hidecontent' | 'blink' | 'image';
+
 interface PipeAction {
   variableId: string;
   range: { min: number; max: number };
-  options?: { fillA?: string; fillB?: string };
-  type: string;
+  // SP-FX-48.21: optional bitmask — applies `numVal & bitmask` before range check
+  bitmask?: number;
+  options?: { fillA?: string; fillB?: string; image?: string; period?: number };
+  type: PipeActionType | string;
 }
 
 interface PipeProperty {
@@ -33,11 +39,14 @@ const DEFAULT_PIPE_COLOR = '#E79180';
 class PipeGauge implements GaugeBase {
   private bgRect: SVGRectElement | null = null;
   private pipeEl: SVGLineElement | null = null;
+  private imageEl: SVGImageElement | null = null;
   private widget!: FuxaWidget;
   private defaultColor = DEFAULT_PIPE_COLOR;
   private flowInterval: ReturnType<typeof setInterval> | null = null;
+  private blinkInterval: ReturnType<typeof setInterval> | null = null;
   private dashOffset = 0;
   private ctxMode: 'editor' | 'runtime' = 'editor';
+  private parentGroup: SVGGElement | null = null;
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -73,6 +82,7 @@ class PipeGauge implements GaugeBase {
     this.pipeEl = line;
 
     this.ctxMode = ctx.mode;
+    this.parentGroup = ctx.parentGroup;
     this.startFlowAnimation(w);
   }
 
@@ -106,14 +116,40 @@ class PipeGauge implements GaugeBase {
 
   onUnmount(): void {
     this.stopFlowAnimation();
+    this.stopBlink();
     this.bgRect?.remove();
     this.pipeEl?.remove();
+    this.imageEl?.remove();
     this.bgRect = null;
     this.pipeEl = null;
+    this.imageEl = null;
+    this.parentGroup = null;
+  }
+
+  private stopBlink(): void {
+    if (this.blinkInterval !== null) {
+      clearInterval(this.blinkInterval);
+      this.blinkInterval = null;
+      if (this.pipeEl) (this.pipeEl as unknown as HTMLElement).style.visibility = '';
+    }
+  }
+
+  // SP-FX-48.21: check if a numeric value falls inside an action range, applying
+  // optional bitmask first (FUXA convention: `(value & bitmask) match range`).
+  private actionMatches(numVal: number, action: PipeAction): boolean {
+    let v = numVal;
+    if (typeof action.bitmask === 'number' && action.bitmask > 0) {
+      v = (v | 0) & action.bitmask;
+    }
+    return v >= action.range.min && v <= action.range.max;
   }
 
   onProcess(value: GaugeValue): void {
     if (!this.pipeEl) return;
+    this.stopBlink();
+    if (this.imageEl) this.imageEl.setAttribute('visibility', 'hidden');
+    if (this.bgRect) this.bgRect.setAttribute('visibility', 'visible');
+
     if (value.isStale || value.value === null) {
       this.pipeEl.setAttribute('stroke', this.defaultColor);
       return;
@@ -123,10 +159,69 @@ class PipeGauge implements GaugeBase {
     let numVal = parseFloat(String(value.value));
     if (Number.isNaN(numVal)) numVal = 0;
 
-    const matched = (prop.actions ?? []).find(
-      (a) => a.variableId === tagId && a.range.min <= numVal && a.range.max >= numVal
-    );
-    this.pipeEl.setAttribute('stroke', matched?.options?.fillA ?? this.defaultColor);
+    // SP-FX-48.21: evaluate all matching actions (multiple may apply per tick).
+    // Use first matching fillpipe / hidecontent / image action of each type.
+    let appliedColor = false;
+    for (const action of (prop.actions ?? [])) {
+      if (action.variableId !== tagId) continue;
+      if (!this.actionMatches(numVal, action)) continue;
+      const type = (action.type ?? 'fillpipe').toLowerCase();
+      // SP-FX-48.21: clockwise/anticlockwise are FUXA's flow-direction
+      // actions; they also tint the pipe via fillA when matched. Treat them
+      // as fillpipe for the color step.
+      if ((type === 'fillpipe' || type === 'fill' || type === 'clockwise' || type === 'anticlockwise') && !appliedColor) {
+        this.pipeEl.setAttribute('stroke', action.options?.fillA ?? this.defaultColor);
+        appliedColor = true;
+      } else if (type === 'hidecontent') {
+        if (this.bgRect) this.bgRect.setAttribute('visibility', 'hidden');
+      } else if (type === 'image' && action.options?.image) {
+        this.ensureImageOverlay(action.options.image);
+      } else if (type === 'blink') {
+        this.startBlink(action.options?.period ?? 500);
+      }
+    }
+    if (!appliedColor) {
+      this.pipeEl.setAttribute('stroke', this.defaultColor);
+    }
+  }
+
+  private startBlink(period: number): void {
+    if (!this.pipeEl || this.blinkInterval !== null) return;
+    const p = Math.max(100, period);
+    let on = true;
+    this.blinkInterval = setInterval(() => {
+      if (!this.pipeEl) return;
+      on = !on;
+      (this.pipeEl as unknown as HTMLElement).style.visibility = on ? '' : 'hidden';
+    }, p);
+  }
+
+  private ensureImageOverlay(href: string): void {
+    if (!this.parentGroup) return;
+    if (!this.imageEl) {
+      const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      const x = (this.widget as any).x ?? 0;
+      const y = (this.widget as any).y ?? 0;
+      const w = (this.widget as any).w ?? 120;
+      const h = (this.widget as any).h ?? 20;
+      img.setAttribute('x', String(x));
+      img.setAttribute('y', String(y));
+      img.setAttribute('width', String(w));
+      img.setAttribute('height', String(h));
+      img.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      img.setAttribute('data-pipe-image', 'true');
+      this.parentGroup.appendChild(img);
+      this.imageEl = img;
+    }
+    // SP-FX-48.21: only allow http(s):// or data: URIs to prevent javascript:
+    // schemes leaking through user widget config.
+    if (/^(https?:\/\/|data:image\/|\/)/i.test(href)) {
+      this.imageEl.setAttributeNS('http://www.w3.org/1999/xlink', 'href', href);
+      this.imageEl.setAttribute('href', href);
+      this.imageEl.setAttribute('visibility', 'visible');
+    } else {
+      this.imageEl.setAttribute('visibility', 'hidden');
+    }
   }
 
   onPropertyChange(change: GaugePropChange): void {

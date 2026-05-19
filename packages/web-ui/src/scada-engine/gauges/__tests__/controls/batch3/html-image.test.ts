@@ -87,4 +87,63 @@ describe('HtmlImageGauge', () => {
     expect(ctx.parentGroup.childElementCount).toBe(0);
     expect(() => gauge.onUnmount()).not.toThrow();
   });
+
+  // SP-FX-48.21 phase 3: inline svgContent prop with sanitization
+  it('svgContent renders inline SVG into a host div (not <img>)', async () => {
+    const { htmlImageMeta } = await import('../../../controls/batch3/html-image');
+    const ctx = makeCtx();
+    const gauge = htmlImageMeta.create();
+    gauge.onMount(makeWidget({
+      property: {
+        svgContent: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>',
+      },
+    } as any), ctx);
+    const host = ctx.parentGroup.querySelector('[data-svg-host]') as HTMLDivElement | null;
+    expect(host).not.toBeNull();
+    expect(host?.querySelector('circle')).not.toBeNull();
+    expect(ctx.parentGroup.querySelector('img')).toBeNull();
+  });
+
+  it('svgContent strips <script> elements (XSS guard)', async () => {
+    const { htmlImageMeta } = await import('../../../controls/batch3/html-image');
+    const ctx = makeCtx();
+    const gauge = htmlImageMeta.create();
+    gauge.onMount(makeWidget({
+      property: {
+        svgContent: '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><rect width="10" height="10"/></svg>',
+      },
+    } as any), ctx);
+    const host = ctx.parentGroup.querySelector('[data-svg-host]') as HTMLDivElement | null;
+    expect(host?.querySelector('script')).toBeNull();
+    expect(host?.querySelector('rect')).not.toBeNull();
+  });
+
+  it('svgContent strips on* event handler attributes', async () => {
+    const { htmlImageMeta } = await import('../../../controls/batch3/html-image');
+    const ctx = makeCtx();
+    const gauge = htmlImageMeta.create();
+    gauge.onMount(makeWidget({
+      property: {
+        svgContent: '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" onclick="alert(1)" onload="x()"/></svg>',
+      },
+    } as any), ctx);
+    const rect = ctx.parentGroup.querySelector('[data-svg-host] rect') as SVGRectElement | null;
+    expect(rect).not.toBeNull();
+    expect(rect?.hasAttribute('onclick')).toBe(false);
+    expect(rect?.hasAttribute('onload')).toBe(false);
+  });
+
+  it('svgContent renames id attributes to widget-prefixed form (avoid collisions)', async () => {
+    const { htmlImageMeta } = await import('../../../controls/batch3/html-image');
+    const ctx = makeCtx();
+    const gauge = htmlImageMeta.create();
+    gauge.onMount(makeWidget({
+      id: 'wImg1',
+      property: {
+        svgContent: '<svg xmlns="http://www.w3.org/2000/svg"><rect id="myBox" width="10" height="10"/></svg>',
+      },
+    } as any), ctx);
+    const rect = ctx.parentGroup.querySelector('[data-svg-host] rect') as SVGRectElement | null;
+    expect(rect?.getAttribute('id')).toBe('wImg1__myBox');
+  });
 });
