@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { matchRange, applyActions, createActionRuntime, teardownActions } from '../runtime-helpers';
+import { matchRange, applyActions, createActionRuntime, teardownActions, formatValue } from '../runtime-helpers';
 
 describe('matchRange', () => {
   it('returns null for empty ranges', () => {
@@ -90,5 +90,57 @@ describe('applyActions', () => {
     expect(rt.intervalIds.size).toBe(1);
     applyActions(50, [{ type: 'blink', range: { min: 0, max: 10 } }], element, rt);
     expect(rt.intervalIds.size).toBe(0);
+  });
+});
+
+describe('formatValue (SP-FX-48.19)', () => {
+  it('replaces {value} token with raw string', () => {
+    expect(formatValue(42, '{value}')).toBe('42');
+    expect(formatValue('abc', '{value}')).toBe('abc');
+  });
+
+  it('returns "--" for null/undefined values in {value} template', () => {
+    expect(formatValue(null, '{value}')).toBe('--');
+    expect(formatValue(undefined, '{value}')).toBe('--');
+  });
+
+  it('applies decimals fallback to numeric values', () => {
+    expect(formatValue(3.14159, '{value}', { decimals: 2 })).toBe('3.14');
+    expect(formatValue(3.14159, '{value}', { decimals: 0 })).toBe('3');
+  });
+
+  it('appends unit after substituted value when no {unit} token present', () => {
+    expect(formatValue(42, '{value}', { unit: '°C' })).toBe('42 °C');
+  });
+
+  it('substitutes {unit} when present in template', () => {
+    expect(formatValue(42, '{value} {unit}', { unit: 'rpm' })).toBe('42 rpm');
+  });
+
+  it('printf %.Nf renders fixed decimals from format token', () => {
+    expect(formatValue(3.14159, '%.2f')).toBe('3.14');
+    expect(formatValue(3.14159, '$%.2f')).toBe('$3.14');
+  });
+
+  it('printf %d renders integer floor', () => {
+    expect(formatValue(3.9, '%d')).toBe('3');
+    expect(formatValue(-3.9, '%d')).toBe('-4');
+  });
+
+  it('printf %.Ne renders exponential', () => {
+    expect(formatValue(12345.6, '%.2e')).toBe('1.23e+4');
+  });
+
+  it('printf format with non-finite value renders "--"', () => {
+    expect(formatValue(null, '%.2f')).toBe('--');
+    expect(formatValue('abc', '%.2f')).toBe('--');
+  });
+
+  it('printf format appends unit', () => {
+    expect(formatValue(3.14, '%.2f', { unit: '°C' })).toBe('3.14 °C');
+  });
+
+  it('plain text format with no token returns as-is', () => {
+    expect(formatValue(42, 'static label')).toBe('static label');
   });
 });

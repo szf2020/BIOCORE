@@ -1,15 +1,48 @@
 // SP-FX-6: HtmlButtonGauge — click → ctx.onWriteIntent (runtime only).
-// Renders <foreignObject><button> in the SVG group.
+// SP-FX-48.19: FUXA fidelity — icon/image + label, range bg/stroke color override,
+// action system (blink/hide/show).
 
 import type { GaugeBase, GaugeContext, GaugeClickContext, GaugeMeta, GaugePropChange, GaugeValue } from '../gauge-base';
 import type { FuxaWidget } from '../../models';
+import {
+  matchRange,
+  applyActions,
+  createActionRuntime,
+  teardownActions,
+  type Range,
+  type RangeAction,
+  type ActionRuntime,
+} from '../runtime-helpers';
+
+interface ButtonProperty {
+  variableId?: string;
+  writeValue?: unknown;
+  events?: Array<{ type?: string; actparam?: string; value?: unknown }>;
+  label?: string;
+  icon?: string;
+  image?: string;
+  bgColor?: string;
+  textColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+  ranges?: Range[];
+  actions?: RangeAction[];
+}
+
+const DEFAULT_BG = '#1f2937';
+const DEFAULT_FG = '#ffffff';
 
 class HtmlButtonGauge implements GaugeBase {
   private foreignObj: SVGForeignObjectElement | null = null;
   private htmlBtn: HTMLButtonElement | null = null;
+  private iconEl: HTMLSpanElement | null = null;
+  private imageEl: HTMLImageElement | null = null;
+  private labelEl: HTMLSpanElement | null = null;
   private widget!: FuxaWidget;
   private ctx!: GaugeContext;
   private clickHandler: (() => void) | null = null;
+  private actionRt: ActionRuntime = createActionRuntime();
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -29,20 +62,52 @@ class HtmlButtonGauge implements GaugeBase {
     const btn = document.createElement('button');
     btn.style.width = '100%';
     btn.style.height = '100%';
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center';
+    btn.style.justifyContent = 'center';
+    btn.style.gap = '6px';
     btn.style.cursor = ctx.mode === 'runtime' ? 'pointer' : 'default';
-    const prop = widget.property as { label?: string; bgColor?: string; textColor?: string };
-    btn.textContent = prop.label ?? '';
-    if (prop.bgColor) btn.style.backgroundColor = prop.bgColor;
-    if (prop.textColor) btn.style.color = prop.textColor;
+    btn.style.background = 'transparent';
+    btn.style.padding = '0 8px';
+    btn.style.font = 'inherit';
+    btn.style.lineHeight = '1';
+
+    const prop = widget.property as ButtonProperty;
+
+    // Image (if provided) takes priority over icon-font.
+    if (prop.image) {
+      const img = document.createElement('img');
+      img.src = prop.image;
+      img.alt = '';
+      img.style.maxHeight = '70%';
+      img.style.maxWidth = '40%';
+      img.setAttribute('data-button-image', 'true');
+      btn.appendChild(img);
+      this.imageEl = img;
+    } else if (prop.icon) {
+      const span = document.createElement('span');
+      span.className = 'material-icons';
+      span.textContent = prop.icon;
+      span.setAttribute('data-button-icon', 'true');
+      btn.appendChild(span);
+      this.iconEl = span;
+    }
+
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = prop.label ?? '';
+    labelSpan.setAttribute('data-button-label', 'true');
+    btn.appendChild(labelSpan);
+    this.labelEl = labelSpan;
+
+    this._applyStyles(btn, prop);
 
     this.clickHandler = () => {
       if (this.ctx.mode !== 'runtime') return;
-      const prop = this.widget.property as any;
-      const events = prop.events ?? [];
-      const evt = events.find((x: any) => x?.type === 'click');
-      // SP-FX-48.9: prefer FUXA-style events array; fall back to schema flat keys
-      const tag = evt?.actparam ?? prop.variableId;
-      const value = evt?.value ?? prop.writeValue;
+      const p = this.widget.property as ButtonProperty;
+      const events = p.events ?? [];
+      const evt = events.find((x) => x?.type === 'click');
+      const tag = evt?.actparam ?? p.variableId;
+      const value = evt?.value ?? p.writeValue;
       if (!tag) return;
       this.ctx.onWriteIntent?.({ tag, value, widgetId: this.widget.id });
     };
@@ -54,26 +119,39 @@ class HtmlButtonGauge implements GaugeBase {
   }
 
   onUnmount(): void {
+    teardownActions(this.actionRt);
     if (this.htmlBtn && this.clickHandler) this.htmlBtn.removeEventListener('click', this.clickHandler);
     this.foreignObj?.remove();
     this.foreignObj = null;
     this.htmlBtn = null;
+    this.iconEl = null;
+    this.imageEl = null;
+    this.labelEl = null;
     this.clickHandler = null;
   }
 
-  onProcess(_value: GaugeValue): void {
-    if (!this.htmlBtn) return;
-    const prop = this.widget.property as { bgColor?: string };
-    if (prop.bgColor) this.htmlBtn.style.backgroundColor = prop.bgColor;
+  onProcess(value: GaugeValue): void {
+    if (!this.htmlBtn || !this.foreignObj) return;
+    const prop = this.widget.property as ButtonProperty;
+    this._applyStyles(this.htmlBtn, prop);
+
+    if (!value.isStale && value.value !== null && value.value !== undefined) {
+      const matched = matchRange(value.value, prop.ranges);
+      if (matched?.color) this.htmlBtn.style.backgroundColor = matched.color;
+      if (matched?.stroke) this.htmlBtn.style.borderColor = matched.stroke;
+      if (matched?.textColor) this.htmlBtn.style.color = matched.textColor;
+    }
+    applyActions(value.value, prop.actions, this.foreignObj as unknown as SVGElement, this.actionRt);
   }
 
   onPropertyChange(change: GaugePropChange): void {
     this.widget = change.nextWidget;
     if (!this.htmlBtn) return;
-    const prop = this.widget.property as { label?: string; bgColor?: string; textColor?: string };
-    if (prop.label !== undefined) this.htmlBtn.textContent = prop.label;
-    if (prop.bgColor) this.htmlBtn.style.backgroundColor = prop.bgColor;
-    if (prop.textColor) this.htmlBtn.style.color = prop.textColor;
+    const prop = this.widget.property as ButtonProperty;
+    if (this.labelEl) this.labelEl.textContent = prop.label ?? '';
+    if (this.iconEl) this.iconEl.textContent = prop.icon ?? '';
+    if (this.imageEl && prop.image) this.imageEl.src = prop.image;
+    this._applyStyles(this.htmlBtn, prop);
   }
 
   onResize(w: number, h: number): void {
@@ -84,14 +162,22 @@ class HtmlButtonGauge implements GaugeBase {
 
   onClick(_e: MouseEvent, c: GaugeClickContext): void {
     if (c.ctx.mode !== 'runtime') return;
-    const prop = c.widget.property as any;
+    const prop = c.widget.property as ButtonProperty;
     const events = prop.events ?? [];
-    const evt = events.find((x: any) => x?.type === 'click');
-    // SP-FX-48.9: prefer events[], fall back to flat variableId + writeValue
+    const evt = events.find((x) => x?.type === 'click');
     const tag = evt?.actparam ?? prop.variableId;
     const value = evt?.value ?? prop.writeValue;
     if (!tag) return;
     c.ctx.onWriteIntent?.({ tag, value, widgetId: c.widget.id });
+  }
+
+  private _applyStyles(btn: HTMLButtonElement, prop: ButtonProperty): void {
+    btn.style.backgroundColor = prop.bgColor ?? DEFAULT_BG;
+    btn.style.color = prop.textColor ?? DEFAULT_FG;
+    btn.style.borderStyle = 'solid';
+    btn.style.borderColor = prop.borderColor ?? 'transparent';
+    btn.style.borderWidth = `${prop.borderWidth ?? 0}px`;
+    btn.style.borderRadius = `${prop.borderRadius ?? 4}px`;
   }
 }
 
@@ -99,7 +185,7 @@ export const htmlButtonMeta: GaugeMeta = {
   widgetType: 'svg-ext-html_button',
   create: () => new HtmlButtonGauge(),
   getSignals: (w) => {
-    const v = (w.property as { variableId?: string }).variableId;
+    const v = (w.property as ButtonProperty).variableId;
     return v ? [v] : [];
   },
 };

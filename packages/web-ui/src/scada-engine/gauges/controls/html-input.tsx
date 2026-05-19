@@ -1,8 +1,75 @@
 // SP-FX-6: HtmlInputGauge — Enter/blur commit → ctx.onWriteIntent.
+// SP-FX-48.19: FUXA fidelity — date/time/datetime-local types (commit as
+// epoch ms), unit suffix for display formatting, action system (blink/hide/show).
 // isSubmitting guard absorbs duplicate Enter+blur in same synchronous tick.
 
 import type { GaugeBase, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } from '../gauge-base';
 import type { FuxaWidget } from '../../models';
+import {
+  matchRange,
+  applyActions,
+  createActionRuntime,
+  teardownActions,
+  type Range,
+  type RangeAction,
+  type ActionRuntime,
+} from '../runtime-helpers';
+
+interface InputProperty {
+  variableId?: string;
+  inputType?: string;
+  placeholder?: string;
+  min?: number;
+  max?: number;
+  decimals?: number;
+  unit?: string;
+  ranges?: Range[];
+  actions?: RangeAction[];
+}
+
+const DATE_TYPES = new Set(['date', 'time', 'datetime-local']);
+
+function toEpochMs(type: string, raw: string): number | null {
+  if (!raw) return null;
+  if (type === 'date') {
+    const t = new Date(raw + 'T00:00:00').getTime();
+    return Number.isFinite(t) ? t : null;
+  }
+  if (type === 'time') {
+    const m = raw.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
+    if (!m) return null;
+    const hh = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10);
+    const ss = m[3] ? parseInt(m[3], 10) : 0;
+    return ((hh * 60 + mm) * 60 + ss) * 1000;
+  }
+  if (type === 'datetime-local') {
+    const t = new Date(raw).getTime();
+    return Number.isFinite(t) ? t : null;
+  }
+  return null;
+}
+
+function fromEpochMs(type: string, ms: number): string {
+  if (!Number.isFinite(ms)) return '';
+  if (type === 'date') {
+    const d = new Date(ms);
+    return d.toISOString().slice(0, 10);
+  }
+  if (type === 'time') {
+    const ss = Math.floor(ms / 1000) % 60;
+    const mm = Math.floor(ms / 60000) % 60;
+    const hh = Math.floor(ms / 3600000) % 24;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(hh)}:${pad(mm)}:${pad(ss)}`;
+  }
+  if (type === 'datetime-local') {
+    const d = new Date(ms);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  return String(ms);
+}
 
 class HtmlInputGauge implements GaugeBase {
   private foreignObj: SVGForeignObjectElement | null = null;
@@ -12,6 +79,7 @@ class HtmlInputGauge implements GaugeBase {
   private ctx!: GaugeContext;
   private keydownHandler: ((e: KeyboardEvent) => void) | null = null;
   private blurHandler: (() => void) | null = null;
+  private actionRt: ActionRuntime = createActionRuntime();
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -28,7 +96,7 @@ class HtmlInputGauge implements GaugeBase {
     fo.setAttribute('height', String(h));
     fo.setAttribute('data-widget-id', widget.id);
 
-    const prop = widget.property as { inputType?: string; placeholder?: string; min?: number; max?: number };
+    const prop = widget.property as InputProperty;
     const input = document.createElement('input');
     input.type = prop.inputType ?? 'text';
     input.placeholder = prop.placeholder ?? '';
@@ -49,19 +117,25 @@ class HtmlInputGauge implements GaugeBase {
     this.inputEl = input;
   }
 
-  private _commit(value: string): void {
+  private _commit(raw: string): void {
     if (this.ctx.mode !== 'runtime' || this.isSubmitting) return;
-    const tag = (this.widget.property as { variableId?: string }).variableId;
+    const prop = this.widget.property as InputProperty;
+    const tag = prop.variableId;
     if (!tag) return;
     this.isSubmitting = true;
+    const inputType = prop.inputType ?? 'text';
+    const valueToSend: string | number = DATE_TYPES.has(inputType)
+      ? (toEpochMs(inputType, raw) ?? raw)
+      : raw;
     try {
-      this.ctx.onWriteIntent?.({ tag, value, widgetId: this.widget.id });
+      this.ctx.onWriteIntent?.({ tag, value: valueToSend, widgetId: this.widget.id });
     } finally {
       Promise.resolve().then(() => { this.isSubmitting = false; });
     }
   }
 
   onUnmount(): void {
+    teardownActions(this.actionRt);
     if (this.inputEl) {
       if (this.keydownHandler) this.inputEl.removeEventListener('keydown', this.keydownHandler);
       if (this.blurHandler) this.inputEl.removeEventListener('blur', this.blurHandler);
@@ -75,16 +149,39 @@ class HtmlInputGauge implements GaugeBase {
 
   onProcess(value: GaugeValue): void {
     if (!this.inputEl || document.activeElement === this.inputEl) return;
-    this.inputEl.value = value.isStale ? '' : String(value.value ?? '');
+    const prop = this.widget.property as InputProperty;
+    const inputType = prop.inputType ?? 'text';
+
+    if (value.isStale || value.value === null || value.value === undefined) {
+      this.inputEl.value = '';
+    } else if (DATE_TYPES.has(inputType)) {
+      const ms = Number(value.value);
+      this.inputEl.value = Number.isFinite(ms) ? fromEpochMs(inputType, ms) : String(value.value);
+    } else if (typeof prop.decimals === 'number' && Number.isFinite(Number(value.value))) {
+      let str = Number(value.value).toFixed(prop.decimals);
+      if (prop.unit) str += ' ' + prop.unit;
+      this.inputEl.value = str;
+    } else {
+      this.inputEl.value = String(value.value);
+    }
+
+    const matched = matchRange(value.value, prop.ranges);
+    if (matched?.text) {
+      this.inputEl.placeholder = matched.text;
+    }
+    if (this.foreignObj) {
+      applyActions(value.value, prop.actions, this.foreignObj as unknown as SVGElement, this.actionRt);
+    }
   }
 
   onPropertyChange(change: GaugePropChange): void {
     this.widget = change.nextWidget;
     if (!this.inputEl) return;
-    const prop = this.widget.property as { placeholder?: string; min?: number; max?: number };
+    const prop = this.widget.property as InputProperty;
     if (prop.placeholder !== undefined) this.inputEl.placeholder = prop.placeholder;
     if (prop.min !== undefined) this.inputEl.min = String(prop.min);
     if (prop.max !== undefined) this.inputEl.max = String(prop.max);
+    if (prop.inputType) this.inputEl.type = prop.inputType;
   }
 
   onResize(w: number, h: number): void {
@@ -98,7 +195,7 @@ export const htmlInputMeta: GaugeMeta = {
   widgetType: 'svg-ext-html_input',
   create: () => new HtmlInputGauge(),
   getSignals: (w) => {
-    const v = (w.property as { variableId?: string }).variableId;
+    const v = (w.property as InputProperty).variableId;
     return v ? [v] : [];
   },
 };

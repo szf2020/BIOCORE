@@ -89,3 +89,73 @@ export function teardownActions(rt: ActionRuntime): void {
   for (const id of rt.intervalIds.values()) clearInterval(id);
   rt.intervalIds.clear();
 }
+
+// SP-FX-48.19: shared value formatter for FUXA-style widgets.
+//
+// Supported template forms (in `format` string):
+//   '{value}'             → raw string of value
+//   '{value} {unit}'      → value + space + unit
+//   '%d'                  → integer floor
+//   '%.Nf' / '%.Ne'       → fixed/exponential N decimals
+//   '%s'                  → raw string
+//   plain text            → passthrough (no substitution → returns input as-is)
+//
+// Append `unit` after substituted value when provided.
+//
+// `decimals` is a fallback applied to numeric values only when format does not
+// already specify precision (no '%.Nf'). For non-numeric values, `decimals` is
+// ignored and the raw string is used.
+export function formatValue(
+  value: unknown,
+  format: string | undefined,
+  options?: { decimals?: number; unit?: string },
+): string {
+  const fmt = format ?? '{value}';
+  const unit = options?.unit ?? '';
+  const decimals = options?.decimals;
+
+  // printf-style tokens first (FUXA passes e.g. '%.2f', '$%.2f', '%d')
+  const pctMatch = fmt.match(/%(?:\.(\d+))?([dfes])/);
+  if (pctMatch) {
+    const isNullish = value === null || value === undefined;
+    const num = isNullish ? NaN : Number(value);
+    let rendered: string;
+    if (!Number.isFinite(num)) {
+      // FUXA renders '--' for any non-numeric value in a numeric format slot
+      // (including string values like 'abc').
+      rendered = pctMatch[2] === 's' ? String(value ?? '--') : '--';
+    } else if (pctMatch[2] === 'd') {
+      rendered = String(Math.floor(num));
+    } else if (pctMatch[2] === 'f') {
+      const p = pctMatch[1] ? parseInt(pctMatch[1], 10) : (decimals ?? 0);
+      rendered = num.toFixed(p);
+    } else if (pctMatch[2] === 'e') {
+      const p = pctMatch[1] ? parseInt(pctMatch[1], 10) : (decimals ?? 6);
+      rendered = num.toExponential(p);
+    } else {
+      rendered = String(num);
+    }
+    return fmt.replace(pctMatch[0], rendered) + (unit ? ' ' + unit : '');
+  }
+
+  // Brace token substitution
+  if (fmt.includes('{value}')) {
+    let str: string;
+    if (value === null || value === undefined) {
+      str = '--';
+    } else {
+      const num = Number(value);
+      if (Number.isFinite(num) && typeof decimals === 'number' && decimals >= 0) {
+        str = num.toFixed(decimals);
+      } else {
+        str = String(value);
+      }
+    }
+    let result = fmt.replace('{value}', str);
+    if (unit && !result.includes('{unit}')) result += ' ' + unit;
+    return result.replace('{unit}', unit);
+  }
+
+  // Plain text label, no substitution
+  return fmt;
+}

@@ -4,7 +4,7 @@
 
 import type { GaugeBase, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } from '../../gauge-base';
 import type { FuxaWidget } from '../../../models';
-import { matchRange, applyActions, createActionRuntime, teardownActions, type Range, type RangeAction, type ActionRuntime } from '../../runtime-helpers';
+import { matchRange, applyActions, createActionRuntime, teardownActions, formatValue, type Range, type RangeAction, type ActionRuntime } from '../../runtime-helpers';
 
 interface ProgressProperty {
   variableId?: string;
@@ -12,6 +12,9 @@ interface ProgressProperty {
   max?: number;
   barColor?: string;
   showLabel?: boolean;
+  labelFormat?: string;
+  decimals?: number;
+  unit?: string;
   ranges?: Range[];
   actions?: RangeAction[];
 }
@@ -102,14 +105,27 @@ class GaugeProgress implements GaugeBase {
     this.barRect.setAttribute('height', String(barH));
     this.barRect.setAttribute('y', String(bgY + totalH - barH));
 
-    if (this.labelEl) {
-      this.labelEl.textContent = String(clamped);
-    }
-
     // SP-FX-48.12: ranges → bar color override; actions → hide/show/blink
     const matched = matchRange(numVal, prop.ranges);
     if (matched?.color) this.barRect.setAttribute('fill', matched.color);
     else if (prop.barColor) this.barRect.setAttribute('fill', prop.barColor);
+
+    if (this.labelEl) {
+      // SP-FX-48.19: range.text overrides label; falls back to formatValue
+      // with labelFormat/decimals/unit; final fallback is the clamped number.
+      if (matched && typeof matched.text === 'string' && matched.text.length > 0) {
+        this.labelEl.textContent = matched.text;
+      } else if (prop.labelFormat || typeof prop.decimals === 'number' || prop.unit) {
+        this.labelEl.textContent = formatValue(clamped, prop.labelFormat, {
+          decimals: prop.decimals,
+          unit: prop.unit,
+        });
+      } else {
+        this.labelEl.textContent = String(clamped);
+      }
+      if (matched?.textColor) this.labelEl.setAttribute('fill', matched.textColor);
+    }
+
     applyActions(numVal, prop.actions, this.barRect, this.actionRt);
   }
 
