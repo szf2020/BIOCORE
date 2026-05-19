@@ -36,7 +36,7 @@ export function ViewListRows({ sorted, onRename, onDelete, onMove }: Props) {
           <button data-testid="rename-btn" onClick={() => setRenamingId(v.view_id)}>{t('view-list-rows.edit')}</button>
           <button data-testid="delete-btn" onClick={() => void onDelete(v)}>{t('view-list-rows.delete')}</button>
           <a href={`/scada2/${v.view_id}`}>{t('view-list-rows.view')}</a>
-          <a href={`/scada2/edit/${v.view_id}`} data-testid={`edit-link-${v.view_id}`}>{t('view-list-rows.edit')}</a>
+          <a href={`/scada2/edit-v2/${v.view_id}`} data-testid={`edit-link-${v.view_id}`}>{t('view-list-rows.edit')}</a>
         </li>
       ))}
     </ul>

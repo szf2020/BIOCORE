@@ -46,6 +46,8 @@ describe('Palette component (SP-FX-4)', () => {
   it('items rendered as <li> inside details[data-section="basic"] > ul within data-panel="palette" wrapper', () => {
     // SP-FX-48.12: palette restructured into collapsible <details> sections;
     // basic items now live inside <details data-section="basic"><ul>...
+    // SP-FX-48.13: ShapePicker grid removed — gauge categories cover the
+    // same surface area.
     const { container } = render(<Palette />);
     const panel = container.querySelector('[data-panel="palette"]') as HTMLElement;
     expect(panel).not.toBeNull();
@@ -53,6 +55,6 @@ describe('Palette component (SP-FX-4)', () => {
     expect(basic).not.toBeNull();
     const lis = Array.from(basic.children).filter((c) => c.tagName === 'LI');
     expect(lis.length).toBe(3);
-    expect(panel.querySelector('[data-panel="shape-picker"]')).not.toBeNull();
+    expect(panel.querySelector('[data-panel="shape-picker"]')).toBeNull();
   });
 });

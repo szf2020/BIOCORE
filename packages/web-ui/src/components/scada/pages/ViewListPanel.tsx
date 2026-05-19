@@ -168,7 +168,7 @@ export function ViewListPanel({ projectId }: Props) {
   }
 
   function handleEdit(viewId: string) {
-    window.location.href = `/scada2/edit/${viewId}`;
+    window.location.href = `/scada2/edit-v2/${viewId}`;
   }
 
   return (

@@ -1,11 +1,12 @@
-// SP-FX-4 + SP-FX-5: palette panel — basic shapes on top, ShapePicker below.
-// SP-FX-27: batch 2 gauge widgets section added between basic and ShapePicker.
+// SP-FX-4 + SP-FX-5: palette panel — basic shapes on top, gauges by category below.
+// SP-FX-27: batch 2 gauge widgets section.
 // SP-FX-48.12: FUXA-aligned categories (General/Animation/Shape/Proc.Eng) with
 //   collapsible <details> sections matching FUXA's left sidebar layout.
+// SP-FX-48.13: ShapePicker grid hidden — gauge widgets already cover the catalog
+//   surface area and the search/icon-grid was visually redundant.
 
 import React from 'react';
 import { PALETTE_ITEMS, GAUGE_PALETTE_ITEMS, PALETTE_CATEGORY_LABELS, type PaletteCategory } from './palette-items';
-import { ShapePicker } from './ShapePicker';
 
 const CATEGORY_ORDER: PaletteCategory[] = ['general', 'animation', 'shape', 'procEng'];
 
@@ -58,7 +59,6 @@ export function Palette(): JSX.Element {
           </details>
         );
       })}
-      <ShapePicker />
     </div>
   );
 }

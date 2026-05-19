@@ -13,7 +13,7 @@
  *   - admin/* 不 cache
  */
 
-const SW_VERSION = 'v2';
+const SW_VERSION = 'v3';
 const CACHE_STATIC = `biocore-static-${SW_VERSION}`;
 const CACHE_API = `biocore-api-${SW_VERSION}`;
 const CACHE_OFFLINE = `biocore-offline-${SW_VERSION}`;
