@@ -9,7 +9,6 @@ export type HandleId =
   | 'sw' | 's' | 'se'
   | 'rotate';
 
-const ROTATE_HANDLE_OFFSET = 20;
 const MIN_BOX = 5;
 
 export function clientToSvg(pt: Point, ctm: { a: number; b: number; c: number; d: number; e: number; f: number }): Point {
@@ -33,7 +32,9 @@ export function handlePositions(box: Box): Record<HandleId, Point> {
     sw: { x, y: y + h },
     s:  { x: x + w / 2, y: y + h },
     se: { x: x + w, y: y + h },
-    rotate: { x: x + w / 2, y: y - ROTATE_HANDLE_OFFSET },
+    // SP-FX-48.25: rotate handle sits at widget center (not floating above
+    // top edge) — matches user's mental model of "rotation point".
+    rotate: { x: x + w / 2, y: y + h / 2 },
   };
 }
 

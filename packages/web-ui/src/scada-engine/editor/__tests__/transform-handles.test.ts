@@ -80,10 +80,10 @@ describe('TransformHandles (SP-FX-3a)', () => {
     expect(h.hitTest({ x: 100, y: 100 })).toBe('nw');
   });
 
-  it('hitTest returns rotate handle at rotate position', () => {
+  it('hitTest returns rotate handle at widget center (SP-FX-48.25)', () => {
     const h = new TransformHandles(canvas.overlayLayer);
     h.show({ x: 100, y: 100, w: 80, h: 60 });
-    expect(h.hitTest({ x: 140, y: 80 })).toBe('rotate');
+    expect(h.hitTest({ x: 140, y: 130 })).toBe('rotate');
   });
 
   it('hitTest returns null when hidden', () => {
@@ -196,15 +196,16 @@ describe('TransformHandles.showBbox SP-FX-3b.2.3 group-resize handles', () => {
     expect(Math.abs(seY + 4 - 180)).toBeLessThanOrEqual(5);
   });
 
-  it('showBbox positions rotate handle above bbox top center', () => {
+  it('showBbox positions rotate handle at bbox center (SP-FX-48.25)', () => {
     const h = new TransformHandles(canvas.overlayLayer);
     h.showBbox({ x: 100, y: 100, w: 200, h: 80 });
     const rotate = container.querySelector('[data-handle="rotate"]') as SVGRectElement;
     expect(rotate).not.toBeNull();
     const rX = Number(rotate.getAttribute('x'));
     const rY = Number(rotate.getAttribute('y'));
+    // bbox center = (200, 140); handle center = position - HANDLE_HALF(4)
     expect(Math.abs(rX + 4 - 200)).toBeLessThanOrEqual(5);
-    expect(rY).toBeLessThan(100);
+    expect(Math.abs(rY + 4 - 140)).toBeLessThanOrEqual(5);
   });
 
   it('showBbox→show(single) transition: corners hidden, handles re-layout to single widget', () => {
@@ -222,10 +223,10 @@ describe('TransformHandles.showBbox SP-FX-3b.2.3 group-resize handles', () => {
     expect(Math.abs(seY + 4 - 110)).toBeLessThanOrEqual(5);
   });
 
-  it('showBbox hitTest finds rotate handle above bbox top center', () => {
+  it('showBbox hitTest finds rotate handle at bbox center (SP-FX-48.25)', () => {
     const h = new TransformHandles(canvas.overlayLayer);
     h.showBbox({ x: 100, y: 100, w: 200, h: 80 });
-    const hit = h.hitTest({ x: 200, y: 80 });
+    const hit = h.hitTest({ x: 200, y: 140 });
     expect(hit).toBe('rotate');
   });
 });
