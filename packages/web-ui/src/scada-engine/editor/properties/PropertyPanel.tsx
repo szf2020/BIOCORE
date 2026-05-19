@@ -40,9 +40,21 @@ function PropertyContent({
       if (typeof numVal === 'number' && !Number.isNaN(numVal)) {
         onChange({ [entry.key]: numVal } as Partial<FuxaWidget>);
       }
-    } else {
-      onChange({ property: { ...property, [entry.key]: rawValue } } as Partial<FuxaWidget>);
+      return;
     }
+    // Coerce numeric fields so the controlled <input type="number"> round-trips.
+    // Empty string clears the property (undefined) instead of writing NaN.
+    let coerced: unknown = rawValue;
+    if (entry.type === 'number') {
+      if (rawValue === '' || rawValue == null) {
+        coerced = undefined;
+      } else {
+        const n = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
+        if (typeof n !== 'number' || Number.isNaN(n)) return;
+        coerced = n;
+      }
+    }
+    onChange({ property: { ...property, [entry.key]: coerced } } as Partial<FuxaWidget>);
   }
 
   return (
