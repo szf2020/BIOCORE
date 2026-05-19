@@ -39,6 +39,14 @@ export function EditorCanvas() {
     const canvas = new CanvasController(containerRef.current, {
       width: currentView.width,
       height: currentView.height,
+      onTextEdit: (id, nextText) => {
+        const view = useEditorStore.getState().currentView;
+        const w = view?.items[id] as { property?: Record<string, unknown> } | undefined;
+        if (!w) return;
+        useEditorStore.getState().updateWidget(id, {
+          property: { ...(w.property ?? {}), text: nextText },
+        } as Partial<FuxaWidget>);
+      },
     });
     const handles = new TransformHandles(canvas.overlayLayer);
     const snapGuides = new SnapGuides(canvas.overlayLayer);

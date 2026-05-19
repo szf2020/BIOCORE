@@ -246,3 +246,80 @@ describe('CanvasController.upsertWidget type rendering (SP-FX-4)', () => {
     c.destroy();
   });
 });
+
+describe('CanvasController text inline edit (SP-FX-48.15)', () => {
+  let host: HTMLDivElement;
+  beforeEach(() => {
+    host = document.createElement('div');
+    document.body.appendChild(host);
+  });
+  afterEach(() => {
+    document.body.removeChild(host);
+  });
+
+  it('startInlineTextEdit spawns foreignObject + input and hides original text', () => {
+    const c = new CanvasController(host, { width: 800, height: 600, onTextEdit: () => {} });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 't1', type: 'text', property: { text: 'Hi' }, x: 50, y: 50, w: 120, h: 30 } as any);
+    c.startInlineTextEdit('t1');
+    const fo = host.querySelector('foreignObject[data-inline-edit="t1"]') as SVGForeignObjectElement;
+    expect(fo).not.toBeNull();
+    const input = fo.querySelector('input') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    expect(input.value).toBe('Hi');
+    const text = host.querySelector('text[data-widget-id="t1"]') as SVGTextElement;
+    expect(text.getAttribute('visibility')).toBe('hidden');
+    c.destroy();
+  });
+
+  it('Enter commits next value via onTextEdit and removes foreignObject', () => {
+    const captured: Array<[string, string]> = [];
+    const c = new CanvasController(host, {
+      width: 800, height: 600,
+      onTextEdit: (id, text) => captured.push([id, text]),
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 't1', type: 'text', property: { text: 'Old' }, x: 50, y: 50, w: 120, h: 30 } as any);
+    c.startInlineTextEdit('t1');
+    const input = host.querySelector('foreignObject[data-inline-edit="t1"] input') as HTMLInputElement;
+    input.value = 'New';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    expect(captured).toEqual([['t1', 'New']]);
+    expect(host.querySelector('foreignObject[data-inline-edit="t1"]')).toBeNull();
+    const text = host.querySelector('text[data-widget-id="t1"]') as SVGTextElement;
+    expect(text.getAttribute('visibility')).toBeNull();
+    c.destroy();
+  });
+
+  it('Escape cancels — onTextEdit not called, foreignObject removed', () => {
+    const captured: string[] = [];
+    const c = new CanvasController(host, {
+      width: 800, height: 600,
+      onTextEdit: (_id, t) => captured.push(t),
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 't1', type: 'text', property: { text: 'Old' }, x: 50, y: 50, w: 120, h: 30 } as any);
+    c.startInlineTextEdit('t1');
+    const input = host.querySelector('foreignObject[data-inline-edit="t1"] input') as HTMLInputElement;
+    input.value = 'Discarded';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    expect(captured).toEqual([]);
+    expect(host.querySelector('foreignObject[data-inline-edit="t1"]')).toBeNull();
+    c.destroy();
+  });
+
+  it('Enter without value change does NOT call onTextEdit', () => {
+    const captured: string[] = [];
+    const c = new CanvasController(host, {
+      width: 800, height: 600,
+      onTextEdit: (_id, t) => captured.push(t),
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 't1', type: 'text', property: { text: 'Same' }, x: 50, y: 50, w: 120, h: 30 } as any);
+    c.startInlineTextEdit('t1');
+    const input = host.querySelector('foreignObject[data-inline-edit="t1"] input') as HTMLInputElement;
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    expect(captured).toEqual([]);
+    c.destroy();
+  });
+});

@@ -16,6 +16,10 @@ const EDITOR_GAUGE_VALUE: GaugeValue = { value: null, isStale: true };
 export interface CanvasOpts {
   width: number;
   height: number;
+  // SP-FX-48.15: optional inline text-edit hook. When provided, double-clicking
+  // a 'text' widget on the canvas swaps in a foreignObject <input>; the callback
+  // fires on Enter/blur with the committed value.
+  onTextEdit?: (widgetId: string, nextText: string) => void;
 }
 
 function hasGeometry(w: FuxaWidget): w is FuxaWidget & { x: number; y: number; w: number; h: number } {
@@ -40,6 +44,7 @@ export class CanvasController {
   // warnings from html-chart/html-table which use createRoot internally).
   private widgetSnapshot = new Map<string, string>();
   private destroyed = false;
+  private onTextEdit?: (id: string, text: string) => void;
 
   constructor(container: HTMLElement, opts: CanvasOpts) {
     if (opts.width <= 0 || opts.height <= 0) {
@@ -48,6 +53,7 @@ export class CanvasController {
     this.root = SVG().addTo(container).size(opts.width, opts.height).viewbox(0, 0, opts.width, opts.height);
     this.widgetLayer = this.root.group().attr('data-layer', 'widgets');
     this.overlayLayer = this.root.group().attr('data-layer', 'overlay');
+    this.onTextEdit = opts.onTextEdit;
   }
 
   loadView(view: FuxaView): void {
@@ -150,6 +156,13 @@ export class CanvasController {
         node.setAttribute('fill', '#111827');
         node.setAttribute('font-size', '14');
         node.textContent = content;
+        // SP-FX-48.15: double-click swaps a foreignObject <input> in place
+        // so the operator can type directly on the canvas instead of hunting
+        // for the 文字内容 field in the property panel.
+        node.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          this.startInlineTextEdit(widget.id);
+        });
         this.widgetLayer.node.appendChild(node);
         return SVG(node) as SvgElement;
       }
@@ -333,5 +346,69 @@ export class CanvasController {
     this.widgetSnapshot.clear();
     this.widgetMap.clear();
     this.root.remove();
+  }
+
+  // SP-FX-48.15: swap the SVG <text> for a foreignObject <input> at the same
+  // geometry so the user can type directly on the canvas. Commit on Enter/blur,
+  // cancel on Esc. The callback (set via opts.onTextEdit) writes back to the
+  // store; the upsertWidget that follows re-renders the SVG <text> at the new
+  // value, replacing the foreignObject.
+  startInlineTextEdit(widgetId: string): void {
+    if (this.destroyed || !this.onTextEdit) return;
+    const el = this.widgetMap.get(widgetId);
+    if (!el) return;
+    const node = el.node as SVGTextElement;
+    if (node.tagName.toLowerCase() !== 'text') return;
+    const x = parseFloat(node.getAttribute('x') ?? '0');
+    const y = parseFloat(node.getAttribute('y') ?? '0');
+    const initial = node.textContent ?? '';
+    // Estimate width via a generous box; height = font-size + padding.
+    const boxW = Math.max(120, initial.length * 14);
+    const boxH = 28;
+    const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+    fo.setAttribute('x', String(x - boxW / 2));
+    fo.setAttribute('y', String(y - boxH / 2));
+    fo.setAttribute('width', String(boxW));
+    fo.setAttribute('height', String(boxH));
+    fo.setAttribute('data-inline-edit', widgetId);
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = initial;
+    input.style.width = '100%';
+    input.style.height = '100%';
+    input.style.boxSizing = 'border-box';
+    input.style.border = '1px solid #3b82f6';
+    input.style.background = '#ffffff';
+    input.style.color = '#111827';
+    input.style.font = '14px sans-serif';
+    input.style.padding = '0 4px';
+    input.style.textAlign = 'center';
+    fo.appendChild(input);
+    this.widgetLayer.node.appendChild(fo);
+    node.setAttribute('visibility', 'hidden');
+
+    let committed = false;
+    const cleanup = () => {
+      fo.remove();
+      node.removeAttribute('visibility');
+    };
+    const commit = () => {
+      if (committed) return;
+      committed = true;
+      const next = input.value;
+      cleanup();
+      if (next !== initial) this.onTextEdit?.(widgetId, next);
+    };
+    const cancel = () => {
+      if (committed) return;
+      committed = true;
+      cleanup();
+    };
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    });
+    input.addEventListener('blur', () => commit());
+    requestAnimationFrame(() => { input.focus(); input.select(); });
   }
 }
