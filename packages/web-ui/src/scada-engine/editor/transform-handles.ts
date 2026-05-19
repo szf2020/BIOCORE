@@ -91,6 +91,12 @@ export class TransformHandles {
     this.currentBox = null;
     this.mode = 'single';
     this.group.attr('visibility', 'hidden');
+    // SVG visibility="visible" on a child overrides "hidden" on its parent,
+    // so the group attr alone won't conceal handles that were previously
+    // shown via show()/showBbox(). Reset every individual handle + corner.
+    for (const id in this.handles) {
+      this.handles[id as HandleId].attr('visibility', 'hidden');
+    }
     for (const c of this.bboxCorners) c.attr('visibility', 'hidden');
   }
 

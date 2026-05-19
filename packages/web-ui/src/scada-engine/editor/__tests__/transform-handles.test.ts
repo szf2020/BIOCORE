@@ -43,6 +43,19 @@ describe('TransformHandles (SP-FX-3a)', () => {
     expect(overlay.getAttribute('visibility')).toBe('hidden');
   });
 
+  it('hide also clears every individual handle visibility (regression: stale outline after delete)', () => {
+    const h = new TransformHandles(canvas.overlayLayer);
+    h.show({ x: 0, y: 0, w: 50, h: 50 });
+    h.hide();
+    // SVG visibility="visible" on a handle would override the parent group's
+    // "hidden" and leave the resize outline floating after the widget is gone.
+    const handles = Array.from(container.querySelectorAll('[data-handle]')) as SVGElement[];
+    expect(handles.length).toBeGreaterThan(0);
+    for (const handleEl of handles) {
+      expect(handleEl.getAttribute('visibility')).toBe('hidden');
+    }
+  });
+
   it('updateBox moves existing handles to new positions', () => {
     const h = new TransformHandles(canvas.overlayLayer);
     h.show({ x: 0, y: 0, w: 50, h: 50 });
