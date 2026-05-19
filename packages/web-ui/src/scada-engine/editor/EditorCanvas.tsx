@@ -5,7 +5,7 @@ import { CanvasController } from './canvas-svg';
 import { TransformHandles, SnapGuides, RotateTooltip } from './transform-handles';
 import { PointerTools } from './pointer-tools';
 import { snapPoint, computeBbox, clientToSvg, type Box } from './geometry';
-import { makeWidget, makeGaugeWidget, makeDrawnWidget, makeEllipseFromDrag } from './palette/palette-items';
+import { makeWidget, makeGaugeWidget, makeDrawnWidget, makeEllipseFromDrag, makeShapeWidget } from './palette/palette-items';
 import type { FuxaWidget } from '../models';
 
 interface Refs {
@@ -482,7 +482,8 @@ export function EditorCanvas() {
         const types = e.dataTransfer.types;
         if (
           types.includes('palette-item') ||
-          types.includes('palette-gauge')
+          types.includes('palette-gauge') ||
+          types.includes('palette-shape')
         ) {
           e.preventDefault();
         }
@@ -509,6 +510,20 @@ export function EditorCanvas() {
         const gaugeType = e.dataTransfer.getData('palette-gauge');
         if (gaugeType) {
           store.addWidget(makeGaugeWidget(gaugeType, local, store.gridSize));
+          return;
+        }
+
+        // SP-FX-48.20: FUXA shape library drag support.
+        const shapeName = e.dataTransfer.getData('palette-shape');
+        if (shapeName) {
+          const bboxCsv = e.dataTransfer.getData('palette-shape-bbox') || '40,40';
+          const [bw, bh] = bboxCsv.split(',').map((n) => parseFloat(n));
+          store.addWidget(makeShapeWidget(
+            shapeName,
+            { w: Number.isFinite(bw) ? bw : 40, h: Number.isFinite(bh) ? bh : 40 },
+            local,
+            store.gridSize,
+          ));
         }
       }}
     >

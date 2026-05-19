@@ -5,6 +5,7 @@ import {
   makeWidget,
   makeDrawnWidget,
   makeEllipseFromDrag,
+  makeShapeWidget,
 } from '../palette-items';
 
 describe('palette-items PALETTE_ITEMS', () => {
@@ -109,6 +110,32 @@ describe('palette-items makeDrawnWidget (SP-FX-48.17)', () => {
     const w = makeDrawnWidget('pencil', [50, 0, 50, 100]);
     expect(w!.w).toBe(2);
     expect(w!.h).toBe(100);
+  });
+});
+
+describe('palette-items makeShapeWidget (SP-FX-48.20)', () => {
+  it('creates shape widget with shapeName + scaled 2x bbox + snapped x/y', () => {
+    const w = makeShapeWidget('centrifugal', { w: 40, h: 40 }, { x: 23, y: 47 }, 10);
+    expect(w.type).toBe('shape');
+    expect((w.property as { shapeName: string }).shapeName).toBe('centrifugal');
+    expect(w.x).toBe(20); // snapped
+    expect(w.y).toBe(50); // snapped
+    expect(w.w).toBe(80); // 40 * 2 scaled, snapped
+    expect(w.h).toBe(80);
+  });
+
+  it('default property includes fill=none + stroke + strokeWidth', () => {
+    const w = makeShapeWidget('valve-ax', { w: 60, h: 60 }, { x: 0, y: 0 }, 10);
+    const p = w.property as { fill: string; stroke: string; strokeWidth: number };
+    expect(p.fill).toBe('none');
+    expect(p.stroke).toBe('#1e293b');
+    expect(p.strokeWidth).toBe(1.5);
+  });
+
+  it('clamps minimum w/h to 20 when bbox is tiny', () => {
+    const w = makeShapeWidget('mini', { w: 4, h: 4 }, { x: 0, y: 0 }, 10);
+    expect(w.w).toBeGreaterThanOrEqual(20);
+    expect(w.h).toBeGreaterThanOrEqual(20);
   });
 });
 

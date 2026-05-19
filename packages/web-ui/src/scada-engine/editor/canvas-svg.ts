@@ -9,6 +9,10 @@ import type { GaugeBase, GaugeContext, GaugeValue } from '../gauges/gauge-base';
 // SP-FX-48.4: side-effect import — registers all 4 batches of gauges so the
 // editor canvas can mount real widget visuals (matches runtime).
 import '../gauges/controls/index';
+import { SHAPE_CATALOG, type ShapeEntry } from './shapes/shape-catalog';
+
+// SP-FX-48.20: shape-name → catalog entry lookup for O(1) render
+const SHAPE_BY_NAME: Map<string, ShapeEntry> = new Map(SHAPE_CATALOG.map((s) => [s.name, s]));
 
 // SP-FX-48.4: design-time stub for GaugeContext.readValue (no live data).
 const EDITOR_GAUGE_VALUE: GaugeValue = { value: null, isStale: true };
@@ -204,6 +208,51 @@ export class CanvasController {
         this.widgetLayer.node.appendChild(node);
         return SVG(node) as SvgElement;
       }
+      case 'shape': {
+        // SP-FX-48.20: FUXA shape widget — looks up shape-catalog by name,
+        // builds inner <svg viewBox> wrapper containing each content path
+        // primitive. preserveAspectRatio="none" matches FUXA's stretch behavior.
+        const prop = widget.property as { shapeName?: string; fill?: string; stroke?: string; strokeWidth?: number };
+        const shape = prop.shapeName ? SHAPE_BY_NAME.get(prop.shapeName) : undefined;
+        const wrap = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        wrap.setAttribute('x', String(widget.x));
+        wrap.setAttribute('y', String(widget.y));
+        wrap.setAttribute('width', String(widget.w));
+        wrap.setAttribute('height', String(widget.h));
+        wrap.setAttribute('data-widget-id', widget.id);
+        if (prop.shapeName) wrap.setAttribute('data-shape-name', prop.shapeName);
+        if (shape) {
+          wrap.setAttribute('viewBox', `0 0 ${shape.bbox.w} ${shape.bbox.h}`);
+          wrap.setAttribute('preserveAspectRatio', 'none');
+          const fill = prop.fill ?? 'none';
+          const stroke = prop.stroke ?? '#1e293b';
+          const sw = String(prop.strokeWidth ?? 1.5);
+          for (const item of shape.content) {
+            const child = document.createElementNS('http://www.w3.org/2000/svg', item.type);
+            for (const [k, v] of Object.entries(item.attr)) {
+              child.setAttribute(k, String(v));
+            }
+            // Only apply default fill/stroke if not already set by FUXA shape data
+            if (!child.hasAttribute('fill')) child.setAttribute('fill', fill);
+            if (!child.hasAttribute('stroke')) child.setAttribute('stroke', stroke);
+            if (!child.hasAttribute('stroke-width')) child.setAttribute('stroke-width', sw);
+            wrap.appendChild(child);
+          }
+        } else {
+          // Unknown shape — render a marker rect so the user sees something
+          const placeholder = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          placeholder.setAttribute('x', '0');
+          placeholder.setAttribute('y', '0');
+          placeholder.setAttribute('width', String(widget.w));
+          placeholder.setAttribute('height', String(widget.h));
+          placeholder.setAttribute('fill', '#fee2e2');
+          placeholder.setAttribute('stroke', '#dc2626');
+          placeholder.setAttribute('stroke-dasharray', '4 2');
+          wrap.appendChild(placeholder);
+        }
+        this.widgetLayer.node.appendChild(wrap);
+        return SVG(wrap) as SvgElement;
+      }
       default: {
         // SP-FX-48.4: real gauge widgets (svg-ext-*) — delegate to GaugeRegistry
         // so the editor canvas matches runtime visuals (no more generic blocks).
@@ -276,6 +325,35 @@ export class CanvasController {
         node.setAttribute('points', polylinePointsAttr(prop.points ?? []));
         if (prop.stroke) node.setAttribute('stroke', prop.stroke);
         if (prop.strokeWidth != null) node.setAttribute('stroke-width', String(prop.strokeWidth));
+        break;
+      }
+      case 'shape': {
+        // SP-FX-48.20: re-position & re-size wrapper. Color updates handled by
+        // re-attribute on inner children (full re-mount if shapeName changed).
+        const prop = widget.property as { shapeName?: string; fill?: string; stroke?: string; strokeWidth?: number };
+        const node = el.node as SVGSVGElement;
+        const currentShape = node.getAttribute('data-shape-name');
+        if (prop.shapeName && prop.shapeName !== currentShape) {
+          // Shape changed → full rebuild
+          el.remove();
+          this.widgetMap.delete(widget.id);
+          const replacement = this.createElementForType(widget);
+          this.widgetMap.set(widget.id, replacement);
+          break;
+        }
+        node.setAttribute('x', String(widget.x));
+        node.setAttribute('y', String(widget.y));
+        node.setAttribute('width', String(widget.w));
+        node.setAttribute('height', String(widget.h));
+        // Update fill/stroke on children
+        const fill = prop.fill ?? 'none';
+        const stroke = prop.stroke ?? '#1e293b';
+        const sw = String(prop.strokeWidth ?? 1.5);
+        for (const child of Array.from(node.children)) {
+          (child as SVGElement).setAttribute('fill', fill);
+          (child as SVGElement).setAttribute('stroke', stroke);
+          (child as SVGElement).setAttribute('stroke-width', sw);
+        }
         break;
       }
       default: {

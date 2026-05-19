@@ -28,6 +28,7 @@ import {
   type DrawToolType,
 } from './palette-items';
 import { useEditorStore } from '../../services/editor-store';
+import { SHAPE_CATALOG, SHAPE_GROUP_LABELS, type ShapeGroup, type ShapeEntry } from '../shapes/shape-catalog';
 
 const CATEGORY_ORDER: PaletteCategory[] = ['general', 'animation', 'shape', 'procEng'];
 
@@ -75,6 +76,32 @@ function IconCell({ Icon, label, active = false }: { Icon: LucideIcon; label: st
     </div>
   );
 }
+
+// SP-FX-48.20: thumbnail render for shape-catalog entries (SVG content[] array).
+// Renders inline <svg viewBox> with stroke-only style for compact preview.
+function ShapeThumb({ shape }: { shape: ShapeEntry }): JSX.Element {
+  return (
+    <svg
+      viewBox={`0 0 ${shape.bbox.w} ${shape.bbox.h}`}
+      preserveAspectRatio="xMidYMid meet"
+      width="24"
+      height="24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+    >
+      {shape.content.map((c, i) => {
+        const Tag = c.type as keyof JSX.IntrinsicElements;
+        const attrs: Record<string, string | number> = {};
+        for (const [k, v] of Object.entries(c.attr)) attrs[k] = v as string | number;
+        return <Tag key={i} {...(attrs as Record<string, unknown>)} />;
+      })}
+    </svg>
+  );
+}
+
+const SHAPE_GROUP_ORDER: ShapeGroup[] = ['basic', 'process', 'compressor', 'pumps', 'animation'];
 
 export function Palette(): JSX.Element {
   const drawTool = useEditorStore((s) => s.drawTool);
@@ -152,6 +179,37 @@ export function Palette(): JSX.Element {
                   </li>
                 );
               })}
+            </ul>
+          </details>
+        );
+      })}
+      {/* SP-FX-48.20: FUXA shape library — 153 industrial shapes by group */}
+      {SHAPE_GROUP_ORDER.map((grp) => {
+        const items = SHAPE_CATALOG.filter((s) => s.group === grp);
+        if (items.length === 0) return null;
+        return (
+          <details key={grp} data-section={`shapes-${grp}`} className="border-b border-zinc-700">
+            <summary className="px-2 py-1 text-xs uppercase tracking-wider text-zinc-400 cursor-pointer hover:text-zinc-200">
+              形状 · {SHAPE_GROUP_LABELS[grp]} <span className="ml-1 opacity-50">({items.length})</span>
+            </summary>
+            <ul className="p-2 grid grid-cols-3 gap-1 max-h-[280px] overflow-y-auto">
+              {items.map((shape) => (
+                <li
+                  key={shape.name}
+                  draggable
+                  data-palette-shape={shape.name}
+                  title={shape.name}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('palette-shape', shape.name);
+                    e.dataTransfer.setData('palette-shape-bbox', `${shape.bbox.w},${shape.bbox.h}`);
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
+                  className="cursor-grab flex items-center justify-center aspect-square text-zinc-100 hover:bg-zinc-800 rounded"
+                >
+                  <ShapeThumb shape={shape} />
+                  <span className="sr-only">{shape.name}</span>
+                </li>
+              ))}
             </ul>
           </details>
         );

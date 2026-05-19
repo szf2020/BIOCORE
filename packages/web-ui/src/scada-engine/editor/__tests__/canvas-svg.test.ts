@@ -323,3 +323,41 @@ describe('CanvasController text inline edit (SP-FX-48.15)', () => {
     c.destroy();
   });
 });
+
+// SP-FX-48.20: FUXA shape widget render path
+describe('CanvasController shape widget render (SP-FX-48.20)', () => {
+  let host: HTMLDivElement;
+  beforeEach(() => { host = document.createElement('div'); document.body.appendChild(host); });
+  afterEach(() => { host.remove(); });
+
+  it('upsertWidget type=shape with known shapeName renders inline <svg> wrapper with viewBox + paths', () => {
+    const c = new CanvasController(host, { width: 800, height: 600 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({
+      id: 's1', type: 'shape',
+      property: { shapeName: 'centrifugal', stroke: '#000', fill: 'none', strokeWidth: 1.5 },
+      x: 0, y: 0, w: 80, h: 80,
+    } as any);
+    const wrap = host.querySelector('svg[data-widget-id="s1"]') as SVGSVGElement | null;
+    expect(wrap).not.toBeNull();
+    expect(wrap?.getAttribute('viewBox')).toBe('0 0 40 40');
+    expect(wrap?.getAttribute('data-shape-name')).toBe('centrifugal');
+    expect(wrap?.querySelectorAll('path').length).toBeGreaterThan(0);
+    c.destroy();
+  });
+
+  it('upsertWidget type=shape with unknown shapeName renders red placeholder rect', () => {
+    const c = new CanvasController(host, { width: 800, height: 600 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({
+      id: 's2', type: 'shape',
+      property: { shapeName: 'does-not-exist' },
+      x: 0, y: 0, w: 60, h: 60,
+    } as any);
+    const wrap = host.querySelector('svg[data-widget-id="s2"]') as SVGSVGElement | null;
+    const rect = wrap?.querySelector('rect') as SVGRectElement | null;
+    expect(rect).not.toBeNull();
+    expect(rect?.getAttribute('stroke')).toBe('#dc2626');
+    c.destroy();
+  });
+});

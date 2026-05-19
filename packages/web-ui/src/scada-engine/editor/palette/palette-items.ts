@@ -2,7 +2,7 @@
 
 import type { FuxaWidget } from '../../models/widget';
 
-export type PaletteItemType = 'rect' | 'ellipse' | 'text' | 'line' | 'pencil' | 'path';
+export type PaletteItemType = 'rect' | 'ellipse' | 'text' | 'line' | 'pencil' | 'path' | 'shape';
 
 export type DrawToolType = 'pencil' | 'path' | 'ellipse-draw';
 
@@ -87,6 +87,34 @@ export function makeDrawnWidget(
     y,
     w,
     h,
+  } as FuxaWidget;
+}
+
+// SP-FX-48.20: Build shape widget referencing FUXA shape-catalog entry.
+// Renders via canvas-svg case 'shape' which uses shape.content[] paths.
+// Widget bbox = shape natural bbox * 2 (FUXA defaults to 2x scaling).
+export function makeShapeWidget(
+  shapeName: string,
+  shapeBBox: { w: number; h: number },
+  pt: { x: number; y: number },
+  gridSize: number,
+): FuxaWidget {
+  const id = `w_${Date.now()}_${Math.random().toString(36).slice(2, 8).padEnd(6, '0')}`;
+  const step = gridSize > 0 ? gridSize : 1;
+  const scale = 2; // FUXA palette default — shapes drawn at 2x natural size for visibility
+  return {
+    id,
+    type: 'shape',
+    property: {
+      shapeName,
+      fill: 'none',
+      stroke: '#1e293b',
+      strokeWidth: 1.5,
+    },
+    x: Math.round(pt.x / step) * step,
+    y: Math.round(pt.y / step) * step,
+    w: Math.max(20, Math.round((shapeBBox.w * scale) / step) * step),
+    h: Math.max(20, Math.round((shapeBBox.h * scale) / step) * step),
   } as FuxaWidget;
 }
 
