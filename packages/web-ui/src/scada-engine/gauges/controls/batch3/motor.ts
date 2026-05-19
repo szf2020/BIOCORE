@@ -39,15 +39,48 @@ class MotorGauge implements GaugeBase {
     const cx = x + w / 2;
     const cy = y + h / 2;
 
+    // 2 terminal stubs on top (P&ID motor wiring)
+    const termW = r * 0.18;
+    const termH = r * 0.22;
+    for (const offset of [-r * 0.4, r * 0.4]) {
+      const term = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      term.setAttribute('x', String(cx + offset - termW / 2));
+      term.setAttribute('y', String(cy - r - termH));
+      term.setAttribute('width', String(termW));
+      term.setAttribute('height', String(termH));
+      term.setAttribute('fill', '#334155');
+      term.setAttribute('data-terminal', 'true');
+      ctx.parentGroup.appendChild(term);
+      this.elements.push(term);
+    }
+
+    // Main body circle (color = state indicator)
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('cx', String(cx));
     circle.setAttribute('cy', String(cy));
     circle.setAttribute('r', String(r));
     circle.setAttribute('fill', prop.defaultColor ?? DEFAULT_COLOR);
+    circle.setAttribute('stroke', '#334155');
+    circle.setAttribute('stroke-width', '2');
     circle.setAttribute('data-widget-id', widget.id);
     ctx.parentGroup.appendChild(circle);
     this.circleEl = circle;
-    this.elements = [circle];
+    this.elements.push(circle);
+
+    // "M" label in center (P&ID motor symbol)
+    const mText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    mText.setAttribute('x', String(cx));
+    mText.setAttribute('y', String(cy));
+    mText.setAttribute('text-anchor', 'middle');
+    mText.setAttribute('dominant-baseline', 'central');
+    mText.setAttribute('font-size', String(Math.max(10, r * 0.9)));
+    mText.setAttribute('font-weight', 'bold');
+    mText.setAttribute('font-family', 'sans-serif');
+    mText.setAttribute('fill', '#ffffff');
+    mText.setAttribute('data-motor-label', 'true');
+    mText.textContent = 'M';
+    ctx.parentGroup.appendChild(mText);
+    this.elements.push(mText);
   }
 
   onUnmount(): void {

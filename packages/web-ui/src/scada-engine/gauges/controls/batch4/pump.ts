@@ -53,6 +53,29 @@ class PumpGauge implements GaugeBase {
     const cy = y + h / 2;
     const r = Math.min(w, h) / 2;
 
+    // Top inlet stub + right outlet stub (P&ID centrifugal pump nozzles)
+    const stubW = r * 0.3;
+    const stubL = r * 0.35;
+    const inletStub = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    inletStub.setAttribute('x', String(cx - stubW / 2));
+    inletStub.setAttribute('y', String(cy - r - stubL));
+    inletStub.setAttribute('width', String(stubW));
+    inletStub.setAttribute('height', String(stubL));
+    inletStub.setAttribute('fill', '#475569');
+    inletStub.setAttribute('data-inlet', 'true');
+    ctx.parentGroup.appendChild(inletStub);
+    this.elements.push(inletStub);
+
+    const outletStub = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    outletStub.setAttribute('x', String(cx + r));
+    outletStub.setAttribute('y', String(cy - stubW / 2));
+    outletStub.setAttribute('width', String(stubL));
+    outletStub.setAttribute('height', String(stubW));
+    outletStub.setAttribute('fill', '#475569');
+    outletStub.setAttribute('data-outlet', 'true');
+    ctx.parentGroup.appendChild(outletStub);
+    this.elements.push(outletStub);
+
     // Outer circle: pump casing
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('cx', String(cx));

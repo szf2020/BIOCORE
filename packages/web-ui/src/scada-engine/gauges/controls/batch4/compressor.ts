@@ -54,10 +54,26 @@ class CompressorGauge implements GaugeBase {
     outer.setAttribute('rx', String(rx));
     outer.setAttribute('ry', String(ry));
     outer.setAttribute('fill', prop.bodyColor ?? DEFAULT_BODY_COLOR);
+    outer.setAttribute('stroke', '#1e293b');
+    outer.setAttribute('stroke-width', '1.5');
     outer.setAttribute('data-widget-id', widget.id);
     ctx.parentGroup.appendChild(outer);
     this.outerEl = outer;
     this.elements.push(outer);
+
+    // Cooling fins (3 vertical lines across body — P&ID compressor cue)
+    for (const fx of [cx - rx * 0.5, cx, cx + rx * 0.5]) {
+      const fin = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      fin.setAttribute('x1', String(fx));
+      fin.setAttribute('y1', String(cy - ry * 0.7));
+      fin.setAttribute('x2', String(fx));
+      fin.setAttribute('y2', String(cy + ry * 0.7));
+      fin.setAttribute('stroke', '#1e293b');
+      fin.setAttribute('stroke-width', '1');
+      fin.setAttribute('data-fin', 'true');
+      ctx.parentGroup.appendChild(fin);
+      this.elements.push(fin);
+    }
 
     // Inner ellipse: state indicator
     const inner = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
@@ -70,6 +86,21 @@ class CompressorGauge implements GaugeBase {
     ctx.parentGroup.appendChild(inner);
     this.innerEl = inner;
     this.elements.push(inner);
+
+    // Base stand (trapezoid path below body)
+    const baseTopY = cy + ry;
+    const baseBottomY = y + h;
+    const baseTopHalf = rx * 0.5;
+    const baseBottomHalf = rx * 0.8;
+    if (baseBottomY > baseTopY + 1) {
+      const base = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const d = `M ${cx - baseTopHalf} ${baseTopY} L ${cx + baseTopHalf} ${baseTopY} L ${cx + baseBottomHalf} ${baseBottomY} L ${cx - baseBottomHalf} ${baseBottomY} Z`;
+      base.setAttribute('d', d);
+      base.setAttribute('fill', '#334155');
+      base.setAttribute('data-base', 'true');
+      ctx.parentGroup.appendChild(base);
+      this.elements.push(base);
+    }
   }
 
   onUnmount(): void {

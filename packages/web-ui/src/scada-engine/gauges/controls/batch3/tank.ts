@@ -28,6 +28,7 @@ class TankGauge implements GaugeBase {
   private bgRect: SVGRectElement | null = null;
   private fillRect: SVGRectElement | null = null;
   private labelEl: SVGTextElement | null = null;
+  private tickEls: SVGLineElement[] = [];
   private widget!: FuxaWidget;
   private actionRt: ActionRuntime = createActionRuntime();
 
@@ -39,13 +40,16 @@ class TankGauge implements GaugeBase {
     const h = (widget as any).h ?? 100;
     const prop = widget.property as TankProperty;
 
-    // Background rect
+    // Background rect with P&ID-style outline
     const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     bg.setAttribute('x', String(x));
     bg.setAttribute('y', String(y));
     bg.setAttribute('width', String(w));
     bg.setAttribute('height', String(h));
     bg.setAttribute('fill', prop.bgColor ?? DEFAULT_BG_COLOR);
+    bg.setAttribute('stroke', '#475569');
+    bg.setAttribute('stroke-width', '2');
+    bg.setAttribute('rx', '4');
     bg.setAttribute('data-widget-id', widget.id);
     ctx.parentGroup.appendChild(bg);
     this.bgRect = bg;
@@ -60,6 +64,21 @@ class TankGauge implements GaugeBase {
     fill.setAttribute('data-fill', 'true');
     ctx.parentGroup.appendChild(fill);
     this.fillRect = fill;
+
+    // Right-side scale tick marks (3 ticks: 25%, 50%, 75%)
+    this.tickEls = [];
+    for (const pct of [0.25, 0.5, 0.75]) {
+      const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      tick.setAttribute('x1', String(x + w - 6));
+      tick.setAttribute('y1', String(y + h * (1 - pct)));
+      tick.setAttribute('x2', String(x + w));
+      tick.setAttribute('y2', String(y + h * (1 - pct)));
+      tick.setAttribute('stroke', '#475569');
+      tick.setAttribute('stroke-width', '1');
+      tick.setAttribute('data-tick', String(pct));
+      ctx.parentGroup.appendChild(tick);
+      this.tickEls.push(tick);
+    }
 
     // Label text
     if (prop.showLabel !== false) {
@@ -82,6 +101,8 @@ class TankGauge implements GaugeBase {
     this.bgRect?.remove();
     this.fillRect?.remove();
     this.labelEl?.remove();
+    this.tickEls.forEach((t) => t.remove());
+    this.tickEls = [];
     this.bgRect = null;
     this.fillRect = null;
     this.labelEl = null;

@@ -54,7 +54,7 @@ class ValveGauge implements GaugeBase {
     const cx = x + w / 2;
     const cy = y + h / 2;
     const rx = w * 0.3;
-    const ry = h * 0.45;
+    const ry = h * 0.35;
     const pts = [
       `${cx},${cy - ry}`,
       `${cx + rx},${cy}`,
@@ -64,10 +64,41 @@ class ValveGauge implements GaugeBase {
     const body = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
     body.setAttribute('points', pts);
     body.setAttribute('fill', closedColor);
+    body.setAttribute('stroke', '#1e293b');
+    body.setAttribute('stroke-width', '1.5');
     body.setAttribute('data-valve-body', 'true');
     ctx.parentGroup.appendChild(body);
     this.valveBodyEl = body;
     this.elements.push(body);
+
+    // Stem line (vertical from valve body to handle)
+    const stemTopY = y + h * 0.05;
+    const stemBottomY = cy - ry;
+    if (stemBottomY > stemTopY + 1) {
+      const stem = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      stem.setAttribute('x1', String(cx));
+      stem.setAttribute('y1', String(stemBottomY));
+      stem.setAttribute('x2', String(cx));
+      stem.setAttribute('y2', String(stemTopY));
+      stem.setAttribute('stroke', '#334155');
+      stem.setAttribute('stroke-width', '2');
+      stem.setAttribute('data-valve-stem', 'true');
+      ctx.parentGroup.appendChild(stem);
+      this.elements.push(stem);
+
+      // Handle (horizontal bar at stem top)
+      const handleW = w * 0.5;
+      const handleH = h * 0.06;
+      const handle = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      handle.setAttribute('x', String(cx - handleW / 2));
+      handle.setAttribute('y', String(stemTopY - handleH / 2));
+      handle.setAttribute('width', String(handleW));
+      handle.setAttribute('height', String(handleH));
+      handle.setAttribute('fill', '#334155');
+      handle.setAttribute('data-valve-handle', 'true');
+      ctx.parentGroup.appendChild(handle);
+      this.elements.push(handle);
+    }
   }
 
   onUnmount(): void {
