@@ -2,7 +2,7 @@
 
 import type { FuxaWidget } from '../../models/widget';
 
-export type PaletteItemType = 'rect' | 'ellipse' | 'text';
+export type PaletteItemType = 'rect' | 'ellipse' | 'text' | 'line';
 
 export interface PaletteItem {
   id: PaletteItemType;
@@ -15,6 +15,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
   { id: 'rect',    label: '矩形', defaultW: 100, defaultH: 60 },
   { id: 'ellipse', label: '椭圆', defaultW: 80,  defaultH: 80 },
   { id: 'text',    label: '文本', defaultW: 120, defaultH: 30 },
+  { id: 'line',    label: '直线', defaultW: 120, defaultH: 2 },
 ];
 
 export function makeWidget(

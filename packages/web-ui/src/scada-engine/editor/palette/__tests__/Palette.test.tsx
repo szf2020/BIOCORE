@@ -4,10 +4,10 @@ import { render, fireEvent } from '@testing-library/react';
 import { Palette } from '../Palette';
 
 describe('Palette component (SP-FX-4)', () => {
-  it('renders 3 palette items', () => {
+  it('renders 4 basic palette items (rect/ellipse/text/line)', () => {
     const { container } = render(<Palette />);
     const items = container.querySelectorAll('[data-palette-item]');
-    expect(items.length).toBe(3);
+    expect(items.length).toBe(4);
   });
 
   it('each item is draggable', () => {
@@ -54,7 +54,7 @@ describe('Palette component (SP-FX-4)', () => {
     const basic = panel.querySelector('details[data-section="basic"] ul') as HTMLUListElement;
     expect(basic).not.toBeNull();
     const lis = Array.from(basic.children).filter((c) => c.tagName === 'LI');
-    expect(lis.length).toBe(3);
+    expect(lis.length).toBe(4);
     expect(panel.querySelector('[data-panel="shape-picker"]')).toBeNull();
   });
 });

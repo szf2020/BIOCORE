@@ -153,6 +153,19 @@ export class CanvasController {
         this.widgetLayer.node.appendChild(node);
         return SVG(node) as SvgElement;
       }
+      case 'line': {
+        const prop = widget.property as { stroke?: string; strokeWidth?: number };
+        const node = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        node.setAttribute('x1', String(widget.x));
+        node.setAttribute('y1', String(widget.y + widget.h / 2));
+        node.setAttribute('x2', String(widget.x + widget.w));
+        node.setAttribute('y2', String(widget.y + widget.h / 2));
+        node.setAttribute('stroke', prop.stroke ?? '#111827');
+        node.setAttribute('stroke-width', String(prop.strokeWidth ?? Math.max(1, widget.h)));
+        node.setAttribute('data-widget-id', widget.id);
+        this.widgetLayer.node.appendChild(node);
+        return SVG(node) as SvgElement;
+      }
       default: {
         // SP-FX-48.4: real gauge widgets (svg-ext-*) — delegate to GaugeRegistry
         // so the editor canvas matches runtime visuals (no more generic blocks).
@@ -205,6 +218,17 @@ export class CanvasController {
         const content = ((widget.property as { text?: string }).text) ?? '文本';
         el.attr({ x: cx, y: cy });
         (el.node as SVGTextElement).textContent = content;
+        break;
+      }
+      case 'line': {
+        const prop = widget.property as { stroke?: string; strokeWidth?: number };
+        const node = el.node as SVGLineElement;
+        node.setAttribute('x1', String(widget.x));
+        node.setAttribute('y1', String(widget.y + widget.h / 2));
+        node.setAttribute('x2', String(widget.x + widget.w));
+        node.setAttribute('y2', String(widget.y + widget.h / 2));
+        if (prop.stroke) node.setAttribute('stroke', prop.stroke);
+        if (prop.strokeWidth != null) node.setAttribute('stroke-width', String(prop.strokeWidth));
         break;
       }
       default: {

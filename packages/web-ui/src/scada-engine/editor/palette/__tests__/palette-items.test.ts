@@ -2,15 +2,22 @@ import { describe, it, expect } from 'vitest';
 import { PALETTE_ITEMS, makeWidget } from '../palette-items';
 
 describe('palette-items PALETTE_ITEMS', () => {
-  it('has 3 items (rect, ellipse, text) with required fields', () => {
-    expect(PALETTE_ITEMS.length).toBe(3);
+  it('has 4 items (rect, ellipse, text, line) with required fields', () => {
+    expect(PALETTE_ITEMS.length).toBe(4);
     const ids = PALETTE_ITEMS.map((i) => i.id);
-    expect(ids).toEqual(['rect', 'ellipse', 'text']);
+    expect(ids).toEqual(['rect', 'ellipse', 'text', 'line']);
     for (const item of PALETTE_ITEMS) {
       expect(typeof item.label).toBe('string');
       expect(typeof item.defaultW).toBe('number');
       expect(typeof item.defaultH).toBe('number');
     }
+  });
+
+  it('line: defaults w=120 h=2', () => {
+    const w = makeWidget('line', { x: 0, y: 0 }, 10);
+    expect(w.type).toBe('line');
+    expect(w.w).toBe(120);
+    expect(w.h).toBe(2);
   });
 });
 

@@ -123,6 +123,14 @@ export const textSchema: WidgetPropertySchema = {
   ],
 };
 
+export const lineSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'stroke', label: '线条颜色', type: 'color', allowNone: true },
+    { key: 'strokeWidth', label: '线条粗细', type: 'number', min: 1, max: 20, step: 1 },
+    ...GEOMETRY_ENTRIES,
+  ],
+};
+
 export const valueSchema: WidgetPropertySchema = {
   entries: [
     { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
@@ -663,6 +671,7 @@ export const WIDGET_SCHEMAS: Record<string, WidgetPropertySchema> = {
   'rect': rectSchema,
   'ellipse': ellipseSchema,
   'text': textSchema,
+  'line': lineSchema,
   // SP-FX-48.7: FUXA parity batch 5
   'svg-ext-panel': panelSchema,
   'svg-ext-html_video': htmlVideoSchema,

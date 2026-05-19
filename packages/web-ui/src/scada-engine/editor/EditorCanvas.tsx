@@ -356,8 +356,8 @@ export function EditorCanvas() {
           : { x: e.clientX - hostRect.left, y: e.clientY - hostRect.top };
         const store = useEditorStore.getState();
 
-        const basicType = e.dataTransfer.getData('palette-item') as 'rect' | 'ellipse' | 'text' | '';
-        if (basicType && (['rect', 'ellipse', 'text'] as string[]).includes(basicType)) {
+        const basicType = e.dataTransfer.getData('palette-item') as 'rect' | 'ellipse' | 'text' | 'line' | '';
+        if (basicType && (['rect', 'ellipse', 'text', 'line'] as string[]).includes(basicType)) {
           store.addWidget(makeWidget(basicType, local, store.gridSize));
           return;
         }
