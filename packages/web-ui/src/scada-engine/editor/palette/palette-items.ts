@@ -51,16 +51,11 @@ export interface GaugePaletteItem {
 }
 
 export const GAUGE_PALETTE_ITEMS: GaugePaletteItem[] = [
-  // General — HTML controls, charts, media, scheduler
+  // General — HTML controls + media
   { widgetType: 'svg-ext-value',           label: '数值显示',  defaultW: 120, defaultH: 30,  category: 'general' },
   { widgetType: 'svg-ext-html_button',     label: '按钮',      defaultW: 100, defaultH: 36,  category: 'general' },
   { widgetType: 'svg-ext-html_input',      label: '输入框',    defaultW: 140, defaultH: 32,  category: 'general' },
-  { widgetType: 'svg-ext-html_chart',      label: '折线图表',  defaultW: 320, defaultH: 200, category: 'general' },
-  { widgetType: 'svg-ext-own_ctrl-table',  label: '表格',      defaultW: 280, defaultH: 160, category: 'general' },
   { widgetType: 'svg-ext-html_img',        label: '图片',      defaultW: 120, defaultH: 80,  category: 'general' },
-  { widgetType: 'svg-ext-html_iframe',     label: '内嵌网页',  defaultW: 320, defaultH: 200, category: 'general' },
-  { widgetType: 'svg-ext-html_video',      label: '视频',      defaultW: 320, defaultH: 180, category: 'general' },
-  { widgetType: 'svg-ext-html_scheduler',  label: '日程表',    defaultW: 480, defaultH: 200, category: 'general' },
   { widgetType: 'svg-ext-html_select',     label: '下拉选择',  defaultW: 140, defaultH: 32,  category: 'general' },
   // Animation — value-driven visual widgets
   { widgetType: 'svg-ext-gauge_semaphore', label: '信号灯',    defaultW: 60,  defaultH: 60,  category: 'animation' },

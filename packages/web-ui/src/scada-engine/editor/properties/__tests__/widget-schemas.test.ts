@@ -1,14 +1,15 @@
+// SP-FX-48.16: htmlChart/htmlTable/htmlIframe/htmlVideo/htmlScheduler removed (user request).
 import { describe, it, expect } from 'vitest';
 import {
-  valueSchema, htmlButtonSchema, htmlInputSchema, htmlChartSchema, htmlTableSchema,
+  valueSchema, htmlButtonSchema, htmlInputSchema,
   gaugeSemaphoreSchema, gaugeProgressSchema, htmlSwitchSchema, sliderSchema, pipeSchema,
   htmlBagSchema, htmlGraphSchema, tankSchema, motorSchema, htmlImageSchema,
-  htmlIframeSchema, compressorSchema, valveSchema, pumpSchema, htmlSelectSchema,
+  compressorSchema, valveSchema, pumpSchema, htmlSelectSchema,
 } from '../widget-schemas';
 
 describe('widget-schemas', () => {
-  it('all 5 batch-1 schemas export valid entries arrays with string keys and labels', () => {
-    const schemas = [valueSchema, htmlButtonSchema, htmlInputSchema, htmlChartSchema, htmlTableSchema];
+  it('all 3 batch-1 schemas export valid entries arrays with string keys and labels', () => {
+    const schemas = [valueSchema, htmlButtonSchema, htmlInputSchema];
     for (const schema of schemas) {
       expect(Array.isArray(schema.entries)).toBe(true);
       expect(schema.entries.length).toBeGreaterThan(0);
@@ -20,9 +21,7 @@ describe('widget-schemas', () => {
     }
   });
 
-  it('chart and table schemas include renderCustomSection; others do not', () => {
-    expect(typeof htmlChartSchema.renderCustomSection).toBe('function');
-    expect(typeof htmlTableSchema.renderCustomSection).toBe('function');
+  it('batch-1 schemas do not include renderCustomSection', () => {
     expect(valueSchema.renderCustomSection).toBeUndefined();
     expect(htmlButtonSchema.renderCustomSection).toBeUndefined();
     expect(htmlInputSchema.renderCustomSection).toBeUndefined();
@@ -156,19 +155,7 @@ describe('widget-schemas', () => {
     expect(WIDGET_SCHEMAS['svg-ext-html_img']).toBeDefined();
   });
 
-  // SP-FX-10 batch 4 schema tests (+10)
-
-  it('htmlIframeSchema has src text entry and geometric x/y/w/h', () => {
-    const srcEntry = htmlIframeSchema.entries.find(e => e.key === 'src');
-    expect(srcEntry?.type).toBe('text');
-    const geoKeys = htmlIframeSchema.entries.filter(e => e.geometric).map(e => e.key);
-    expect(geoKeys).toEqual(expect.arrayContaining(['x', 'y', 'w', 'h']));
-  });
-
-  it('htmlIframeSchema has no variableId entry (iframe has no tag binding)', () => {
-    const varEntry = htmlIframeSchema.entries.find(e => e.key === 'variableId');
-    expect(varEntry).toBeUndefined();
-  });
+  // SP-FX-10 batch 4 schema tests
 
   it('compressorSchema has tag-ref variableId entry and geometric x/y/w/h', () => {
     const entry = compressorSchema.entries.find(e => e.key === 'variableId');
@@ -225,9 +212,8 @@ describe('widget-schemas', () => {
     expect((result as any).props['data-section']).toBe('select-options');
   });
 
-  it('WIDGET_SCHEMAS includes all 5 batch-4 widget types', async () => {
+  it('WIDGET_SCHEMAS includes all 4 batch-4 widget types', async () => {
     const { WIDGET_SCHEMAS } = await import('../widget-schemas');
-    expect(WIDGET_SCHEMAS['svg-ext-html_iframe']).toBeDefined();
     expect(WIDGET_SCHEMAS['svg-ext-compressor']).toBeDefined();
     expect(WIDGET_SCHEMAS['svg-ext-valve']).toBeDefined();
     expect(WIDGET_SCHEMAS['svg-ext-pump']).toBeDefined();

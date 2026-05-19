@@ -22,5 +22,5 @@ export { PropertiesPlaceholder } from './properties/PropertiesPlaceholder';
 
 // SP-FX-6 additions
 export { PropertyPanel, type PropertyPanelProps } from './properties/PropertyPanel';
-export { WIDGET_SCHEMAS, valueSchema, htmlButtonSchema, htmlInputSchema, htmlChartSchema, htmlTableSchema } from './properties/widget-schemas';
+export { WIDGET_SCHEMAS, valueSchema, htmlButtonSchema, htmlInputSchema } from './properties/widget-schemas';
 export type { WidgetPropertySchema, PropertySchemaEntry } from './properties/property-schema';

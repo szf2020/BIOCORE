@@ -182,66 +182,6 @@ export const htmlInputSchema: WidgetPropertySchema = {
   ],
 };
 
-export const htmlChartSchema: WidgetPropertySchema = {
-  entries: [
-    { key: 'title', label: '图表标题', type: 'text', placeholder: '趋势图' },
-    { key: 'timeRangeSeconds', label: '时间范围 (秒)', type: 'number', min: 10, max: 3600, step: 10 },
-    { key: 'x', label: 'X', type: 'number', geometric: true },
-    { key: 'y', label: 'Y', type: 'number', geometric: true },
-    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
-    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
-  ],
-  renderCustomSection: (property, onChange) => {
-    const variableIds = Array.isArray((property as any).variableIds)
-      ? ((property as any).variableIds as string[])
-      : [];
-    return (
-      <div data-section="chart-series">
-        <p className="text-xs text-zinc-400 mb-1">Series Tags（逗号分隔）</p>
-        <textarea
-          className="bg-zinc-800 border border-zinc-600 rounded px-2 py-1 text-xs w-full resize-none"
-          rows={3}
-          value={variableIds.join(', ')}
-          placeholder="reactor1.AI-0, reactor1.AI-1"
-          onChange={(e) => {
-            const ids = e.target.value.split(',').map((s) => s.trim()).filter(Boolean);
-            onChange({ variableIds: ids });
-          }}
-        />
-      </div>
-    );
-  },
-};
-
-export const htmlTableSchema: WidgetPropertySchema = {
-  entries: [
-    { key: 'title', label: '表格标题', type: 'text', placeholder: '数据表' },
-    { key: 'x', label: 'X', type: 'number', geometric: true },
-    { key: 'y', label: 'Y', type: 'number', geometric: true },
-    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
-    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
-  ],
-  renderCustomSection: (property, onChange) => {
-    const rows = Array.isArray((property as any)?.options?.rows)
-      ? ((property as any).options.rows as any[])
-      : [];
-    return (
-      <div data-section="table-columns">
-        <p className="text-xs text-zinc-400 mb-1">行数：{rows.length}</p>
-        <button
-          className="text-xs text-blue-400 underline"
-          onClick={() => {
-            const newRow = { cells: [{ type: 'label', value: '' }, { type: 'variable', variableId: '' }] };
-            onChange({ options: { ...((property as any).options ?? {}), rows: [...rows, newRow] } });
-          }}
-        >
-          + 添加行
-        </button>
-      </div>
-    );
-  },
-};
-
 // SP-FX-6.2: Batch 2 schemas
 
 export const gaugeSemaphoreSchema: WidgetPropertySchema = {
@@ -517,17 +457,6 @@ export const htmlImageSchema: WidgetPropertySchema = {
 
 // SP-FX-10 Batch 4 schemas
 
-export const htmlIframeSchema: WidgetPropertySchema = {
-  entries: [
-    { key: 'src', label: '嵌入 URL (https://)', type: 'text', placeholder: 'https://example.com' },
-    { key: 'title', label: 'iframe 标题', type: 'text', placeholder: '页面标题' },
-    { key: 'x', label: 'X', type: 'number', geometric: true },
-    { key: 'y', label: 'Y', type: 'number', geometric: true },
-    { key: 'w', label: '宽', type: 'number', geometric: true, min: 0 },
-    { key: 'h', label: '高', type: 'number', geometric: true, min: 0 },
-  ],
-};
-
 export const compressorSchema: WidgetPropertySchema = {
   entries: [
     { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
@@ -646,26 +575,6 @@ export const panelSchema: WidgetPropertySchema = {
   ],
 };
 
-export const htmlVideoSchema: WidgetPropertySchema = {
-  entries: [
-    { key: 'src', label: '视频 URL (https://)', type: 'text', placeholder: 'https://example.com/video.mp4' },
-    { key: 'autoplay', label: '自动播放', type: 'boolean' },
-    { key: 'loop', label: '循环播放', type: 'boolean' },
-    { key: 'muted', label: '静音', type: 'boolean' },
-    { key: 'controls', label: '显示控制条', type: 'boolean' },
-    ...GEOMETRY_ENTRIES,
-  ],
-};
-
-export const htmlSchedulerSchema: WidgetPropertySchema = {
-  entries: [
-    { key: 'blockColor', label: '时段颜色', type: 'color' },
-    { key: 'gridColor', label: '网格颜色', type: 'color' },
-    { key: 'labelColor', label: '标签颜色', type: 'color' },
-    ...GEOMETRY_ENTRIES,
-  ],
-};
-
 export const WIDGET_SCHEMAS: Record<string, WidgetPropertySchema> = {
   // SP-FX-48.5: basic shapes (geometry + style only)
   'rect': rectSchema,
@@ -674,13 +583,9 @@ export const WIDGET_SCHEMAS: Record<string, WidgetPropertySchema> = {
   'line': lineSchema,
   // SP-FX-48.7: FUXA parity batch 5
   'svg-ext-panel': panelSchema,
-  'svg-ext-html_video': htmlVideoSchema,
-  'svg-ext-html_scheduler': htmlSchedulerSchema,
   'svg-ext-value': valueSchema,
   'svg-ext-html_button': htmlButtonSchema,
   'svg-ext-html_input': htmlInputSchema,
-  'svg-ext-html_chart': htmlChartSchema,
-  'svg-ext-own_ctrl-table': htmlTableSchema,
   'svg-ext-gauge_semaphore': gaugeSemaphoreSchema,
   'svg-ext-gauge_progress': gaugeProgressSchema,
   'svg-ext-html_switch': htmlSwitchSchema,
@@ -693,7 +598,6 @@ export const WIDGET_SCHEMAS: Record<string, WidgetPropertySchema> = {
   'svg-ext-motor': motorSchema,
   'svg-ext-html_img': htmlImageSchema,
   // SP-FX-10 batch 4
-  'svg-ext-html_iframe': htmlIframeSchema,
   'svg-ext-compressor': compressorSchema,
   'svg-ext-valve': valveSchema,
   'svg-ext-pump': pumpSchema,
