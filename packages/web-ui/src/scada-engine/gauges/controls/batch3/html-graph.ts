@@ -6,8 +6,13 @@ import type { GaugeBase, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } 
 import type { FuxaWidget } from '../../../models';
 import { matchRange, applyActions, createActionRuntime, teardownActions, type Range, type RangeAction, type ActionRuntime } from '../../runtime-helpers';
 
+type GraphChartType = 'line' | 'bar';
+
 interface GraphProperty {
   variableId?: string;
+  // SP-FX-48.19: FUXA chartType enum (line/bar). Pie omitted: single-tag pie
+  // is a gauge, not a chart — use svg-ext-gauge_progress for that.
+  chartType?: GraphChartType;
   maxPoints?: number;
   lineColor?: string;
   bgColor?: string;
@@ -127,6 +132,27 @@ class HtmlGraphGauge implements GaugeBase {
     ctx2d.fillStyle = bgColor;
     ctx2d.fillRect(0, 0, w, h);
 
+    if (this.buffer.length < 1) return;
+
+    const chartType: GraphChartType = prop?.chartType ?? 'line';
+
+    if (chartType === 'bar') {
+      // SP-FX-48.19: Bar chart — one vertical bar per buffer sample.
+      const slot = w / this.buffer.length;
+      const barW = Math.max(1, slot * 0.7);
+      const gap = (slot - barW) / 2;
+      ctx2d.fillStyle = lineColor;
+      this.buffer.forEach((val, i) => {
+        const px = i * slot + gap;
+        const ratio = Math.max(0, Math.min(1, (val - minVal) / range));
+        const barH = ratio * h;
+        const py = h - barH;
+        ctx2d.fillRect(px, py, barW, barH);
+      });
+      return;
+    }
+
+    // line chart (default)
     if (this.buffer.length < 2) return;
 
     ctx2d.beginPath();

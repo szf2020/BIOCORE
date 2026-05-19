@@ -85,4 +85,26 @@ describe('HtmlGraphGauge', () => {
     expect(ctx.parentGroup.childElementCount).toBe(0);
     expect(() => gauge.onUnmount()).not.toThrow();
   });
+
+  // SP-FX-48.19 phase 2: chartType=bar renders bars (smoke test — no canvas pixel
+  // assertions in jsdom, just verify no throw + buffer still updates).
+  it('chartType=bar updates buffer count same as line variant', async () => {
+    const { htmlGraphMeta } = await import('../../../controls/batch3/html-graph');
+    const ctx = makeCtx();
+    const gauge = htmlGraphMeta.create();
+    gauge.onMount(makeWidget({ property: { variableId: 'r1.AI-0', chartType: 'bar', maxPoints: 5, minVal: 0, maxVal: 100 } } as any), ctx);
+    gauge.onProcess({ value: 10, isStale: false });
+    gauge.onProcess({ value: 30, isStale: false });
+    gauge.onProcess({ value: 60, isStale: false });
+    const canvas = ctx.parentGroup.querySelector('canvas') as HTMLCanvasElement | null;
+    expect(canvas?.dataset['pointCount']).toBe('3');
+  });
+
+  it('chartType=bar single sample does not throw (line needs 2 points minimum)', async () => {
+    const { htmlGraphMeta } = await import('../../../controls/batch3/html-graph');
+    const ctx = makeCtx();
+    const gauge = htmlGraphMeta.create();
+    gauge.onMount(makeWidget({ property: { variableId: 'r1.AI-0', chartType: 'bar', maxPoints: 5 } } as any), ctx);
+    expect(() => gauge.onProcess({ value: 42, isStale: false })).not.toThrow();
+  });
 });

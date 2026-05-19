@@ -97,4 +97,45 @@ describe('HtmlSelectGauge', () => {
     expect(ctx.parentGroup.childElementCount).toBe(0);
     expect(() => gauge.onUnmount()).not.toThrow();
   });
+
+  // SP-FX-48.19 phase 2: derive options[] from FUXA-style ranges[] when options absent.
+  it('derives options from ranges[] when options[] is absent (FUXA fallback)', async () => {
+    const { htmlSelectMeta } = await import('../../../controls/batch4/html-select');
+    const ctx = makeCtx('runtime');
+    const widget = {
+      ...makeWidget(),
+      property: {
+        variableId: 'r1.recipe-step',
+        ranges: [
+          { min: 1, max: 1, text: '步骤一', color: '#22c55e' },
+          { min: 2, max: 2, text: '步骤二', color: '#3b82f6' },
+        ],
+      },
+    } as FuxaWidget;
+    const gauge = htmlSelectMeta.create();
+    gauge.onMount(widget, ctx);
+    const select = ctx.parentGroup.querySelector('foreignObject select') as HTMLSelectElement | null;
+    expect(select).toBeTruthy();
+    expect(select!.children.length).toBe(3); // 1 placeholder + 2 derived
+    expect((select!.children[1] as HTMLOptionElement).value).toBe('1');
+    expect((select!.children[1] as HTMLOptionElement).textContent).toBe('步骤一');
+    expect((select!.children[2] as HTMLOptionElement).value).toBe('2');
+  });
+
+  it('readonly=true disables select even in runtime mode', async () => {
+    const { htmlSelectMeta } = await import('../../../controls/batch4/html-select');
+    const ctx = makeCtx('runtime');
+    const widget = {
+      ...makeWidget(),
+      property: {
+        variableId: 'r1.recipe-step',
+        options: [{ value: 'a', label: 'A' }],
+        readonly: true,
+      },
+    } as FuxaWidget;
+    const gauge = htmlSelectMeta.create();
+    gauge.onMount(widget, ctx);
+    const select = ctx.parentGroup.querySelector('foreignObject select') as HTMLSelectElement | null;
+    expect(select?.disabled).toBe(true);
+  });
 });

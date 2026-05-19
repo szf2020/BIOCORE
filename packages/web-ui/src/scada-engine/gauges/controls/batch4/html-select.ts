@@ -1,18 +1,49 @@
 // SP-FX-10 T10: HtmlSelectGauge — foreignObject + HTML select, onChange WriteIntent.
+// SP-FX-48.19 (phase 2): FUXA fidelity — ranges[]→options[] derivation,
+// range per-option bg/fg/stroke, readonly toggle, action system.
 // FUXA equivalent: svg-ext-html_select
 
 import type { GaugeBase, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } from '../../gauge-base';
 import type { FuxaWidget } from '../../../models';
+import {
+  applyActions,
+  createActionRuntime,
+  teardownActions,
+  type Range,
+  type RangeAction,
+  type ActionRuntime,
+} from '../../runtime-helpers';
 
 interface SelectOption {
   value: string;
   label: string;
+  bgColor?: string;
+  textColor?: string;
 }
 
 interface SelectProperty {
   variableId?: string;
   options?: SelectOption[];
   placeholder?: string;
+  readonly?: boolean;
+  ranges?: Range[];
+  actions?: RangeAction[];
+}
+
+// SP-FX-48.19: when `options[]` absent and `ranges[]` present, derive option
+// list from ranges using FUXA convention: range.min → option value, range.text
+// → option label, range.color → option bg, range.textColor → option fg.
+function deriveOptions(prop: SelectProperty): SelectOption[] {
+  if (Array.isArray(prop.options) && prop.options.length > 0) return prop.options;
+  if (!Array.isArray(prop.ranges)) return [];
+  return prop.ranges
+    .filter((r) => Number.isFinite(r.min))
+    .map((r) => ({
+      value: String(r.min),
+      label: r.text ?? String(r.min),
+      bgColor: r.color,
+      textColor: r.textColor,
+    }));
 }
 
 class HtmlSelectGauge implements GaugeBase {
@@ -21,6 +52,7 @@ class HtmlSelectGauge implements GaugeBase {
   private widget!: FuxaWidget;
   private ctx!: GaugeContext;
   private changeHandler: (() => void) | null = null;
+  private actionRt: ActionRuntime = createActionRuntime();
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -41,28 +73,33 @@ class HtmlSelectGauge implements GaugeBase {
     const select = document.createElement('select');
     select.style.width = '100%';
     select.style.height = '100%';
-    select.disabled = ctx.mode !== 'runtime';
+    select.disabled = ctx.mode !== 'runtime' || prop.readonly === true;
+    if (prop.readonly === true) {
+      select.style.border = '0';
+      select.style.appearance = 'none';
+      select.style.background = 'transparent';
+    }
 
-    // Placeholder option
-    const placeholder = prop.placeholder ?? '请选择...';
+    const placeholderText = prop.placeholder ?? '请选择...';
     const placeholderOpt = document.createElement('option');
     placeholderOpt.value = '';
-    placeholderOpt.textContent = placeholder;
+    placeholderOpt.textContent = placeholderText;
     placeholderOpt.disabled = true;
     select.appendChild(placeholderOpt);
 
-    // Value options
-    for (const opt of (prop.options ?? [])) {
+    for (const opt of deriveOptions(prop)) {
       const optEl = document.createElement('option');
       optEl.value = opt.value;
       optEl.textContent = opt.label;
+      if (opt.bgColor) optEl.style.backgroundColor = opt.bgColor;
+      if (opt.textColor) optEl.style.color = opt.textColor;
       select.appendChild(optEl);
     }
 
     this.changeHandler = () => {
       if (this.ctx.mode !== 'runtime') return;
       const p = this.widget.property as SelectProperty;
-      if (!p.variableId) return;
+      if (!p.variableId || p.readonly === true) return;
       this.ctx.onWriteIntent?.({ tag: p.variableId, value: select.value, widgetId: this.widget.id });
     };
     select.addEventListener('change', this.changeHandler);
@@ -74,6 +111,7 @@ class HtmlSelectGauge implements GaugeBase {
   }
 
   onUnmount(): void {
+    teardownActions(this.actionRt);
     if (this.selectEl && this.changeHandler) {
       this.selectEl.removeEventListener('change', this.changeHandler);
     }
@@ -84,16 +122,35 @@ class HtmlSelectGauge implements GaugeBase {
   }
 
   onProcess(value: GaugeValue): void {
-    if (!this.selectEl) return;
+    if (!this.selectEl || !this.foreignObj) return;
+    const prop = this.widget.property as SelectProperty;
     if (value.isStale || value.value === null) {
       this.selectEl.value = '';
-      return;
+    } else {
+      this.selectEl.value = String(value.value);
     }
-    this.selectEl.value = String(value.value);
+    applyActions(value.value, prop.actions, this.foreignObj as unknown as SVGElement, this.actionRt);
   }
 
   onPropertyChange(change: GaugePropChange): void {
     this.widget = change.nextWidget;
+    if (!this.selectEl) return;
+    const prop = this.widget.property as SelectProperty;
+    const prevValue = this.selectEl.value;
+    Array.from(this.selectEl.children).forEach((child, i) => {
+      if (i > 0) child.remove();
+    });
+    for (const opt of deriveOptions(prop)) {
+      const optEl = document.createElement('option');
+      optEl.value = opt.value;
+      optEl.textContent = opt.label;
+      if (opt.bgColor) optEl.style.backgroundColor = opt.bgColor;
+      if (opt.textColor) optEl.style.color = opt.textColor;
+      this.selectEl.appendChild(optEl);
+    }
+    const stillValid = Array.from(this.selectEl.options).some((o) => o.value === prevValue);
+    this.selectEl.value = stillValid ? prevValue : '';
+    this.selectEl.disabled = this.ctx.mode !== 'runtime' || prop.readonly === true;
   }
 
   onResize(w: number, h: number): void {
