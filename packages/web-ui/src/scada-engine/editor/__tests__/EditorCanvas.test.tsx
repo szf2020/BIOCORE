@@ -445,7 +445,9 @@ describe('EditorCanvas rotate (SP-FX-3b.2.2)', () => {
     expect('rotate' in w).toBe(false);
   });
 
-  it('TransformHandles position stays at unrotated AABB even when widget.rotate is set', () => {
+  // SP-FX-48.23: selection handles now sync rotation with the widget so the
+  // chrome tracks rotated widgets (previously was axis-aligned even on rotate).
+  it('TransformHandles group rotates to match widget.rotate', () => {
     const { container } = render(<EditorCanvas />);
     act(() => {
       useEditorStore.getState().openView(makeViewWithItems({
@@ -455,7 +457,7 @@ describe('EditorCanvas rotate (SP-FX-3b.2.2)', () => {
     });
     const overlay = container.querySelector('[data-overlay="transform"]') as SVGGElement;
     expect(overlay).not.toBeNull();
-    expect(overlay.getAttribute('transform') ?? '').not.toContain('rotate');
+    expect(overlay.getAttribute('transform') ?? '').toContain('rotate(90');
   });
 
   it('selection useEffect with rotated widget: selectionRect at unrotated geom', () => {

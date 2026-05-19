@@ -16,6 +16,7 @@ export class TransformHandles {
   private handles: Record<HandleId, Rect>;
   private bboxCorners: Rect[];
   private currentBox: Box | null = null;
+  private currentRotate: number | undefined = undefined;
   private visible = false;
   private mode: 'single' | 'bbox' = 'single';
 
@@ -42,10 +43,12 @@ export class TransformHandles {
         .attr('visibility', 'hidden');
       this.bboxCorners.push(r);
     }
+    // Ensure bbox mode lays out from a known-good axis-aligned group
   }
 
-  show(box: Box): void {
+  show(box: Box, rotate?: number): void {
     this.currentBox = box;
+    this.currentRotate = rotate;
     this.visible = true;
     this.mode = 'single';
     this.group.attr('visibility', 'visible');
@@ -55,10 +58,12 @@ export class TransformHandles {
     }
     for (const c of this.bboxCorners) c.attr('visibility', 'hidden');
     this.layout(box);
+    this.applyRotation(box, rotate);
   }
 
   showBbox(bbox: Box): void {
     this.currentBox = bbox;
+    this.currentRotate = undefined;
     this.visible = true;
     this.mode = 'bbox';
     this.group.attr('visibility', 'visible');
@@ -69,6 +74,9 @@ export class TransformHandles {
     }
     for (const c of this.bboxCorners) c.attr('visibility', 'visible');
     this.layoutBbox(bbox);
+    // SP-FX-48.23: bbox mode = axis-aligned multi-selection; clear any prior
+    // single-rotation transform on the group.
+    (this.group.node as SVGGElement).removeAttribute('transform');
   }
 
   private layoutBbox(bbox: Box): void {
@@ -89,8 +97,10 @@ export class TransformHandles {
   hide(): void {
     this.visible = false;
     this.currentBox = null;
+    this.currentRotate = undefined;
     this.mode = 'single';
     this.group.attr('visibility', 'hidden');
+    (this.group.node as SVGGElement).removeAttribute('transform');
     // SVG visibility="visible" on a child overrides "hidden" on its parent,
     // so the group attr alone won't conceal handles that were previously
     // shown via show()/showBbox(). Reset every individual handle + corner.
@@ -100,14 +110,47 @@ export class TransformHandles {
     for (const c of this.bboxCorners) c.attr('visibility', 'hidden');
   }
 
-  updateBox(box: Box): void {
+  updateBox(box: Box, rotate?: number): void {
     this.currentBox = box;
     if (this.mode === 'bbox') this.layoutBbox(box);
     else this.layout(box);
+    if (this.mode === 'single') {
+      // SP-FX-48.23: preserve current rotation across drag/resize updates;
+      // explicit rotate=0 clears (caller intent), undefined keeps current.
+      const r = rotate !== undefined ? rotate : this.currentRotate;
+      this.currentRotate = r;
+      this.applyRotation(box, r);
+    }
+  }
+
+  // SP-FX-48.23: rotate the entire handle group around the widget's center
+  // so the selection chrome tracks the rotated widget. Passing undefined or 0
+  // clears the transform (axis-aligned).
+  private applyRotation(box: Box, rotate?: number): void {
+    const node = this.group.node as SVGGElement;
+    if (typeof rotate === 'number' && rotate !== 0) {
+      const cx = box.x + box.w / 2;
+      const cy = box.y + box.h / 2;
+      node.setAttribute('transform', `rotate(${rotate} ${cx} ${cy})`);
+    } else {
+      node.removeAttribute('transform');
+    }
   }
 
   hitTest(pt: { x: number; y: number }): HandleId | null {
     if (!this.visible || !this.currentBox) return null;
+    // SP-FX-48.23: when handles are rotated, un-rotate the hit point around the
+    // widget center so axis-aligned handle bbox checks still work.
+    if (this.mode === 'single' && typeof this.currentRotate === 'number' && this.currentRotate !== 0) {
+      const cx = this.currentBox.x + this.currentBox.w / 2;
+      const cy = this.currentBox.y + this.currentBox.h / 2;
+      const rad = (-this.currentRotate * Math.PI) / 180;
+      const dx = pt.x - cx;
+      const dy = pt.y - cy;
+      const lx = cx + dx * Math.cos(rad) - dy * Math.sin(rad);
+      const ly = cy + dx * Math.sin(rad) + dy * Math.cos(rad);
+      return handleFromPoint(this.currentBox, { x: lx, y: ly });
+    }
     return handleFromPoint(this.currentBox, pt);
   }
 

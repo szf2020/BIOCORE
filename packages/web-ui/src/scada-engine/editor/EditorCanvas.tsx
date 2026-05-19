@@ -226,8 +226,14 @@ export function EditorCanvas() {
     if (selection.length === 1) {
       const w = currentView.items[selection[0]];
       const g = w ? getWidgetGeom(w) : null;
-      if (g) refs.current.handles.show(g);
-      else refs.current.handles.hide();
+      if (g) {
+        // SP-FX-48.23: sync handle rotation to widget rotation so the selection
+        // chrome tracks rotated widgets instead of staying axis-aligned.
+        const rotate = (w as { rotate?: number } | undefined)?.rotate;
+        refs.current.handles.show(g, rotate);
+      } else {
+        refs.current.handles.hide();
+      }
       return;
     }
     const boxes: Box[] = [];
