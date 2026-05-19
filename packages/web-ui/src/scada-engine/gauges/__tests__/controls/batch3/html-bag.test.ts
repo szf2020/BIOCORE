@@ -81,4 +81,49 @@ describe('HtmlBagGauge', () => {
     expect(ctx.parentGroup.childElementCount).toBe(0);
     expect(() => gauge.onUnmount()).not.toThrow();
   });
+
+  // SP-FX-48.22 phase 3 finale: displayMode='gauge' renders SVG arc gauge.
+  it('displayMode=gauge mounts track + value arc + label (no foreignObject)', async () => {
+    const { htmlBagMeta } = await import('../../../controls/batch3/html-bag');
+    const ctx = makeCtx();
+    const gauge = htmlBagMeta.create();
+    gauge.onMount(makeWidget({
+      w: 80, h: 80,
+      property: { variableId: 'r1.AI-0', displayMode: 'gauge', min: 0, max: 100 },
+    } as any), ctx);
+    expect(ctx.parentGroup.querySelector('foreignObject')).toBeNull();
+    expect(ctx.parentGroup.querySelector('path[data-bag-track="true"]')).not.toBeNull();
+    expect(ctx.parentGroup.querySelector('path[data-bag-value="true"]')).not.toBeNull();
+    expect(ctx.parentGroup.querySelector('text[data-bag-label="true"]')).not.toBeNull();
+  });
+
+  it('gauge mode onProcess value=50 sets value arc d attribute and label text', async () => {
+    const { htmlBagMeta } = await import('../../../controls/batch3/html-bag');
+    const ctx = makeCtx();
+    const gauge = htmlBagMeta.create();
+    gauge.onMount(makeWidget({
+      w: 80, h: 80,
+      property: { variableId: 'r1.AI-0', displayMode: 'gauge', min: 0, max: 100, decimals: 0 },
+    } as any), ctx);
+    gauge.onProcess({ value: 50, isStale: false });
+    const label = ctx.parentGroup.querySelector('text[data-bag-label="true"]') as SVGTextElement | null;
+    expect(label?.textContent).toBe('50');
+    const valuePath = ctx.parentGroup.querySelector('path[data-bag-value="true"]') as SVGPathElement | null;
+    expect(valuePath?.getAttribute('d')?.startsWith('M')).toBe(true);
+  });
+
+  it('gauge mode stale value resets to placeholder + stale color', async () => {
+    const { htmlBagMeta } = await import('../../../controls/batch3/html-bag');
+    const ctx = makeCtx();
+    const gauge = htmlBagMeta.create();
+    gauge.onMount(makeWidget({
+      w: 80, h: 80,
+      property: { variableId: 'r1.AI-0', displayMode: 'gauge', min: 0, max: 100 },
+    } as any), ctx);
+    gauge.onProcess({ value: null, isStale: true });
+    const label = ctx.parentGroup.querySelector('text[data-bag-label="true"]') as SVGTextElement | null;
+    expect(label?.textContent).toBe('--');
+    const valuePath = ctx.parentGroup.querySelector('path[data-bag-value="true"]') as SVGPathElement | null;
+    expect(valuePath?.getAttribute('stroke')).toBe('#9ca3af');
+  });
 });
