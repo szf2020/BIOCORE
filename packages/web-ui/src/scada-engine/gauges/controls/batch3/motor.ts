@@ -4,6 +4,7 @@
 
 import type { GaugeBase, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } from '../../gauge-base';
 import type { FuxaWidget } from '../../../models';
+import { matchRange, applyActions, createActionRuntime, teardownActions, type Range, type RangeAction, type ActionRuntime } from '../../runtime-helpers';
 
 interface MotorState {
   value: string;
@@ -15,6 +16,8 @@ interface MotorProperty {
   variableId?: string;
   states?: MotorState[];
   defaultColor?: string;
+  ranges?: Range[];
+  actions?: RangeAction[];
 }
 
 const DEFAULT_COLOR = '#9ca3af';
@@ -23,6 +26,7 @@ class MotorGauge implements GaugeBase {
   private circleEl: SVGCircleElement | null = null;
   private elements: SVGElement[] = [];
   private widget!: FuxaWidget;
+  private actionRt: ActionRuntime = createActionRuntime();
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -47,6 +51,7 @@ class MotorGauge implements GaugeBase {
   }
 
   onUnmount(): void {
+    teardownActions(this.actionRt);
     this.elements.forEach(el => el.remove());
     this.elements = [];
     this.circleEl = null;
@@ -64,7 +69,14 @@ class MotorGauge implements GaugeBase {
 
     const strVal = String(value.value);
     const matched = (prop.states ?? []).find(s => s.value === strVal);
-    this.circleEl.setAttribute('fill', matched?.color ?? defaultColor);
+    let color = matched?.color ?? defaultColor;
+
+    // SP-FX-48.12: ranges → color override; actions → hide/show/blink
+    const numVal = Number(value.value);
+    const rangeMatched = matchRange(numVal, prop.ranges);
+    if (rangeMatched?.color) color = rangeMatched.color;
+    this.circleEl.setAttribute('fill', color);
+    applyActions(numVal, prop.actions, this.circleEl, this.actionRt);
   }
 
   onPropertyChange(change: GaugePropChange): void {

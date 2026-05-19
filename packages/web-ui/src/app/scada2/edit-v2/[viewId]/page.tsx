@@ -22,11 +22,13 @@ export default function Page({ params }: { params: { viewId: string } }): JSX.El
       const r = await fetch(`/api/v1/fuxa-views/${params.viewId}`);
       if (r.status === 404) { setState('not_found'); return; }
       if (!r.ok) { setState('error'); return; }
-      const row = await r.json();
+      const env = await r.json();
+      const row = env && typeof env === 'object' && 'data' in env && env.data != null ? env.data : env;
       const view = parseFuxaView(typeof row.payload === 'string' ? row.payload : JSON.stringify(row));
       openView(view);
       setState('ready');
-    } catch {
+    } catch (e) {
+      console.error('[edit-v2] load failed:', e);
       setState('error');
     }
   }, [params.viewId, openView]);

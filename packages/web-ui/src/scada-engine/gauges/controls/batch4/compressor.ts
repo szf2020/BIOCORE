@@ -4,6 +4,7 @@
 
 import type { GaugeBase, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } from '../../gauge-base';
 import type { FuxaWidget } from '../../../models';
+import { matchRange, applyActions, createActionRuntime, teardownActions, type Range, type RangeAction, type ActionRuntime } from '../../runtime-helpers';
 
 interface CompressorState {
   value: string;
@@ -16,6 +17,8 @@ interface CompressorProperty {
   states?: CompressorState[];
   defaultColor?: string;
   bodyColor?: string;
+  ranges?: Range[];
+  actions?: RangeAction[];
 }
 
 const STALE_COLOR = '#9ca3af';
@@ -27,6 +30,7 @@ class CompressorGauge implements GaugeBase {
   private innerEl: SVGEllipseElement | null = null;
   private elements: SVGElement[] = [];
   private widget!: FuxaWidget;
+  private actionRt: ActionRuntime = createActionRuntime();
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -69,6 +73,7 @@ class CompressorGauge implements GaugeBase {
   }
 
   onUnmount(): void {
+    teardownActions(this.actionRt);
     this.elements.forEach(el => el.remove());
     this.elements = [];
     this.outerEl = null;
@@ -87,7 +92,14 @@ class CompressorGauge implements GaugeBase {
 
     const strVal = String(value.value);
     const matched = (prop.states ?? []).find(s => s.value === strVal);
-    this.innerEl.setAttribute('fill', matched?.color ?? defaultColor);
+    let color = matched?.color ?? defaultColor;
+
+    // SP-FX-48.12: ranges → color override; actions → hide/show/blink on body
+    const numVal = Number(value.value);
+    const rangeMatched = matchRange(numVal, prop.ranges);
+    if (rangeMatched?.color) color = rangeMatched.color;
+    this.innerEl.setAttribute('fill', color);
+    applyActions(numVal, prop.actions, this.outerEl, this.actionRt);
   }
 
   onPropertyChange(change: GaugePropChange): void {

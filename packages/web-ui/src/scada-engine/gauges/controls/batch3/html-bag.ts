@@ -3,6 +3,7 @@
 
 import type { GaugeBase, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } from '../../gauge-base';
 import type { FuxaWidget } from '../../../models';
+import { matchRange, applyActions, createActionRuntime, teardownActions, type Range, type RangeAction, type ActionRuntime } from '../../runtime-helpers';
 
 interface BagProperty {
   variableId?: string;
@@ -10,6 +11,8 @@ interface BagProperty {
   offColor?: string;
   onValue?: string;
   shape?: 'circle' | 'rect';
+  ranges?: Range[];
+  actions?: RangeAction[];
 }
 
 const STALE_COLOR = '#9ca3af';
@@ -20,6 +23,7 @@ class HtmlBagGauge implements GaugeBase {
   private foEl: SVGForeignObjectElement | null = null;
   private divEl: HTMLDivElement | null = null;
   private widget!: FuxaWidget;
+  private actionRt: ActionRuntime = createActionRuntime();
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -51,6 +55,7 @@ class HtmlBagGauge implements GaugeBase {
   }
 
   onUnmount(): void {
+    teardownActions(this.actionRt);
     this.foEl?.remove();
     this.foEl = null;
     this.divEl = null;
@@ -66,11 +71,17 @@ class HtmlBagGauge implements GaugeBase {
     }
     const onValue = prop.onValue ?? '1';
     const isOn = String(value.value) === onValue;
-    const color = isOn
+    let color = isOn
       ? (prop.onColor ?? DEFAULT_ON_COLOR)
       : (prop.offColor ?? DEFAULT_OFF_COLOR);
+
+    // SP-FX-48.12: ranges → color override; actions → hide/show/blink on foreignObject
+    const numVal = Number(value.value);
+    const matched = matchRange(numVal, prop.ranges);
+    if (matched?.color) color = matched.color;
     this.divEl.style.backgroundColor = color;
     this.divEl.dataset['color'] = color;
+    applyActions(numVal, prop.actions, this.foEl, this.actionRt);
   }
 
   onPropertyChange(change: GaugePropChange): void {

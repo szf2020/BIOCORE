@@ -4,12 +4,15 @@
 
 import type { GaugeBase, GaugeClickContext, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } from '../../gauge-base';
 import type { FuxaWidget } from '../../../models';
+import { matchRange, applyActions, createActionRuntime, teardownActions, type Range, type RangeAction, type ActionRuntime } from '../../runtime-helpers';
 
 interface ValveProperty {
   variableId?: string;
   openValue?: string;    // default '1'
   openColor?: string;    // default '#22c55e'
   closedColor?: string;  // default '#ef4444'
+  ranges?: Range[];
+  actions?: RangeAction[];
 }
 
 const STALE_COLOR = '#9ca3af';
@@ -22,6 +25,7 @@ class ValveGauge implements GaugeBase {
   private widget!: FuxaWidget;
   private ctx!: GaugeContext;
   private isOpen = false;
+  private actionRt: ActionRuntime = createActionRuntime();
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -67,6 +71,7 @@ class ValveGauge implements GaugeBase {
   }
 
   onUnmount(): void {
+    teardownActions(this.actionRt);
     this.elements.forEach(el => el.remove());
     this.elements = [];
     this.valveBodyEl = null;
@@ -84,10 +89,16 @@ class ValveGauge implements GaugeBase {
 
     const openVal = prop.openValue ?? '1';
     this.isOpen = String(value.value) === openVal;
-    const color = this.isOpen
+    let color = this.isOpen
       ? (prop.openColor ?? DEFAULT_OPEN_COLOR)
       : (prop.closedColor ?? DEFAULT_CLOSED_COLOR);
+
+    // SP-FX-48.12: ranges → color override; actions → hide/show/blink
+    const numVal = Number(value.value);
+    const matched = matchRange(numVal, prop.ranges);
+    if (matched?.color) color = matched.color;
     this.valveBodyEl.setAttribute('fill', color);
+    applyActions(numVal, prop.actions, this.valveBodyEl, this.actionRt);
   }
 
   onPropertyChange(change: GaugePropChange): void {

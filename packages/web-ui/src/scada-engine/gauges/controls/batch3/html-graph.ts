@@ -4,6 +4,7 @@
 
 import type { GaugeBase, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } from '../../gauge-base';
 import type { FuxaWidget } from '../../../models';
+import { matchRange, applyActions, createActionRuntime, teardownActions, type Range, type RangeAction, type ActionRuntime } from '../../runtime-helpers';
 
 interface GraphProperty {
   variableId?: string;
@@ -12,6 +13,8 @@ interface GraphProperty {
   bgColor?: string;
   minVal?: number;
   maxVal?: number;
+  ranges?: Range[];
+  actions?: RangeAction[];
 }
 
 const DEFAULT_MAX_POINTS = 60;
@@ -26,6 +29,8 @@ class HtmlGraphGauge implements GaugeBase {
   private buffer: number[] = [];
   private maxPoints = DEFAULT_MAX_POINTS;
   private widget!: FuxaWidget;
+  private actionRt: ActionRuntime = createActionRuntime();
+  private lastRangeColor: string | null = null;
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -59,6 +64,7 @@ class HtmlGraphGauge implements GaugeBase {
   }
 
   onUnmount(): void {
+    teardownActions(this.actionRt);
     this.foEl?.remove();
     this.foEl = null;
     this.canvasEl = null;
@@ -76,6 +82,13 @@ class HtmlGraphGauge implements GaugeBase {
       this.buffer.shift();
     }
     this.canvasEl.dataset['pointCount'] = String(this.buffer.length);
+
+    // SP-FX-48.12: ranges → line color override; actions → hide/show/blink on foreignObject
+    const prop = this.widget.property as GraphProperty;
+    const matched = matchRange(numVal, prop.ranges);
+    this.lastRangeColor = matched?.color ?? null;
+    applyActions(numVal, prop.actions, this.foEl, this.actionRt);
+
     this._draw();
   }
 
@@ -103,7 +116,7 @@ class HtmlGraphGauge implements GaugeBase {
 
     const prop = this.widget?.property as GraphProperty | undefined;
     const bgColor = prop?.bgColor ?? DEFAULT_BG_COLOR;
-    const lineColor = prop?.lineColor ?? DEFAULT_LINE_COLOR;
+    const lineColor = this.lastRangeColor ?? prop?.lineColor ?? DEFAULT_LINE_COLOR;
     const minVal = prop?.minVal ?? DEFAULT_MIN;
     const maxVal = prop?.maxVal ?? DEFAULT_MAX;
     const range = maxVal - minVal || 1;

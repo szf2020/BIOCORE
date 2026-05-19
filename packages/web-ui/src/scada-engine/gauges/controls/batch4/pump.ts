@@ -4,6 +4,7 @@
 
 import type { GaugeBase, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } from '../../gauge-base';
 import type { FuxaWidget } from '../../../models';
+import { matchRange, applyActions, createActionRuntime, teardownActions, type Range, type RangeAction, type ActionRuntime } from '../../runtime-helpers';
 
 interface PumpState {
   value: string;
@@ -15,6 +16,8 @@ interface PumpProperty {
   states?: PumpState[];
   defaultColor?: string;
   bladeCount?: number;
+  ranges?: Range[];
+  actions?: RangeAction[];
 }
 
 const DEFAULT_COLOR = '#9ca3af';
@@ -34,6 +37,7 @@ class PumpGauge implements GaugeBase {
   private bladeEls: SVGPathElement[] = [];
   private elements: SVGElement[] = [];
   private widget!: FuxaWidget;
+  private actionRt: ActionRuntime = createActionRuntime();
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -79,6 +83,7 @@ class PumpGauge implements GaugeBase {
   }
 
   onUnmount(): void {
+    teardownActions(this.actionRt);
     this.elements.forEach(el => el.remove());
     this.elements = [];
     this.outerCircle = null;
@@ -99,9 +104,14 @@ class PumpGauge implements GaugeBase {
       color = matched?.color ?? defaultColor;
     }
 
+    // SP-FX-48.12: ranges → color override; actions → hide/show/blink on outer
+    const numVal = Number(value.value);
+    const rangeMatched = matchRange(numVal, prop.ranges);
+    if (rangeMatched?.color) color = rangeMatched.color;
     for (const blade of this.bladeEls) {
       blade.setAttribute('fill', color);
     }
+    applyActions(numVal, prop.actions, this.outerCircle, this.actionRt);
   }
 
   onPropertyChange(change: GaugePropChange): void {

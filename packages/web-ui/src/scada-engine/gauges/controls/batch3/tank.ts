@@ -4,6 +4,7 @@
 
 import type { GaugeBase, GaugeContext, GaugeMeta, GaugePropChange, GaugeValue } from '../../gauge-base';
 import type { FuxaWidget } from '../../../models';
+import { matchRange, applyActions, createActionRuntime, teardownActions, type Range, type RangeAction, type ActionRuntime } from '../../runtime-helpers';
 
 interface TankProperty {
   variableId?: string;
@@ -12,6 +13,8 @@ interface TankProperty {
   fillColor?: string;
   bgColor?: string;
   showLabel?: boolean;
+  ranges?: Range[];
+  actions?: RangeAction[];
 }
 
 const DEFAULT_FILL_COLOR = '#3b82f6';
@@ -26,6 +29,7 @@ class TankGauge implements GaugeBase {
   private fillRect: SVGRectElement | null = null;
   private labelEl: SVGTextElement | null = null;
   private widget!: FuxaWidget;
+  private actionRt: ActionRuntime = createActionRuntime();
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
@@ -74,6 +78,7 @@ class TankGauge implements GaugeBase {
   }
 
   onUnmount(): void {
+    teardownActions(this.actionRt);
     this.bgRect?.remove();
     this.fillRect?.remove();
     this.labelEl?.remove();
@@ -107,6 +112,12 @@ class TankGauge implements GaugeBase {
     if (this.labelEl) {
       this.labelEl.textContent = String(Math.round(numVal));
     }
+
+    // SP-FX-48.12: ranges → fill color override; actions → hide/show/blink on bg
+    const matched = matchRange(numVal, prop.ranges);
+    if (matched?.color) this.fillRect.setAttribute('fill', matched.color);
+    else if (prop.fillColor) this.fillRect.setAttribute('fill', prop.fillColor);
+    applyActions(numVal, prop.actions, this.bgRect, this.actionRt);
   }
 
   onPropertyChange(change: GaugePropChange): void {
