@@ -103,6 +103,9 @@ class HtmlInputGauge implements GaugeBase {
     input.style.width = '100%';
     input.style.height = '100%';
     input.style.boxSizing = 'border-box';
+    // SP-FX-48.24: editor mode → pointer-events:none so the widget remains
+    // draggable; runtime keeps full interactivity.
+    if (ctx.mode !== 'runtime') input.style.pointerEvents = 'none';
     if (prop.min !== undefined) input.min = String(prop.min);
     if (prop.max !== undefined) input.max = String(prop.max);
 

@@ -82,7 +82,7 @@ function IconCell({ Icon, label, active = false }: { Icon: LucideIcon; label: st
 function ShapeThumb({ shape }: { shape: ShapeEntry }): JSX.Element {
   return (
     <svg
-      viewBox={`0 0 ${shape.bbox.w} ${shape.bbox.h}`}
+      viewBox={`${shape.bbox.x} ${shape.bbox.y} ${shape.bbox.w} ${shape.bbox.h}`}
       preserveAspectRatio="xMidYMid meet"
       width="24"
       height="24"

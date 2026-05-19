@@ -6,7 +6,7 @@
 export type ShapeContentType = "path" | "rect" | "circle" | "ellipse" | "line" | "polyline" | "polygon";
 export type ShapeGroup = "basic" | "process" | "compressor" | "pumps" | "animation";
 export interface ShapeContent { type: ShapeContentType; attr: Record<string, string | number>; }
-export interface ShapeEntry { name: string; group: ShapeGroup; bbox: { w: number; h: number }; content: ShapeContent[]; }
+export interface ShapeEntry { name: string; group: ShapeGroup; bbox: { x: number; y: number; w: number; h: number }; content: ShapeContent[]; }
 
 export const SHAPE_CATALOG: ShapeEntry[] = [
   {
@@ -27,8 +27,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 40
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 42
     }
   },
   {
@@ -49,8 +51,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 30
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 32
     }
   },
   {
@@ -71,8 +75,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 20
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 22
     }
   },
   {
@@ -93,8 +99,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 37
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 39
     }
   },
   {
@@ -127,8 +135,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 20
+      "x": -7,
+      "y": -7,
+      "w": 48,
+      "h": 28
     }
   },
   {
@@ -153,8 +163,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 40
+      "x": 19,
+      "y": 0,
+      "w": 22,
+      "h": 41
     }
   },
   {
@@ -169,8 +181,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 77,
-      "h": 47
+      "x": -2,
+      "y": -1,
+      "w": 79,
+      "h": 49
     }
   },
   {
@@ -185,8 +199,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 47
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 49
     }
   },
   {
@@ -207,8 +223,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 91,
-      "h": 45
+      "x": -1,
+      "y": -1,
+      "w": 92,
+      "h": 47
     }
   },
   {
@@ -223,8 +241,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 45
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 47
     }
   },
   {
@@ -251,8 +271,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 123,
-      "h": 35
+      "x": -1,
+      "y": -1,
+      "w": 125,
+      "h": 37
     }
   },
   {
@@ -279,8 +301,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 51,
-      "h": 47
+      "x": -1,
+      "y": -1,
+      "w": 53,
+      "h": 49
     }
   },
   {
@@ -319,8 +343,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 67,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 69,
+      "h": 82
     }
   },
   {
@@ -341,8 +367,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 83,
-      "h": 100
+      "x": -1,
+      "y": -1,
+      "w": 85,
+      "h": 102
     }
   },
   {
@@ -363,8 +391,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 48
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 50
     }
   },
   {
@@ -409,8 +439,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 48,
-      "h": 56
+      "x": -25,
+      "y": -25,
+      "w": 74,
+      "h": 82
     }
   },
   {
@@ -425,8 +457,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 81,
-      "h": 32
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 34
     }
   },
   {
@@ -441,8 +475,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 41,
-      "h": 26
+      "x": -29,
+      "y": -10,
+      "w": 71,
+      "h": 37
     }
   },
   {
@@ -457,8 +493,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 41,
-      "h": 27
+      "x": -29,
+      "y": -10,
+      "w": 71,
+      "h": 38
     }
   },
   {
@@ -473,8 +511,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 26
+      "x": -29,
+      "y": -10,
+      "w": 70,
+      "h": 37
     }
   },
   {
@@ -501,8 +541,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 38
+      "x": -9,
+      "y": -9,
+      "w": 50,
+      "h": 48
     }
   },
   {
@@ -523,8 +565,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 38
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 40
     }
   },
   {
@@ -545,8 +589,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 38
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 40
     }
   },
   {
@@ -567,8 +613,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 38
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 40
     }
   },
   {
@@ -589,8 +637,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 38
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 40
     }
   },
   {
@@ -635,8 +685,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 100,
-      "h": 67
+      "x": -5,
+      "y": -5,
+      "w": 106,
+      "h": 73
     }
   },
   {
@@ -663,8 +715,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 100,
-      "h": 40
+      "x": -1,
+      "y": -2,
+      "w": 102,
+      "h": 42
     }
   },
   {
@@ -685,8 +739,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 52
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 54
     }
   },
   {
@@ -731,8 +787,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 91,
-      "h": 81
+      "x": -9,
+      "y": -9,
+      "w": 101,
+      "h": 91
     }
   },
   {
@@ -753,8 +811,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 100,
-      "h": 70
+      "x": -1,
+      "y": -1,
+      "w": 102,
+      "h": 72
     }
   },
   {
@@ -787,8 +847,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 76,
-      "h": 91
+      "x": -1,
+      "y": -1,
+      "w": 78,
+      "h": 93
     }
   },
   {
@@ -815,8 +877,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 61,
-      "h": 57
+      "x": -31,
+      "y": -31,
+      "w": 93,
+      "h": 89
     }
   },
   {
@@ -831,8 +895,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 24
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 26
     }
   },
   {
@@ -847,8 +913,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 32
+      "x": 7,
+      "y": -1,
+      "w": 34,
+      "h": 34
     }
   },
   {
@@ -863,8 +931,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 32
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 34
     }
   },
   {
@@ -879,8 +949,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 81,
-      "h": 88
+      "x": -1,
+      "y": -1,
+      "w": 83,
+      "h": 90
     }
   },
   {
@@ -895,8 +967,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 87
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 89
     }
   },
   {
@@ -935,8 +1009,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 88
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 90
     }
   },
   {
@@ -963,8 +1039,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 88
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 90
     }
   },
   {
@@ -985,8 +1063,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 90
+      "x": -1,
+      "y": -2,
+      "w": 62,
+      "h": 92
     }
   },
   {
@@ -1007,8 +1087,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 66,
-      "h": 60
+      "x": -1,
+      "y": -1,
+      "w": 68,
+      "h": 62
     }
   },
   {
@@ -1029,8 +1111,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 66
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 68
     }
   },
   {
@@ -1051,8 +1135,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 66
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 68
     }
   },
   {
@@ -1073,8 +1159,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 66
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 68
     }
   },
   {
@@ -1095,8 +1183,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 48
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 50
     }
   },
   {
@@ -1117,8 +1207,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 48
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 50
     }
   },
   {
@@ -1139,8 +1231,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 48
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 50
     }
   },
   {
@@ -1167,8 +1261,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 81,
-      "h": 48
+      "x": -9,
+      "y": -9,
+      "w": 91,
+      "h": 58
     }
   },
   {
@@ -1201,8 +1297,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 48
+      "x": -9,
+      "y": -9,
+      "w": 90,
+      "h": 58
     }
   },
   {
@@ -1223,8 +1321,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 48
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 50
     }
   },
   {
@@ -1263,8 +1363,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 81,
-      "h": 48
+      "x": -17,
+      "y": -17,
+      "w": 99,
+      "h": 66
     }
   },
   {
@@ -1279,8 +1381,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 84
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 86
     }
   },
   {
@@ -1307,8 +1411,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 84
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 86
     }
   },
   {
@@ -1371,8 +1477,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 84
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 86
     }
   },
   {
@@ -1405,8 +1513,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 84
+      "x": -7,
+      "y": -7,
+      "w": 68,
+      "h": 92
     }
   },
   {
@@ -1427,8 +1537,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 84
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 86
     }
   },
   {
@@ -1443,8 +1555,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 40
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 42
     }
   },
   {
@@ -1459,8 +1573,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 20
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 22
     }
   },
   {
@@ -1487,8 +1603,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 56
+      "x": -4,
+      "y": -4,
+      "w": 65,
+      "h": 61
     }
   },
   {
@@ -1509,8 +1627,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 61,
-      "h": 48
+      "x": -31,
+      "y": -31,
+      "w": 93,
+      "h": 80
     }
   },
   {
@@ -1525,8 +1645,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 300,
-      "h": 50
+      "x": -1,
+      "y": -1,
+      "w": 302,
+      "h": 52
     }
   },
   {
@@ -1541,8 +1663,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 70,
-      "h": 40
+      "x": -1,
+      "y": -1,
+      "w": 72,
+      "h": 42
     }
   },
   {
@@ -1563,8 +1687,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 100
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 102
     }
   },
   {
@@ -1591,8 +1717,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 100,
-      "h": 50
+      "x": -1,
+      "y": -1,
+      "w": 102,
+      "h": 52
     }
   },
   {
@@ -1614,8 +1742,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 53,
-      "h": 53
+      "x": -1,
+      "y": -1,
+      "w": 55,
+      "h": 55
     }
   },
   {
@@ -1630,8 +1760,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 51,
-      "h": 72
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 74
     }
   },
   {
@@ -1658,8 +1790,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 81
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 82
     }
   },
   {
@@ -1680,8 +1814,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 41
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 42
     }
   },
   {
@@ -1702,8 +1838,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 101
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 102
     }
   },
   {
@@ -1724,8 +1862,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 58
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 60
     }
   },
   {
@@ -1740,8 +1880,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 51,
-      "h": 40
+      "x": -1,
+      "y": -2,
+      "w": 52,
+      "h": 42
     }
   },
   {
@@ -1756,8 +1898,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 50
+      "x": -1,
+      "y": -2,
+      "w": 52,
+      "h": 52
     }
   },
   {
@@ -1772,8 +1916,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 25
+      "x": -1,
+      "y": -2,
+      "w": 52,
+      "h": 27
     }
   },
   {
@@ -1794,8 +1940,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 76,
-      "h": 47
+      "x": -26,
+      "y": -26,
+      "w": 103,
+      "h": 74
     }
   },
   {
@@ -1822,8 +1970,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 38
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 40
     }
   },
   {
@@ -1844,8 +1994,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 50
+      "x": -1,
+      "y": -2,
+      "w": 52,
+      "h": 53
     }
   },
   {
@@ -1860,8 +2012,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 181,
-      "h": 30
+      "x": -1,
+      "y": -1,
+      "w": 182,
+      "h": 32
     }
   },
   {
@@ -1888,8 +2042,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 82
     }
   },
   {
@@ -1910,8 +2066,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 75
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 77
     }
   },
   {
@@ -1926,8 +2084,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 100
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 102
     }
   },
   {
@@ -1948,8 +2108,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 70,
-      "h": 20
+      "x": -1,
+      "y": -1,
+      "w": 72,
+      "h": 22
     }
   },
   {
@@ -1970,8 +2132,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 101
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 102
     }
   },
   {
@@ -1986,8 +2150,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 90,
-      "h": 101
+      "x": -1,
+      "y": -1,
+      "w": 92,
+      "h": 102
     }
   },
   {
@@ -2002,8 +2168,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 120,
-      "h": 60
+      "x": -1,
+      "y": -1,
+      "w": 122,
+      "h": 62
     }
   },
   {
@@ -2018,8 +2186,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 121,
-      "h": 60
+      "x": -1,
+      "y": -1,
+      "w": 122,
+      "h": 62
     }
   },
   {
@@ -2034,8 +2204,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 101,
-      "h": 61
+      "x": -1,
+      "y": -1,
+      "w": 102,
+      "h": 62
     }
   },
   {
@@ -2050,8 +2222,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 96,
-      "h": 55
+      "x": -1,
+      "y": -2,
+      "w": 98,
+      "h": 58
     }
   },
   {
@@ -2066,8 +2240,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 98
+      "x": -2,
+      "y": -1,
+      "w": 52,
+      "h": 99
     }
   },
   {
@@ -2082,8 +2258,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 120
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 122
     }
   },
   {
@@ -2098,8 +2276,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 96
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 97
     }
   },
   {
@@ -2120,8 +2300,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 100,
-      "h": 96
+      "x": -1,
+      "y": -1,
+      "w": 102,
+      "h": 98
     }
   },
   {
@@ -2136,8 +2318,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 100,
-      "h": 90
+      "x": -1,
+      "y": -1,
+      "w": 102,
+      "h": 92
     }
   },
   {
@@ -2152,8 +2336,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 66,
-      "h": 101
+      "x": -1,
+      "y": 4,
+      "w": 68,
+      "h": 98
     }
   },
   {
@@ -2192,8 +2378,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 155,
-      "h": 116
+      "x": -1,
+      "y": -1,
+      "w": 157,
+      "h": 117
     }
   },
   {
@@ -2214,8 +2402,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 100,
-      "h": 30
+      "x": -1,
+      "y": -1,
+      "w": 102,
+      "h": 32
     }
   },
   {
@@ -2236,8 +2426,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 100,
-      "h": 31
+      "x": -1,
+      "y": -1,
+      "w": 102,
+      "h": 32
     }
   },
   {
@@ -2252,8 +2444,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 90,
-      "h": 31
+      "x": -1,
+      "y": -1,
+      "w": 92,
+      "h": 32
     }
   },
   {
@@ -2268,8 +2462,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 91,
-      "h": 31
+      "x": -1,
+      "y": -1,
+      "w": 93,
+      "h": 32
     }
   },
   {
@@ -2290,8 +2486,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 91,
-      "h": 30
+      "x": -1,
+      "y": -1,
+      "w": 93,
+      "h": 32
     }
   },
   {
@@ -2312,8 +2510,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 120
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 122
     }
   },
   {
@@ -2334,8 +2534,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 100,
-      "h": 31
+      "x": -1,
+      "y": -1,
+      "w": 102,
+      "h": 32
     }
   },
   {
@@ -2356,8 +2558,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 100,
-      "h": 40
+      "x": -1,
+      "y": -1,
+      "w": 102,
+      "h": 42
     }
   },
   {
@@ -2378,8 +2582,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 100,
-      "h": 40
+      "x": -1,
+      "y": -1,
+      "w": 102,
+      "h": 42
     }
   },
   {
@@ -2394,8 +2600,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 70,
-      "h": 70
+      "x": -1,
+      "y": -1,
+      "w": 72,
+      "h": 72
     }
   },
   {
@@ -2416,8 +2624,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 35
+      "x": -2,
+      "y": -1,
+      "w": 53,
+      "h": 37
     }
   },
   {
@@ -2444,8 +2654,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 30
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 32
     }
   },
   {
@@ -2460,8 +2672,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 36
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 37
     }
   },
   {
@@ -2476,8 +2690,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 45
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 47
     }
   },
   {
@@ -2498,8 +2714,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 30,
-      "h": 27
+      "x": -1,
+      "y": -1,
+      "w": 32,
+      "h": 29
     }
   },
   {
@@ -2514,8 +2732,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 20
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 22
     }
   },
   {
@@ -2536,8 +2756,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 20
+      "x": -11,
+      "y": -11,
+      "w": 62,
+      "h": 23
     }
   },
   {
@@ -2552,8 +2774,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 24,
-      "h": 24
+      "x": 0,
+      "y": -1,
+      "w": 25,
+      "h": 26
     }
   },
   {
@@ -2568,8 +2792,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 33,
-      "h": 28
+      "x": -29,
+      "y": -29,
+      "w": 63,
+      "h": 58
     }
   },
   {
@@ -2594,8 +2820,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
+      "x": 1,
+      "y": -1,
       "w": 78,
-      "h": 78
+      "h": 80
     }
   },
   {
@@ -2611,8 +2839,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 20,
-      "h": 20
+      "x": -1,
+      "y": -1,
+      "w": 22,
+      "h": 22
     }
   },
   {
@@ -2630,8 +2860,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 20,
-      "h": 20
+      "x": -1,
+      "y": -1,
+      "w": 22,
+      "h": 22
     }
   },
   {
@@ -2646,8 +2878,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 40
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 42
     }
   },
   {
@@ -2662,8 +2896,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 30,
-      "h": 40
+      "x": -1,
+      "y": -1,
+      "w": 32,
+      "h": 42
     }
   },
   {
@@ -2678,8 +2914,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 20
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 22
     }
   },
   {
@@ -2694,8 +2932,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 20
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 22
     }
   },
   {
@@ -2710,8 +2950,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 32
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 34
     }
   },
   {
@@ -2726,8 +2968,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 27
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 29
     }
   },
   {
@@ -2742,8 +2986,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 20
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 22
     }
   },
   {
@@ -2758,8 +3004,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 30
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 32
     }
   },
   {
@@ -2774,8 +3022,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 120,
-      "h": 60
+      "x": -1,
+      "y": -1,
+      "w": 122,
+      "h": 62
     }
   },
   {
@@ -2790,8 +3040,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 82
     }
   },
   {
@@ -2806,8 +3058,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 90,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 92,
+      "h": 82
     }
   },
   {
@@ -2822,8 +3076,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 100,
-      "h": 100
+      "x": -1,
+      "y": -1,
+      "w": 102,
+      "h": 102
     }
   },
   {
@@ -2838,8 +3094,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 20
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 22
     }
   },
   {
@@ -2854,8 +3112,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 90,
-      "h": 40
+      "x": -1,
+      "y": -1,
+      "w": 92,
+      "h": 42
     }
   },
   {
@@ -2870,8 +3130,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 82
     }
   },
   {
@@ -2886,8 +3148,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 40
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 42
     }
   },
   {
@@ -2902,8 +3166,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 120,
-      "h": 116
+      "x": -1,
+      "y": -17,
+      "w": 122,
+      "h": 134
     }
   },
   {
@@ -2918,8 +3184,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 120,
-      "h": 97
+      "x": -1,
+      "y": -1,
+      "w": 122,
+      "h": 99
     }
   },
   {
@@ -2934,8 +3202,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 70
+      "x": -1,
+      "y": 2,
+      "w": 82,
+      "h": 69
     }
   },
   {
@@ -2950,8 +3220,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 62,
+      "h": 82
     }
   },
   {
@@ -2966,8 +3238,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 82
     }
   },
   {
@@ -2982,8 +3256,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 82
     }
   },
   {
@@ -2998,8 +3274,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 82
     }
   },
   {
@@ -3014,8 +3292,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 50,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 52,
+      "h": 82
     }
   },
   {
@@ -3030,8 +3310,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 82
     }
   },
   {
@@ -3046,8 +3328,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 82
     }
   },
   {
@@ -3068,8 +3352,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 60,
-      "h": 86
+      "x": -1,
+      "y": -7,
+      "w": 62,
+      "h": 93
     }
   },
   {
@@ -3084,8 +3370,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 100,
-      "h": 100
+      "x": -1,
+      "y": -1,
+      "w": 102,
+      "h": 102
     }
   },
   {
@@ -3100,8 +3388,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 82
     }
   },
   {
@@ -3116,8 +3406,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 82
     }
   },
   {
@@ -3132,8 +3424,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 80,
-      "h": 80
+      "x": -1,
+      "y": -1,
+      "w": 82,
+      "h": 82
     }
   },
   {
@@ -3148,8 +3442,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 24
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 26
     }
   },
   {
@@ -3164,8 +3460,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 40,
-      "h": 24
+      "x": -1,
+      "y": -1,
+      "w": 42,
+      "h": 26
     }
   },
   {
@@ -3180,8 +3478,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 23,
-      "h": 40
+      "x": -1,
+      "y": -1,
+      "w": 25,
+      "h": 42
     }
   },
   {
@@ -3196,8 +3496,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 24,
-      "h": 40
+      "x": -1,
+      "y": -1,
+      "w": 26,
+      "h": 42
     }
   },
   {
@@ -3212,8 +3514,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 24,
-      "h": 44
+      "x": -1,
+      "y": -1,
+      "w": 26,
+      "h": 46
     }
   },
   {
@@ -3228,8 +3532,10 @@ export const SHAPE_CATALOG: ShapeEntry[] = [
       }
     ],
     "bbox": {
-      "w": 24,
-      "h": 24
+      "x": -1,
+      "y": -1,
+      "w": 26,
+      "h": 26
     }
   }
 ];

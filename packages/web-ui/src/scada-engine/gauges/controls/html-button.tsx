@@ -71,6 +71,9 @@ class HtmlButtonGauge implements GaugeBase {
     btn.style.padding = '0 8px';
     btn.style.font = 'inherit';
     btn.style.lineHeight = '1';
+    // SP-FX-48.24: editor mode lets pointer events fall through to the SVG
+    // canvas so widgets remain draggable; runtime mode keeps full interactivity.
+    if (ctx.mode !== 'runtime') btn.style.pointerEvents = 'none';
 
     const prop = widget.property as ButtonProperty;
 

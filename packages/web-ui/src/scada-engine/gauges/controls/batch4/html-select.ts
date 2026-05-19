@@ -74,6 +74,8 @@ class HtmlSelectGauge implements GaugeBase {
     select.style.width = '100%';
     select.style.height = '100%';
     select.disabled = ctx.mode !== 'runtime' || prop.readonly === true;
+    // SP-FX-48.24: editor mode → pointer-events:none so the widget can be dragged
+    if (ctx.mode !== 'runtime') select.style.pointerEvents = 'none';
     if (prop.readonly === true) {
       select.style.border = '0';
       select.style.appearance = 'none';

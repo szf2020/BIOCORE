@@ -49,16 +49,17 @@ class PumpGauge implements GaugeBase {
     const defaultColor = prop.defaultColor ?? DEFAULT_COLOR;
     const bladeCount = prop.bladeCount ?? DEFAULT_BLADE_COUNT;
 
-    const cx = x + w / 2;
-    const cy = y + h / 2;
-    const r = Math.min(w, h) / 2;
+    // SP-FX-48.24: stubs reserve top + right strips of the bbox so casing
+    // and stubs both fit inside widget x/y/w/h (selection chrome aligns).
+    const stubL = Math.min(h, w) * 0.2;
+    const r = Math.min(w - stubL, h - stubL) / 2;
+    const cx = x + r;
+    const cy = y + stubL + r;
+    const stubW = r * 0.5;
 
-    // Top inlet stub + right outlet stub (P&ID centrifugal pump nozzles)
-    const stubW = r * 0.3;
-    const stubL = r * 0.35;
     const inletStub = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     inletStub.setAttribute('x', String(cx - stubW / 2));
-    inletStub.setAttribute('y', String(cy - r - stubL));
+    inletStub.setAttribute('y', String(y));
     inletStub.setAttribute('width', String(stubW));
     inletStub.setAttribute('height', String(stubL));
     inletStub.setAttribute('fill', '#475569');
@@ -69,7 +70,7 @@ class PumpGauge implements GaugeBase {
     const outletStub = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     outletStub.setAttribute('x', String(cx + r));
     outletStub.setAttribute('y', String(cy - stubW / 2));
-    outletStub.setAttribute('width', String(stubL));
+    outletStub.setAttribute('width', String(Math.max(0, x + w - (cx + r))));
     outletStub.setAttribute('height', String(stubW));
     outletStub.setAttribute('fill', '#475569');
     outletStub.setAttribute('data-outlet', 'true');

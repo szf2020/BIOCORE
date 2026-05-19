@@ -82,6 +82,8 @@ class HtmlBagGauge implements GaugeBase {
     div.style.height = '100%';
     div.style.backgroundColor = offColor;
     div.style.borderRadius = prop.shape === 'rect' ? '4px' : '50%';
+    // SP-FX-48.24: editor mode → pointer-events:none so the widget can be dragged
+    if (ctx.mode !== 'runtime') div.style.pointerEvents = 'none';
     div.dataset['color'] = offColor;
     fo.appendChild(div);
     ctx.parentGroup.appendChild(fo);

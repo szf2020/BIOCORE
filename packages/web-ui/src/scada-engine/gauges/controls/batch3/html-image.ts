@@ -72,6 +72,8 @@ class HtmlImageGauge implements GaugeBase {
     wrap.style.position = 'relative';
     wrap.style.width = '100%';
     wrap.style.height = '100%';
+    // SP-FX-48.24: editor mode → pointer-events:none so the widget can be dragged
+    if (ctx.mode !== 'runtime') wrap.style.pointerEvents = 'none';
 
     // SP-FX-48.21: prefer inline svgContent when set, fall back to img/src.
     if (prop.svgContent && prop.svgContent.trim().length > 0) {

@@ -59,6 +59,8 @@ class HtmlGraphGauge implements GaugeBase {
     canvas.height = h;
     canvas.style.width = '100%';
     canvas.style.height = '100%';
+    // SP-FX-48.24: editor mode → pointer-events:none so the widget can be dragged
+    if (ctx.mode !== 'runtime') canvas.style.pointerEvents = 'none';
     canvas.dataset['pointCount'] = '0';
     fo.appendChild(canvas);
     ctx.parentGroup.appendChild(fo);

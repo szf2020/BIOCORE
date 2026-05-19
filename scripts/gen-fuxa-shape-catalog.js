@@ -53,28 +53,50 @@ function extractShapes(src) {
 }
 
 function computeBBox(content) {
-  let maxX = 0; let maxY = 0;
+  let minX = Infinity; let minY = Infinity;
+  let maxX = -Infinity; let maxY = -Infinity;
+  const ext = (x, y) => {
+    if (Number.isFinite(x)) { if (x < minX) minX = x; if (x > maxX) maxX = x; }
+    if (Number.isFinite(y)) { if (y < minY) minY = y; if (y > maxY) maxY = y; }
+  };
   for (const c of content) {
     const a = c.attr || {};
     if (a.d) {
       const nums = String(a.d).match(/-?\d+(?:\.\d+)?/g) || [];
       for (let i = 0; i + 1 < nums.length; i += 2) {
-        maxX = Math.max(maxX, parseFloat(nums[i]));
-        maxY = Math.max(maxY, parseFloat(nums[i + 1]));
+        ext(parseFloat(nums[i]), parseFloat(nums[i + 1]));
       }
     }
     if (a.cx !== undefined && a.r !== undefined) {
-      maxX = Math.max(maxX, parseFloat(a.cx) + parseFloat(a.r));
-      maxY = Math.max(maxY, parseFloat(a.cy || 0) + parseFloat(a.r));
+      const r = parseFloat(a.r);
+      ext(parseFloat(a.cx) - r, parseFloat(a.cy || 0) - r);
+      ext(parseFloat(a.cx) + r, parseFloat(a.cy || 0) + r);
     }
-    if (a.x !== undefined && a.width !== undefined) {
-      maxX = Math.max(maxX, parseFloat(a.x) + parseFloat(a.width));
+    if (a.x !== undefined) {
+      const x = parseFloat(a.x);
+      const w = parseFloat(a.width || 0);
+      const y = parseFloat(a.y || 0);
+      const h = parseFloat(a.height || 0);
+      ext(x, y); ext(x + w, y + h);
     }
-    if (a.y !== undefined && a.height !== undefined) {
-      maxY = Math.max(maxY, parseFloat(a.y) + parseFloat(a.height));
+    if (a.x1 !== undefined) ext(parseFloat(a.x1), parseFloat(a.y1 || 0));
+    if (a.x2 !== undefined) ext(parseFloat(a.x2), parseFloat(a.y2 || 0));
+    if (a.points) {
+      const nums = String(a.points).match(/-?\d+(?:\.\d+)?/g) || [];
+      for (let i = 0; i + 1 < nums.length; i += 2) {
+        ext(parseFloat(nums[i]), parseFloat(nums[i + 1]));
+      }
     }
   }
-  return { w: Math.max(20, Math.ceil(maxX)), h: Math.max(20, Math.ceil(maxY)) };
+  if (!Number.isFinite(minX)) { minX = 0; minY = 0; maxX = 20; maxY = 20; }
+  // 1px padding so stroke at edges renders without clipping
+  const pad = 1;
+  return {
+    x: Math.floor(minX) - pad,
+    y: Math.floor(minY) - pad,
+    w: Math.max(20, Math.ceil(maxX - minX) + pad * 2),
+    h: Math.max(20, Math.ceil(maxY - minY) + pad * 2),
+  };
 }
 
 function main() {
@@ -105,7 +127,7 @@ function main() {
     + 'export type ShapeContentType = "path" | "rect" | "circle" | "ellipse" | "line" | "polyline" | "polygon";\n'
     + 'export type ShapeGroup = "basic" | "process" | "compressor" | "pumps" | "animation";\n'
     + 'export interface ShapeContent { type: ShapeContentType; attr: Record<string, string | number>; }\n'
-    + 'export interface ShapeEntry { name: string; group: ShapeGroup; bbox: { w: number; h: number }; content: ShapeContent[]; }\n\n'
+    + 'export interface ShapeEntry { name: string; group: ShapeGroup; bbox: { x: number; y: number; w: number; h: number }; content: ShapeContent[]; }\n\n'
     + 'export const SHAPE_CATALOG: ShapeEntry[] = ' + JSON.stringify(withBBox, null, 2) + ';\n\n'
     + 'export const SHAPE_GROUP_LABELS: Record<ShapeGroup, string> = {\n'
     + '  basic: "基础",\n'

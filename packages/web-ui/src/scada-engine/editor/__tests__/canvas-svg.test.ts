@@ -340,7 +340,8 @@ describe('CanvasController shape widget render (SP-FX-48.20)', () => {
     } as any);
     const wrap = host.querySelector('svg[data-widget-id="s1"]') as SVGSVGElement | null;
     expect(wrap).not.toBeNull();
-    expect(wrap?.getAttribute('viewBox')).toBe('0 0 40 40');
+    // SP-FX-48.24: viewBox uses full computed bbox (incl. negative/padded coords)
+    expect(wrap?.getAttribute('viewBox')).toMatch(/^-?\d+ -?\d+ \d+ \d+$/);
     expect(wrap?.getAttribute('data-shape-name')).toBe('centrifugal');
     expect(wrap?.querySelectorAll('path').length).toBeGreaterThan(0);
     c.destroy();

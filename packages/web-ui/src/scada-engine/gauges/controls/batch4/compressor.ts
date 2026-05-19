@@ -40,10 +40,13 @@ class CompressorGauge implements GaugeBase {
     const h = (widget as any).h ?? 40;
     const prop = widget.property as CompressorProperty;
 
+    // SP-FX-48.24: reserve bottom ~22% of bbox for base stand; shell ellipse
+    // sits above. All geometry stays inside widget x/y/w/h.
+    const baseH = Math.min(h * 0.22, 16);
     const cx = x + w / 2;
-    const cy = y + h / 2;
+    const ry = (h - baseH) / 2;
+    const cy = y + ry;
     const rx = w / 2;
-    const ry = h / 2;
     const innerRx = rx * 0.6;
     const innerRy = ry * 0.6;
 
@@ -88,10 +91,11 @@ class CompressorGauge implements GaugeBase {
     this.elements.push(inner);
 
     // Base stand (trapezoid path below body)
+    // SP-FX-48.24: clamp bottom half so base never exceeds widget bbox.
     const baseTopY = cy + ry;
     const baseBottomY = y + h;
-    const baseTopHalf = rx * 0.5;
-    const baseBottomHalf = rx * 0.8;
+    const baseTopHalf = Math.min(rx * 0.5, w / 2);
+    const baseBottomHalf = Math.min(rx * 0.8, w / 2);
     if (baseBottomY > baseTopY + 1) {
       const base = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       const d = `M ${cx - baseTopHalf} ${baseTopY} L ${cx + baseTopHalf} ${baseTopY} L ${cx + baseBottomHalf} ${baseBottomY} L ${cx - baseBottomHalf} ${baseBottomY} Z`;

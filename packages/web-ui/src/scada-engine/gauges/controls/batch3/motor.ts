@@ -35,17 +35,18 @@ class MotorGauge implements GaugeBase {
     const w = (widget as any).w ?? 50;
     const h = (widget as any).h ?? 50;
     const prop = widget.property as MotorProperty;
-    const r = Math.min(w, h) / 2;
+    // SP-FX-48.24: reserve top strip for terminal stubs so all geometry stays
+    // within the widget bbox (selection chrome aligns to widget x/y/w/h).
+    const termH = Math.min(h * 0.18, 12);
+    const r = Math.min(w / 2, (h - termH) / 2);
     const cx = x + w / 2;
-    const cy = y + h / 2;
+    const cy = y + termH + r;
 
-    // 2 terminal stubs on top (P&ID motor wiring)
-    const termW = r * 0.18;
-    const termH = r * 0.22;
+    const termW = Math.max(4, r * 0.18);
     for (const offset of [-r * 0.4, r * 0.4]) {
       const term = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       term.setAttribute('x', String(cx + offset - termW / 2));
-      term.setAttribute('y', String(cy - r - termH));
+      term.setAttribute('y', String(y));
       term.setAttribute('width', String(termW));
       term.setAttribute('height', String(termH));
       term.setAttribute('fill', '#334155');

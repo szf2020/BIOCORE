@@ -222,7 +222,9 @@ export class CanvasController {
         wrap.setAttribute('data-widget-id', widget.id);
         if (prop.shapeName) wrap.setAttribute('data-shape-name', prop.shapeName);
         if (shape) {
-          wrap.setAttribute('viewBox', `0 0 ${shape.bbox.w} ${shape.bbox.h}`);
+          // SP-FX-48.24: viewBox uses full bbox (handles negative coords in
+          // FUXA paths like compreci `M ... -0.02`)
+          wrap.setAttribute('viewBox', `${shape.bbox.x} ${shape.bbox.y} ${shape.bbox.w} ${shape.bbox.h}`);
           wrap.setAttribute('preserveAspectRatio', 'none');
           const fill = prop.fill ?? 'none';
           const stroke = prop.stroke ?? '#1e293b';
