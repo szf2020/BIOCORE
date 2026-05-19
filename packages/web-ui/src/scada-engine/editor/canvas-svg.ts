@@ -29,6 +29,15 @@ function hasGeometry(w: FuxaWidget): w is FuxaWidget & { x: number; y: number; w
     && typeof (w as any).h === 'number';
 }
 
+// SP-FX-48.17: flat point array [x0,y0,x1,y1,...] -> SVG polyline `points` attr.
+function polylinePointsAttr(points: number[]): string {
+  const parts: string[] = [];
+  for (let i = 0; i + 1 < points.length; i += 2) {
+    parts.push(`${points[i]},${points[i + 1]}`);
+  }
+  return parts.join(' ');
+}
+
 export class CanvasController {
   readonly root: Svg;
   readonly widgetLayer: G;
@@ -179,6 +188,22 @@ export class CanvasController {
         this.widgetLayer.node.appendChild(node);
         return SVG(node) as SvgElement;
       }
+      case 'pencil':
+      case 'path': {
+        const prop = widget.property as { points?: number[]; stroke?: string; strokeWidth?: number };
+        const pts = (prop.points ?? []).slice();
+        const pointsAttr = polylinePointsAttr(pts);
+        const node = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        node.setAttribute('points', pointsAttr);
+        node.setAttribute('stroke', prop.stroke ?? '#111827');
+        node.setAttribute('stroke-width', String(prop.strokeWidth ?? 2));
+        node.setAttribute('fill', 'none');
+        node.setAttribute('stroke-linejoin', widget.type === 'pencil' ? 'round' : 'miter');
+        node.setAttribute('stroke-linecap', 'round');
+        node.setAttribute('data-widget-id', widget.id);
+        this.widgetLayer.node.appendChild(node);
+        return SVG(node) as SvgElement;
+      }
       default: {
         // SP-FX-48.4: real gauge widgets (svg-ext-*) — delegate to GaugeRegistry
         // so the editor canvas matches runtime visuals (no more generic blocks).
@@ -240,6 +265,15 @@ export class CanvasController {
         node.setAttribute('y1', String(widget.y + widget.h / 2));
         node.setAttribute('x2', String(widget.x + widget.w));
         node.setAttribute('y2', String(widget.y + widget.h / 2));
+        if (prop.stroke) node.setAttribute('stroke', prop.stroke);
+        if (prop.strokeWidth != null) node.setAttribute('stroke-width', String(prop.strokeWidth));
+        break;
+      }
+      case 'pencil':
+      case 'path': {
+        const prop = widget.property as { points?: number[]; stroke?: string; strokeWidth?: number };
+        const node = el.node as SVGPolylineElement;
+        node.setAttribute('points', polylinePointsAttr(prop.points ?? []));
         if (prop.stroke) node.setAttribute('stroke', prop.stroke);
         if (prop.strokeWidth != null) node.setAttribute('stroke-width', String(prop.strokeWidth));
         break;
@@ -346,6 +380,64 @@ export class CanvasController {
     this.widgetSnapshot.clear();
     this.widgetMap.clear();
     this.root.remove();
+  }
+
+  // SP-FX-48.17: live drawing preview rendered on overlayLayer.
+  // - kind='polyline' for pencil/path (uses point list as-is)
+  // - kind='ellipse' for ellipse-draw (points = [x1,y1,x2,y2] bbox corners)
+  showDrawPreview(kind: 'polyline' | 'ellipse', points: number[]): void {
+    if (this.destroyed) return;
+    let preview = (this.overlayLayer.node as SVGGElement).querySelector('[data-overlay="draw-preview"]') as SVGElement | null;
+    if (preview && preview.getAttribute('data-kind') !== kind) {
+      preview.remove();
+      preview = null;
+    }
+    if (kind === 'polyline') {
+      if (!preview) {
+        preview = document.createElementNS('http://www.w3.org/2000/svg', 'polyline') as unknown as SVGElement;
+        preview.setAttribute('data-overlay', 'draw-preview');
+        preview.setAttribute('data-kind', 'polyline');
+        preview.setAttribute('fill', 'none');
+        preview.setAttribute('stroke', '#3b82f6');
+        preview.setAttribute('stroke-width', '2');
+        preview.setAttribute('stroke-dasharray', '4 2');
+        preview.setAttribute('pointer-events', 'none');
+        this.overlayLayer.node.appendChild(preview);
+      }
+      preview.setAttribute('points', polylinePointsAttr(points));
+      return;
+    }
+    // ellipse preview: bbox from [x1,y1,x2,y2]
+    if (points.length < 4) return;
+    if (!preview) {
+      preview = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse') as unknown as SVGElement;
+      preview.setAttribute('data-overlay', 'draw-preview');
+      preview.setAttribute('data-kind', 'ellipse');
+      preview.setAttribute('fill', 'rgba(59,130,246,0.1)');
+      preview.setAttribute('stroke', '#3b82f6');
+      preview.setAttribute('stroke-width', '2');
+      preview.setAttribute('stroke-dasharray', '4 2');
+      preview.setAttribute('pointer-events', 'none');
+      this.overlayLayer.node.appendChild(preview);
+    }
+    const x1 = points[0];
+    const y1 = points[1];
+    const x2 = points[2];
+    const y2 = points[3];
+    const cx = (x1 + x2) / 2;
+    const cy = (y1 + y2) / 2;
+    const rx = Math.abs(x2 - x1) / 2;
+    const ry = Math.abs(y2 - y1) / 2;
+    preview.setAttribute('cx', String(cx));
+    preview.setAttribute('cy', String(cy));
+    preview.setAttribute('rx', String(rx));
+    preview.setAttribute('ry', String(ry));
+  }
+
+  hideDrawPreview(): void {
+    if (this.destroyed) return;
+    const preview = (this.overlayLayer.node as SVGGElement).querySelector('[data-overlay="draw-preview"]');
+    preview?.remove();
   }
 
   // SP-FX-48.15: swap the SVG <text> for a foreignObject <input> at the same

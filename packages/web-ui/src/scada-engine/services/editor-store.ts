@@ -22,6 +22,8 @@ const HISTORY_LIMIT = 50;
 
 // ---------- data shape ----------
 
+export type DrawToolKind = 'pencil' | 'path' | 'ellipse-draw' | null;
+
 export interface EditorData {
   currentView: FuxaView | null;
   isDirty: boolean;
@@ -29,6 +31,8 @@ export interface EditorData {
   selection: string[];
   snapEnabled: boolean;
   gridSize: number;
+  drawTool: DrawToolKind;
+  drawPoints: number[];
 }
 
 // ---------- actions shape ----------
@@ -50,6 +54,10 @@ export interface EditorActions {
   setGridSize: (n: number) => void;
   saveView: (viewId: string) => Promise<void>;
   toggleGrid: () => void;
+  setDrawTool: (tool: DrawToolKind) => void;
+  appendDrawPoint: (x: number, y: number) => void;
+  resetDrawPoints: () => void;
+  cancelDraw: () => void;
 }
 
 export type EditorState = EditorData & EditorActions;
@@ -71,6 +79,8 @@ const _store = create<EditorData>(() => ({
   selection: [],
   snapEnabled: true,
   gridSize: 10,
+  drawTool: null,
+  drawPoints: [],
 }));
 
 // ---------- module-level actions (survive setState replace) ----------
@@ -83,6 +93,8 @@ const actions: EditorActions = {
     selection: [],
     snapEnabled: s.snapEnabled,
     gridSize: s.gridSize,
+    drawTool: null,
+    drawPoints: [],
   })),
 
   closeView: () => _store.setState((s) => ({
@@ -92,6 +104,8 @@ const actions: EditorActions = {
     selection: [],
     snapEnabled: s.snapEnabled,
     gridSize: s.gridSize,
+    drawTool: null,
+    drawPoints: [],
   })),
 
   addWidget: (widget) => {
@@ -198,6 +212,22 @@ const actions: EditorActions = {
   toggleGrid: () => {
     _store.setState((s) => ({ snapEnabled: !s.snapEnabled }));
   },
+
+  setDrawTool: (tool) => {
+    _store.setState({ drawTool: tool, drawPoints: [] });
+  },
+
+  appendDrawPoint: (x, y) => {
+    _store.setState((s) => ({ drawPoints: [...s.drawPoints, x, y] }));
+  },
+
+  resetDrawPoints: () => {
+    _store.setState({ drawPoints: [] });
+  },
+
+  cancelDraw: () => {
+    _store.setState({ drawTool: null, drawPoints: [] });
+  },
 };
 
 // ---------- public store (data + actions merged) ----------
@@ -210,6 +240,7 @@ const actions: EditorActions = {
 
 const _DATA_KEYS: ReadonlyArray<keyof EditorData> = [
   'currentView', 'isDirty', 'history', 'selection', 'snapEnabled', 'gridSize',
+  'drawTool', 'drawPoints',
 ];
 
 const _stateProxy = { ...actions } as EditorState;

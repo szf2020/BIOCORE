@@ -53,8 +53,11 @@ describe('Palette component (SP-FX-4)', () => {
     expect(panel).not.toBeNull();
     const basic = panel.querySelector('details[data-section="basic"] ul') as HTMLUListElement;
     expect(basic).not.toBeNull();
-    const lis = Array.from(basic.children).filter((c) => c.tagName === 'LI');
-    expect(lis.length).toBe(4);
+    // SP-FX-48.17: 4 drag widgets + 1 divider + 3 draw tools (pencil/ellipse-draw/path).
+    const dragItems = basic.querySelectorAll('li[data-palette-item]');
+    expect(dragItems.length).toBe(4);
+    const drawTools = basic.querySelectorAll('li[data-palette-tool]');
+    expect(drawTools.length).toBe(3);
     expect(panel.querySelector('[data-panel="shape-picker"]')).toBeNull();
   });
 });

@@ -5,7 +5,7 @@ import { CanvasController } from './canvas-svg';
 import { TransformHandles, SnapGuides, RotateTooltip } from './transform-handles';
 import { PointerTools } from './pointer-tools';
 import { snapPoint, computeBbox, clientToSvg, type Box } from './geometry';
-import { makeWidget, makeGaugeWidget } from './palette/palette-items';
+import { makeWidget, makeGaugeWidget, makeDrawnWidget, makeEllipseFromDrag } from './palette/palette-items';
 import type { FuxaWidget } from '../models';
 
 interface Refs {
@@ -31,6 +31,7 @@ export function EditorCanvas() {
   const items = useEditorStore((s) => s.currentView?.items);
   const snapEnabled = useEditorStore((s) => s.snapEnabled);
   const gridSize = useEditorStore((s) => s.gridSize);
+  const drawTool = useEditorStore((s) => s.drawTool);
 
   // (a) Lifecycle: mount/unmount on currentView.id change
   useEffect(() => {
@@ -245,6 +246,123 @@ export function EditorCanvas() {
     refs.current.canvas.setGridVisible(snapEnabled ?? true, gridSize ?? 10);
   }, [snapEnabled, gridSize]);
 
+  // SP-FX-48.17: draw-tool mouse handlers. Active only when drawTool is set.
+  // Capture-phase listeners stopImmediatePropagation so pointer-tools (select/drag)
+  // doesn't fire while drawing. Listeners detached when drawTool flips back to null.
+  useEffect(() => {
+    if (!refs.current || !drawTool) return;
+    const canvas = refs.current.canvas;
+    const svg = canvas.getSvgRoot();
+    const host = containerRef.current;
+    if (host) host.style.cursor = 'crosshair';
+
+    const toSvg = (e: MouseEvent): { x: number; y: number } => {
+      const ctm = (svg as any).getScreenCTM?.();
+      if (!ctm || typeof (ctm as any).inverse !== 'function') return { x: e.clientX, y: e.clientY };
+      return clientToSvg({ x: e.clientX, y: e.clientY }, (ctm as any).inverse());
+    };
+
+    let drawing = false; // pencil active drag flag
+    let ellipseStart: { x: number; y: number } | null = null;
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      const pt = toSvg(e);
+      const tool = useEditorStore.getState().drawTool;
+      if (tool === 'pencil') {
+        drawing = true;
+        useEditorStore.getState().setDrawTool('pencil');
+        useEditorStore.getState().appendDrawPoint(pt.x, pt.y);
+        canvas.showDrawPreview('polyline', [pt.x, pt.y]);
+      } else if (tool === 'ellipse-draw') {
+        ellipseStart = pt;
+        canvas.showDrawPreview('ellipse', [pt.x, pt.y, pt.x, pt.y]);
+      } else if (tool === 'path') {
+        const store = useEditorStore.getState();
+        store.appendDrawPoint(pt.x, pt.y);
+        canvas.showDrawPreview('polyline', useEditorStore.getState().drawPoints);
+      }
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      const tool = useEditorStore.getState().drawTool;
+      if (!tool) return;
+      const pt = toSvg(e);
+      if (tool === 'pencil' && drawing) {
+        e.stopImmediatePropagation();
+        const pts = useEditorStore.getState().drawPoints;
+        const lastX = pts[pts.length - 2];
+        const lastY = pts[pts.length - 1];
+        const dx = pt.x - lastX;
+        const dy = pt.y - lastY;
+        if (dx * dx + dy * dy >= 4) {
+          useEditorStore.getState().appendDrawPoint(pt.x, pt.y);
+          canvas.showDrawPreview('polyline', useEditorStore.getState().drawPoints);
+        }
+      } else if (tool === 'ellipse-draw' && ellipseStart) {
+        e.stopImmediatePropagation();
+        canvas.showDrawPreview('ellipse', [ellipseStart.x, ellipseStart.y, pt.x, pt.y]);
+      } else if (tool === 'path') {
+        e.stopImmediatePropagation();
+        const pts = useEditorStore.getState().drawPoints;
+        if (pts.length >= 2) {
+          // Preview existing points + rubber-band to cursor
+          canvas.showDrawPreview('polyline', [...pts, pt.x, pt.y]);
+        }
+      }
+    };
+
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const tool = useEditorStore.getState().drawTool;
+      if (tool === 'pencil' && drawing) {
+        e.stopImmediatePropagation();
+        drawing = false;
+        const pts = useEditorStore.getState().drawPoints.slice();
+        const widget = makeDrawnWidget('pencil', pts);
+        canvas.hideDrawPreview();
+        if (widget) useEditorStore.getState().addWidget(widget);
+        useEditorStore.getState().setDrawTool(null);
+      } else if (tool === 'ellipse-draw' && ellipseStart) {
+        e.stopImmediatePropagation();
+        const endPt = toSvg(e);
+        const widget = makeEllipseFromDrag(ellipseStart, endPt, useEditorStore.getState().gridSize);
+        canvas.hideDrawPreview();
+        ellipseStart = null;
+        if (widget) useEditorStore.getState().addWidget(widget);
+        useEditorStore.getState().setDrawTool(null);
+      }
+    };
+
+    const onDblClick = (e: MouseEvent) => {
+      const tool = useEditorStore.getState().drawTool;
+      if (tool !== 'path') return;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      const pts = useEditorStore.getState().drawPoints.slice();
+      const widget = makeDrawnWidget('path', pts);
+      canvas.hideDrawPreview();
+      if (widget) useEditorStore.getState().addWidget(widget);
+      useEditorStore.getState().setDrawTool(null);
+    };
+
+    svg.addEventListener('mousedown', onMouseDown, true);
+    svg.addEventListener('mousemove', onMouseMove, true);
+    svg.addEventListener('mouseup', onMouseUp, true);
+    svg.addEventListener('dblclick', onDblClick, true);
+
+    return () => {
+      svg.removeEventListener('mousedown', onMouseDown, true);
+      svg.removeEventListener('mousemove', onMouseMove, true);
+      svg.removeEventListener('mouseup', onMouseUp, true);
+      svg.removeEventListener('dblclick', onDblClick, true);
+      canvas.hideDrawPreview();
+      if (host) host.style.cursor = '';
+    };
+  }, [drawTool]);
+
   // SP-FX-48.8: sync view-level background color → canvas SVG bg.
   // Reads FuxaView.background_color (preferred) or profile.bkcolor (legacy).
   useEffect(() => {
@@ -263,6 +381,14 @@ export function EditorCanvas() {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || (ae as any)?.isContentEditable) return;
 
       if (e.key === 'Escape') {
+        // SP-FX-48.17: ESC cancels active draw tool first.
+        const dt = useEditorStore.getState().drawTool;
+        if (dt) {
+          e.preventDefault();
+          refs.current?.canvas.hideDrawPreview();
+          useEditorStore.getState().cancelDraw();
+          return;
+        }
         if (refs.current?.pointer.state.kind !== 'idle') {
           refs.current?.pointer.cancel();
           return;

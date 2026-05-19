@@ -2,7 +2,9 @@
 
 import type { FuxaWidget } from '../../models/widget';
 
-export type PaletteItemType = 'rect' | 'ellipse' | 'text' | 'line';
+export type PaletteItemType = 'rect' | 'ellipse' | 'text' | 'line' | 'pencil' | 'path';
+
+export type DrawToolType = 'pencil' | 'path' | 'ellipse-draw';
 
 export interface PaletteItem {
   id: PaletteItemType;
@@ -18,12 +20,28 @@ export const PALETTE_ITEMS: PaletteItem[] = [
   { id: 'line',    label: '直线', defaultW: 120, defaultH: 2 },
 ];
 
+// SP-FX-48.17: Drawing tools — click to activate, draw on canvas with mouse.
+// Pencil = freehand drag; Path = click-segments; Ellipse-draw = drag bbox.
+export interface DrawToolItem {
+  id: DrawToolType;
+  label: string;
+  shortcut?: string;
+}
+
+export const DRAW_TOOL_ITEMS: DrawToolItem[] = [
+  { id: 'pencil',       label: '铅笔', shortcut: 'P' },
+  { id: 'ellipse-draw', label: '椭圆工具' },
+  { id: 'path',         label: '折线' },
+];
+
 export function makeWidget(
   type: PaletteItemType,
   pt: { x: number; y: number },
   gridSize: number,
 ): FuxaWidget {
-  const item = PALETTE_ITEMS.find((i) => i.id === type)!;
+  const item = PALETTE_ITEMS.find((i) => i.id === type);
+  const defaultW = item?.defaultW ?? 80;
+  const defaultH = item?.defaultH ?? 60;
   const id = `w_${Date.now()}_${Math.random().toString(36).slice(2, 8).padEnd(6, '0')}`;
   const step = gridSize > 0 ? gridSize : 1;
   return {
@@ -32,8 +50,67 @@ export function makeWidget(
     property: {},
     x: Math.round(pt.x / step) * step,
     y: Math.round(pt.y / step) * step,
-    w: item.defaultW,
-    h: item.defaultH,
+    w: defaultW,
+    h: defaultH,
+  } as FuxaWidget;
+}
+
+// SP-FX-48.17: Build pencil/path widget from drawn point list.
+// Points are absolute canvas coords; bbox computed to set x/y/w/h.
+export function makeDrawnWidget(
+  type: 'pencil' | 'path',
+  points: number[],
+): FuxaWidget | null {
+  if (points.length < 4) return null; // need at least 2 points
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (let i = 0; i < points.length; i += 2) {
+    const x = points[i];
+    const y = points[i + 1];
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+  const x = Math.floor(minX);
+  const y = Math.floor(minY);
+  const w = Math.max(2, Math.ceil(maxX - minX));
+  const h = Math.max(2, Math.ceil(maxY - minY));
+  const id = `w_${Date.now()}_${Math.random().toString(36).slice(2, 8).padEnd(6, '0')}`;
+  return {
+    id,
+    type,
+    property: { points, stroke: '#111827', strokeWidth: 2, fill: 'none' },
+    x,
+    y,
+    w,
+    h,
+  } as FuxaWidget;
+}
+
+// SP-FX-48.17: Build ellipse widget from drag bbox (px1,py1)->(px2,py2).
+export function makeEllipseFromDrag(
+  p1: { x: number; y: number },
+  p2: { x: number; y: number },
+  gridSize: number,
+): FuxaWidget | null {
+  const x = Math.min(p1.x, p2.x);
+  const y = Math.min(p1.y, p2.y);
+  const w = Math.abs(p2.x - p1.x);
+  const h = Math.abs(p2.y - p1.y);
+  if (w < 4 || h < 4) return null;
+  const step = gridSize > 0 ? gridSize : 1;
+  const id = `w_${Date.now()}_${Math.random().toString(36).slice(2, 8).padEnd(6, '0')}`;
+  return {
+    id,
+    type: 'ellipse',
+    property: {},
+    x: Math.round(x / step) * step,
+    y: Math.round(y / step) * step,
+    w: Math.round(w / step) * step || step,
+    h: Math.round(h / step) * step || step,
   } as FuxaWidget;
 }
 

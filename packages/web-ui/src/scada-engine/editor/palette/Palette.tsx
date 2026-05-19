@@ -6,11 +6,13 @@
 //   widgets cover the same surface area.
 
 import React from 'react';
-import { PALETTE_ITEMS, GAUGE_PALETTE_ITEMS, PALETTE_CATEGORY_LABELS, type PaletteCategory } from './palette-items';
+import { PALETTE_ITEMS, GAUGE_PALETTE_ITEMS, PALETTE_CATEGORY_LABELS, DRAW_TOOL_ITEMS, type PaletteCategory } from './palette-items';
+import { useEditorStore } from '../../services/editor-store';
 
 const CATEGORY_ORDER: PaletteCategory[] = ['general', 'animation', 'shape', 'procEng'];
 
 export function Palette(): JSX.Element {
+  const drawTool = useEditorStore((s) => s.drawTool);
   return (
     <div data-panel="palette" className="w-[200px] flex-shrink-0 flex flex-col border-r border-zinc-700 bg-zinc-900 overflow-auto">
       <details open data-section="basic" className="border-b border-zinc-700">
@@ -30,6 +32,25 @@ export function Palette(): JSX.Element {
               {item.label}
             </li>
           ))}
+          <li className="border-t border-zinc-700 my-1" data-divider="tools" />
+          {DRAW_TOOL_ITEMS.map((tool) => {
+            const active = drawTool === tool.id;
+            return (
+              <li
+                key={tool.id}
+                data-palette-tool={tool.id}
+                data-active={active ? 'true' : 'false'}
+                onClick={() => {
+                  const store = useEditorStore.getState();
+                  if (store.drawTool === tool.id) store.cancelDraw();
+                  else store.setDrawTool(tool.id);
+                }}
+                className={`cursor-pointer px-2 py-1 text-sm rounded ${active ? 'bg-blue-600 text-white' : 'text-zinc-100 hover:bg-zinc-800'}`}
+              >
+                {tool.label}{tool.shortcut ? <span className="ml-2 text-xs opacity-60">{tool.shortcut}</span> : null}
+              </li>
+            );
+          })}
         </ul>
       </details>
       {CATEGORY_ORDER.map((cat) => {

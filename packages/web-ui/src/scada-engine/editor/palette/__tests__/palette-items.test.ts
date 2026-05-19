@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { PALETTE_ITEMS, makeWidget } from '../palette-items';
+import {
+  PALETTE_ITEMS,
+  DRAW_TOOL_ITEMS,
+  makeWidget,
+  makeDrawnWidget,
+  makeEllipseFromDrag,
+} from '../palette-items';
 
 describe('palette-items PALETTE_ITEMS', () => {
   it('has 4 items (rect, ellipse, text, line) with required fields', () => {
@@ -60,6 +66,75 @@ describe('palette-items makeWidget', () => {
   it('property is empty object placeholder', () => {
     const w = makeWidget('rect', { x: 0, y: 0 }, 10);
     expect(w.property).toEqual({});
+  });
+});
+
+describe('palette-items DRAW_TOOL_ITEMS (SP-FX-48.17)', () => {
+  it('exports 3 draw tools (pencil/ellipse-draw/path) with labels', () => {
+    expect(DRAW_TOOL_ITEMS.length).toBe(3);
+    const ids = DRAW_TOOL_ITEMS.map((t) => t.id);
+    expect(ids).toEqual(['pencil', 'ellipse-draw', 'path']);
+    for (const t of DRAW_TOOL_ITEMS) {
+      expect(typeof t.label).toBe('string');
+      expect(t.label.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('palette-items makeDrawnWidget (SP-FX-48.17)', () => {
+  it('returns null when fewer than 2 points', () => {
+    expect(makeDrawnWidget('pencil', [])).toBeNull();
+    expect(makeDrawnWidget('pencil', [10, 10])).toBeNull();
+    expect(makeDrawnWidget('path', [10])).toBeNull();
+  });
+
+  it('computes bbox from points and stores them in property.points', () => {
+    const w = makeDrawnWidget('pencil', [10, 20, 50, 60, 30, 100]);
+    expect(w).not.toBeNull();
+    expect(w!.type).toBe('pencil');
+    expect(w!.x).toBe(10);
+    expect(w!.y).toBe(20);
+    expect(w!.w).toBe(40);
+    expect(w!.h).toBe(80);
+    expect((w!.property as { points: number[] }).points).toEqual([10, 20, 50, 60, 30, 100]);
+  });
+
+  it('path type preserves provided points', () => {
+    const w = makeDrawnWidget('path', [0, 0, 100, 100]);
+    expect(w!.type).toBe('path');
+    expect((w!.property as { points: number[] }).points).toEqual([0, 0, 100, 100]);
+  });
+
+  it('clamps minimum w/h to 2 when bbox is zero-width or zero-height', () => {
+    const w = makeDrawnWidget('pencil', [50, 0, 50, 100]);
+    expect(w!.w).toBe(2);
+    expect(w!.h).toBe(100);
+  });
+});
+
+describe('palette-items makeEllipseFromDrag (SP-FX-48.17)', () => {
+  it('returns null when drag is below minimum size (< 4px in either dim)', () => {
+    expect(makeEllipseFromDrag({ x: 0, y: 0 }, { x: 2, y: 100 }, 10)).toBeNull();
+    expect(makeEllipseFromDrag({ x: 0, y: 0 }, { x: 100, y: 2 }, 10)).toBeNull();
+  });
+
+  it('builds ellipse widget from drag bbox, snapping to gridSize', () => {
+    const w = makeEllipseFromDrag({ x: 13, y: 27 }, { x: 100, y: 80 }, 10);
+    expect(w).not.toBeNull();
+    expect(w!.type).toBe('ellipse');
+    expect(w!.x).toBe(10);
+    expect(w!.y).toBe(30);
+    expect(w!.w).toBe(90);
+    expect(w!.h).toBe(50);
+  });
+
+  it('handles inverted drag direction (p2 before p1)', () => {
+    const w = makeEllipseFromDrag({ x: 100, y: 100 }, { x: 20, y: 20 }, 10);
+    expect(w).not.toBeNull();
+    expect(w!.x).toBe(20);
+    expect(w!.y).toBe(20);
+    expect(w!.w).toBe(80);
+    expect(w!.h).toBe(80);
   });
 });
 
