@@ -238,6 +238,63 @@ describe('EditorCanvas SP-FX-3b.2.1', () => {
     document.body.removeChild(input);
   });
 
+  it('Delete key removes selected widgets', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 50, h: 30 } as any,
+        w2: { id: 'w2', type: 'svg-ext-value', property: {}, x: 100, y: 100, w: 60, h: 40 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1']);
+    });
+    act(() => { fireKey('Delete'); });
+    const items = useEditorStore.getState().currentView!.items;
+    expect(Object.keys(items)).toEqual(['w2']);
+    expect(useEditorStore.getState().selection).toEqual([]);
+  });
+
+  it('Backspace key removes selected widgets', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 50, h: 30 } as any,
+        w2: { id: 'w2', type: 'svg-ext-value', property: {}, x: 100, y: 100, w: 60, h: 40 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1', 'w2']);
+    });
+    act(() => { fireKey('Backspace'); });
+    expect(Object.keys(useEditorStore.getState().currentView!.items)).toEqual([]);
+    expect(useEditorStore.getState().selection).toEqual([]);
+  });
+
+  it('Delete with empty selection is a no-op', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 50, h: 30 } as any,
+      }));
+      useEditorStore.getState().setSelection([]);
+    });
+    act(() => { fireKey('Delete'); });
+    expect(Object.keys(useEditorStore.getState().currentView!.items)).toEqual(['w1']);
+  });
+
+  it('Delete while activeElement=INPUT does NOT remove widgets', () => {
+    render(<EditorCanvas />);
+    act(() => {
+      useEditorStore.getState().openView(makeViewWithItems({
+        w1: { id: 'w1', type: 'svg-ext-value', property: {}, x: 10, y: 10, w: 50, h: 30 } as any,
+      }));
+      useEditorStore.getState().setSelection(['w1']);
+    });
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    act(() => { fireKey('Delete'); });
+    expect(Object.keys(useEditorStore.getState().currentView!.items)).toEqual(['w1']);
+    document.body.removeChild(input);
+  });
+
   it('Arrow with selection N>=2: all widgets move, 1 history entry', () => {
     render(<EditorCanvas />);
     act(() => {

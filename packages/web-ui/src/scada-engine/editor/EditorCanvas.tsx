@@ -275,6 +275,15 @@ export function EditorCanvas() {
         return;
       }
 
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        const state = useEditorStore.getState();
+        if (state.selection.length === 0) return;
+        e.preventDefault();
+        if (refs.current?.pointer.state.kind !== 'idle') return;
+        state.deleteWidgets(state.selection);
+        return;
+      }
+
       if (e.ctrlKey && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (refs.current?.pointer.state.kind !== 'idle') return;
