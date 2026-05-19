@@ -33,10 +33,10 @@ describe('EditorShell (SP-FX-4)', () => {
     expect(container.querySelector('[data-editor-canvas-host]')).not.toBeNull();
   });
 
-  it('palette has width 200px class', () => {
+  it('palette has fixed-width class (w-[148px] after SP-FX-48.18 icon-grid)', () => {
     const { container } = render(<EditorShell viewId="v1" />);
     const palette = container.querySelector('[data-panel="palette"]')!;
-    expect(palette.className).toContain('w-[200px]');
+    expect(palette.className).toContain('w-[148px]');
   });
 
   it('properties has width 250px class', () => {

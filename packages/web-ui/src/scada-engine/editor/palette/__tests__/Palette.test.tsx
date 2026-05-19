@@ -18,11 +18,15 @@ describe('Palette component (SP-FX-4)', () => {
     });
   });
 
-  it('renders Chinese labels 矩形 椭圆 文本', () => {
-    const { getByText } = render(<Palette />);
+  it('renders Chinese labels 矩形 椭圆 文本 as accessible names (sr-only span + title)', () => {
+    // SP-FX-48.18: palette switched to icon-grid; labels live in sr-only spans
+    // and title attributes (FUXA-style tooltips on hover).
+    const { container, getByText } = render(<Palette />);
     expect(getByText('矩形')).not.toBeNull();
     expect(getByText('椭圆')).not.toBeNull();
     expect(getByText('文本')).not.toBeNull();
+    const rectLi = container.querySelector('li[data-palette-item="rect"]') as HTMLElement;
+    expect(rectLi.getAttribute('title')).toBe('矩形');
   });
 
   it('dragstart on rect item sets dataTransfer palette-item=rect + effectAllowed=copy', () => {
@@ -51,9 +55,9 @@ describe('Palette component (SP-FX-4)', () => {
     const { container } = render(<Palette />);
     const panel = container.querySelector('[data-panel="palette"]') as HTMLElement;
     expect(panel).not.toBeNull();
-    const basic = panel.querySelector('details[data-section="basic"] ul') as HTMLUListElement;
+    const basic = panel.querySelector('details[data-section="basic"]') as HTMLElement;
     expect(basic).not.toBeNull();
-    // SP-FX-48.17: 4 drag widgets + 1 divider + 3 draw tools (pencil/ellipse-draw/path).
+    // SP-FX-48.18: 4 drag widgets + 3 draw tools (pencil/ellipse-draw/path).
     const dragItems = basic.querySelectorAll('li[data-palette-item]');
     expect(dragItems.length).toBe(4);
     const drawTools = basic.querySelectorAll('li[data-palette-tool]');
