@@ -30,7 +30,9 @@ interface ValueProperty {
 // SP-FX-FF.1: auto font sizing — when prop.fontSize is absent, scale text to
 // fill the widget bbox (FUXA fidelity). Height-driven (0.65 of h) with a
 // width-clamp so common placeholders ("#.##") never overflow horizontally.
-const AUTO_FONT_H_RATIO = 0.85;
+// SP-FX-FF.1.3: ratio tuned down per user feedback ("太大了，缩小4号") —
+// drops ~12px on a 60h default widget (51→39px), closer to FUXA visual weight.
+const AUTO_FONT_H_RATIO = 0.65;
 const AUTO_FONT_W_CHAR = 0.55;
 const AUTO_FONT_MIN = 14;
 const AUTO_FONT_MAX = 400;

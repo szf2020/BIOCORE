@@ -62,15 +62,15 @@ describe('ValueGauge (svg-ext-value)', () => {
     expect((ctx.parentGroup.querySelector('text') as SVGTextElement).textContent).toContain('rpm');
   });
 
-  it('SP-FX-FF.1 auto font: omitted fontSize → scales with bbox h (~0.85 * h)', () => {
+  it('SP-FX-FF.1 auto font: omitted fontSize → scales with bbox h (~0.65 * h)', () => {
     const ctx = makeCtx();
     const g = valueMeta.create();
     g.onMount({ id: 'w1', type: 'svg-ext-value', property: {}, x: 0, y: 0, w: 200, h: 100 } as any, ctx);
     const el = ctx.parentGroup.querySelector('text') as SVGTextElement;
     const fs = Number(el.getAttribute('font-size'));
-    // h=100, byHeight=85; byWidth=200/(4*0.55)=90.9; min=85
-    expect(fs).toBeGreaterThanOrEqual(70);
-    expect(fs).toBeLessThanOrEqual(95);
+    // h=100, byHeight=65; byWidth=200/(4*0.55)=90.9; min=65
+    expect(fs).toBeGreaterThanOrEqual(55);
+    expect(fs).toBeLessThanOrEqual(80);
   });
 
   it('SP-FX-FF.1 auto font: width-clamped on narrow tall widget', () => {
