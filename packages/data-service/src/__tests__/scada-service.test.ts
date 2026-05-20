@@ -86,12 +86,16 @@ describe('SCADA view CRUD', () => {
     expect(svc.getScadaView('v_nested')!.items).toEqual(items);
   });
 
-  it('listScadaViewsByProject returns project views', () => {
-    svc.createScadaView({ view_id: 'v1', project_id: 'p1', name: 'A' });
+  it('listScadaViewsByProject returns project views with parsed items', () => {
+    svc.createScadaView({ view_id: 'v1', project_id: 'p1', name: 'A', items: { w1: { id: 'w1', type: 't' } } });
     svc.createScadaView({ view_id: 'v2', project_id: 'p1', name: 'B' });
     const list = svc.listScadaViewsByProject('p1');
     expect(list).toHaveLength(2);
-    expect((list[0] as any).items).toBeUndefined();
+    // SP-FX-FF.36: list 返回 items (parsed) 供 ViewCard 缩略图渲染。
+    const v1 = list.find(v => v.view_id === 'v1')!;
+    expect(v1.items).toEqual({ w1: { id: 'w1', type: 't' } });
+    const v2 = list.find(v => v.view_id === 'v2')!;
+    expect(v2.items).toEqual({});
   });
 
   it('listScadaViewsByReactor returns reactor-specific + generic (NULL) views', () => {

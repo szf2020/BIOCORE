@@ -14,6 +14,11 @@ export interface ViewMeta {
   svgcontent?: string | null;
   owner_id?: string | null;
   acl?: string; // JSON: { users: string[], roles: string[] }
+  // SP-FX-FF.36: cards-view 列表项可携带 items + width/height 供 ViewCard
+  // 渲染 widget bbox 缩略图 (无 svgcontent 时的回退预览)。
+  width?: number;
+  height?: number;
+  items?: Record<string, { id: string; type: string; x?: number; y?: number; w?: number; h?: number; property?: unknown }>;
 }
 
 export interface UseViewListOpts {

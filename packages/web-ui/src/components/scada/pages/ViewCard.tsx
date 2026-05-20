@@ -31,9 +31,27 @@ function relativeTime(iso?: string): string {
   return `${days} 天前`;
 }
 
+// SP-FX-FF.36: widget-type → mini-thumbnail fill color。覆盖常见 widget 类型。
+function thumbColorFor(type: string): string {
+  if (type.includes('button')) return '#1d4ed8';
+  if (type.includes('input') || type.includes('select')) return '#475569';
+  if (type.includes('switch') || type.includes('toggle')) return '#16a34a';
+  if (type.includes('slider')) return '#f59e0b';
+  if (type.includes('progress') || type.includes('gauge')) return '#0891b2';
+  if (type.includes('value') || type.includes('text')) return '#334155';
+  if (type.includes('pipe')) return '#94a3b8';
+  if (type.includes('pump') || type.includes('motor')) return '#dc2626';
+  if (type.includes('valve')) return '#7c3aed';
+  if (type.includes('tank') || type.includes('bag')) return '#0ea5e9';
+  if (type.includes('graph') || type.includes('chart')) return '#10b981';
+  return '#64748b';
+}
+
 export function ViewCard({ view, onEdit, onOpen, onDuplicate, onDelete, currentUserId, currentUserRole, onAcl }: Props) {
   const { t } = useLocale();
   const hasSvg = typeof view.svgcontent === 'string' && view.svgcontent.trim().length > 0;
+  const itemEntries = view.items ? Object.values(view.items) : [];
+  const hasItems = !hasSvg && itemEntries.length > 0;
 
   const isAdmin = currentUserRole === 'admin';
   const isOwner = !!currentUserId && view.owner_id === currentUserId;
@@ -58,11 +76,37 @@ export function ViewCard({ view, onEdit, onOpen, onDuplicate, onDelete, currentU
           <div data-testid="view-card-thumbnail-svg">
             <ThumbnailRenderer
               svgcontent={view.svgcontent!}
-              viewWidth={800}
-              viewHeight={600}
+              viewWidth={view.width ?? 800}
+              viewHeight={view.height ?? 600}
               height={80}
             />
           </div>
+        ) : hasItems ? (
+          <svg
+            data-testid="view-card-thumbnail-items"
+            width="100%"
+            height={80}
+            viewBox={`0 0 ${view.width ?? 800} ${view.height ?? 600}`}
+            preserveAspectRatio="xMidYMid meet"
+            style={{ display: 'block', background: '#f9fafb' }}
+            aria-hidden="true"
+          >
+            {itemEntries.map((w) => {
+              const x = typeof w.x === 'number' ? w.x : 0;
+              const y = typeof w.y === 'number' ? w.y : 0;
+              const ww = typeof w.w === 'number' && w.w > 0 ? w.w : 40;
+              const hh = typeof w.h === 'number' && w.h > 0 ? w.h : 24;
+              return (
+                <rect
+                  key={w.id}
+                  data-thumb-widget={w.id}
+                  x={x} y={y} width={ww} height={hh}
+                  fill={thumbColorFor(w.type ?? '')}
+                  opacity={0.85}
+                />
+              );
+            })}
+          </svg>
         ) : (
           <div
             data-testid="view-card-thumbnail-placeholder"

@@ -29,6 +29,29 @@ describe('ViewCard', () => {
     expect(screen.getByTestId('view-card-thumbnail-svg')).toBeTruthy();
   });
 
+  // SP-FX-FF.36: cards-view 视图没存 svgcontent;若 items 非空,直接用 widget
+  // bbox 渲染 mini SVG 缩略图 (颜色块) 而不是 "无预览"。
+  it('shows items thumbnail when items present without svgcontent', () => {
+    const view = {
+      ...baseView,
+      width: 800, height: 600,
+      items: {
+        w1: { id: 'w1', type: 'svg-ext-value', x: 10, y: 20, w: 80, h: 30, property: {} },
+        w2: { id: 'w2', type: 'svg-ext-html_button', x: 200, y: 100, w: 60, h: 30, property: {} },
+      },
+    };
+    render(<ViewCard view={view} onEdit={vi.fn()} onOpen={vi.fn()} onDuplicate={vi.fn()} onDelete={vi.fn()} />);
+    const thumb = screen.getByTestId('view-card-thumbnail-items');
+    expect(thumb).toBeTruthy();
+    expect(thumb.querySelectorAll('[data-thumb-widget]')).toHaveLength(2);
+  });
+
+  it('shows placeholder when items is empty object and no svgcontent', () => {
+    const view = { ...baseView, items: {} };
+    render(<ViewCard view={view} onEdit={vi.fn()} onOpen={vi.fn()} onDuplicate={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.getByTestId('view-card-thumbnail-placeholder')).toBeTruthy();
+  });
+
   it('edit button calls onEdit', () => {
     const onEdit = vi.fn();
     render(<ViewCard view={baseView} onEdit={onEdit} onOpen={vi.fn()} onDuplicate={vi.fn()} onDelete={vi.fn()} />);

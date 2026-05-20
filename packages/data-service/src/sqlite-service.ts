@@ -983,18 +983,28 @@ export class SQLiteService {
     mtime_desc: 'updated_at DESC',
   };
 
-  listScadaViewsByProject(projectId: string): ScadaViewMeta[];
-  listScadaViewsByProject(projectId: string, opts: { limit: number; offset: number; q?: string; sort?: string }): { views: ScadaViewMeta[]; total: number };
+  // SP-FX-FF.36: list endpoint 同时返回 items (parsed),供 cards-view 卡片
+  // 渲染 widget bbox 缩略图 (无 svgcontent 时的回退预览)。
+  listScadaViewsByProject(projectId: string): ScadaView[];
+  listScadaViewsByProject(projectId: string, opts: { limit: number; offset: number; q?: string; sort?: string }): { views: ScadaView[]; total: number };
   listScadaViewsByProject(
     projectId: string,
     opts?: { limit: number; offset: number; q?: string; sort?: string },
-  ): ScadaViewMeta[] | { views: ScadaViewMeta[]; total: number } {
-    const BASE_SELECT = `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, updated_at, owner_id, acl
+  ): ScadaView[] | { views: ScadaView[]; total: number } {
+    const BASE_SELECT = `SELECT view_id, project_id, name, reactor_id, display_order, width, height, background, is_svg, is_template, items_json, updated_at, owner_id, acl
        FROM scada_views`;
+
+    const parseRow = (row: ScadaViewMeta & { items_json: string }): ScadaView => {
+      const { items_json, ...meta } = row;
+      let items: Record<string, unknown> = {};
+      try { items = JSON.parse(items_json); } catch { items = {}; }
+      return { ...meta, items };
+    };
 
     if (!opts) {
       const sql = `${BASE_SELECT} WHERE project_id = ? ORDER BY display_order ASC, name ASC`;
-      return this.db.prepare(sql).all(projectId) as ScadaViewMeta[];
+      const rows = this.db.prepare(sql).all(projectId) as (ScadaViewMeta & { items_json: string })[];
+      return rows.map(parseRow);
     }
 
     const { limit, offset, q, sort } = opts;
@@ -1011,8 +1021,8 @@ export class SQLiteService {
     const total = (this.db.prepare(countSql).get(...binds) as { cnt: number }).cnt;
 
     const dataSql = `${BASE_SELECT} ${where} ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
-    const views = this.db.prepare(dataSql).all(...binds, limit, offset) as ScadaViewMeta[];
-    return { views, total };
+    const rows = this.db.prepare(dataSql).all(...binds, limit, offset) as (ScadaViewMeta & { items_json: string })[];
+    return { views: rows.map(parseRow), total };
   }
 
   listScadaViewsByReactor(reactorId: string): ScadaViewMeta[] {
