@@ -12,7 +12,7 @@ import {
   Square, Circle, Type, Minus,
   Pencil, CircleDashed, Spline,
   Hash, RectangleHorizontal, TextCursorInput, Image as ImageIcon, ListOrdered,
-  Lightbulb, BarChart3, BatteryMedium, ToggleLeft, SlidersHorizontal, ArrowRight, Package, BarChart2,
+  Lightbulb, BarChart3, BatteryMedium, ToggleLeft, SlidersVertical, Cable, Package,
   SquareDashed,
   Container, Cog, Fan, Diamond, Disc,
   HelpCircle,
@@ -57,10 +57,13 @@ const GAUGE_ICONS: Record<string, LucideIcon> = {
   // SP-FX-FF.20: half-battery visualizes "filled bar" better than 3-bar chart.
   'svg-ext-gauge_progress': BatteryMedium,
   'svg-ext-html_switch': ToggleLeft,
-  'svg-ext-html_slider': SlidersHorizontal,
-  'svg-ext-pipe': ArrowRight,
+  // SP-FX-FF.21: FUXA-style icons — vertical slider matches the vertical
+  // slider widget shape; cable visually reads as a horizontal pipe segment.
+  'svg-ext-html_slider': SlidersVertical,
+  'svg-ext-pipe': Cable,
   'svg-ext-html_bag': Package,
-  'svg-ext-html_graph': BarChart2,
+  // SP-FX-FF.21: 3-bar BarChart3 is the canonical "bar chart" silhouette.
+  'svg-ext-html_graph': BarChart3,
   'svg-ext-panel': SquareDashed,
   'svg-ext-tank': Container,
   'svg-ext-motor': Cog,
