@@ -50,19 +50,21 @@ class PumpGauge implements GaugeBase {
     const defaultColor = prop.defaultColor ?? (prop as { color?: string }).color ?? DEFAULT_COLOR;
     const bladeCount = prop.bladeCount ?? DEFAULT_BLADE_COUNT;
 
-    // SP-FX-48.24: stubs reserve top + right strips of the bbox so casing
-    // and stubs both fit inside widget x/y/w/h (selection chrome aligns).
+    // SP-FX-FF.32: pump casing is now CENTERED in bbox; stubs extend from
+    // the casing edge to the top + right bbox edges. Previous layout anchored
+    // the casing to bottom-left so wide bboxes left large empty corners.
     const stubL = Math.min(h, w) * 0.2;
-    const r = Math.min(w - stubL, h - stubL) / 2;
-    const cx = x + r;
-    const cy = y + stubL + r;
+    const r = Math.min(w - 2 * stubL, h - 2 * stubL) / 2;
+    const cx = x + w / 2;
+    const cy = y + h / 2;
     const stubW = r * 0.5;
 
     const inletStub = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     inletStub.setAttribute('x', String(cx - stubW / 2));
     inletStub.setAttribute('y', String(y));
     inletStub.setAttribute('width', String(stubW));
-    inletStub.setAttribute('height', String(stubL));
+    // SP-FX-FF.32: stub extends from bbox top down to casing top edge.
+    inletStub.setAttribute('height', String(Math.max(0, cy - r - y)));
     inletStub.setAttribute('fill', '#475569');
     inletStub.setAttribute('data-inlet', 'true');
     ctx.parentGroup.appendChild(inletStub);
