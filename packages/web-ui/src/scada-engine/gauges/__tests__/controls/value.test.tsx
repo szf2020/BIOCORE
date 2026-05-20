@@ -48,6 +48,26 @@ describe('ValueGauge (svg-ext-value)', () => {
     g.onProcess({ value: null, isStale: true });
     const el = ctx.parentGroup.querySelector('text') as SVGTextElement;
     expect(el.textContent).toBe('#.##');
+    // No prop.color → muted gray placeholder
+    expect(el.getAttribute('fill')).toBe('#9ca3af');
+  });
+
+  it('SP-FX-FF.7 editor mode + isStale honors prop.color (ColorPaletteBar feedback)', () => {
+    const ctx = makeCtx({ mode: 'editor' });
+    const g = valueMeta.create();
+    g.onMount(makeWidget({ color: '#dc2626' }), ctx);
+    g.onProcess({ value: null, isStale: true });
+    const el = ctx.parentGroup.querySelector('text') as SVGTextElement;
+    expect(el.textContent).toBe('#.##');
+    expect(el.getAttribute('fill')).toBe('#dc2626');
+  });
+
+  it('SP-FX-FF.7 runtime mode + isStale keeps muted gray regardless of prop.color', () => {
+    const ctx = makeCtx({ mode: 'runtime' });
+    const g = valueMeta.create();
+    g.onMount(makeWidget({ color: '#dc2626' }), ctx);
+    g.onProcess({ value: null, isStale: true });
+    const el = ctx.parentGroup.querySelector('text') as SVGTextElement;
     expect(el.getAttribute('fill')).toBe('#9ca3af');
   });
 

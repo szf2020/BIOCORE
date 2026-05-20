@@ -104,7 +104,13 @@ class ValueGauge implements GaugeBase {
         ? PLACEHOLDER
         : formatValue(null, prop.format, { decimals: prop.decimals, unit: prop.unit });
       this.textEl.textContent = placeholder;
-      this.textEl.setAttribute('fill', '#9ca3af');
+      // SP-FX-FF.7: editor mode honors prop.color so the ColorPaletteBar gives
+      // instant visual feedback on the placeholder. Runtime preserves the
+      // muted FUXA stale convention (#9ca3af) regardless of designer color.
+      const fill = this.ctx.mode === 'editor'
+        ? (prop.color ?? '#9ca3af')
+        : '#9ca3af';
+      this.textEl.setAttribute('fill', fill);
       applyActions(null, prop.actions, this.textEl, this.actionRt);
       return;
     }
