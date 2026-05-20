@@ -55,8 +55,13 @@ class ValueGauge implements GaugeBase {
     el.setAttribute('x', String(x + w / 2));
     el.setAttribute('y', String(y + h / 2));
     el.setAttribute('text-anchor', 'middle');
-    el.setAttribute('dominant-baseline', 'middle');
+    // SP-FX-FF.10: 'central' is more consistent across renderers than 'middle'
+    // for vertical text alignment.
+    el.setAttribute('dominant-baseline', 'central');
     el.setAttribute('font-size', String(computeFontSize(prop)));
+    // SP-FX-FF.10: monospace font keeps "#.##" / numeric values width-uniform
+    // so the eye reads the geometric middle as the perceived middle.
+    el.setAttribute('font-family', 'ui-monospace, "SF Mono", Menlo, Consolas, monospace');
     el.setAttribute('data-widget-id', widget.id);
     ctx.parentGroup.appendChild(el);
     this.textEl = el;
