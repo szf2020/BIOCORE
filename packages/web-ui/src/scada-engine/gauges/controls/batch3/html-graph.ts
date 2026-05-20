@@ -20,13 +20,27 @@ interface GraphProperty {
   maxVal?: number;
   ranges?: Range[];
   actions?: RangeAction[];
+  // SP-FX-FF.39: FUXA chart parity — title + tick labels.
+  title?: string;
+  showGrid?: boolean;
 }
 
 const DEFAULT_MAX_POINTS = 60;
 const DEFAULT_LINE_COLOR = '#3b82f6';
-const DEFAULT_BG_COLOR = '#1e293b';
+// SP-FX-FF.39: FUXA parity — chart background defaults to white so axes/title
+// are legible without designer setting bgColor manually.
+const DEFAULT_BG_COLOR = '#ffffff';
 const DEFAULT_MIN = 0;
 const DEFAULT_MAX = 100;
+// SP-FX-FF.39: chart frame styling
+const AXIS_COLOR = '#9ca3af';
+const GRID_COLOR = '#e5e7eb';
+const TITLE_COLOR = '#1f2937';
+const LABEL_COLOR = '#6b7280';
+const PADDING_LEFT = 32;
+const PADDING_RIGHT = 8;
+const PADDING_TOP = 22;
+const PADDING_BOTTOM = 20;
 
 class HtmlGraphGauge implements GaugeBase {
   private foEl: SVGForeignObjectElement | null = null;
@@ -131,6 +145,8 @@ class HtmlGraphGauge implements GaugeBase {
     const minVal = prop?.minVal ?? DEFAULT_MIN;
     const maxVal = prop?.maxVal ?? DEFAULT_MAX;
     const range = maxVal - minVal || 1;
+    const title = prop?.title ?? '';
+    const showGrid = prop?.showGrid !== false;
 
     const w = canvas.width;
     const h = canvas.height;
@@ -138,21 +154,68 @@ class HtmlGraphGauge implements GaugeBase {
     ctx2d.fillStyle = bgColor;
     ctx2d.fillRect(0, 0, w, h);
 
+    // SP-FX-FF.39: chart plot area inside padding so axes/title/labels fit.
+    const plotL = PADDING_LEFT;
+    const plotT = PADDING_TOP;
+    const plotR = w - PADDING_RIGHT;
+    const plotB = h - PADDING_BOTTOM;
+    const plotW = Math.max(1, plotR - plotL);
+    const plotH = Math.max(1, plotB - plotT);
+
+    // Title (top-center)
+    if (title && plotW > 40) {
+      ctx2d.fillStyle = TITLE_COLOR;
+      ctx2d.font = 'bold 12px sans-serif';
+      ctx2d.textAlign = 'center';
+      ctx2d.textBaseline = 'top';
+      ctx2d.fillText(title, w / 2, 4);
+    }
+
+    // Grid lines (4 horizontal bands inside plot area) + tick labels (Y min/max)
+    if (showGrid) {
+      ctx2d.strokeStyle = GRID_COLOR;
+      ctx2d.lineWidth = 1;
+      for (let i = 1; i < 4; i++) {
+        const gy = plotT + (plotH * i) / 4;
+        ctx2d.beginPath();
+        ctx2d.moveTo(plotL, gy);
+        ctx2d.lineTo(plotR, gy);
+        ctx2d.stroke();
+      }
+    }
+
+    // Y axis line
+    ctx2d.strokeStyle = AXIS_COLOR;
+    ctx2d.lineWidth = 1;
+    ctx2d.beginPath();
+    ctx2d.moveTo(plotL, plotT);
+    ctx2d.lineTo(plotL, plotB);
+    ctx2d.lineTo(plotR, plotB);
+    ctx2d.stroke();
+
+    // Y axis tick labels (max top, min bottom)
+    ctx2d.fillStyle = LABEL_COLOR;
+    ctx2d.font = '10px sans-serif';
+    ctx2d.textAlign = 'right';
+    ctx2d.textBaseline = 'middle';
+    ctx2d.fillText(String(maxVal), plotL - 4, plotT);
+    ctx2d.fillText(String(minVal), plotL - 4, plotB);
+
     if (this.buffer.length < 1) return;
 
     const chartType: GraphChartType = prop?.chartType ?? 'line';
 
     if (chartType === 'bar') {
       // SP-FX-48.19: Bar chart — one vertical bar per buffer sample.
-      const slot = w / this.buffer.length;
+      const slot = plotW / this.buffer.length;
       const barW = Math.max(1, slot * 0.7);
       const gap = (slot - barW) / 2;
       ctx2d.fillStyle = lineColor;
       this.buffer.forEach((val, i) => {
-        const px = i * slot + gap;
+        const px = plotL + i * slot + gap;
         const ratio = Math.max(0, Math.min(1, (val - minVal) / range));
-        const barH = ratio * h;
-        const py = h - barH;
+        const barH = ratio * plotH;
+        const py = plotB - barH;
         ctx2d.fillRect(px, py, barW, barH);
       });
       return;
@@ -165,10 +228,10 @@ class HtmlGraphGauge implements GaugeBase {
     ctx2d.strokeStyle = lineColor;
     ctx2d.lineWidth = 1.5;
 
-    const step = w / (this.buffer.length - 1);
+    const step = plotW / (this.buffer.length - 1);
     this.buffer.forEach((val, i) => {
-      const px = i * step;
-      const py = h - ((val - minVal) / range) * h;
+      const px = plotL + i * step;
+      const py = plotB - ((val - minVal) / range) * plotH;
       if (i === 0) {
         ctx2d.moveTo(px, py);
       } else {

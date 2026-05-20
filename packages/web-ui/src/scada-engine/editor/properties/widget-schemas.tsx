@@ -380,8 +380,9 @@ export const htmlBagSchema: WidgetPropertySchema = {
 export const htmlGraphSchema: WidgetPropertySchema = {
   entries: [
     { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'title', label: '标题', type: 'text', placeholder: 'Title' },
     { key: 'maxPoints', label: '最大点数', type: 'number', min: 5, max: 600, step: 5 },
-    { key: 'lineColor', label: '折线颜色', type: 'color' },
+    { key: 'lineColor', label: '折线/柱颜色', type: 'color' },
     { key: 'bgColor', label: '背景色', type: 'color' },
     { key: 'minVal', label: '最小值', type: 'number' },
     { key: 'maxVal', label: '最大值', type: 'number' },
