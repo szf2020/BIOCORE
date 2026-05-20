@@ -45,11 +45,12 @@ describe('EditorShell (SP-FX-4)', () => {
     expect(props.className).toContain('w-[250px]');
   });
 
-  it('canvas host is in a flex-1 wrapper (fills middle)', () => {
+  it('canvas host is nested inside a flex-1 wrapper (fills middle)', () => {
     const { container } = render(<EditorShell viewId="v1" />);
     const host = container.querySelector('[data-editor-canvas-host]')!;
-    const parent = host.parentElement!;
-    expect(parent.className).toContain('flex-1');
+    // SP-FX-FF.5: shell now wraps host + ColorPaletteBar; flex-1 layout is an
+    // ancestor rather than the direct parent.
+    expect(host.closest('.flex-1')).not.toBeNull();
   });
 
   it('forwards viewId to Toolbar (save button click triggers fetch with viewId)', async () => {

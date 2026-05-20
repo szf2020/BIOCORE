@@ -6,6 +6,7 @@ import { TransformHandles, SnapGuides, RotateTooltip } from './transform-handles
 import { PointerTools } from './pointer-tools';
 import { snapPoint, computeBbox, clientToSvg, type Box } from './geometry';
 import { makeWidget, makeGaugeWidget, makeDrawnWidget, makeEllipseFromDrag, makeShapeWidget } from './palette/palette-items';
+import { ColorPaletteBar } from './ColorPaletteBar';
 import type { FuxaWidget } from '../models';
 
 interface Refs {
@@ -530,10 +531,11 @@ export function EditorCanvas() {
   }, []);
 
   return (
+    <div className="w-full h-full flex flex-col" data-editor-canvas-shell>
     <div
       ref={containerRef}
       data-editor-canvas-host
-      className="w-full h-full overflow-auto bg-white"
+      className="w-full flex-1 overflow-auto bg-white"
       onDragOver={(e) => {
         const types = e.dataTransfer.types;
         if (
@@ -584,6 +586,8 @@ export function EditorCanvas() {
       }}
     >
       {!currentView && <div className="p-8 text-center text-muted-foreground">无视图</div>}
+    </div>
+    <ColorPaletteBar />
     </div>
   );
 }
