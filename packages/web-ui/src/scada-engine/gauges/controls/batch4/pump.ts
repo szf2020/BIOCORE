@@ -20,17 +20,14 @@ interface PumpProperty {
   actions?: RangeAction[];
 }
 
-const DEFAULT_COLOR = '#9ca3af';
-const DEFAULT_BLADE_COUNT = 3;
-
-function makeBladePath(cx: number, cy: number, r: number, angleStart: number, angleEnd: number): string {
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const x2 = cx + r * Math.cos(toRad(angleStart));
-  const y2 = cy + r * Math.sin(toRad(angleStart));
-  const x3 = cx + r * Math.cos(toRad(angleEnd));
-  const y3 = cy + r * Math.sin(toRad(angleEnd));
-  return `M ${cx} ${cy} L ${x2} ${y2} A ${r} ${r} 0 0 1 ${x3} ${y3} Z`;
-}
+// SP-FX-FF.34: FUXA-style turbine pump — many thin radial blades + small
+// inner hub + outline-only casing (no fill), matching the industrial impeller
+// glyph rather than a 3-slice pie chart.
+const DEFAULT_COLOR = '#1f2937';
+const DEFAULT_BLADE_COUNT = 14;
+const HUB_RATIO = 0.25;     // inner hub radius / casing radius
+const BLADE_INNER_RATIO = 0.32; // blade inner edge / casing radius (slight gap from hub)
+const BLADE_WIDTH = 3;      // pixel thickness of each blade rectangle
 
 class PumpGauge implements GaugeBase {
   private outerCircle: SVGCircleElement | null = null;
@@ -80,31 +77,49 @@ class PumpGauge implements GaugeBase {
     ctx.parentGroup.appendChild(outletStub);
     this.elements.push(outletStub);
 
-    // Outer circle: pump casing
+    // SP-FX-FF.34: outline-only casing (no fill) — FUXA turbine pump look.
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('cx', String(cx));
     circle.setAttribute('cy', String(cy));
     circle.setAttribute('r', String(r));
-    circle.setAttribute('fill', '#334155');
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', defaultColor);
+    circle.setAttribute('stroke-width', '1.5');
     circle.setAttribute('data-widget-id', widget.id);
     ctx.parentGroup.appendChild(circle);
     this.outerCircle = circle;
     this.elements.push(circle);
 
-    // Blade segments (fan wedges)
+    // SP-FX-FF.34: inner hub
+    const hub = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    hub.setAttribute('cx', String(cx));
+    hub.setAttribute('cy', String(cy));
+    hub.setAttribute('r', String(r * HUB_RATIO));
+    hub.setAttribute('fill', 'none');
+    hub.setAttribute('stroke', defaultColor);
+    hub.setAttribute('stroke-width', '1.5');
+    hub.setAttribute('data-pump-hub', 'true');
+    ctx.parentGroup.appendChild(hub);
+    this.elements.push(hub);
+
+    // SP-FX-FF.34: thin radial blades (rectangles rotated around hub center).
     const angleStep = 360 / bladeCount;
-    const innerR = r * 0.85;
+    const bladeInnerR = r * BLADE_INNER_RATIO;
+    const bladeLen = r - bladeInnerR;
     this.bladeEls = [];
     for (let i = 0; i < bladeCount; i++) {
-      const aStart = i * angleStep + 5;
-      const aEnd = (i + 1) * angleStep - 5;
-      const d = makeBladePath(cx, cy, innerR, aStart, aEnd);
-      const blade = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      blade.setAttribute('d', d);
+      const angle = i * angleStep;
+      const blade = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      // Centered at (cx, cy), then translated outward and rotated.
+      blade.setAttribute('x', String(bladeInnerR));
+      blade.setAttribute('y', String(-BLADE_WIDTH / 2));
+      blade.setAttribute('width', String(bladeLen));
+      blade.setAttribute('height', String(BLADE_WIDTH));
       blade.setAttribute('fill', defaultColor);
+      blade.setAttribute('transform', `translate(${cx} ${cy}) rotate(${angle})`);
       blade.setAttribute('data-blade', String(i));
       ctx.parentGroup.appendChild(blade);
-      this.bladeEls.push(blade);
+      this.bladeEls.push(blade as unknown as SVGPathElement);
       this.elements.push(blade);
     }
   }
