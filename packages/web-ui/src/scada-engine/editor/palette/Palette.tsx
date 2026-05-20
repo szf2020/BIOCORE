@@ -128,12 +128,14 @@ function ShapeThumb({ shape }: { shape: ShapeEntry }): JSX.Element {
   );
 }
 
-const SHAPE_GROUP_ORDER: ShapeGroup[] = ['basic', 'process', 'compressor', 'pumps', 'animation'];
+// SP-FX-FF.27: drop 'animation' shape group from the palette entirely — the
+// two shapes (eli / piston) added visual noise and the user removed them.
+// 'animation' kept in ShapeGroup type so saved views with these shapes still render.
+const SHAPE_GROUP_ORDER: ShapeGroup[] = ['basic', 'process', 'compressor', 'pumps'];
 
-// SP-FX-FF.25: merge shape groups into their matching gauge categories so the
-// palette doesn't repeat "动画" + "形状·动画" or "工艺设备" + "形状·工艺设备".
+// SP-FX-FF.25/27: merge shape groups into matching gauge categories. Animation
+// merge removed in FF.27 since the 2 animation shapes were dropped from palette.
 const CATEGORY_TO_SHAPE_GROUP: Partial<Record<PaletteCategory, ShapeGroup>> = {
-  animation: 'animation',
   procEng: 'process',
 };
 const MERGED_SHAPE_GROUPS = new Set<ShapeGroup>(
