@@ -76,6 +76,13 @@ class HtmlSelectGauge implements GaugeBase {
     select.disabled = ctx.mode !== 'runtime' || prop.readonly === true;
     // SP-FX-48.24: editor mode → pointer-events:none so the widget can be dragged
     if (ctx.mode !== 'runtime') select.style.pointerEvents = 'none';
+    // SP-FX-FF.14: FUXA visual parity — blue bg + dark text + 20px font + 2px
+    // corner radius. Designers can still override via prop.color / bgColor.
+    select.style.backgroundColor = (prop as { bgColor?: string }).bgColor ?? '#3b82f6';
+    select.style.color = (prop as { color?: string }).color ?? '#0f172a';
+    select.style.fontSize = '20px';
+    select.style.borderRadius = '2px';
+    select.style.padding = '0 6px';
     if (prop.readonly === true) {
       select.style.border = '0';
       select.style.appearance = 'none';
@@ -93,6 +100,10 @@ class HtmlSelectGauge implements GaugeBase {
     placeholderOpt.value = '';
     placeholderOpt.textContent = placeholderText;
     placeholderOpt.disabled = true;
+    // SP-FX-FF.14: mark selected so the placeholder text actually shows in the
+    // collapsed select (previously the option existed but wasn't the chosen
+    // entry, so the select appeared blank).
+    placeholderOpt.selected = true;
     select.appendChild(placeholderOpt);
 
     for (const opt of deriveOptions(prop)) {
