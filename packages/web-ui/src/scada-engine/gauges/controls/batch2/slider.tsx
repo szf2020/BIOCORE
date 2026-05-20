@@ -202,49 +202,54 @@ class SliderGauge implements GaugeBase {
     void trackBottom;
     void trackH;
 
-    // Pointer drag (runtime only)
-    if (ctx.mode === 'runtime') {
-      this.pointerDownHandler = (e: PointerEvent) => {
-        this.dragging = true;
-        try { (handleG as unknown as { setPointerCapture?: (id: number) => void }).setPointerCapture?.(e.pointerId); } catch { /* ignore */ }
-        e.stopPropagation();
-      };
-      this.pointerMoveHandler = (e: PointerEvent) => {
-        if (!this.dragging || !this.inputEl) return;
-        const svg = ctx.parentGroup.ownerSVGElement;
-        if (!svg) return;
-        const ctm = (svg as SVGSVGElement).getScreenCTM?.();
-        const create = (svg as SVGSVGElement).createSVGPoint?.bind(svg);
-        if (!ctm || !create) return;
-        const pt = create();
-        pt.x = e.clientX;
-        pt.y = e.clientY;
-        const local = pt.matrixTransform(ctm.inverse());
-        const pp = this.widget.property as SliderProperty;
-        const lmin = pp.min ?? 0;
-        const lmax = pp.max ?? 100;
-        const lstep = pp.step ?? 1;
-        const wy = (this.widget as any).y ?? 0;
-        const wh = (this.widget as any).h ?? 180;
-        const ttop = wy + PAD_Y;
-        const tbot = wy + wh - PAD_Y;
-        const ratio = Math.max(0, Math.min(1, (local.y - ttop) / (tbot - ttop)));
-        let v = lmin + ratio * (lmax - lmin);
-        if (lstep > 0) v = Math.round(v / lstep) * lstep;
-        v = Math.max(lmin, Math.min(lmax, v));
-        this.inputEl.value = String(v);
-        this.layoutForValue(v);
-      };
-      this.pointerUpHandler = (e: PointerEvent) => {
-        if (!this.dragging) return;
-        this.dragging = false;
-        try { (handleG as unknown as { releasePointerCapture?: (id: number) => void }).releasePointerCapture?.(e.pointerId); } catch { /* ignore */ }
-        if (this.inputEl) this.inputEl.dispatchEvent(new Event('change'));
-      };
-      handleG.addEventListener('pointerdown', this.pointerDownHandler);
-      window.addEventListener('pointermove', this.pointerMoveHandler);
-      window.addEventListener('pointerup', this.pointerUpHandler);
-    }
+    // SP-FX-FF.18: pointer drag wired in BOTH editor and runtime modes so
+    // designers can preview the slider value in the canvas. Editor mode just
+    // re-layouts visuals — the change handler short-circuits before calling
+    // onWriteIntent unless mode === 'runtime'. stopPropagation on pointerdown
+    // keeps the editor's widget-body drag from also picking up the event.
+    this.pointerDownHandler = (e: PointerEvent) => {
+      this.dragging = true;
+      try { (handleG as unknown as { setPointerCapture?: (id: number) => void }).setPointerCapture?.(e.pointerId); } catch { /* ignore */ }
+      e.stopPropagation();
+      e.preventDefault();
+    };
+    this.pointerMoveHandler = (e: PointerEvent) => {
+      if (!this.dragging || !this.inputEl) return;
+      const svg = ctx.parentGroup.ownerSVGElement;
+      if (!svg) return;
+      const ctm = (svg as SVGSVGElement).getScreenCTM?.();
+      const create = (svg as SVGSVGElement).createSVGPoint?.bind(svg);
+      if (!ctm || !create) return;
+      const pt = create();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const local = pt.matrixTransform(ctm.inverse());
+      const pp = this.widget.property as SliderProperty;
+      const lmin = pp.min ?? 0;
+      const lmax = pp.max ?? 100;
+      const lstep = pp.step ?? 1;
+      const wy = (this.widget as any).y ?? 0;
+      const wh = (this.widget as any).h ?? 180;
+      const ttop = wy + PAD_Y;
+      const tbot = wy + wh - PAD_Y;
+      const ratio = Math.max(0, Math.min(1, (local.y - ttop) / (tbot - ttop)));
+      let v = lmin + ratio * (lmax - lmin);
+      if (lstep > 0) v = Math.round(v / lstep) * lstep;
+      v = Math.max(lmin, Math.min(lmax, v));
+      this.inputEl.value = String(v);
+      this.layoutForValue(v);
+    };
+    this.pointerUpHandler = (e: PointerEvent) => {
+      if (!this.dragging) return;
+      this.dragging = false;
+      try { (handleG as unknown as { releasePointerCapture?: (id: number) => void }).releasePointerCapture?.(e.pointerId); } catch { /* ignore */ }
+      if (this.inputEl) this.inputEl.dispatchEvent(new Event('change'));
+    };
+    handleG.addEventListener('pointerdown', this.pointerDownHandler);
+    window.addEventListener('pointermove', this.pointerMoveHandler);
+    window.addEventListener('pointerup', this.pointerUpHandler);
+    // Visible cursor hint regardless of mode.
+    (handleG as unknown as HTMLElement).style.cursor = 'pointer';
   }
 
   onUnmount(): void {
