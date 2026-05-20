@@ -31,13 +31,23 @@ describe('ValueGauge (svg-ext-value)', () => {
     expect(el.textContent).toContain('7.77');
   });
 
-  it('onProcess with isStale=true renders gray "--"', () => {
-    const ctx = makeCtx();
+  it('runtime mode + isStale=true renders gray FUXA stale token "--"', () => {
+    const ctx = makeCtx({ mode: 'runtime' });
     const g = valueMeta.create();
     g.onMount(makeWidget(), ctx);
     g.onProcess({ value: null, isStale: true });
     const el = ctx.parentGroup.querySelector('text') as SVGTextElement;
     expect(el.textContent).toContain('--');
+    expect(el.getAttribute('fill')).toBe('#9ca3af');
+  });
+
+  it('SP-FX-FF.1.2 editor mode + isStale renders FUXA "#.##" placeholder', () => {
+    const ctx = makeCtx({ mode: 'editor' });
+    const g = valueMeta.create();
+    g.onMount(makeWidget(), ctx);
+    g.onProcess({ value: null, isStale: true });
+    const el = ctx.parentGroup.querySelector('text') as SVGTextElement;
+    expect(el.textContent).toBe('#.##');
     expect(el.getAttribute('fill')).toBe('#9ca3af');
   });
 

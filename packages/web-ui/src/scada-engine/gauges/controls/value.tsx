@@ -111,7 +111,13 @@ class ValueGauge implements GaugeBase {
     const prop = this.widget.property as ValueProperty;
 
     if (v.isStale || v.value === null || v.value === undefined) {
-      this.textEl.textContent = formatValue(null, prop.format, { decimals: prop.decimals, unit: prop.unit });
+      // SP-FX-FF.1.2: editor mode shows FUXA-style "#.##" placeholder so the
+      // designer sees the widget shape at full size before binding a tag.
+      // Runtime mode keeps the FUXA stale convention ("--").
+      const placeholder = this.ctx.mode === 'editor'
+        ? PLACEHOLDER
+        : formatValue(null, prop.format, { decimals: prop.decimals, unit: prop.unit });
+      this.textEl.textContent = placeholder;
       this.textEl.setAttribute('fill', '#9ca3af');
       applyActions(null, prop.actions, this.textEl, this.actionRt);
       return;
