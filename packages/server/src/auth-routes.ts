@@ -24,7 +24,10 @@ import { requireRole } from './middlewares/auth';
 // SP-FX-40: brute-force 防护 — login 限 5 req/min per ip:path
 import { rateLimit } from './middlewares/rate-limit';
 
-const loginRateLimit = rateLimit({ limit: 5, windowMs: 60_000, keyStrategy: 'ip:path' });
+// SP-FX-FF.41: prod 保持 5/60s (防暴力破解),dev 放宽到 100/60s — 开发/E2E
+// 测试场景会反复登录,5 次太严容易触发 "Too many requests" 阻塞工作。
+const LOGIN_RATE_LIMIT = process.env.NODE_ENV === 'production' ? 5 : 100;
+const loginRateLimit = rateLimit({ limit: LOGIN_RATE_LIMIT, windowMs: 60_000, keyStrategy: 'ip:path' });
 
 export interface AuthRoutesDeps {
   sqlite: SQLiteService;
