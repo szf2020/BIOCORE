@@ -19,9 +19,8 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-// SP-FX-FF.22: inline pipe icon — horizontal capsule + 2 flange lines.
-// Lucide's `Cable` (used in SP-FX-FF.21) read as a plug, not a pipe; this
-// custom svg matches the industrial-pipe glyph FUXA uses in its palette.
+// SP-FX-FF.23: inline pipe icon — 2 parallel L-shaped paths forming an elbow
+// joint, matching FUXA's industrial-pipe glyph (top-view P&ID style).
 const PipeIcon = (({ size = 20, className }: { size?: number; className?: string }) => (
   <svg
     width={size}
@@ -29,15 +28,19 @@ const PipeIcon = (({ size = 20, className }: { size?: number; className?: string
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
+    strokeWidth={1.8}
+    strokeLinecap="square"
+    strokeLinejoin="miter"
     className={className}
     aria-hidden="true"
   >
-    <rect x="3" y="9" width="18" height="6" rx="3" />
-    <line x1="8" y1="9" x2="8" y2="15" />
-    <line x1="16" y1="9" x2="16" y2="15" />
+    {/* Outer pipe path: top → elbow → right */}
+    <path d="M 4 3 L 4 13 L 21 13" />
+    {/* Inner parallel pipe path (offset for "pipe wall") */}
+    <path d="M 8 3 L 8 9 L 21 9" />
+    {/* End caps at the open ends */}
+    <line x1="3" y1="3" x2="9" y2="3" />
+    <line x1="21" y1="8" x2="21" y2="14" />
   </svg>
 )) as unknown as LucideIcon;
 import {
