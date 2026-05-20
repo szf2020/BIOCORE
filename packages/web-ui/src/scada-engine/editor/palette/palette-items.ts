@@ -157,7 +157,7 @@ export interface GaugePaletteItem {
 
 export const GAUGE_PALETTE_ITEMS: GaugePaletteItem[] = [
   // General — HTML controls + media
-  { widgetType: 'svg-ext-value',           label: '数值显示',  defaultW: 120, defaultH: 30,  category: 'general' },
+  { widgetType: 'svg-ext-value',           label: '数值显示',  defaultW: 160, defaultH: 60,  category: 'general' },
   { widgetType: 'svg-ext-html_button',     label: '按钮',      defaultW: 100, defaultH: 36,  category: 'general' },
   { widgetType: 'svg-ext-html_input',      label: '输入框',    defaultW: 140, defaultH: 32,  category: 'general' },
   { widgetType: 'svg-ext-html_img',        label: '图片',      defaultW: 120, defaultH: 80,  category: 'general' },

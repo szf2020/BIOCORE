@@ -30,9 +30,9 @@ interface ValueProperty {
 // SP-FX-FF.1: auto font sizing — when prop.fontSize is absent, scale text to
 // fill the widget bbox (FUXA fidelity). Height-driven (0.65 of h) with a
 // width-clamp so common placeholders ("#.##") never overflow horizontally.
-const AUTO_FONT_H_RATIO = 0.65;
+const AUTO_FONT_H_RATIO = 0.85;
 const AUTO_FONT_W_CHAR = 0.55;
-const AUTO_FONT_MIN = 6;
+const AUTO_FONT_MIN = 14;
 const AUTO_FONT_MAX = 400;
 const PLACEHOLDER = '#.##';
 
