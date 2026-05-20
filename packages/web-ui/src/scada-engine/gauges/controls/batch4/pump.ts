@@ -46,7 +46,8 @@ class PumpGauge implements GaugeBase {
     const w = (widget as any).w ?? 60;
     const h = (widget as any).h ?? 60;
     const prop = widget.property as PumpProperty;
-    const defaultColor = prop.defaultColor ?? DEFAULT_COLOR;
+    // SP-FX-FF.8: ColorPaletteBar (prop.color) provides designer fallback.
+    const defaultColor = prop.defaultColor ?? (prop as { color?: string }).color ?? DEFAULT_COLOR;
     const bladeCount = prop.bladeCount ?? DEFAULT_BLADE_COUNT;
 
     // SP-FX-48.24: stubs reserve top + right strips of the bbox so casing

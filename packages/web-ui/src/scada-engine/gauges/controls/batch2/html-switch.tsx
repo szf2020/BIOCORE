@@ -38,6 +38,12 @@ class HtmlSwitchGauge implements GaugeBase {
     input.style.width = '100%';
     input.style.height = '100%';
     input.disabled = ctx.mode !== 'runtime';
+    // SP-FX-FF.8: ColorPaletteBar paints the checkbox accent + a visible outline.
+    const accent = (widget.property as { color?: string }).color;
+    if (accent) {
+      input.style.accentColor = accent;
+      input.style.outline = `2px solid ${accent}`;
+    }
 
     this.changeHandler = () => {
       if (this.ctx.mode !== 'runtime') return;

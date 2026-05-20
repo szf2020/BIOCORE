@@ -81,6 +81,12 @@ class HtmlSelectGauge implements GaugeBase {
       select.style.appearance = 'none';
       select.style.background = 'transparent';
     }
+    // SP-FX-FF.8: ColorPaletteBar tints the select text + border.
+    const selectColor = (prop as { color?: string }).color;
+    if (selectColor) {
+      select.style.color = selectColor;
+      select.style.borderColor = selectColor;
+    }
 
     const placeholderText = prop.placeholder ?? '请选择...';
     const placeholderOpt = document.createElement('option');

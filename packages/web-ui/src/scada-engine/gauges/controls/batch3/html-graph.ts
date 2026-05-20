@@ -59,6 +59,10 @@ class HtmlGraphGauge implements GaugeBase {
     canvas.height = h;
     canvas.style.width = '100%';
     canvas.style.height = '100%';
+    // SP-FX-FF.8: CSS-level background so ColorPaletteBar (prop.bgColor) is visible
+    // even before any data points are buffered (canvas pixels aren't reachable
+    // via attribute reads — the CSS background is).
+    canvas.style.backgroundColor = prop.bgColor ?? DEFAULT_BG_COLOR;
     // SP-FX-48.24: editor mode → pointer-events:none so the widget can be dragged
     if (ctx.mode !== 'runtime') canvas.style.pointerEvents = 'none';
     canvas.dataset['pointCount'] = '0';

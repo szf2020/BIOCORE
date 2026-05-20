@@ -27,7 +27,7 @@ describe('ColorPaletteBar (SP-FX-FF.5)', () => {
     expect(swatches.length).toBe(1 + __PALETTE_COLORS.length);
   });
 
-  it('click on a color swatch patches selected widget property.fill + property.color', () => {
+  it('click on a color swatch patches selected widget property with wide color set', () => {
     const w: FuxaWidget = { id: 'w1', type: 'rect', property: {}, x: 0, y: 0, w: 50, h: 50 } as FuxaWidget;
     useEditorStore.getState().openView(makeView({ w1: w }));
     useEditorStore.getState().setSelection(['w1']);
@@ -36,8 +36,11 @@ describe('ColorPaletteBar (SP-FX-FF.5)', () => {
     expect(target).not.toBeNull();
     fireEvent.click(target);
     const updated = useEditorStore.getState().currentView!.items.w1 as FuxaWidget;
-    expect((updated.property as Record<string, unknown>).fill).toBe('#ef4444');
-    expect((updated.property as Record<string, unknown>).color).toBe('#ef4444');
+    const p = updated.property as Record<string, unknown>;
+    // SP-FX-FF.8: wide patch covers every designer color field gauges use
+    for (const key of ['fill', 'color', 'stroke', 'bgColor', 'fillColor', 'borderColor', 'barColor', 'pipeColor', 'tintColor', 'bodyColor', 'defaultColor', 'lineColor']) {
+      expect(p[key]).toBe('#ef4444');
+    }
   });
 
   it('click X swatch sets transparent on selected widget', () => {

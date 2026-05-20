@@ -38,7 +38,10 @@ class GaugeSemaphore implements GaugeBase {
     el.setAttribute('cx', String(x + w / 2));
     el.setAttribute('cy', String(y + h / 2));
     el.setAttribute('r', String(r));
-    el.setAttribute('fill', STALE_COLOR);
+    // SP-FX-FF.8: ColorPaletteBar (prop.color) overrides the muted stale color
+    // so the designer can preview the lamp tint in the editor.
+    const designerColor = (widget.property as { color?: string }).color;
+    el.setAttribute('fill', designerColor ?? STALE_COLOR);
     el.setAttribute('data-widget-id', widget.id);
     ctx.parentGroup.appendChild(el);
     this.circleEl = el;

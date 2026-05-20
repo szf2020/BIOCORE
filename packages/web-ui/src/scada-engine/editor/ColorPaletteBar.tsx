@@ -65,9 +65,27 @@ export function ColorPaletteBar(): JSX.Element {
       const w = view.items[id] as FuxaWidget | undefined;
       if (!w) continue;
       const prop = (w.property ?? {}) as Record<string, unknown>;
-      // Patch both 'fill' (shape widgets) and 'color' (text/value widgets) so
-      // the same click works across widget types without dispatch.
-      const nextProperty = { ...prop, fill: color, color };
+      // SP-FX-FF.8: write every designer-color field used across the gauge
+      // library. Each widget renderer reads the field(s) it knows about and
+      // ignores the rest. Cheaper than per-widget dispatch and keeps the bar
+      // visually uniform: one click → that color wins everywhere it applies.
+      const nextProperty = {
+        ...prop,
+        // shape primitives
+        fill: color,
+        color,
+        stroke: color,
+        // gauge-specific fields
+        bgColor: color,
+        fillColor: color,
+        borderColor: color,
+        barColor: color,
+        pipeColor: color,
+        tintColor: color,
+        bodyColor: color,
+        defaultColor: color,
+        lineColor: color,
+      };
       store.updateWidget(id, { property: nextProperty } as Partial<FuxaWidget>);
     }
   };

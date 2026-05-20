@@ -77,7 +77,10 @@ class HtmlBagGauge implements GaugeBase {
     fo.setAttribute('data-widget-id', widget.id);
 
     const div = document.createElement('div');
-    const offColor = prop.offColor ?? DEFAULT_OFF_COLOR;
+    // SP-FX-FF.8: ColorPaletteBar (prop.bgColor) drives the LED's off / idle
+    // color when no explicit offColor was set, so the bar visibly paints bag widgets.
+    const designerColor = (prop as { bgColor?: string }).bgColor;
+    const offColor = prop.offColor ?? designerColor ?? DEFAULT_OFF_COLOR;
     div.style.width = '100%';
     div.style.height = '100%';
     div.style.backgroundColor = offColor;
@@ -116,7 +119,8 @@ class HtmlBagGauge implements GaugeBase {
     const track = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     track.setAttribute('d', buildArcPath(cx, cy, r, 135, 405));
     track.setAttribute('fill', 'none');
-    track.setAttribute('stroke', prop.trackColor ?? DEFAULT_GAUGE_TRACK_COLOR);
+    // SP-FX-FF.8: gauge-mode track picks up prop.bgColor when explicit trackColor absent.
+    track.setAttribute('stroke', prop.trackColor ?? (prop as { bgColor?: string }).bgColor ?? DEFAULT_GAUGE_TRACK_COLOR);
     track.setAttribute('stroke-width', String(Math.max(4, r * 0.18)));
     track.setAttribute('stroke-linecap', 'round');
     track.setAttribute('data-bag-track', 'true');

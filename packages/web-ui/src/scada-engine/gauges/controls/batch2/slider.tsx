@@ -41,6 +41,12 @@ class SliderGauge implements GaugeBase {
     input.step = String(prop.step ?? 1);
     input.style.width = '100%';
     input.disabled = ctx.mode !== 'runtime';
+    // SP-FX-FF.8: ColorPaletteBar paints the range thumb + a visible outline.
+    const accent = (widget.property as { color?: string }).color;
+    if (accent) {
+      input.style.accentColor = accent;
+      input.style.outline = `2px solid ${accent}`;
+    }
 
     this.changeHandler = () => {
       if (this.ctx.mode !== 'runtime') return;

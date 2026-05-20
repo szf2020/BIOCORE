@@ -35,7 +35,10 @@ class ValveGauge implements GaugeBase {
     const w = (widget as any).w ?? 50;
     const h = (widget as any).h ?? 50;
     const prop = widget.property as ValveProperty;
-    const closedColor = prop.closedColor ?? DEFAULT_CLOSED_COLOR;
+    // SP-FX-FF.8: ColorPaletteBar (prop.color) acts as the designer's closed-state
+    // color when no explicit closedColor is set, so the bar visibly paints valves.
+    const designerColor = (prop as { color?: string }).color;
+    const closedColor = prop.closedColor ?? designerColor ?? DEFAULT_CLOSED_COLOR;
 
     // Pipe body: horizontal rectangle in the center third
     const pipeH = h * 0.25;

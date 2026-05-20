@@ -60,7 +60,8 @@ class MotorGauge implements GaugeBase {
     circle.setAttribute('cx', String(cx));
     circle.setAttribute('cy', String(cy));
     circle.setAttribute('r', String(r));
-    circle.setAttribute('fill', prop.defaultColor ?? DEFAULT_COLOR);
+    // SP-FX-FF.8: ColorPaletteBar (prop.color) provides designer fallback.
+    circle.setAttribute('fill', prop.defaultColor ?? (prop as { color?: string }).color ?? DEFAULT_COLOR);
     circle.setAttribute('stroke', '#334155');
     circle.setAttribute('stroke-width', '2');
     circle.setAttribute('data-widget-id', widget.id);

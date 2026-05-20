@@ -107,6 +107,9 @@ class HtmlInputGauge implements GaugeBase {
     input.style.boxSizing = 'border-box';
     // SP-FX-FF.2: fixed 20px font matches value widget visual weight.
     input.style.fontSize = '20px';
+    // SP-FX-FF.8: text color responds to ColorPaletteBar (prop.color).
+    const inputColor = (prop as { color?: string }).color;
+    if (inputColor) input.style.color = inputColor;
     // SP-FX-48.24: editor mode → pointer-events:none so the widget remains
     // draggable; runtime keeps full interactivity.
     if (ctx.mode !== 'runtime') input.style.pointerEvents = 'none';
