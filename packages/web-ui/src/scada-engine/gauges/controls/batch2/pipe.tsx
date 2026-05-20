@@ -95,11 +95,13 @@ class PipeGauge implements GaugeBase {
     if (!dir || dir === 'none') return;
 
     const speed = prop.flowSpeed ?? prop.options?.flowSpeed ?? 2;
-    const dashLen = Math.max(10, w * 0.4);
-    // SP-FX-FF.30: dashed pattern with a visible gap conveys flow direction
-    // (was equal dash/gap → looked like a striped pipe, not flowing fluid).
+    // SP-FX-FF.31: short fixed-length dashes look like discrete fluid packets
+    // flowing along the pipe. Previous formula (w * 0.4) yielded ~480px dashes
+    // on wide pipes — read as static stripes, not flow.
+    const dashLen = 20;
+    const gapLen = 16;
     this.dashOffset = 0;
-    this.pipeEl?.setAttribute('stroke-dasharray', `${dashLen} ${dashLen * 0.6}`);
+    this.pipeEl?.setAttribute('stroke-dasharray', `${dashLen} ${gapLen}`);
     this.pipeEl?.setAttribute('stroke-dashoffset', '0');
 
     this.flowInterval = setInterval(() => {
