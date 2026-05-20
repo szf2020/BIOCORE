@@ -107,6 +107,9 @@ class HtmlInputGauge implements GaugeBase {
     input.style.boxSizing = 'border-box';
     // SP-FX-FF.2: fixed 20px font matches value widget visual weight.
     input.style.fontSize = '20px';
+    // SP-FX-FF.12: center text horizontally so input value/placeholder reads
+    // visually aligned with value widget output.
+    input.style.textAlign = 'center';
     // SP-FX-FF.8: text color responds to ColorPaletteBar (prop.color).
     const inputColor = (prop as { color?: string }).color;
     if (inputColor) input.style.color = inputColor;

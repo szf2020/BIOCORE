@@ -183,7 +183,8 @@ class HtmlButtonGauge implements GaugeBase {
     btn.style.borderStyle = 'solid';
     btn.style.borderColor = prop.borderColor ?? 'transparent';
     btn.style.borderWidth = `${prop.borderWidth ?? 0}px`;
-    btn.style.borderRadius = `${prop.borderRadius ?? 4}px`;
+    // SP-FX-FF.12: smaller rounded corners per user feedback ("圆角较小").
+    btn.style.borderRadius = `${prop.borderRadius ?? 2}px`;
   }
 }
 
