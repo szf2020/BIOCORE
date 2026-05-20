@@ -21,15 +21,21 @@ interface ProgressProperty {
 
 const DEFAULT_BAR_COLOR = '#3F4964';
 
+// SP-FX-FF.19: editor preview fill ratio so the empty stale state shows a
+// half-filled bar (matches FUXA's design-time preview), not a blank rect.
+const EDITOR_PREVIEW_RATIO = 0.5;
+
 class GaugeProgress implements GaugeBase {
   private bgRect: SVGRectElement | null = null;
   private barRect: SVGRectElement | null = null;
   private labelEl: SVGTextElement | null = null;
   private widget!: FuxaWidget;
+  private ctx!: GaugeContext;
   private actionRt: ActionRuntime = createActionRuntime();
 
   onMount(widget: FuxaWidget, ctx: GaugeContext): void {
     this.widget = widget;
+    this.ctx = ctx;
     const x = (widget as any).x ?? 0;
     const y = (widget as any).y ?? 0;
     const w = (widget as any).w ?? 40;
@@ -48,12 +54,15 @@ class GaugeProgress implements GaugeBase {
     ctx.parentGroup.appendChild(bg);
     this.bgRect = bg;
 
-    // Bar rect (starts at bottom, height=0)
+    // Bar rect — height defaults to 0 for runtime (stale = empty), but in
+    // editor mode we paint EDITOR_PREVIEW_RATIO of the bbox so designers can
+    // see the FUXA-style filled portion without binding a tag (SP-FX-FF.19).
     const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     bar.setAttribute('x', String(x));
-    bar.setAttribute('y', String(y + h));
+    const previewH = ctx.mode === 'editor' ? h * EDITOR_PREVIEW_RATIO : 0;
+    bar.setAttribute('y', String(y + h - previewH));
     bar.setAttribute('width', String(w));
-    bar.setAttribute('height', '0');
+    bar.setAttribute('height', String(previewH));
     bar.setAttribute('fill', barColor);
     bar.setAttribute('data-bar', 'true');
     ctx.parentGroup.appendChild(bar);
@@ -92,8 +101,10 @@ class GaugeProgress implements GaugeBase {
     const totalH = parseFloat(this.bgRect.getAttribute('height') ?? '100');
 
     if (value.isStale || value.value === null) {
-      this.barRect.setAttribute('height', '0');
-      this.barRect.setAttribute('y', String(bgY + totalH));
+      // SP-FX-FF.19: editor mode keeps the preview fill; runtime clears it.
+      const previewH = this.ctx?.mode === 'editor' ? totalH * EDITOR_PREVIEW_RATIO : 0;
+      this.barRect.setAttribute('height', String(previewH));
+      this.barRect.setAttribute('y', String(bgY + totalH - previewH));
       return;
     }
 
