@@ -69,15 +69,28 @@ class PipeGauge implements GaugeBase {
     ctx.parentGroup.appendChild(bg);
     this.bgRect = bg;
 
-    // Pipe line visual
+    // SP-FX-FF.33: orientation auto-detected by aspect ratio — taller than
+    // wide → vertical pipe; otherwise horizontal. Lets users stretch the
+    // bbox along Y to get a vertical pipe segment.
+    const isVertical = h > w;
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', String(x));
-    line.setAttribute('y1', String(y + h / 2));
-    line.setAttribute('x2', String(x + w));
-    line.setAttribute('y2', String(y + h / 2));
+    if (isVertical) {
+      const midX = x + w / 2;
+      line.setAttribute('x1', String(midX));
+      line.setAttribute('y1', String(y));
+      line.setAttribute('x2', String(midX));
+      line.setAttribute('y2', String(y + h));
+    } else {
+      const midY = y + h / 2;
+      line.setAttribute('x1', String(x));
+      line.setAttribute('y1', String(midY));
+      line.setAttribute('x2', String(x + w));
+      line.setAttribute('y2', String(midY));
+    }
     line.setAttribute('stroke', pipeColor);
-    line.setAttribute('stroke-width', String(Math.max(2, h * 0.4)));
+    line.setAttribute('stroke-width', String(Math.max(2, Math.min(w, h) * 0.4)));
     line.setAttribute('data-pipe', 'true');
+    line.setAttribute('data-pipe-orientation', isVertical ? 'vertical' : 'horizontal');
     ctx.parentGroup.appendChild(line);
     this.pipeEl = line;
 
