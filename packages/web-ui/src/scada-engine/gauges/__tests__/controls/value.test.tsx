@@ -52,6 +52,44 @@ describe('ValueGauge (svg-ext-value)', () => {
     expect((ctx.parentGroup.querySelector('text') as SVGTextElement).textContent).toContain('rpm');
   });
 
+  it('SP-FX-FF.1 auto font: omitted fontSize → scales with bbox h (~0.65 * h)', () => {
+    const ctx = makeCtx();
+    const g = valueMeta.create();
+    g.onMount({ id: 'w1', type: 'svg-ext-value', property: {}, x: 0, y: 0, w: 200, h: 100 } as any, ctx);
+    const el = ctx.parentGroup.querySelector('text') as SVGTextElement;
+    const fs = Number(el.getAttribute('font-size'));
+    expect(fs).toBeGreaterThanOrEqual(50);
+    expect(fs).toBeLessThanOrEqual(80);
+  });
+
+  it('SP-FX-FF.1 auto font: width-clamped on narrow tall widget', () => {
+    const ctx = makeCtx();
+    const g = valueMeta.create();
+    g.onMount({ id: 'w1', type: 'svg-ext-value', property: {}, x: 0, y: 0, w: 40, h: 200 } as any, ctx);
+    const el = ctx.parentGroup.querySelector('text') as SVGTextElement;
+    const fs = Number(el.getAttribute('font-size'));
+    expect(fs).toBeLessThanOrEqual(25);
+  });
+
+  it('SP-FX-FF.1 explicit fontSize bypasses auto sizing', () => {
+    const ctx = makeCtx();
+    const g = valueMeta.create();
+    g.onMount({ id: 'w1', type: 'svg-ext-value', property: { fontSize: 32 }, x: 0, y: 0, w: 200, h: 100 } as any, ctx);
+    const el = ctx.parentGroup.querySelector('text') as SVGTextElement;
+    expect(el.getAttribute('font-size')).toBe('32');
+  });
+
+  it('SP-FX-FF.1 onResize recomputes auto font', () => {
+    const ctx = makeCtx();
+    const g = valueMeta.create();
+    g.onMount({ id: 'w1', type: 'svg-ext-value', property: {}, x: 0, y: 0, w: 80, h: 40 } as any, ctx);
+    const el = ctx.parentGroup.querySelector('text') as SVGTextElement;
+    const before = Number(el.getAttribute('font-size'));
+    g.onResize(400, 200);
+    const after = Number(el.getAttribute('font-size'));
+    expect(after).toBeGreaterThan(before);
+  });
+
   it('onUnmount removes <text> element from parentGroup', () => {
     const ctx = makeCtx();
     const g = valueMeta.create();
