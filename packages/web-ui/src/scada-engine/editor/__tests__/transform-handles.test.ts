@@ -135,19 +135,20 @@ describe('TransformHandles.showBbox (SP-FX-3b.2.1)', () => {
 });
 
 describe('SnapGuides (SP-FX-3b.2.1)', () => {
-  it('show renders H and V lines at box.y / box.x with viewBox extent', () => {
+  it('SP-FX-FF.16 show renders H and V lines through widget CENTER with viewBox extent', () => {
     const guides = new SnapGuides(canvas.overlayLayer);
+    // box (60,70,50,30) → center (85, 85)
     guides.show({ x: 60, y: 70, w: 50, h: 30 }, { w: 800, h: 600 });
     const h = container.querySelector('[data-guide="h"]') as SVGLineElement;
     const v = container.querySelector('[data-guide="v"]') as SVGLineElement;
     expect(h).not.toBeNull();
     expect(v).not.toBeNull();
-    expect(h.getAttribute('y1')).toBe('70');
-    expect(h.getAttribute('y2')).toBe('70');
+    expect(h.getAttribute('y1')).toBe('85');
+    expect(h.getAttribute('y2')).toBe('85');
     expect(h.getAttribute('x1')).toBe('0');
     expect(h.getAttribute('x2')).toBe('800');
-    expect(v.getAttribute('x1')).toBe('60');
-    expect(v.getAttribute('x2')).toBe('60');
+    expect(v.getAttribute('x1')).toBe('85');
+    expect(v.getAttribute('x2')).toBe('85');
     expect(v.getAttribute('y1')).toBe('0');
     expect(v.getAttribute('y2')).toBe('600');
     const group = container.querySelector('[data-overlay="snap-guides"]');

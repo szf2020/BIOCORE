@@ -214,8 +214,12 @@ export class SnapGuides {
 
   show(snappedBox: Box, viewBox: { w: number; h: number }): void {
     if (this.destroyed) return;
-    this.hLine.attr('x1', 0).attr('y1', snappedBox.y).attr('x2', viewBox.w).attr('y2', snappedBox.y);
-    this.vLine.attr('x1', snappedBox.x).attr('y1', 0).attr('x2', snappedBox.x).attr('y2', viewBox.h);
+    // SP-FX-FF.16: guides cross at the widget center (not the top-left
+    // corner) — matches user mental model of "where the widget is".
+    const cx = snappedBox.x + snappedBox.w / 2;
+    const cy = snappedBox.y + snappedBox.h / 2;
+    this.hLine.attr('x1', 0).attr('y1', cy).attr('x2', viewBox.w).attr('y2', cy);
+    this.vLine.attr('x1', cx).attr('y1', 0).attr('x2', cx).attr('y2', viewBox.h);
     this.group.attr('visibility', 'visible');
   }
 
