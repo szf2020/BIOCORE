@@ -149,6 +149,43 @@ describe('ShapeGauge', () => {
     expect(() => gauge.onUnmount()).not.toThrow();
   });
 
+  // SP-FX-FF.40: rotate animation
+  it('rotateSpeed=0 (default) → no rAF started, wrap has no transform style', async () => {
+    const { shapeMeta } = await import('../shape');
+    const wrap = makeShapeDom(parent, 'ws1');
+    const ctx = makeCtx(parent);
+    const gauge = shapeMeta.create();
+    gauge.onMount(makeWidget({ property: { shapeName: 'eli', fill: '#aaa' } } as unknown as FuxaWidget), ctx);
+    expect((wrap as unknown as HTMLElement).style.transform || '').toBe('');
+    gauge.onUnmount();
+  });
+
+  it('rotateSpeed=90 → onMount sets transform-box/origin and schedules rAF', async () => {
+    const rafSpy = vi.spyOn(window, 'requestAnimationFrame');
+    const { shapeMeta } = await import('../shape');
+    const wrap = makeShapeDom(parent, 'ws1');
+    const ctx = makeCtx(parent);
+    const gauge = shapeMeta.create();
+    gauge.onMount(makeWidget({ property: { shapeName: 'eli', fill: '#aaa', rotateSpeed: 90 } } as unknown as FuxaWidget), ctx);
+    expect((wrap as unknown as HTMLElement).style.transformBox).toBe('fill-box');
+    expect((wrap as unknown as HTMLElement).style.transformOrigin).toBe('center');
+    expect(rafSpy).toHaveBeenCalled();
+    gauge.onUnmount();
+    rafSpy.mockRestore();
+  });
+
+  it('onUnmount cancels rotation rAF', async () => {
+    const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame');
+    const { shapeMeta } = await import('../shape');
+    makeShapeDom(parent, 'ws1');
+    const ctx = makeCtx(parent);
+    const gauge = shapeMeta.create();
+    gauge.onMount(makeWidget({ property: { shapeName: 'eli', fill: '#aaa', rotateSpeed: 180 } } as unknown as FuxaWidget), ctx);
+    gauge.onUnmount();
+    expect(cancelSpy).toHaveBeenCalled();
+    cancelSpy.mockRestore();
+  });
+
   it('onPropertyChange updates widget reference for subsequent onProcess', async () => {
     const { shapeMeta } = await import('../shape');
     const wrap = makeShapeDom(parent, 'ws1');

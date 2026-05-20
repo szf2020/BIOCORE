@@ -469,6 +469,8 @@ export const shapeSchema: WidgetPropertySchema = {
     { key: 'fill', label: '填充色', type: 'color', allowNone: true },
     { key: 'stroke', label: '边框色', type: 'color', allowNone: true },
     { key: 'strokeWidth', label: '边框宽度', type: 'number', min: 0, max: 20, step: 0.5 },
+    // SP-FX-FF.40: 旋转动画 — degrees/sec。正数顺时针,负数逆时针,0 静止。
+    { key: 'rotateSpeed', label: '旋转速度 (°/秒)', type: 'number', min: -720, max: 720, step: 10 },
     ...GEOMETRY_ENTRIES,
   ],
   renderCustomSection: (property, onChange) => renderRangesAndActions(property, onChange),
