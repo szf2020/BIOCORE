@@ -158,8 +158,9 @@ export interface GaugePaletteItem {
 export const GAUGE_PALETTE_ITEMS: GaugePaletteItem[] = [
   // General — HTML controls + media
   // SP-FX-FF.3: ordering — 数值显示(输出) + 输入框 相邻; 按钮后置; 图片/下拉收尾.
-  { widgetType: 'svg-ext-value',           label: '数值显示',  defaultW: 160, defaultH: 60,  category: 'general' },
-  { widgetType: 'svg-ext-html_input',      label: '输入框',    defaultW: 160, defaultH: 60,  category: 'general' },
+  // SP-FX-FF.13: smaller defaults per user feedback ("外框太大了").
+  { widgetType: 'svg-ext-value',           label: '数值显示',  defaultW: 120, defaultH: 40,  category: 'general' },
+  { widgetType: 'svg-ext-html_input',      label: '输入框',    defaultW: 120, defaultH: 40,  category: 'general' },
   { widgetType: 'svg-ext-html_button',     label: '按钮',      defaultW: 120, defaultH: 60,  category: 'general' },
   { widgetType: 'svg-ext-html_img',        label: '图片',      defaultW: 120, defaultH: 80,  category: 'general' },
   { widgetType: 'svg-ext-html_select',     label: '下拉选择',  defaultW: 140, defaultH: 32,  category: 'general' },
