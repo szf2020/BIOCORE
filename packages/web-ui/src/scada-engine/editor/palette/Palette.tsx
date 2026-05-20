@@ -12,7 +12,7 @@ import {
   Square, Circle, Type, Minus,
   Pencil, CircleDashed, Spline,
   Hash, RectangleHorizontal, TextCursorInput, Image as ImageIcon, ListOrdered,
-  Lightbulb, BarChart3, BatteryMedium, ToggleLeft, SlidersVertical, Package,
+  Lightbulb, BarChart3, BatteryMedium, ToggleLeft, SlidersVertical,
   SquareDashed,
   Container, Cog, Fan, Diamond, Disc,
   HelpCircle,
@@ -86,7 +86,6 @@ const GAUGE_ICONS: Record<string, LucideIcon> = {
   'svg-ext-html_slider': SlidersVertical,
   // SP-FX-FF.22: custom horizontal pipe glyph — FUXA-style industrial pipe.
   'svg-ext-pipe': PipeIcon,
-  'svg-ext-html_bag': Package,
   // SP-FX-FF.21: 3-bar BarChart3 is the canonical "bar chart" silhouette.
   'svg-ext-html_graph': BarChart3,
   'svg-ext-panel': SquareDashed,
