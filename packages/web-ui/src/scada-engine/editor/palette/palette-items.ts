@@ -167,7 +167,7 @@ export const GAUGE_PALETTE_ITEMS: GaugePaletteItem[] = [
   // Animation — value-driven visual widgets
   { widgetType: 'svg-ext-gauge_semaphore', label: '信号灯',    defaultW: 60,  defaultH: 60,  category: 'animation' },
   { widgetType: 'svg-ext-gauge_progress',  label: '进度条',    defaultW: 40,  defaultH: 120, category: 'animation' },
-  { widgetType: 'svg-ext-html_switch',     label: '开关',      defaultW: 60,  defaultH: 30,  category: 'animation' },
+  { widgetType: 'svg-ext-html_switch',     label: '开关',      defaultW: 120, defaultH: 40,  category: 'animation' },
   { widgetType: 'svg-ext-html_slider',     label: '滑块',      defaultW: 200, defaultH: 40,  category: 'animation' },
   { widgetType: 'svg-ext-pipe',            label: '管道',      defaultW: 120, defaultH: 20,  category: 'animation' },
   { widgetType: 'svg-ext-html_bag',        label: '袋装料',    defaultW: 60,  defaultH: 80,  category: 'animation' },
