@@ -38,6 +38,25 @@ export interface PointerToolsCallbacks {
 
 const CLICK_DRAG_THRESHOLD = 3;
 
+// SP-FX-FF.9: build a synthetic widget for live drag/resize updates that
+// preserves the real widget's type and property. The previous implementation
+// hard-coded `type:'svg-ext-value', property:{}` which made every dragged
+// widget render as an empty value gauge ("#.##") until mouseup committed
+// the real type back to the store.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function syntheticWidget(id: string, box: Box, extra?: { rotate?: number }): any {
+  const view = useEditorStore.getState().currentView;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const real = view?.items[id] as any;
+  return {
+    id,
+    type: real?.type ?? 'rect',
+    property: real?.property ?? {},
+    x: box.x, y: box.y, w: box.w, h: box.h,
+    ...(extra ?? {}),
+  };
+}
+
 export class PointerTools {
   state: PointerState = { kind: 'idle' };
   private destroyed = false;
@@ -157,8 +176,7 @@ export class PointerTools {
       const snapStep = e.shiftKey ? 15 : 0;
       const result = applyMultiRotate(this.state.startBboxes, this.state.startRotates, this.state.pivot, this.state.startPt, pt, snapStep);
       for (const [id, { box, rotate }] of result) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.canvas.upsertWidget({ id, type: 'svg-ext-value' as any, property: {} as any, x: box.x, y: box.y, w: box.w, h: box.h, rotate } as any);
+        this.canvas.upsertWidget(syntheticWidget(id, box, { rotate }));
       }
       const newBbox = computeBbox(Array.from(result.values()).map((v) => v.box));
       this.handles.updateBox(newBbox);
@@ -179,8 +197,7 @@ export class PointerTools {
       const result = applyGroupResize(this.state.startBbox, newBbox, this.state.handle, this.state.startBoxes, aspectLock);
       if (!result) return;
       for (const [id, box] of result.widgets) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.canvas.upsertWidget({ id, type: 'svg-ext-value' as any, property: {} as any, x: box.x, y: box.y, w: box.w, h: box.h } as any);
+        this.canvas.upsertWidget(syntheticWidget(id, box));
       }
       this.handles.updateBox(result.bbox);
       this.cb.onDragVisualUpdate(result.bbox);
@@ -215,7 +232,7 @@ export class PointerTools {
     if (this.state.kind === 'drag-handle') {
       let newBox = applyHandleDrag(this.state.startBox, this.state.handle, dx, dy);
       if (snapOn) newBox = snap(newBox, gridSize);
-      this.canvas.upsertWidget({ id: this.state.widgetId, type: 'svg-ext-value' as any, property: {} as any, x: newBox.x, y: newBox.y, w: newBox.w, h: newBox.h });
+      this.canvas.upsertWidget(syntheticWidget(this.state.widgetId, newBox));
       this.handles.updateBox(newBox);
       this.cb.onDragVisualUpdate(newBox);
       return;
@@ -229,7 +246,7 @@ export class PointerTools {
       let nb: Box = { x: sb.x + dx, y: sb.y + dy, w: sb.w, h: sb.h };
       if (snapOn) nb = snap(nb, gridSize);
       newBoxes.push({ id, newBox: nb });
-      this.canvas.upsertWidget({ id, type: 'svg-ext-value' as any, property: {} as any, x: nb.x, y: nb.y, w: nb.w, h: nb.h });
+      this.canvas.upsertWidget(syntheticWidget(id, nb));
     }
     if (newBoxes.length === 0) return;
     if (newBoxes.length === 1) {
@@ -356,7 +373,7 @@ export class PointerTools {
     if (this.state.kind === 'drag-handle') {
       const startBox = this.state.startBox;
       const widgetId = this.state.widgetId;
-      this.canvas.upsertWidget({ id: widgetId, type: 'svg-ext-value' as any, property: {} as any, x: startBox.x, y: startBox.y, w: startBox.w, h: startBox.h });
+      this.canvas.upsertWidget(syntheticWidget(widgetId, startBox));
       this.handles.updateBox(startBox);
       this.state = { kind: 'idle' };
       this.cb.onDragVisualUpdate(null);
@@ -366,8 +383,7 @@ export class PointerTools {
     if (this.state.kind === 'group-rotate') {
       for (const [id, sb] of this.state.startBboxes) {
         const sr = this.state.startRotates.get(id) ?? 0;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.canvas.upsertWidget({ id, type: 'svg-ext-value' as any, property: {} as any, x: sb.x, y: sb.y, w: sb.w, h: sb.h, rotate: sr } as any);
+        this.canvas.upsertWidget(syntheticWidget(id, sb, { rotate: sr }));
       }
       this.handles.updateBox(this.state.startBbox);
       this.state = { kind: 'idle' };
@@ -377,8 +393,7 @@ export class PointerTools {
 
     if (this.state.kind === 'group-resize') {
       for (const [id, sb] of this.state.startBoxes) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.canvas.upsertWidget({ id, type: 'svg-ext-value' as any, property: {} as any, x: sb.x, y: sb.y, w: sb.w, h: sb.h } as any);
+        this.canvas.upsertWidget(syntheticWidget(id, sb));
       }
       this.handles.updateBox(this.state.startBbox);
       this.state = { kind: 'idle' };
@@ -398,7 +413,7 @@ export class PointerTools {
       dragState.widgetIds.forEach((id) => {
         const sb = dragState.startBoxes.get(id);
         if (!sb) return;
-        this.canvas.upsertWidget({ id, type: 'svg-ext-value' as any, property: {} as any, x: sb.x, y: sb.y, w: sb.w, h: sb.h });
+        this.canvas.upsertWidget(syntheticWidget(id, sb));
       });
       const boxes = Array.from(dragState.startBoxes.values());
       if (boxes.length === 1) this.handles.updateBox(boxes[0]);
