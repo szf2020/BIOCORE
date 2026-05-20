@@ -30,8 +30,11 @@ interface ButtonProperty {
   actions?: RangeAction[];
 }
 
-const DEFAULT_BG = '#1f2937';
-const DEFAULT_FG = '#ffffff';
+// SP-FX-FF.11: FUXA visual parity — bright blue bg, near-black text, "button"
+// default label so unbound buttons look identical to FUXA's preview.
+const DEFAULT_BG = '#3b82f6';
+const DEFAULT_FG = '#0f172a';
+const DEFAULT_LABEL = 'button';
 
 class HtmlButtonGauge implements GaugeBase {
   private foreignObj: SVGForeignObjectElement | null = null;
@@ -97,7 +100,7 @@ class HtmlButtonGauge implements GaugeBase {
     }
 
     const labelSpan = document.createElement('span');
-    labelSpan.textContent = prop.label ?? '';
+    labelSpan.textContent = prop.label ?? DEFAULT_LABEL;
     labelSpan.setAttribute('data-button-label', 'true');
     btn.appendChild(labelSpan);
     this.labelEl = labelSpan;
@@ -151,7 +154,7 @@ class HtmlButtonGauge implements GaugeBase {
     this.widget = change.nextWidget;
     if (!this.htmlBtn) return;
     const prop = this.widget.property as ButtonProperty;
-    if (this.labelEl) this.labelEl.textContent = prop.label ?? '';
+    if (this.labelEl) this.labelEl.textContent = prop.label ?? DEFAULT_LABEL;
     if (this.iconEl) this.iconEl.textContent = prop.icon ?? '';
     if (this.imageEl && prop.image) this.imageEl.src = prop.image;
     this._applyStyles(this.htmlBtn, prop);
