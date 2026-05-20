@@ -245,6 +245,50 @@ describe('CanvasController.upsertWidget type rendering (SP-FX-4)', () => {
     expect(el2.textContent).toBe('文本');
     c.destroy();
   });
+
+  it('SP-FX-FF.6 rect picks up property.fill on initial render', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 'r1', type: 'rect', property: { fill: '#ef4444', stroke: '#7f1d1d' }, x: 0, y: 0, w: 40, h: 30 } as any);
+    const el = container.querySelector('[data-widget-id="r1"]') as SVGElement;
+    expect(el.getAttribute('fill')).toBe('#ef4444');
+    expect(el.getAttribute('stroke')).toBe('#7f1d1d');
+    c.destroy();
+  });
+
+  it('SP-FX-FF.6 rect fill updates on subsequent upsert', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 'r1', type: 'rect', property: {}, x: 0, y: 0, w: 40, h: 30 } as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 'r1', type: 'rect', property: { fill: '#22c55e' }, x: 0, y: 0, w: 40, h: 30 } as any);
+    const el = container.querySelector('[data-widget-id="r1"]') as SVGElement;
+    expect(el.getAttribute('fill')).toBe('#22c55e');
+    c.destroy();
+  });
+
+  it('SP-FX-FF.6 ellipse fill updates on subsequent upsert', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 'e1', type: 'ellipse', property: {}, x: 0, y: 0, w: 40, h: 30 } as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 'e1', type: 'ellipse', property: { fill: '#3b82f6' }, x: 0, y: 0, w: 40, h: 30 } as any);
+    const el = container.querySelector('[data-widget-id="e1"]') as SVGElement;
+    expect(el.getAttribute('fill')).toBe('#3b82f6');
+    c.destroy();
+  });
+
+  it('SP-FX-FF.6 text picks up property.color and updates on re-upsert', () => {
+    const c = new CanvasController(container, { width: 800, height: 600 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 't1', type: 'text', property: { text: 'Hi', color: '#dc2626' }, x: 0, y: 0, w: 120, h: 30 } as any);
+    const el = container.querySelector('[data-widget-id="t1"]') as SVGElement;
+    expect(el.getAttribute('fill')).toBe('#dc2626');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.upsertWidget({ id: 't1', type: 'text', property: { text: 'Hi', color: '#0e7490' }, x: 0, y: 0, w: 120, h: 30 } as any);
+    expect(el.getAttribute('fill')).toBe('#0e7490');
+    c.destroy();
+  });
 });
 
 describe('CanvasController text inline edit (SP-FX-48.15)', () => {

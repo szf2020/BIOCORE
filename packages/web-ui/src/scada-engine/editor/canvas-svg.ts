@@ -143,22 +143,39 @@ export class CanvasController {
 
   private createElementForType(widget: FuxaWidget & { x: number; y: number; w: number; h: number }): SvgElement {
     switch (widget.type) {
+      case 'rect': {
+        // SP-FX-FF.6: rect widget respects prop.fill / prop.stroke from the
+        // ColorPaletteBar (was previously falling through to a hardcoded blue
+        // legacy render).
+        const prop = widget.property as { fill?: string; stroke?: string; strokeWidth?: number };
+        return this.widgetLayer
+          .rect(widget.w, widget.h)
+          .attr({ x: widget.x, y: widget.y })
+          .attr('data-widget-id', widget.id)
+          .attr('fill', prop.fill ?? '#3b82f6')
+          .attr('stroke', prop.stroke ?? '#1e40af')
+          .attr('stroke-width', prop.strokeWidth ?? 1);
+      }
       case 'ellipse': {
         const cx = widget.x + widget.w / 2;
         const cy = widget.y + widget.h / 2;
         const rx = widget.w / 2;
         const ry = widget.h / 2;
+        // SP-FX-FF.6: read prop.fill / prop.stroke so ColorPaletteBar applies.
+        const prop = widget.property as { fill?: string; stroke?: string; strokeWidth?: number };
         return this.widgetLayer
           .ellipse(widget.w, widget.h)
           .attr({ cx, cy, rx, ry })
           .attr('data-widget-id', widget.id)
-          .attr('fill', '#3b82f6')
-          .attr('stroke', '#1e40af');
+          .attr('fill', prop.fill ?? '#3b82f6')
+          .attr('stroke', prop.stroke ?? '#1e40af')
+          .attr('stroke-width', prop.strokeWidth ?? 1);
       }
       case 'text': {
         const cx = widget.x + widget.w / 2;
         const cy = widget.y + widget.h / 2;
-        const content = ((widget.property as { text?: string }).text) ?? '文本';
+        const tprop = widget.property as { text?: string; color?: string; fill?: string };
+        const content = tprop.text ?? '文本';
         // Use raw DOM to avoid svg.js Text.bbox() which fails in jsdom.
         const node = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         node.setAttribute('x', String(cx));
@@ -166,7 +183,9 @@ export class CanvasController {
         node.setAttribute('text-anchor', 'middle');
         node.setAttribute('dominant-baseline', 'middle');
         node.setAttribute('data-widget-id', widget.id);
-        node.setAttribute('fill', '#111827');
+        // SP-FX-FF.6: text fill driven by prop.color (FUXA convention) with
+        // prop.fill as compat fallback for ColorPaletteBar's dual-write.
+        node.setAttribute('fill', tprop.color ?? tprop.fill ?? '#111827');
         node.setAttribute('font-size', '14');
         node.textContent = content;
         // SP-FX-48.15: double-click swaps a foreignObject <input> in place
@@ -295,18 +314,43 @@ export class CanvasController {
 
   private updateElementForType(el: SvgElement, widget: FuxaWidget & { x: number; y: number; w: number; h: number }): void {
     switch (widget.type) {
+      case 'rect': {
+        // SP-FX-FF.6: sync fill/stroke from property on update so the
+        // ColorPaletteBar takes effect without a full re-mount.
+        const prop = widget.property as { fill?: string; stroke?: string; strokeWidth?: number };
+        const node = el.node as SVGRectElement;
+        node.setAttribute('x', String(widget.x));
+        node.setAttribute('y', String(widget.y));
+        node.setAttribute('width', String(widget.w));
+        node.setAttribute('height', String(widget.h));
+        if (prop.fill !== undefined) node.setAttribute('fill', prop.fill);
+        if (prop.stroke !== undefined) node.setAttribute('stroke', prop.stroke);
+        if (prop.strokeWidth !== undefined) node.setAttribute('stroke-width', String(prop.strokeWidth));
+        break;
+      }
       case 'ellipse': {
         const cx = widget.x + widget.w / 2;
         const cy = widget.y + widget.h / 2;
+        const prop = widget.property as { fill?: string; stroke?: string; strokeWidth?: number };
         el.attr({ cx, cy, rx: widget.w / 2, ry: widget.h / 2 });
+        const node = el.node as SVGEllipseElement;
+        if (prop.fill !== undefined) node.setAttribute('fill', prop.fill);
+        if (prop.stroke !== undefined) node.setAttribute('stroke', prop.stroke);
+        if (prop.strokeWidth !== undefined) node.setAttribute('stroke-width', String(prop.strokeWidth));
         break;
       }
       case 'text': {
         const cx = widget.x + widget.w / 2;
         const cy = widget.y + widget.h / 2;
-        const content = ((widget.property as { text?: string }).text) ?? '文本';
+        const tprop = widget.property as { text?: string; color?: string; fill?: string };
+        const content = tprop.text ?? '文本';
         el.attr({ x: cx, y: cy });
-        (el.node as SVGTextElement).textContent = content;
+        const node = el.node as SVGTextElement;
+        node.textContent = content;
+        // SP-FX-FF.6: text color sync — prefer prop.color (FUXA), fall back
+        // to prop.fill (ColorPaletteBar's dual-write companion).
+        const fill = tprop.color ?? tprop.fill;
+        if (fill !== undefined) node.setAttribute('fill', fill);
         break;
       }
       case 'line': {
