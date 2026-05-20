@@ -12,12 +12,34 @@ import {
   Square, Circle, Type, Minus,
   Pencil, CircleDashed, Spline,
   Hash, RectangleHorizontal, TextCursorInput, Image as ImageIcon, ListOrdered,
-  Lightbulb, BarChart3, BatteryMedium, ToggleLeft, SlidersVertical, Cable, Package,
+  Lightbulb, BarChart3, BatteryMedium, ToggleLeft, SlidersVertical, Package,
   SquareDashed,
   Container, Cog, Fan, Diamond, Disc,
   HelpCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+
+// SP-FX-FF.22: inline pipe icon — horizontal capsule + 2 flange lines.
+// Lucide's `Cable` (used in SP-FX-FF.21) read as a plug, not a pipe; this
+// custom svg matches the industrial-pipe glyph FUXA uses in its palette.
+const PipeIcon = (({ size = 20, className }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden="true"
+  >
+    <rect x="3" y="9" width="18" height="6" rx="3" />
+    <line x1="8" y1="9" x2="8" y2="15" />
+    <line x1="16" y1="9" x2="16" y2="15" />
+  </svg>
+)) as unknown as LucideIcon;
 import {
   PALETTE_ITEMS,
   GAUGE_PALETTE_ITEMS,
@@ -57,10 +79,10 @@ const GAUGE_ICONS: Record<string, LucideIcon> = {
   // SP-FX-FF.20: half-battery visualizes "filled bar" better than 3-bar chart.
   'svg-ext-gauge_progress': BatteryMedium,
   'svg-ext-html_switch': ToggleLeft,
-  // SP-FX-FF.21: FUXA-style icons — vertical slider matches the vertical
-  // slider widget shape; cable visually reads as a horizontal pipe segment.
+  // SP-FX-FF.21: vertical slider matches the vertical slider widget shape.
   'svg-ext-html_slider': SlidersVertical,
-  'svg-ext-pipe': Cable,
+  // SP-FX-FF.22: custom horizontal pipe glyph — FUXA-style industrial pipe.
+  'svg-ext-pipe': PipeIcon,
   'svg-ext-html_bag': Package,
   // SP-FX-FF.21: 3-bar BarChart3 is the canonical "bar chart" silhouette.
   'svg-ext-html_graph': BarChart3,
