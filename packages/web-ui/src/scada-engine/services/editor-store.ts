@@ -35,6 +35,9 @@ export type ArmedPlacement =
 
 export interface EditorData {
   currentView: FuxaView | null;
+  // SP-FX-FF.35: optimistic-lock version returned by GET /api/v1/fuxa-views/:id,
+  // sent back as If-Match on PUT save. Null until openView gets one.
+  viewVersion: number | null;
   isDirty: boolean;
   history: { past: FuxaView[]; future: FuxaView[] };
   selection: string[];
@@ -48,7 +51,8 @@ export interface EditorData {
 // ---------- actions shape ----------
 
 export interface EditorActions {
-  openView: (view: FuxaView) => void;
+  openView: (view: FuxaView, version?: number) => void;
+  setViewVersion: (v: number | null) => void;
   closeView: () => void;
   addWidget: (widget: FuxaWidget) => void;
   updateWidget: (id: string, patch: Partial<FuxaWidget>, opts?: { silent?: boolean }) => void;
@@ -86,6 +90,7 @@ function pushHistory(past: FuxaView[], snapshot: FuxaView): FuxaView[] {
 
 const _store = create<EditorData>(() => ({
   currentView: null,
+  viewVersion: null,
   isDirty: false,
   history: { past: [], future: [] },
   selection: [],
@@ -99,8 +104,9 @@ const _store = create<EditorData>(() => ({
 // ---------- module-level actions (survive setState replace) ----------
 
 const actions: EditorActions = {
-  openView: (view) => _store.setState((s) => ({
+  openView: (view, version) => _store.setState((s) => ({
     currentView: view,
+    viewVersion: version ?? null,
     isDirty: false,
     history: { past: [], future: [] },
     selection: [],
@@ -111,8 +117,11 @@ const actions: EditorActions = {
     armedPlacement: null,
   })),
 
+  setViewVersion: (v) => _store.setState({ viewVersion: v }),
+
   closeView: () => _store.setState((s) => ({
     currentView: null,
+    viewVersion: null,
     isDirty: false,
     history: { past: [], future: [] },
     selection: [],
@@ -213,15 +222,36 @@ const actions: EditorActions = {
   },
 
   saveView: async (viewId) => {
-    const { currentView } = _store.getState();
+    // SP-FX-FF.35: server expects UpdateBodySchema {name, type, payload, width,
+    // height, ...} + If-Match header with optimistic-lock version.
+    const { currentView, viewVersion } = _store.getState();
     if (!currentView) throw new Error('saveView: no currentView');
+    const v = currentView as unknown as Record<string, unknown>;
+    const body = {
+      name: v.name as string,
+      type: (v.type as string) ?? 'svg',
+      payload: currentView,
+      width: (v.width as number) ?? 1200,
+      height: (v.height as number) ?? 800,
+    };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (typeof viewVersion === 'number') headers['If-Match'] = String(viewVersion);
     const r = await fetch(`/api/v1/fuxa-views/${viewId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(currentView),
+      headers,
+      body: JSON.stringify(body),
     });
-    if (!r.ok) throw new Error(`save failed: ${r.status}`);
-    _store.setState({ isDirty: false });
+    if (!r.ok) {
+      const text = await r.text().catch(() => '');
+      throw new Error(`save failed: ${r.status} ${text}`);
+    }
+    // Server returns updated row including new version.
+    const data = await r.json().catch(() => null);
+    const newVersion = data?.data?.version ?? data?.version;
+    _store.setState({
+      isDirty: false,
+      ...(typeof newVersion === 'number' ? { viewVersion: newVersion } : {}),
+    });
   },
 
   toggleGrid: () => {
@@ -263,7 +293,7 @@ const actions: EditorActions = {
 // the current _store state without caching (preserves immutability of values).
 
 const _DATA_KEYS: ReadonlyArray<keyof EditorData> = [
-  'currentView', 'isDirty', 'history', 'selection', 'snapEnabled', 'gridSize',
+  'currentView', 'viewVersion', 'isDirty', 'history', 'selection', 'snapEnabled', 'gridSize',
   'drawTool', 'drawPoints', 'armedPlacement',
 ];
 

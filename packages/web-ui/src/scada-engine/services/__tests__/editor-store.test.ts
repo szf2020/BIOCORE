@@ -372,19 +372,27 @@ describe('editorStore SP-FX-4 actions', () => {
     expect(useEditorStore.getState().snapEnabled).toBe(true);
   });
 
-  it('saveView calls fetch PUT /api/v1/fuxa-views/:id with currentView body', async () => {
+  it('saveView calls fetch PUT /api/v1/fuxa-views/:id with UpdateBody + If-Match', async () => {
+    useEditorStore.getState().openView(makeView(), 3);
     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
     await useEditorStore.getState().saveView('v1');
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('/api/v1/fuxa-views/v1');
     expect(init.method).toBe('PUT');
-    expect(init.headers).toMatchObject({ 'Content-Type': 'application/json' });
-    expect(JSON.parse(init.body as string).id).toBe('v1');
+    expect(init.headers).toMatchObject({ 'Content-Type': 'application/json', 'If-Match': '3' });
+    const body = JSON.parse(init.body as string);
+    expect(body.name).toBe('View 1');
+    expect(body.type).toBe('svg');
+    expect(body.width).toBe(800);
+    expect(body.height).toBe(600);
+    expect(body.payload.id).toBe('v1');
+    expect(body.payload.schemaVersion).toBe(1);
     fetchSpy.mockRestore();
   });
 
   it('saveView clears isDirty on 2xx', async () => {
+    useEditorStore.getState().openView(makeView(), 1);
     useEditorStore.setState({ isDirty: true });
     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
     await useEditorStore.getState().saveView('v1');
@@ -393,6 +401,7 @@ describe('editorStore SP-FX-4 actions', () => {
   });
 
   it('saveView throws on non-2xx, retains isDirty', async () => {
+    useEditorStore.getState().openView(makeView(), 1);
     useEditorStore.setState({ isDirty: true });
     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response('err', { status: 500 }));
     await expect(useEditorStore.getState().saveView('v1')).rejects.toThrow(/500/);

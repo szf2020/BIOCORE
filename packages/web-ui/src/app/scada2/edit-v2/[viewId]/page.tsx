@@ -25,7 +25,8 @@ export default function Page({ params }: { params: { viewId: string } }): JSX.El
       const env = await r.json();
       const row = env && typeof env === 'object' && 'data' in env && env.data != null ? env.data : env;
       const view = parseFuxaView(typeof row.payload === 'string' ? row.payload : JSON.stringify(row));
-      openView(view);
+      const version = typeof row.version === 'number' ? row.version : undefined;
+      openView(view, version);
       setState('ready');
     } catch (e) {
       console.error('[edit-v2] load failed:', e);
