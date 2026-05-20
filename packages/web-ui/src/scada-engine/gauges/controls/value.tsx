@@ -27,24 +27,14 @@ interface ValueProperty {
   actions?: RangeAction[];
 }
 
-// SP-FX-FF.1: auto font sizing — when prop.fontSize is absent, scale text to
-// fill the widget bbox (FUXA fidelity). Height-driven (0.65 of h) with a
-// width-clamp so common placeholders ("#.##") never overflow horizontally.
-// SP-FX-FF.1.3: ratio tuned down per user feedback ("太大了，缩小4号") —
-// drops ~12px on a 60h default widget (51→39px), closer to FUXA visual weight.
-const AUTO_FONT_H_RATIO = 0.65;
-const AUTO_FONT_W_CHAR = 0.55;
-const AUTO_FONT_MIN = 14;
-const AUTO_FONT_MAX = 400;
+// SP-FX-FF.1.4: fixed 20px default per user feedback ("改成20px"). Explicit
+// prop.fontSize still overrides. Bbox no longer drives font size.
+const DEFAULT_FONT_SIZE = 20;
 const PLACEHOLDER = '#.##';
 
-function computeFontSize(prop: ValueProperty, w: number, h: number, sampleLen: number): number {
+function computeFontSize(prop: ValueProperty): number {
   if (typeof prop.fontSize === 'number' && prop.fontSize > 0) return prop.fontSize;
-  const byHeight = h * AUTO_FONT_H_RATIO;
-  const safeLen = Math.max(1, sampleLen);
-  const byWidth = w / (safeLen * AUTO_FONT_W_CHAR);
-  const px = Math.min(byHeight, byWidth);
-  return Math.max(AUTO_FONT_MIN, Math.min(AUTO_FONT_MAX, Math.round(px)));
+  return DEFAULT_FONT_SIZE;
 }
 
 class ValueGauge implements GaugeBase {
@@ -66,7 +56,7 @@ class ValueGauge implements GaugeBase {
     el.setAttribute('y', String(y + h / 2));
     el.setAttribute('text-anchor', 'middle');
     el.setAttribute('dominant-baseline', 'middle');
-    el.setAttribute('font-size', String(computeFontSize(prop, w, h, PLACEHOLDER.length)));
+    el.setAttribute('font-size', String(computeFontSize(prop)));
     el.setAttribute('data-widget-id', widget.id);
     ctx.parentGroup.appendChild(el);
     this.textEl = el;
@@ -88,10 +78,7 @@ class ValueGauge implements GaugeBase {
     this.widget = change.nextWidget;
     const prop = this.widget.property as ValueProperty;
     if (this.textEl) {
-      const w = (this.widget as any).w ?? 80;
-      const h = (this.widget as any).h ?? 40;
-      const sampleLen = (this.textEl.textContent ?? PLACEHOLDER).length || PLACEHOLDER.length;
-      this.textEl.setAttribute('font-size', String(computeFontSize(prop, w, h, sampleLen)));
+      this.textEl.setAttribute('font-size', String(computeFontSize(prop)));
     }
     const tagId = prop.variableId ?? '';
     this._render(tagId ? this.ctx.readValue(tagId) : { value: null, isStale: true });
@@ -103,9 +90,6 @@ class ValueGauge implements GaugeBase {
     const y = (this.widget as any).y ?? 0;
     this.textEl.setAttribute('x', String(x + w / 2));
     this.textEl.setAttribute('y', String(y + h / 2));
-    const prop = this.widget.property as ValueProperty;
-    const sampleLen = (this.textEl.textContent ?? PLACEHOLDER).length || PLACEHOLDER.length;
-    this.textEl.setAttribute('font-size', String(computeFontSize(prop, w, h, sampleLen)));
   }
 
   private _render(v: GaugeValue): void {
