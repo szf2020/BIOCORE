@@ -12,7 +12,7 @@ import {
   Square, Circle, Type, Minus,
   Pencil, CircleDashed, Spline,
   Hash, RectangleHorizontal, TextCursorInput, Image as ImageIcon, ListOrdered,
-  Lightbulb, BarChart3, ToggleLeft, SlidersHorizontal, ArrowRight, Package, BarChart2,
+  Lightbulb, BarChart3, BatteryMedium, ToggleLeft, SlidersHorizontal, ArrowRight, Package, BarChart2,
   SquareDashed,
   Container, Cog, Fan, Diamond, Disc,
   HelpCircle,
@@ -54,7 +54,8 @@ const GAUGE_ICONS: Record<string, LucideIcon> = {
   'svg-ext-html_img': ImageIcon,
   'svg-ext-html_select': ListOrdered,
   'svg-ext-gauge_semaphore': Lightbulb,
-  'svg-ext-gauge_progress': BarChart3,
+  // SP-FX-FF.20: half-battery visualizes "filled bar" better than 3-bar chart.
+  'svg-ext-gauge_progress': BatteryMedium,
   'svg-ext-html_switch': ToggleLeft,
   'svg-ext-html_slider': SlidersHorizontal,
   'svg-ext-pipe': ArrowRight,
