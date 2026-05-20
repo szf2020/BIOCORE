@@ -172,7 +172,6 @@ export const GAUGE_PALETTE_ITEMS: GaugePaletteItem[] = [
   { widgetType: 'svg-ext-pipe',            label: '管道',      defaultW: 120, defaultH: 20,  category: 'animation' },
   { widgetType: 'svg-ext-html_graph',      label: '柱状图',    defaultW: 200, defaultH: 140, category: 'animation' },
   // Shape — passive containers
-  { widgetType: 'svg-ext-panel',           label: '面板容器',  defaultW: 200, defaultH: 120, category: 'shape' },
   // Proc. Eng. — industrial process equipment
   { widgetType: 'svg-ext-tank',            label: '罐体',      defaultW: 80,  defaultH: 140, category: 'procEng' },
   { widgetType: 'svg-ext-motor',           label: '电机',      defaultW: 80,  defaultH: 80,  category: 'procEng' },

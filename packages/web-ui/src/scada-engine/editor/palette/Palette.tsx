@@ -13,7 +13,6 @@ import {
   Pencil, CircleDashed, Spline,
   Hash, RectangleHorizontal, TextCursorInput, Image as ImageIcon, ListOrdered,
   Lightbulb, BarChart3, BatteryMedium, ToggleLeft, SlidersVertical,
-  SquareDashed,
   Container, Cog, Fan, Diamond, Disc,
   HelpCircle,
 } from 'lucide-react';
@@ -55,7 +54,8 @@ import {
 import { useEditorStore } from '../../services/editor-store';
 import { SHAPE_CATALOG, SHAPE_GROUP_LABELS, type ShapeGroup, type ShapeEntry } from '../shapes/shape-catalog';
 
-const CATEGORY_ORDER: PaletteCategory[] = ['general', 'animation', 'shape', 'procEng'];
+// SP-FX-FF.26: 'shape' (外观) category dropped — only widget was panel, removed.
+const CATEGORY_ORDER: PaletteCategory[] = ['general', 'animation', 'procEng'];
 
 const BASIC_ICONS: Record<PaletteItemType, LucideIcon> = {
   rect: Square,
@@ -88,7 +88,6 @@ const GAUGE_ICONS: Record<string, LucideIcon> = {
   'svg-ext-pipe': PipeIcon,
   // SP-FX-FF.21: 3-bar BarChart3 is the canonical "bar chart" silhouette.
   'svg-ext-html_graph': BarChart3,
-  'svg-ext-panel': SquareDashed,
   'svg-ext-tank': Container,
   'svg-ext-motor': Cog,
   'svg-ext-compressor': Fan,
