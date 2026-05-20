@@ -131,6 +131,16 @@ function ShapeThumb({ shape }: { shape: ShapeEntry }): JSX.Element {
 
 const SHAPE_GROUP_ORDER: ShapeGroup[] = ['basic', 'process', 'compressor', 'pumps', 'animation'];
 
+// SP-FX-FF.25: merge shape groups into their matching gauge categories so the
+// palette doesn't repeat "动画" + "形状·动画" or "工艺设备" + "形状·工艺设备".
+const CATEGORY_TO_SHAPE_GROUP: Partial<Record<PaletteCategory, ShapeGroup>> = {
+  animation: 'animation',
+  procEng: 'process',
+};
+const MERGED_SHAPE_GROUPS = new Set<ShapeGroup>(
+  Object.values(CATEGORY_TO_SHAPE_GROUP) as ShapeGroup[],
+);
+
 export function Palette(): JSX.Element {
   const drawTool = useEditorStore((s) => s.drawTool);
   const armed = useEditorStore((s) => s.armedPlacement);
@@ -214,13 +224,16 @@ export function Palette(): JSX.Element {
       </details>
       {CATEGORY_ORDER.map((cat) => {
         const items = GAUGE_PALETTE_ITEMS.filter((g) => g.category === cat);
-        if (items.length === 0) return null;
+        const mergedGroup = CATEGORY_TO_SHAPE_GROUP[cat];
+        const shapes = mergedGroup ? SHAPE_CATALOG.filter((s) => s.group === mergedGroup) : [];
+        if (items.length === 0 && shapes.length === 0) return null;
         return (
           <details key={cat} open data-section={`gauges-${cat}`} className="border-b border-zinc-700">
             <summary className="px-2 py-1 text-xs uppercase tracking-wider text-zinc-400 cursor-pointer hover:text-zinc-200">
               {PALETTE_CATEGORY_LABELS[cat]}
+              {shapes.length > 0 && <span className="ml-1 opacity-50">({items.length + shapes.length})</span>}
             </summary>
-            <ul className="p-2 grid grid-cols-3 gap-1">
+            <ul className="p-2 grid grid-cols-3 gap-1 max-h-[320px] overflow-y-auto">
               {items.map((item) => {
                 const Icon = GAUGE_ICONS[item.widgetType] ?? HelpCircle;
                 const active = isArmedGauge(item.widgetType);
@@ -242,12 +255,37 @@ export function Palette(): JSX.Element {
                   </li>
                 );
               })}
+              {/* SP-FX-FF.25: merged shape items render with same grid cells. */}
+              {shapes.map((shape) => {
+                const active = isArmedShape(shape.name);
+                return (
+                  <li
+                    key={shape.name}
+                    draggable
+                    data-palette-shape={shape.name}
+                    data-active={active ? 'true' : 'false'}
+                    title={shape.name}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('palette-shape', shape.name);
+                      e.dataTransfer.setData('palette-shape-bbox', `${shape.bbox.w},${shape.bbox.h}`);
+                      e.dataTransfer.effectAllowed = 'copy';
+                    }}
+                    onClick={() => toggleArmShape(shape.name, { w: shape.bbox.w, h: shape.bbox.h })}
+                    className={`cursor-grab flex items-center justify-center aspect-square rounded ${active ? 'bg-blue-600' : 'text-zinc-100 hover:bg-zinc-800'}`}
+                  >
+                    <ShapeThumb shape={shape} />
+                    <span className="sr-only">{shape.name}</span>
+                  </li>
+                );
+              })}
             </ul>
           </details>
         );
       })}
-      {/* SP-FX-48.20: FUXA shape library — 153 industrial shapes by group */}
+      {/* SP-FX-48.20: FUXA shape library — remaining shape groups not merged
+          into a gauge category (basic / compressor / pumps). */}
       {SHAPE_GROUP_ORDER.map((grp) => {
+        if (MERGED_SHAPE_GROUPS.has(grp)) return null;
         const items = SHAPE_CATALOG.filter((s) => s.group === grp);
         if (items.length === 0) return null;
         return (
