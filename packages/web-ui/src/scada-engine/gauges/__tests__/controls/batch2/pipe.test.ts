@@ -153,7 +153,7 @@ describe('PipeGauge — flow animation', () => {
     expect(daBefore).toBeFalsy();
   });
 
-  it('editor mode + flowDirection="cw": no interval (dashoffset stays static)', async () => {
+  it('SP-FX-FF.30 editor mode + flowDirection="cw": animation runs (dashoffset changes)', async () => {
     const { pipeMeta } = await import('../../../controls/batch2/pipe');
     const ctx = makeCtx('editor');
     const gauge = pipeMeta.create();
@@ -162,7 +162,7 @@ describe('PipeGauge — flow animation', () => {
     const before = pipeEl?.getAttribute('stroke-dashoffset') ?? null;
     vi.advanceTimersByTime(100);
     const after = pipeEl?.getAttribute('stroke-dashoffset') ?? null;
-    expect(after).toBe(before);
+    expect(after).not.toBe(before);
   });
 
   it('onUnmount clears interval and is idempotent', async () => {

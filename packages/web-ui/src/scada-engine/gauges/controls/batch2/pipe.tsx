@@ -88,14 +88,18 @@ class PipeGauge implements GaugeBase {
 
   private startFlowAnimation(w: number): void {
     const prop = this.widget.property as PipeProperty;
-    // SP-FX-48.9: prefer flat schema keys, fall back to legacy nested options
-    const dir = prop.flowDirection ?? prop.options?.flowDirection;
-    if (this.ctxMode !== 'runtime' || !dir || dir === 'none') return;
+    // SP-FX-FF.30: animation runs in editor + runtime so designers see the
+    // FUXA-style flow preview without binding a tag. Default direction is
+    // 'cw' (forward) when prop unset so new pipes animate out of the box.
+    const dir = prop.flowDirection ?? prop.options?.flowDirection ?? 'cw';
+    if (!dir || dir === 'none') return;
 
     const speed = prop.flowSpeed ?? prop.options?.flowSpeed ?? 2;
-    const dashLen = Math.max(10, w * 0.5);
+    const dashLen = Math.max(10, w * 0.4);
+    // SP-FX-FF.30: dashed pattern with a visible gap conveys flow direction
+    // (was equal dash/gap → looked like a striped pipe, not flowing fluid).
     this.dashOffset = 0;
-    this.pipeEl?.setAttribute('stroke-dasharray', `${dashLen} ${dashLen}`);
+    this.pipeEl?.setAttribute('stroke-dasharray', `${dashLen} ${dashLen * 0.6}`);
     this.pipeEl?.setAttribute('stroke-dashoffset', '0');
 
     this.flowInterval = setInterval(() => {
@@ -239,7 +243,8 @@ class PipeGauge implements GaugeBase {
     // Restart animation with potentially new flowDirection/flowSpeed
     const w = (this.widget as any).w ?? 120;
     if (this.pipeEl) {
-      const dir = prop.flowDirection ?? prop.options?.flowDirection;
+      // SP-FX-FF.30: same default ('cw') so animation persists across prop changes.
+      const dir = prop.flowDirection ?? prop.options?.flowDirection ?? 'cw';
       if (!dir || dir === 'none') {
         this.pipeEl.removeAttribute('stroke-dasharray');
         this.pipeEl.removeAttribute('stroke-dashoffset');
