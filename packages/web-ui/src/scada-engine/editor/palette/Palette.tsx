@@ -142,6 +142,13 @@ const MERGED_SHAPE_GROUPS = new Set<ShapeGroup>(
   Object.values(CATEGORY_TO_SHAPE_GROUP) as ShapeGroup[],
 );
 
+// SP-FX-FF.28: shapes hidden from the palette per user feedback. Catalog
+// kept intact so saved views referencing them keep rendering.
+const EXCLUDED_SHAPE_NAMES = new Set<string>([
+  'radiuskorner',
+  'shape-circlehalf.svg',
+]);
+
 export function Palette(): JSX.Element {
   const drawTool = useEditorStore((s) => s.drawTool);
   const armed = useEditorStore((s) => s.armedPlacement);
@@ -226,7 +233,9 @@ export function Palette(): JSX.Element {
       {CATEGORY_ORDER.map((cat) => {
         const items = GAUGE_PALETTE_ITEMS.filter((g) => g.category === cat);
         const mergedGroup = CATEGORY_TO_SHAPE_GROUP[cat];
-        const shapes = mergedGroup ? SHAPE_CATALOG.filter((s) => s.group === mergedGroup) : [];
+        const shapes = mergedGroup
+          ? SHAPE_CATALOG.filter((s) => s.group === mergedGroup && !EXCLUDED_SHAPE_NAMES.has(s.name))
+          : [];
         if (items.length === 0 && shapes.length === 0) return null;
         return (
           <details key={cat} open data-section={`gauges-${cat}`} className="border-b border-zinc-700">
@@ -287,7 +296,7 @@ export function Palette(): JSX.Element {
           into a gauge category (basic / compressor / pumps). */}
       {SHAPE_GROUP_ORDER.map((grp) => {
         if (MERGED_SHAPE_GROUPS.has(grp)) return null;
-        const items = SHAPE_CATALOG.filter((s) => s.group === grp);
+        const items = SHAPE_CATALOG.filter((s) => s.group === grp && !EXCLUDED_SHAPE_NAMES.has(s.name));
         if (items.length === 0) return null;
         return (
           <details key={grp} data-section={`shapes-${grp}`} className="border-b border-zinc-700">
