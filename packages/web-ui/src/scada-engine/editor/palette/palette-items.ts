@@ -90,6 +90,12 @@ export function makeDrawnWidget(
   } as FuxaWidget;
 }
 
+// SP-FX-FF.42: 部分 FUXA shape 自带预设动画 (eli/elica 扇叶默认旋转 — 复刻
+// FUXA palette 行为)。用户可在 PropertyPanel 调整 rotateSpeed 或置 0 停止。
+const SHAPE_DEFAULT_PROPERTY: Record<string, Record<string, unknown>> = {
+  eli: { rotateSpeed: 60, fill: '#3b82f6' },
+};
+
 // SP-FX-48.20: Build shape widget referencing FUXA shape-catalog entry.
 // Renders via canvas-svg case 'shape' which uses shape.content[] paths.
 // Widget bbox = shape natural bbox * 2 (FUXA defaults to 2x scaling).
@@ -110,6 +116,7 @@ export function makeShapeWidget(
       fill: 'none',
       stroke: '#1e293b',
       strokeWidth: 1.5,
+      ...(SHAPE_DEFAULT_PROPERTY[shapeName] ?? {}),
     },
     x: Math.round(pt.x / step) * step,
     y: Math.round(pt.y / step) * step,
