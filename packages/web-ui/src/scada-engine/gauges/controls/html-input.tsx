@@ -99,10 +99,14 @@ class HtmlInputGauge implements GaugeBase {
     const prop = widget.property as InputProperty;
     const input = document.createElement('input');
     input.type = prop.inputType ?? 'text';
-    input.placeholder = prop.placeholder ?? '';
+    // SP-FX-FF.2: FUXA-style "#.##" default placeholder so the editor preview
+    // shows the input shape and font weight before a tag is bound.
+    input.placeholder = prop.placeholder ?? '#.##';
     input.style.width = '100%';
     input.style.height = '100%';
     input.style.boxSizing = 'border-box';
+    // SP-FX-FF.2: fixed 20px font matches value widget visual weight.
+    input.style.fontSize = '20px';
     // SP-FX-48.24: editor mode → pointer-events:none so the widget remains
     // draggable; runtime keeps full interactivity.
     if (ctx.mode !== 'runtime') input.style.pointerEvents = 'none';

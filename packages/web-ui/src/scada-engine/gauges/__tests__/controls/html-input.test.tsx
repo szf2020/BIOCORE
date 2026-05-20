@@ -24,6 +24,27 @@ describe('HtmlInputGauge (svg-ext-html_input)', () => {
     expect(ctx.parentGroup.querySelector('input')).not.toBeNull();
   });
 
+  it('SP-FX-FF.2 default placeholder is "#.##" when prop.placeholder unset', () => {
+    const ctx = makeCtx();
+    htmlInputMeta.create().onMount(makeWidget(), ctx);
+    const input = ctx.parentGroup.querySelector('input') as HTMLInputElement;
+    expect(input.placeholder).toBe('#.##');
+  });
+
+  it('SP-FX-FF.2 explicit prop.placeholder overrides "#.##" default', () => {
+    const ctx = makeCtx();
+    htmlInputMeta.create().onMount(makeWidget({ variableId: 'r1.AI-0', placeholder: '请输入' }), ctx);
+    const input = ctx.parentGroup.querySelector('input') as HTMLInputElement;
+    expect(input.placeholder).toBe('请输入');
+  });
+
+  it('SP-FX-FF.2 input font-size style is 20px', () => {
+    const ctx = makeCtx();
+    htmlInputMeta.create().onMount(makeWidget(), ctx);
+    const input = ctx.parentGroup.querySelector('input') as HTMLInputElement;
+    expect(input.style.fontSize).toBe('20px');
+  });
+
   it('onProcess updates input.value when input is NOT focused', () => {
     const ctx = makeCtx();
     const g = htmlInputMeta.create();
