@@ -219,4 +219,19 @@ describe('widget-schemas', () => {
     expect(WIDGET_SCHEMAS['svg-ext-pump']).toBeDefined();
     expect(WIDGET_SCHEMAS['svg-ext-html_select']).toBeDefined();
   });
+
+  // SP-FX-FF.37: FUXA shape widgets (eli/piston/...) live in 动画 palette
+  // section but their widget.type='shape' had no schema → PropertyPanel
+  // showed "无属性面板". Schema now covers fill/stroke/strokeWidth +
+  // bind-tag + ranges/actions for blink/hide/show animation effects.
+  it('WIDGET_SCHEMAS["shape"] exposes fill/stroke/bind-tag + ranges/actions', async () => {
+    const { WIDGET_SCHEMAS } = await import('../widget-schemas');
+    const schema = WIDGET_SCHEMAS['shape'];
+    expect(schema).toBeDefined();
+    const keys = schema.entries.map(e => e.key);
+    expect(keys).toEqual(expect.arrayContaining(['fill', 'stroke', 'strokeWidth', 'variableId', 'x', 'y', 'w', 'h']));
+    const variableId = schema.entries.find(e => e.key === 'variableId');
+    expect(variableId?.type).toBe('tag-ref');
+    expect(typeof schema.renderCustomSection).toBe('function');
+  });
 });

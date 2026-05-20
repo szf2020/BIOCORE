@@ -455,6 +455,24 @@ export const htmlImageSchema: WidgetPropertySchema = {
   ],
 };
 
+// SP-FX-FF.37: FUXA shape widgets (palette 动画 section 的 eli/piston 等,以及
+// 工艺设备 section 的 valve/pump shape 等)。widget.type='shape',原先无 schema
+// 导致 PropertyPanel 显示"无属性面板"。此 schema 暴露:
+//   - 填充色 / 边框色 / 边框宽度 (canvas-svg shape upsertWidget 已应用)
+//   - 绑定 Tag (动画效果)
+//   - ranges[] (值范围 → 颜色) + actions[] (hide/show/blink 动画动作)
+//   - x/y/w/h
+export const shapeSchema: WidgetPropertySchema = {
+  entries: [
+    { key: 'variableId', label: '绑定 Tag', type: 'tag-ref' },
+    { key: 'fill', label: '填充色', type: 'color', allowNone: true },
+    { key: 'stroke', label: '边框色', type: 'color', allowNone: true },
+    { key: 'strokeWidth', label: '边框宽度', type: 'number', min: 0, max: 20, step: 0.5 },
+    ...GEOMETRY_ENTRIES,
+  ],
+  renderCustomSection: (property, onChange) => renderRangesAndActions(property, onChange),
+};
+
 // SP-FX-10 Batch 4 schemas
 
 export const compressorSchema: WidgetPropertySchema = {
@@ -581,6 +599,8 @@ export const WIDGET_SCHEMAS: Record<string, WidgetPropertySchema> = {
   'ellipse': ellipseSchema,
   'text': textSchema,
   'line': lineSchema,
+  // SP-FX-FF.37: FUXA shape catalog widget (palette 动画/工艺设备 section 的 eli/piston/valve...)
+  'shape': shapeSchema,
   // SP-FX-48.7: FUXA parity batch 5
   'svg-ext-panel': panelSchema,
   'svg-ext-value': valueSchema,
