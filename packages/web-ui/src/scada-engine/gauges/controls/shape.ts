@@ -58,11 +58,16 @@ class ShapeGauge implements GaugeBase {
     ) as SVGElement | null;
     if (!wrap) return;
     this.wrap = wrap;
-    // Move existing children into a <g> so we can rotate them reliably.
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g') as SVGGElement;
-    g.setAttribute('data-shape-rotate-group', 'true');
-    while (wrap.firstChild) g.appendChild(wrap.firstChild);
-    wrap.appendChild(g);
+    // SP-FX-FF.46: idempotent — if a prior mount (e.g. canvas-svg in editor +
+    // RuntimeCanvas in runtime) already wrapped children in a rotate-group,
+    // reuse it instead of nesting another wrapper (would double-rotate).
+    let g = wrap.querySelector('[data-shape-rotate-group]') as SVGGElement | null;
+    if (!g) {
+      g = document.createElementNS('http://www.w3.org/2000/svg', 'g') as SVGGElement;
+      g.setAttribute('data-shape-rotate-group', 'true');
+      while (wrap.firstChild) g.appendChild(wrap.firstChild);
+      wrap.appendChild(g);
+    }
     this.rotateGroup = g;
     this.children = Array.from(g.querySelectorAll(FILLABLE_SELECTOR)) as SVGElement[];
     for (const c of this.children) {

@@ -272,6 +272,21 @@ export class CanvasController {
           wrap.appendChild(placeholder);
         }
         this.widgetLayer.node.appendChild(wrap);
+        // SP-FX-FF.46: mount ShapeGauge so editor preview also runs rotate
+        // animation (rotateSpeed > 0) + range/action effects. Same pattern as
+        // default case but DOM was created above. ShapeGauge.onMount looks up
+        // [data-widget-id] and is idempotent w.r.t. rotate-group wrapping.
+        const shapeGauge = gaugeRegistry.create(widget);
+        if (shapeGauge) {
+          const ctx: GaugeContext = {
+            parentGroup: this.widgetLayer.node as SVGGElement,
+            readValue: () => EDITOR_GAUGE_VALUE,
+            canvasSize: { width: 0, height: 0 },
+            mode: 'editor',
+          };
+          shapeGauge.onMount(widget, ctx);
+          this.gaugeMap.set(widget.id, shapeGauge);
+        }
         return SVG(wrap) as SvgElement;
       }
       default: {
