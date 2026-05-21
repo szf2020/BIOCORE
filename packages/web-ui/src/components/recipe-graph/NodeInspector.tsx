@@ -23,10 +23,21 @@ export interface APIPhaseTemplate {
   steps: any[];
 }
 
+// SP-RG-4: Phase Instance (phase class 绑到 reactor 的中间层)。
+export interface APIPhaseInstance {
+  instance_id: string;
+  phase_class: string;
+  reactor_id: string;
+  label: string | null;
+  params_override: Record<string, unknown>;
+}
+
 interface Props {
   node: Node | null;
   template?: APIPhaseTemplate;       // 当前 phase_type 对应的模板 (用于参数 schema)
   allTemplates?: APIPhaseTemplate[]; // 全部模板 (用于"类型"下拉)
+  // SP-RG-4: 可用于绑定的 phase instances (调用方传入全量,inspector 按 phase_type 过滤)
+  phaseInstances?: APIPhaseInstance[];
   // B1.3: 全部画布节点 — 用于 Goto target 下拉选项 (排除自身/start)
   allNodes?: Array<{ id: string; type?: string; data?: any }>;
   onChange: (nodeId: string, patch: Record<string, any>) => void;
@@ -49,7 +60,7 @@ function setNestedValue(obj: Record<string, any>, key: string, value: any): void
   cur[last] = value;
 }
 
-export function NodeInspector({ node, template, allTemplates, allNodes, onChange, onClose }: Props) {
+export function NodeInspector({ node, template, allTemplates, phaseInstances, allNodes, onChange, onClose }: Props) {
   const { t } = useLocale();
   if (!node) return null;
 
@@ -175,6 +186,47 @@ export function NodeInspector({ node, template, allTemplates, allNodes, onChange
                 />
               )}
             </div>
+
+            {/* SP-RG-4: 绑定到 Phase Instance (按当前 phase_type 过滤) */}
+            {(() => {
+              const filtered = (phaseInstances || []).filter(inst => inst.phase_class === data.phase_type);
+              return (
+                <div>
+                  <Label className="text-sm">绑定 Phase Instance</Label>
+                  <select
+                    value={data.instance_id || ''}
+                    onChange={e => {
+                      const instId = e.target.value;
+                      if (!instId) {
+                        updateData({ instance_id: undefined });
+                        return;
+                      }
+                      const inst = filtered.find(i => i.instance_id === instId);
+                      if (!inst) { updateData({ instance_id: instId }); return; }
+                      const params = { ...(template?.default_params || {}), ...inst.params_override };
+                      updateData({
+                        instance_id: instId,
+                        params,
+                        ...(inst.label ? { label: inst.label } : {}),
+                      });
+                    }}
+                    className="h-7 w-full text-sm font-mono mt-1 rounded bg-background border border-border px-1"
+                  >
+                    <option value="">无 (使用模板默认)</option>
+                    {filtered.map(inst => (
+                      <option key={inst.instance_id} value={inst.instance_id}>
+                        {inst.instance_id} {inst.label ? `— ${inst.label}` : ''} @ {inst.reactor_id}
+                      </option>
+                    ))}
+                  </select>
+                  {filtered.length === 0 && data.phase_type && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      无 {data.phase_type} 类型的 instance — 去 <a href="/phase-instances" target="_blank" className="text-blue-500 underline">/phase-instances</a> 创建
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             <div>
               <Label className="text-sm">显示名</Label>

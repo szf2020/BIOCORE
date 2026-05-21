@@ -11,6 +11,9 @@ export interface PhaseNodeData extends Record<string, unknown> {
   phase_type: string;
   label: string;
   params?: Record<string, any>;
+  // SP-RG-4: 可选 — 绑定到具体 phase_instance (phase class + reactor 绑定记录)。
+  // 运行时优先用 instance.params_override;未绑定时 fallback 到 inline params。
+  instance_id?: string;
 }
 
 export function PhaseNode({ data, selected }: NodeProps) {
@@ -34,6 +37,11 @@ export function PhaseNode({ data, selected }: NodeProps) {
           </div>
         </div>
       </div>
+      {d.instance_id && (
+        <div className="mt-1 text-[11px] text-emerald-600 font-mono truncate" title={`绑定到 phase instance: ${d.instance_id}`}>
+          ⛓ {d.instance_id}
+        </div>
+      )}
       {paramCount > 0 && (
         <div className="mt-1 pt-1 border-t border-border/40 text-[12px] text-muted-foreground">
           {paramCount} 参数

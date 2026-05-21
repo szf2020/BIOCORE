@@ -15,7 +15,7 @@ import { BranchNode } from './nodes/BranchNode';
 import { GotoNode } from './nodes/GotoNode';
 import { LoopNode } from './nodes/LoopNode';
 import { StartNode, EndNode } from './nodes/StartEndNode';
-import { NodeInspector, type APIPhaseTemplate } from './NodeInspector';
+import { NodeInspector, type APIPhaseTemplate, type APIPhaseInstance } from './NodeInspector';
 import { applyDagreLayout } from './layout';
 import { phaseLabel } from '@/lib/utils';
 import { useLocale } from '@/i18n/useLocale';
@@ -202,6 +202,8 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
   // SP-RG-3 (M-3): expose phase-template fetch failure instead of silently
   // falling back to a hardcoded `phase_type: 'heating'` blank node.
   const [templatesError, setTemplatesError] = useState<string | null>(null);
+  // SP-RG-4: phase instances (phase class 绑到 reactor 的中间层) for inspector dropdown
+  const [phaseInstances, setPhaseInstances] = useState<APIPhaseInstance[]>([]);
   // DAG 校验错误
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
@@ -222,6 +224,18 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
       .catch(err => {
         setTemplatesError(`模板库加载失败: ${err.message ?? err}`);
       });
+  }, []);
+
+  // SP-RG-4: 加载 phase instances (NodeInspector 用于绑定下拉)
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('biocore_token') : null;
+    fetch(`${API}/api/v1/phase-instances`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+      .then(j => {
+        const data = j && typeof j === 'object' && 'data' in j ? j.data : j;
+        if (Array.isArray(data)) setPhaseInstances(data);
+      })
+      .catch(() => { /* 静默 — instance 列表为空不阻止编辑器使用 */ });
   }, []);
 
   const findTemplate = useCallback(
@@ -599,6 +613,7 @@ function RecipeGraphEditorInner({ initialDag, onSave, saving }: Props) {
           node={selectedNode}
           template={findTemplate((selectedNode.data as any)?.phase_type || '')}
           allTemplates={apiTemplates}
+          phaseInstances={phaseInstances}
           allNodes={nodes}
           onChange={updateNodeData}
           onClose={() => setSelectedNodeId(null)}
