@@ -34,29 +34,22 @@ vi.mock('@/hooks/useViewMutations', () => ({
 
 import { ViewListPanel } from '../ViewListPanel';
 
-describe('ViewListPanel mobile sticky toolbar (SP-FX-25)', () => {
-  it('sticky-toolbar-container 存在', () => {
-    const { getByTestId } = render(<ViewListPanel projectId="default" />);
-    expect(getByTestId('sticky-toolbar-container')).toBeTruthy();
-  });
-
-  it('sticky-toolbar-container 含 sticky class', () => {
-    const { getByTestId } = render(<ViewListPanel projectId="default" />);
-    const el = getByTestId('sticky-toolbar-container');
-    expect(el.className).toContain('sticky');
-  });
-
+// SP-FX-FF.49: sticky toolbar 取消 (cards/list 切换 + pageSize 已删),原 SP-FX-25
+// 测试 obsolete。保留 grid 渲染检查 + 确认 toolbar/searchbar 都不存在。
+describe('ViewListPanel mobile (SP-FX-FF.49 cards-only)', () => {
   it('ViewCardGrid grid 容器在 DOM 中存在 (含 grid class)', () => {
     const { container } = render(<ViewListPanel projectId="default" />);
     const grid = container.querySelector('.grid');
     expect(grid).toBeTruthy();
   });
 
-  // SP-FX-FF.48: SearchBar 整个组件取消, sticky toolbar 只剩 ViewListToolbar。
-  it('sticky toolbar 不再包含 view-search-bar', () => {
-    const { getByTestId } = render(<ViewListPanel projectId="default" />);
-    const toolbar = getByTestId('sticky-toolbar-container');
-    const searchBar = toolbar.querySelector('[data-testid="view-search-bar"]');
-    expect(searchBar).toBeNull();
+  it('sticky-toolbar-container 已移除', () => {
+    const { queryByTestId } = render(<ViewListPanel projectId="default" />);
+    expect(queryByTestId('sticky-toolbar-container')).toBeNull();
+  });
+
+  it('view-search-bar 已移除', () => {
+    const { queryByTestId } = render(<ViewListPanel projectId="default" />);
+    expect(queryByTestId('view-search-bar')).toBeNull();
   });
 });

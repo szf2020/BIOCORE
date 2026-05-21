@@ -1,16 +1,15 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useViewList } from '@/hooks/useViewList';
 import { useViewMutations } from '@/hooks/useViewMutations';
 import type { ViewMeta } from '@/hooks/useViewList';
-import { ViewListToolbar, type ViewMode } from './ViewListToolbar';
 import { ViewCardGrid } from './ViewCardGrid';
-import { ViewListRows } from './ViewListRows';
 import { ViewPaginator } from './ViewPaginator';
 import { useLocale } from '@/i18n/useLocale';
 
-const LS_KEY = 'biocore.scada.viewListMode';
+// SP-FX-FF.49: ViewListToolbar (cards/list 切换 + 每页下拉) 取消,固定 cards
+// 模式;page size 仍由底部 ViewPaginator 控制。
 const VALID_SIZES = [12, 24, 48];
 
 interface Props {
@@ -25,25 +24,11 @@ export function ViewListPanel({ projectId }: Props) {
   const sizeParam = Number(searchParams?.get('size') ?? '12');
   const size = VALID_SIZES.includes(sizeParam) ? sizeParam : 12;
 
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    try {
-      const stored = typeof window !== 'undefined' ? localStorage.getItem(LS_KEY) : null;
-      return (stored === 'list' || stored === 'cards') ? stored : 'cards';
-    } catch {
-      return 'cards';
-    }
-  });
-
   const { t } = useLocale();
   const [mutationError, setMutationError] = useState<string | null>(null);
 
   const { views, total, loading, error, refetch } = useViewList(projectId, { page, size });
   const mut = useViewMutations(projectId);
-
-  const handleModeChange = useCallback((mode: ViewMode) => {
-    setViewMode(mode);
-    try { localStorage.setItem(LS_KEY, mode); } catch { /* ignore */ }
-  }, []);
 
   const setPage = useCallback((p: number) => {
     const params = new URLSearchParams({ page: String(p), size: String(size) });
@@ -55,23 +40,10 @@ export function ViewListPanel({ projectId }: Props) {
     router.replace(`?${params.toString()}`);
   }, [router]);
 
-  // Sync localStorage viewMode on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(LS_KEY);
-      if (stored === 'list' || stored === 'cards') setViewMode(stored);
-    } catch { /* ignore */ }
-  }, []);
-
   if (loading) return <div style={{ padding: 8 }}>{t('view-list-panel.loading')}</div>;
   if (error) return <div style={{ padding: 8, color: '#dc2626' }}>{t('common.error')}: {error.message}</div>;
   if (views.length === 0 && page === 1) return (
-    <>
-      <div data-testid="sticky-toolbar-container" className="sticky top-0 z-10 bg-background border-b">
-        <ViewListToolbar viewMode={viewMode} onModeChange={handleModeChange} pageSize={size} onPageSizeChange={setSize} />
-      </div>
-      <div style={{ padding: 8, color: '#666' }}>{t('view-list-panel.no-views')}</div>
-    </>
+    <div style={{ padding: 8, color: '#666' }}>{t('view-list-panel.no-views')}</div>
   );
 
   const sorted = [...views].sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name));
@@ -155,27 +127,14 @@ export function ViewListPanel({ projectId }: Props) {
         </div>
       )}
 
-      {/* SP-FX-FF.48: 搜索栏取消, 仅保留 toolbar (cards/list 切换 + pageSize) */}
-      <div data-testid="sticky-toolbar-container" className="sticky top-0 z-10 bg-background border-b">
-        <ViewListToolbar viewMode={viewMode} onModeChange={handleModeChange} pageSize={size} onPageSizeChange={setSize} />
-      </div>
-
-      {viewMode === 'cards' ? (
-        <ViewCardGrid
-          views={displayed}
-          onEdit={handleEdit}
-          onOpen={handleOpen}
-          onDuplicate={handleDuplicate}
-          onDelete={handleDelete}
-        />
-      ) : (
-        <ViewListRows
-          sorted={displayed}
-          onRename={handleRename}
-          onDelete={handleDelete}
-          onMove={handleMove}
-        />
-      )}
+      {/* SP-FX-FF.49: 顶部 toolbar 取消, 直接渲染 cards 网格 */}
+      <ViewCardGrid
+        views={displayed}
+        onEdit={handleEdit}
+        onOpen={handleOpen}
+        onDuplicate={handleDuplicate}
+        onDelete={handleDelete}
+      />
 
       <ViewPaginator page={page} total={total} size={size} onPageChange={setPage} onSizeChange={setSize} />
     </>

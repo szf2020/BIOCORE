@@ -50,12 +50,11 @@ beforeEach(() => {
   mocks.rename.mockClear();
   mocks.delete.mockClear();
   mocks.reorder.mockClear();
-  // Default to list mode for existing tests that use [data-testid="view-row"]
-  localStorage.setItem('biocore.scada.viewListMode', 'list');
+  // SP-FX-FF.49: cards-only mode after toolbar removal — no localStorage seeding.
 });
 
 describe('ViewListPanel', () => {
-  it('renders view rows', () => {
+  it('renders view names', () => {
     render(<ViewListPanel projectId="p1" />);
     expect(screen.getByText('Plant Overview')).toBeTruthy();
     expect(screen.getByText('Reactor 3')).toBeTruthy();
@@ -67,135 +66,34 @@ describe('ViewListPanel', () => {
     expect(screen.getByText(/没有画面/)).toBeTruthy();
   });
 
-  it('rename button triggers inline rename', async () => {
-    render(<ViewListPanel projectId="p1" />);
-    const row = screen.getByText('Plant Overview').closest('[data-testid="view-row"]')!;
-    const renameBtn = row.querySelector('[data-testid="rename-btn"]') as HTMLButtonElement;
-    await act(async () => { fireEvent.click(renameBtn); });
-    const input = row.querySelector('input[data-testid="rename-input"]') as HTMLInputElement;
-    expect(input).toBeTruthy();
-    await act(async () => {
-      fireEvent.change(input, { target: { value: 'Renamed' } });
-      fireEvent.keyDown(input, { key: 'Enter' });
-    });
-    expect(mocks.rename).toHaveBeenCalledWith('v1', 'Renamed');
-  });
-
-  it('delete confirmation calls mutations.delete', async () => {
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-    render(<ViewListPanel projectId="p1" />);
-    const row = screen.getByText('Reactor 3').closest('[data-testid="view-row"]')!;
-    const delBtn = row.querySelector('[data-testid="delete-btn"]') as HTMLButtonElement;
-    await act(async () => { fireEvent.click(delBtn); });
-    expect(confirmSpy).toHaveBeenCalled();
-    expect(mocks.delete).toHaveBeenCalledWith('v2');
-    confirmSpy.mockRestore();
-  });
-
-  it('move-up button reorders adjacent rows', async () => {
-    render(<ViewListPanel projectId="p1" />);
-    const row = screen.getByText('Reactor 3').closest('[data-testid="view-row"]')!;
-    const upBtn = row.querySelector('[data-testid="move-up-btn"]') as HTMLButtonElement;
-    await act(async () => { fireEvent.click(upBtn); });
-    expect(mocks.reorder).toHaveBeenCalledWith(['v2', 'v1']);
-  });
-
   it('loading state renders skeleton', () => {
     mocks.loading = true;
     render(<ViewListPanel projectId="p1" />);
     expect(screen.getByText(/加载中/)).toBeTruthy();
   });
 
-  describe('mutation error banner', () => {
-    it('rename failure shows dismissible banner with error message', async () => {
-      mocks.rename.mockRejectedValueOnce(new Error('HTTP 409 (name taken)'));
-      render(<ViewListPanel projectId="p1" />);
-      const row = screen.getByText('Plant Overview').closest('[data-testid="view-row"]')!;
-      await act(async () => { fireEvent.click(row.querySelector('[data-testid="rename-btn"]') as HTMLButtonElement); });
-      const input = row.querySelector('input[data-testid="rename-input"]') as HTMLInputElement;
-      await act(async () => {
-        fireEvent.change(input, { target: { value: 'Renamed' } });
-        fireEvent.keyDown(input, { key: 'Enter' });
-      });
-      const banner = await screen.findByTestId('mutation-error-banner');
-      expect(banner.textContent).toContain('HTTP 409');
-      const dismiss = banner.querySelector('[data-testid="dismiss-error-btn"]') as HTMLButtonElement;
-      await act(async () => { fireEvent.click(dismiss); });
-      expect(screen.queryByTestId('mutation-error-banner')).toBeNull();
-    });
-
-    it('delete failure shows banner and view remains listed', async () => {
-      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-      mocks.delete.mockRejectedValueOnce(new Error('HTTP 500'));
-      render(<ViewListPanel projectId="p1" />);
-      const row = screen.getByText('Reactor 3').closest('[data-testid="view-row"]')!;
-      await act(async () => { fireEvent.click(row.querySelector('[data-testid="delete-btn"]') as HTMLButtonElement); });
-      const banner = await screen.findByTestId('mutation-error-banner');
-      expect(banner.textContent).toContain('HTTP 500');
-      expect(screen.getByText('Reactor 3')).toBeTruthy();
-      confirmSpy.mockRestore();
-    });
-
-    it('reorder failure shows banner', async () => {
-      mocks.reorder.mockRejectedValueOnce(new Error('HTTP 503'));
-      render(<ViewListPanel projectId="p1" />);
-      const row = screen.getByText('Reactor 3').closest('[data-testid="view-row"]')!;
-      await act(async () => { fireEvent.click(row.querySelector('[data-testid="move-up-btn"]') as HTMLButtonElement); });
-      const banner = await screen.findByTestId('mutation-error-banner');
-      expect(banner.textContent).toContain('HTTP 503');
-    });
-
-    it('successful mutation after failure clears the banner', async () => {
-      mocks.rename.mockRejectedValueOnce(new Error('HTTP 409'));
-      render(<ViewListPanel projectId="p1" />);
-      const row = screen.getByText('Plant Overview').closest('[data-testid="view-row"]')!;
-      await act(async () => { fireEvent.click(row.querySelector('[data-testid="rename-btn"]') as HTMLButtonElement); });
-      let input = row.querySelector('input[data-testid="rename-input"]') as HTMLInputElement;
-      await act(async () => {
-        fireEvent.change(input, { target: { value: 'X' } });
-        fireEvent.keyDown(input, { key: 'Enter' });
-      });
-      expect(await screen.findByTestId('mutation-error-banner')).toBeTruthy();
-      await act(async () => { fireEvent.click(row.querySelector('[data-testid="rename-btn"]') as HTMLButtonElement); });
-      input = row.querySelector('input[data-testid="rename-input"]') as HTMLInputElement;
-      await act(async () => {
-        fireEvent.change(input, { target: { value: 'Y' } });
-        fireEvent.keyDown(input, { key: 'Enter' });
-      });
-      expect(screen.queryByTestId('mutation-error-banner')).toBeNull();
-    });
+  // SP-FX-FF.49: list mode + sticky toolbar 取消, cards-only。delete 走 ViewCard.
+  it('delete confirmation calls mutations.delete (cards mode)', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<ViewListPanel projectId="p1" />);
+    const card = screen.getAllByTestId('view-card')[1];
+    const delBtn = card.querySelector('[data-testid="view-card-delete-btn"]') as HTMLButtonElement;
+    await act(async () => { fireEvent.click(delBtn); });
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(mocks.delete).toHaveBeenCalledWith('v2');
+    confirmSpy.mockRestore();
   });
 
-  describe('view mode toggle', () => {
-    beforeEach(() => {
-      localStorage.clear();
-    });
-
-    it('defaults to cards mode', () => {
-      render(<ViewListPanel projectId="p1" />);
-      expect(screen.getByTestId('view-mode-cards')).toBeTruthy();
-    });
-
-    it('restores list mode from localStorage', () => {
-      localStorage.setItem('biocore.scada.viewListMode', 'list');
-      render(<ViewListPanel projectId="p1" />);
-      expect(screen.getAllByTestId('view-row').length).toBeGreaterThan(0);
-    });
-
-    it('clicking list toggle switches to list mode', async () => {
-      render(<ViewListPanel projectId="p1" />);
-      await act(async () => { fireEvent.click(screen.getByTestId('view-mode-list')); });
-      expect(screen.getAllByTestId('view-row').length).toBeGreaterThan(0);
-      expect(localStorage.getItem('biocore.scada.viewListMode')).toBe('list');
-    });
-
-    it('clicking cards toggle from list switches to cards mode', async () => {
-      localStorage.setItem('biocore.scada.viewListMode', 'list');
-      render(<ViewListPanel projectId="p1" />);
-      await act(async () => { fireEvent.click(screen.getByTestId('view-mode-cards')); });
-      expect(screen.getAllByTestId('view-card').length).toBeGreaterThan(0);
-      expect(localStorage.getItem('biocore.scada.viewListMode')).toBe('cards');
-    });
+  it('delete failure shows banner (cards mode)', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    mocks.delete.mockRejectedValueOnce(new Error('HTTP 500'));
+    render(<ViewListPanel projectId="p1" />);
+    const card = screen.getAllByTestId('view-card')[1];
+    await act(async () => { fireEvent.click(card.querySelector('[data-testid="view-card-delete-btn"]') as HTMLButtonElement); });
+    const banner = await screen.findByTestId('mutation-error-banner');
+    expect(banner.textContent).toContain('HTTP 500');
+    expect(screen.getByText('Reactor 3')).toBeTruthy();
+    confirmSpy.mockRestore();
   });
 
   // SP-FX-FF.48: SearchBar (search input + sort + tag chips) 整个组件取消。
