@@ -158,8 +158,9 @@ export default function PLCConfigPage() {
   useEffect(() => { loadVariables(); }, [loadVariables]);
 
   // --- 连接管理 ---
+  // SP-PLC-1: connection 现含可选 reactor_id 字段,server 接受透传
   // 实际写入逻辑 (不含审计)
-  const doSaveConnection = async (conn: PLCConnection): Promise<string | null> => {
+  const doSaveConnection = async (conn: PLCConnection & { reactor_id?: string | null }): Promise<string | null> => {
     try {
       const method = editingConnection ? 'PUT' : 'POST';
       const url = editingConnection
@@ -178,7 +179,7 @@ export default function PLCConfigPage() {
   };
 
   // 返回错误信息给对话框显示, 成功返回 null, 用户取消返回特殊标记
-  const saveConnection = (conn: PLCConnection): Promise<string | null> => {
+  const saveConnection = (conn: PLCConnection & { reactor_id?: string | null }): Promise<string | null> => {
     return new Promise((resolve) => {
       audit.confirm({
         description: editingConnection ? `编辑 PLC 连接 ${conn.name}` : `创建 PLC 连接 ${conn.name}`,
@@ -542,6 +543,14 @@ export default function PLCConfigPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-2 text-sm">
+                    {/* SP-PLC-1: 绑定的 Unit (reactor) */}
+                    <div className="text-muted-foreground">绑定 Unit</div>
+                    <div>
+                      {(conn as any).reactor_id
+                        ? <Badge className="text-sm bg-emerald-100 text-emerald-800 hover:bg-emerald-100">{(conn as any).reactor_id}</Badge>
+                        : <span className="text-zinc-400 text-sm">未绑定</span>
+                      }
+                    </div>
                     <div className="text-muted-foreground">协议</div>
                     <div>
                       <Badge variant="outline" className="text-sm">
@@ -654,7 +663,11 @@ export default function PLCConfigPage() {
                   <SelectTrigger className="w-[200px]"><SelectValue placeholder="PLC连接" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">全部连接</SelectItem>
-                    {connections.map(c => <SelectItem key={c.id} value={c.id}>{c.name} ({c.ip})</SelectItem>)}
+                    {connections.map(c => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name} ({c.ip}){(c as any).reactor_id ? ` — Unit: ${(c as any).reactor_id}` : ''}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               )}
@@ -799,22 +812,42 @@ export default function PLCConfigPage() {
 
 // ─── 连接编辑对话框 ─────────────────────────────────────────
 
+// SP-PLC-1: 表单内部数据 = PLCConnection + 可选 reactor_id 绑定
+interface ConnectionFormData extends PLCConnection {
+  reactor_id?: string | null;
+}
+
 function ConnectionDialog({ open, onClose, onSave, initial }: {
   open: boolean;
   onClose: () => void;
-  onSave: (c: PLCConnection) => Promise<string | null>;
-  initial: PLCConnection | null;
+  onSave: (c: ConnectionFormData) => Promise<string | null>;
+  initial: (PLCConnection & { reactor_id?: string | null }) | null;
 }) {
-  const defaultConn: PLCConnection = {
+  const defaultConn: ConnectionFormData = {
     id: '', name: 'F01-PLC', protocol: 's7', ip: '192.168.1.10', port: 102,
     rack: 0, slot: 1, s7_db: 1,
     heartbeat_write_address: 'VB400', heartbeat_read_address: 'VB401',
     heartbeat_timeout_ms: 3000, reconnect_interval_ms: 5000, enabled: true,
+    reactor_id: null,
   };
-  const [form, setForm] = useState<PLCConnection>(defaultConn);
+  const [form, setForm] = useState<ConnectionFormData>(defaultConn);
+  // SP-PLC-1: 反应器列表(用于绑定 Unit 下拉)
+  const [reactors, setReactors] = useState<Array<{ reactor_id: string; name: string }>>([]);
 
   useEffect(() => {
-    if (initial) setForm(initial);
+    if (!open) return;
+    const tok = typeof window !== 'undefined' ? localStorage.getItem('biocore_token') ?? '' : '';
+    fetch(`${API_BASE}/api/v1/reactor-configs`, { headers: { Authorization: `Bearer ${tok}` } })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+      .then(j => {
+        const rows = j && typeof j === 'object' && 'data' in j ? j.data : j;
+        if (Array.isArray(rows)) setReactors(rows);
+      })
+      .catch(() => { /* 静默 */ });
+  }, [open]);
+
+  useEffect(() => {
+    if (initial) setForm({ ...initial, reactor_id: initial.reactor_id ?? null });
     else setForm({ ...defaultConn, id: crypto.randomUUID() });
     setSaveError(null);
   }, [initial, open]);
@@ -841,6 +874,22 @@ function ConnectionDialog({ open, onClose, onSave, initial }: {
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right">名称</Label>
             <Input className="col-span-3" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+          </div>
+          {/* SP-PLC-1: 绑定 Unit (reactor) */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label className="text-right">绑定 Unit</Label>
+            <Select
+              value={form.reactor_id ?? '__none__'}
+              onValueChange={v => setForm({ ...form, reactor_id: v === '__none__' ? null : v })}
+            >
+              <SelectTrigger className="col-span-3"><SelectValue placeholder="未绑定" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">未绑定</SelectItem>
+                {reactors.map(r => (
+                  <SelectItem key={r.reactor_id} value={r.reactor_id}>{r.reactor_id} — {r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right">协议</Label>
