@@ -4,7 +4,26 @@
 import React, { useEffect, useState } from 'react';
 import { usePhaseInstances, type PhaseInstance } from '@/hooks/usePhaseInstances';
 
-interface ClassMeta { type: string; label: string; color: string; default_params: Record<string, unknown> }
+interface ParamSchemaEntry {
+  key?: string;
+  plc_tag?: string;
+  label?: string;
+  type?: string;          // 'number' | 'text' | 'select' | ...
+  unit?: string;
+  eng_unit?: string;
+  default?: unknown;
+  default_value?: unknown;
+  min?: number;
+  max?: number;
+  options?: Array<{ value: string; label?: string } | string>;
+}
+interface ClassMeta {
+  type: string;
+  label: string;
+  color: string;
+  default_params: Record<string, unknown>;
+  param_schema?: ParamSchemaEntry[];
+}
 interface ReactorMeta { reactor_id: string; name: string }
 
 function jwtHeader(): Record<string, string> {
@@ -189,31 +208,56 @@ function PhaseInstanceDialog({
   onSave: (form: FormState) => void | Promise<void>;
   onCancel: () => void;
 }): JSX.Element {
+  const initialClass = initial?.phase_class ?? classes[0]?.type ?? '';
+  // Merge: class default_params (基线) overridden by initial.params_override (已存的覆盖)
+  const initialParams: Record<string, unknown> = (() => {
+    const cls = classes.find(c => c.type === initialClass);
+    return { ...(cls?.default_params ?? {}), ...(initial?.params_override ?? {}) };
+  })();
   const [form, setForm] = useState<FormState>(() => ({
     instance_id: initial?.instance_id ?? '',
-    phase_class: initial?.phase_class ?? classes[0]?.type ?? '',
+    phase_class: initialClass,
     reactor_id: initial?.reactor_id ?? reactors[0]?.reactor_id ?? '',
     label: initial?.label ?? '',
-    params_override: initial?.params_override ?? {},
+    params_override: initialParams,
     notes: initial?.notes ?? '',
   }));
-  const [paramsText, setParamsText] = useState<string>(JSON.stringify(form.params_override, null, 2));
-  const [paramsError, setParamsError] = useState<string | null>(null);
 
-  function updateParams(text: string): void {
-    setParamsText(text);
-    try {
-      const parsed = text.trim() ? JSON.parse(text) : {};
-      setForm(f => ({ ...f, params_override: parsed }));
-      setParamsError(null);
-    } catch {
-      setParamsError('JSON 格式错误');
+  const currentClass = classes.find(c => c.type === form.phase_class);
+
+  // 合并 param_schema 与 default_params,产出统一字段列表(模板没显式 schema 时按 default_params 键展开)。
+  const fields: ParamSchemaEntry[] = (() => {
+    if (!currentClass) return [];
+    const schema = (currentClass.param_schema ?? []) as ParamSchemaEntry[];
+    const known = new Set<string>();
+    const list: ParamSchemaEntry[] = [];
+    for (const e of schema) {
+      const k = e.key || e.plc_tag;
+      if (!k) continue;
+      known.add(k);
+      list.push({ ...e, key: k });
     }
+    for (const k of Object.keys(currentClass.default_params ?? {})) {
+      if (!known.has(k)) list.push({ key: k, label: k });
+    }
+    return list;
+  })();
+
+  function setParam(key: string, value: unknown): void {
+    setForm(f => ({ ...f, params_override: { ...f.params_override, [key]: value } }));
+  }
+
+  function changeClass(newClass: string): void {
+    const cls = classes.find(c => c.type === newClass);
+    setForm(f => ({
+      ...f,
+      phase_class: newClass,
+      params_override: { ...(cls?.default_params ?? {}) },
+    }));
   }
 
   function handleSubmit(e: React.FormEvent): void {
     e.preventDefault();
-    if (paramsError) return;
     void onSave(form);
   }
 
@@ -242,7 +286,7 @@ function PhaseInstanceDialog({
               <label className="block text-xs text-zinc-500 mb-1">Phase Class *</label>
               <select
                 value={form.phase_class}
-                onChange={(e) => setForm(f => ({ ...f, phase_class: e.target.value }))}
+                onChange={(e) => changeClass(e.target.value)}
                 required
                 className="w-full border border-zinc-300 rounded px-2 py-1.5 text-sm"
               >
@@ -271,15 +315,58 @@ function PhaseInstanceDialog({
             />
           </div>
           <div>
-            <label className="block text-xs text-zinc-500 mb-1">params 覆盖 (JSON)</label>
-            <textarea
-              value={paramsText}
-              onChange={(e) => updateParams(e.target.value)}
-              rows={5}
-              spellCheck={false}
-              className={`w-full border rounded px-2 py-1.5 text-xs font-mono ${paramsError ? 'border-red-400' : 'border-zinc-300'}`}
-            />
-            {paramsError && <div className="text-xs text-red-600 mt-1">{paramsError}</div>}
+            <label className="block text-xs text-zinc-500 mb-1">参数 (来自 phase class 模板)</label>
+            {fields.length === 0 ? (
+              <div className="text-xs text-zinc-400 italic px-2 py-2 bg-zinc-50 border border-zinc-200 rounded">
+                此 Phase Class 模板无可编辑参数
+              </div>
+            ) : (
+              <div className="space-y-2 border border-zinc-200 rounded p-2 bg-zinc-50">
+                {fields.map((field) => {
+                  const k = field.key!;
+                  const val = form.params_override[k];
+                  const unit = field.unit || field.eng_unit || '';
+                  const fieldLabel = field.label || k;
+                  const isNumber = field.type === 'number' || typeof val === 'number';
+                  const hasOptions = Array.isArray(field.options) && field.options.length > 0;
+                  return (
+                    <div key={k} className="grid grid-cols-3 gap-2 items-center">
+                      <label className="text-xs text-zinc-600 col-span-1 truncate" title={k}>
+                        {fieldLabel}
+                        {unit && <span className="text-zinc-400 ml-1">({unit})</span>}
+                      </label>
+                      {hasOptions ? (
+                        <select
+                          value={String(val ?? '')}
+                          onChange={(e) => setParam(k, e.target.value)}
+                          className="col-span-2 border border-zinc-300 rounded px-2 py-1 text-xs"
+                        >
+                          <option value="">--</option>
+                          {field.options!.map((opt, i) => {
+                            const value = typeof opt === 'string' ? opt : opt.value;
+                            const label = typeof opt === 'string' ? opt : (opt.label || opt.value);
+                            return <option key={i} value={value}>{label}</option>;
+                          })}
+                        </select>
+                      ) : (
+                        <input
+                          type={isNumber ? 'number' : 'text'}
+                          value={val === undefined || val === null ? '' : String(val)}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === '') { setParam(k, undefined); return; }
+                            setParam(k, isNumber ? parseFloat(raw) : raw);
+                          }}
+                          {...(field.min !== undefined ? { min: field.min } : {})}
+                          {...(field.max !== undefined ? { max: field.max } : {})}
+                          className="col-span-2 border border-zinc-300 rounded px-2 py-1 text-xs font-mono"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-xs text-zinc-500 mb-1">备注</label>
@@ -293,7 +380,7 @@ function PhaseInstanceDialog({
 
         <div className="flex justify-end gap-2 mt-5">
           <button type="button" onClick={onCancel} className="px-3 py-1.5 border border-zinc-300 rounded text-sm hover:bg-zinc-50">取消</button>
-          <button type="submit" disabled={!!paramsError} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50">
+          <button type="submit" className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
             {isEdit ? '保存' : '创建'}
           </button>
         </div>
