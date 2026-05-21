@@ -2916,6 +2916,81 @@ apiRouter.post('/reactor-configs/init-defaults', (_req, res) => {
 });
 
 
+// ── SP-RG-4: Phase Instance API (phase_instances 中间层) ──
+// 一个 phase class 可绑定到同一 reactor 多次,每次产生独立 instance。
+
+const PHASE_INSTANCE_ID_PATTERN = /^[A-Za-z0-9_-]{1,40}$/;
+
+function parseInstanceParams(row: any): any {
+  if (!row) return row;
+  try { return { ...row, params_override: JSON.parse(row.params_override ?? '{}') }; }
+  catch { return { ...row, params_override: {} }; }
+}
+
+apiRouter.get('/phase-instances', (req, res) => {
+  const reactor = req.query.reactor as string | undefined;
+  const phaseClass = req.query.phase_class as string | undefined;
+  const rows = sqlite.listPhaseInstances({ reactor_id: reactor, phase_class: phaseClass });
+  res.json(rows.map(parseInstanceParams));
+});
+
+apiRouter.get('/phase-instances/:id', (req, res) => {
+  const row = sqlite.getPhaseInstance(req.params.id);
+  if (!row) return res.status(404).json({ error: 'phase instance 不存在' });
+  res.json(parseInstanceParams(row));
+});
+
+apiRouter.post('/phase-instances', (req, res) => {
+  const { instance_id, phase_class, reactor_id, label, params_override, notes } = req.body ?? {};
+  if (!instance_id || !phase_class || !reactor_id) {
+    return res.status(400).json({ error: '缺少 instance_id / phase_class / reactor_id' });
+  }
+  if (!PHASE_INSTANCE_ID_PATTERN.test(instance_id)) {
+    return res.status(400).json({ error: 'instance_id 仅限英数字下划线短横线 1~40 字符' });
+  }
+  if (sqlite.getPhaseInstance(instance_id)) {
+    return res.status(409).json({ error: `${instance_id} 已存在` });
+  }
+  const tpl: any = sqlite.getDatabase().prepare('SELECT type FROM phase_templates WHERE type = ?').get(phase_class);
+  if (!tpl) return res.status(400).json({ error: `phase_class '${phase_class}' 不存在` });
+  if (!sqlite.getReactorConfig(reactor_id)) return res.status(400).json({ error: `reactor_id '${reactor_id}' 不存在` });
+  try {
+    sqlite.createPhaseInstance({
+      instance_id, phase_class, reactor_id,
+      label: label ?? null,
+      params_override: params_override ?? {},
+      notes: notes ?? '',
+      created_by: (req as any).user?.user_id ?? 'unknown',
+    });
+    const row = sqlite.getPhaseInstance(instance_id);
+    res.status(201).json(parseInstanceParams(row));
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+apiRouter.put('/phase-instances/:id', (req, res) => {
+  const existing = sqlite.getPhaseInstance(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'phase instance 不存在' });
+  const { phase_class, reactor_id, label, params_override, notes } = req.body ?? {};
+  if (phase_class !== undefined) {
+    const tpl: any = sqlite.getDatabase().prepare('SELECT type FROM phase_templates WHERE type = ?').get(phase_class);
+    if (!tpl) return res.status(400).json({ error: `phase_class '${phase_class}' 不存在` });
+  }
+  if (reactor_id !== undefined && !sqlite.getReactorConfig(reactor_id)) {
+    return res.status(400).json({ error: `reactor_id '${reactor_id}' 不存在` });
+  }
+  sqlite.updatePhaseInstance(req.params.id, { phase_class, reactor_id, label, params_override, notes });
+  res.json(parseInstanceParams(sqlite.getPhaseInstance(req.params.id)));
+});
+
+apiRouter.delete('/phase-instances/:id', (req, res) => {
+  const r = sqlite.deletePhaseInstance(req.params.id);
+  if (!r.ok) return res.status(404).json({ error: 'phase instance 不存在' });
+  res.status(204).end();
+});
+
+
 // ── AI建议 API (ai_suggestions表) ──
 
 apiRouter.get('/ai/suggestions', (req, res) => {

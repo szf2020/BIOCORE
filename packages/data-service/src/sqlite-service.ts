@@ -781,6 +781,71 @@ export class SQLiteService {
     this.db.prepare('DELETE FROM reactor_configs WHERE reactor_id = ?').run(reactorId);
   }
 
+  // ─── SP-RG-4: Phase Instance CRUD ────────────────────────
+  // Middle layer between phase_templates (class) and reactor_configs (unit).
+  // One class can be bound to one reactor many times via distinct instances.
+
+  listPhaseInstances(opts?: { reactor_id?: string; phase_class?: string }): PhaseInstanceRow[] {
+    const where: string[] = [];
+    const binds: unknown[] = [];
+    if (opts?.reactor_id)  { where.push('reactor_id = ?');  binds.push(opts.reactor_id); }
+    if (opts?.phase_class) { where.push('phase_class = ?'); binds.push(opts.phase_class); }
+    const sql = `SELECT * FROM phase_instances${where.length ? ' WHERE ' + where.join(' AND ') : ''} ORDER BY created_at DESC`;
+    return this.db.prepare(sql).all(...binds) as PhaseInstanceRow[];
+  }
+
+  getPhaseInstance(instanceId: string): PhaseInstanceRow | undefined {
+    return this.db.prepare('SELECT * FROM phase_instances WHERE instance_id = ?').get(instanceId) as PhaseInstanceRow | undefined;
+  }
+
+  createPhaseInstance(inst: {
+    instance_id: string;
+    phase_class: string;
+    reactor_id: string;
+    label?: string | null;
+    params_override?: Record<string, unknown>;
+    notes?: string;
+    created_by?: string;
+  }): void {
+    this.db.prepare(`INSERT INTO phase_instances
+      (instance_id, phase_class, reactor_id, label, params_override, notes, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      inst.instance_id,
+      inst.phase_class,
+      inst.reactor_id,
+      inst.label ?? null,
+      JSON.stringify(inst.params_override ?? {}),
+      inst.notes ?? '',
+      inst.created_by ?? 'unknown',
+    );
+  }
+
+  updatePhaseInstance(instanceId: string, patch: {
+    phase_class?: string;
+    reactor_id?: string;
+    label?: string | null;
+    params_override?: Record<string, unknown>;
+    notes?: string;
+  }): { ok: boolean } {
+    const sets: string[] = [];
+    const binds: unknown[] = [];
+    if (patch.phase_class !== undefined)     { sets.push('phase_class = ?');     binds.push(patch.phase_class); }
+    if (patch.reactor_id !== undefined)      { sets.push('reactor_id = ?');      binds.push(patch.reactor_id); }
+    if (patch.label !== undefined)           { sets.push('label = ?');           binds.push(patch.label); }
+    if (patch.params_override !== undefined) { sets.push('params_override = ?'); binds.push(JSON.stringify(patch.params_override)); }
+    if (patch.notes !== undefined)           { sets.push('notes = ?');           binds.push(patch.notes); }
+    if (sets.length === 0) return { ok: true };
+    binds.push(instanceId);
+    const info = this.db.prepare(`UPDATE phase_instances SET ${sets.join(', ')} WHERE instance_id = ?`).run(...binds);
+    return { ok: info.changes > 0 };
+  }
+
+  deletePhaseInstance(instanceId: string): { ok: boolean } {
+    const info = this.db.prepare('DELETE FROM phase_instances WHERE instance_id = ?').run(instanceId);
+    return { ok: info.changes > 0 };
+  }
+
   // ─── DoE 研究 CRUD ───────────────────────────────────────
 
   createDoeStudy(study: {
@@ -1564,4 +1629,17 @@ export interface FuxaViewRow {
   updated_at: string;
   created_by: string | null;
   updated_by: string | null;
+}
+
+// SP-RG-4: phase_instances row shape (params_override is JSON-encoded string;
+// caller is responsible for JSON.parse).
+export interface PhaseInstanceRow {
+  instance_id: string;
+  phase_class: string;
+  reactor_id: string;
+  label: string | null;
+  params_override: string;
+  notes: string;
+  created_at: string;
+  created_by: string;
 }

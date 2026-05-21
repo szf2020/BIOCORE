@@ -1,6 +1,6 @@
 // ============================================================
-// migration-roll-forward.test.ts — SP-FX-30 (updated SP-FX-42)
-// fresh DB roll-forward 端到端验证: 001~037 全 migration 顺序执行
+// migration-roll-forward.test.ts — SP-FX-30 (updated SP-RG-4)
+// fresh DB roll-forward 端到端验证: 001~038 全 migration 顺序执行
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
@@ -16,20 +16,20 @@ async function rollForward(): Promise<Database.Database> {
   return db;
 }
 
-describe('migration roll-forward 001~037', () => {
-  it('T1: fresh DB 顺序执行全 37 migration 不抛异常', async () => {
+describe('migration roll-forward 001~038', () => {
+  it('T1: fresh DB 顺序执行全 38 migration 不抛异常', async () => {
     // Arrange: fresh in-memory DB
     // Act + Assert: 不应抛出异常
     await expect(rollForward()).resolves.toBeDefined();
   });
 
-  it('T2: _migrations 表记录恰好 36 条 (每个 migration 文件各一条; 006 未加入故为 36)', async () => {
-    // 注: migrations 目录含 001~037 号但 006 缺失, 实际共 36 个文件
+  it('T2: _migrations 表记录恰好 37 条 (每个 migration 文件各一条; 006 未加入故为 37)', async () => {
+    // 注: migrations 目录含 001~038 号但 006 缺失, 实际共 37 个文件
     const db = await rollForward();
     const row = db
       .prepare('SELECT count(*) AS cnt FROM _migrations')
       .get() as { cnt: number };
-    expect(row.cnt).toBe(36);
+    expect(row.cnt).toBe(37);
   });
 
   it('T3: 关键业务表全部存在', async () => {
@@ -101,5 +101,22 @@ describe('migration roll-forward 001~037', () => {
     expect(tables, 'alert_channels 表应存在').toContain('alert_channels');
     expect(tables, 'alert_rules 表应存在').toContain('alert_rules');
     expect(tables, 'alert_history 表应存在').toContain('alert_history');
+  });
+
+  it('T8: phase_instances 表存在并含全部字段 (migration 038 SP-RG-4)', async () => {
+    const db = await rollForward();
+    const tables = db
+      .prepare(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`)
+      .all()
+      .map((r: any) => r.name as string);
+    expect(tables, 'phase_instances 表应存在').toContain('phase_instances');
+
+    const cols = db
+      .prepare('PRAGMA table_info(phase_instances)')
+      .all()
+      .map((r: any) => r.name as string);
+    for (const col of ['instance_id', 'phase_class', 'reactor_id', 'label', 'params_override', 'notes', 'created_at', 'created_by']) {
+      expect(cols, `phase_instances 应含列 "${col}"`).toContain(col);
+    }
   });
 });
