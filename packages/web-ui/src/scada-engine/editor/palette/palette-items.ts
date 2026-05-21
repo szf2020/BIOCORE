@@ -93,7 +93,9 @@ export function makeDrawnWidget(
 // SP-FX-FF.42: 部分 FUXA shape 自带预设动画 (eli/elica 扇叶默认旋转 — 复刻
 // FUXA palette 行为)。用户可在 PropertyPanel 调整 rotateSpeed 或置 0 停止。
 const SHAPE_DEFAULT_PROPERTY: Record<string, Record<string, unknown>> = {
-  eli: { rotateSpeed: 60, fill: '#3b82f6' },
+  // SP-FX-FF.43: eli 形状现为 14-blade turbine (复刻 FUXA);blade rect 没有
+  // explicit fill,继承 prop.fill — 默认深色 + stroke 同色给经典 FUXA 外观。
+  eli: { rotateSpeed: 60, fill: '#1e293b', stroke: '#1e293b' },
 };
 
 // SP-FX-48.20: Build shape widget referencing FUXA shape-catalog entry.
