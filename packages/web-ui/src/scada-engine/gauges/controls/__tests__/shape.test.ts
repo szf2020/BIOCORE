@@ -149,27 +149,33 @@ describe('ShapeGauge', () => {
     expect(() => gauge.onUnmount()).not.toThrow();
   });
 
-  // SP-FX-FF.40: rotate animation
-  it('rotateSpeed=0 (default) → no rAF started, wrap has no transform style', async () => {
+  // SP-FX-FF.40 / SP-FX-FF.44: rotate animation (SVG transform attr on inner <g>)
+  it('rotateSpeed=0 (default) → no rAF started, rotateGroup has no transform attribute', async () => {
     const { shapeMeta } = await import('../shape');
     const wrap = makeShapeDom(parent, 'ws1');
     const ctx = makeCtx(parent);
     const gauge = shapeMeta.create();
     gauge.onMount(makeWidget({ property: { shapeName: 'eli', fill: '#aaa' } } as unknown as FuxaWidget), ctx);
-    expect((wrap as unknown as HTMLElement).style.transform || '').toBe('');
+    const g = wrap.querySelector('[data-shape-rotate-group]');
+    expect(g?.getAttribute('transform')).toBeFalsy();
     gauge.onUnmount();
   });
 
-  it('rotateSpeed=90 → onMount sets transform-box/origin and schedules rAF', async () => {
-    const rafSpy = vi.spyOn(window, 'requestAnimationFrame');
+  it('rotateSpeed=90 → onMount schedules rAF and writes transform on inner <g>', async () => {
+    let calls = 0;
+    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      calls++;
+      if (calls === 1) cb(0);
+      return calls;
+    });
     const { shapeMeta } = await import('../shape');
     const wrap = makeShapeDom(parent, 'ws1');
     const ctx = makeCtx(parent);
     const gauge = shapeMeta.create();
     gauge.onMount(makeWidget({ property: { shapeName: 'eli', fill: '#aaa', rotateSpeed: 90 } } as unknown as FuxaWidget), ctx);
-    expect((wrap as unknown as HTMLElement).style.transformBox).toBe('fill-box');
-    expect((wrap as unknown as HTMLElement).style.transformOrigin).toBe('center');
     expect(rafSpy).toHaveBeenCalled();
+    const g = wrap.querySelector('[data-shape-rotate-group]');
+    expect(g?.getAttribute('transform') ?? '').toMatch(/^rotate\(/);
     gauge.onUnmount();
     rafSpy.mockRestore();
   });

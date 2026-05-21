@@ -38,6 +38,10 @@ const FILLABLE_SELECTOR = 'ellipse, path, rect, circle, polygon, polyline, line'
 
 class ShapeGauge implements GaugeBase {
   private wrap: SVGElement | null = null;
+  // SP-FX-FF.44: rotate animation applied to an inner <g> rather than the
+  // nested <svg> wrapper — `transform` on inner <svg> elements is unreliable
+  // across browsers; transform on a <g> graphics element is universally OK.
+  private rotateGroup: SVGGElement | null = null;
   private children: SVGElement[] = [];
   private originalFills = new Map<SVGElement, string | null>();
   private widget!: FuxaWidget;
@@ -54,7 +58,13 @@ class ShapeGauge implements GaugeBase {
     ) as SVGElement | null;
     if (!wrap) return;
     this.wrap = wrap;
-    this.children = Array.from(wrap.querySelectorAll(FILLABLE_SELECTOR)) as SVGElement[];
+    // Move existing children into a <g> so we can rotate them reliably.
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g') as SVGGElement;
+    g.setAttribute('data-shape-rotate-group', 'true');
+    while (wrap.firstChild) g.appendChild(wrap.firstChild);
+    wrap.appendChild(g);
+    this.rotateGroup = g;
+    this.children = Array.from(g.querySelectorAll(FILLABLE_SELECTOR)) as SVGElement[];
     for (const c of this.children) {
       this.originalFills.set(c, c.getAttribute('fill'));
     }
@@ -71,30 +81,35 @@ class ShapeGauge implements GaugeBase {
     }
     this.originalFills.clear();
     this.children = [];
+    this.rotateGroup = null;
     this.wrap = null;
   }
 
-  // SP-FX-FF.40: rotate animation — rAF loop, transform-box=fill-box so the
-  // shape rotates around its own center (SVG default origin is (0,0) on the
-  // outer element which would orbit the widget around the canvas origin).
+  // SP-FX-FF.40 / SP-FX-FF.44: rotate animation — rAF loop using SVG native
+  // transform attribute (rotate around viewBox center). CSS transform on
+  // nested <svg> elements is inconsistent across browsers (Webkit/Blink),
+  // so we use the SVG transform attribute which is universally supported.
   private startRotateIfNeeded(): void {
     if (this.rafId !== null) return;
     const speed = Number((this.widget.property as ShapeProperty).rotateSpeed ?? 0);
     if (!Number.isFinite(speed) || speed === 0) return;
     if (!this.wrap) return;
-    // CSS transform-box + transform-origin so rotation centers on the
-    // widget's own bbox rather than the canvas origin.
-    (this.wrap as unknown as SVGElement).style.transformBox = 'fill-box';
-    (this.wrap as unknown as SVGElement).style.transformOrigin = 'center';
+    const viewBox = this.wrap.getAttribute('viewBox') ?? '0 0 100 100';
+    const parts = viewBox.split(/\s+/).map(Number);
+    const vw = parts[2];
+    const vh = parts[3];
+    const cx = (Number.isFinite(vw) ? vw : 100) / 2;
+    const cy = (Number.isFinite(vh) ? vh : 100) / 2;
     this.lastTs = 0;
     const tick = (ts: number): void => {
-      if (!this.wrap) { this.rafId = null; return; }
+      const g = this.rotateGroup;
+      if (!g) { this.rafId = null; return; }
       if (this.lastTs === 0) this.lastTs = ts;
       const dt = (ts - this.lastTs) / 1000;
       this.lastTs = ts;
       const cur = Number((this.widget.property as ShapeProperty).rotateSpeed ?? 0);
       this.angle = (this.angle + cur * dt) % 360;
-      this.wrap.style.transform = `rotate(${this.angle}deg)`;
+      g.setAttribute('transform', `rotate(${this.angle} ${cx} ${cy})`);
       this.rafId = requestAnimationFrame(tick);
     };
     this.rafId = requestAnimationFrame(tick);
@@ -105,6 +120,7 @@ class ShapeGauge implements GaugeBase {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
+    this.rotateGroup?.removeAttribute('transform');
     this.angle = 0;
     this.lastTs = 0;
   }
