@@ -95,9 +95,12 @@ export function rateLimit(config?: RateLimitConfig): RequestHandler {
 }
 
 /** 默认全局配置 */
+// SP-FX-FF.45: prod 保持 100/60s,dev 放宽到 1000/60s — 开发 + 浏览器 SPA
+// 加载/测试时一页可触发几十个并发 API call,100 太严会误锁 HTTP 429。
+const DEFAULT_LIMIT = process.env.NODE_ENV === 'production' ? 100 : 1000;
 export const defaultRateLimitConfig: RateLimitConfig = {
   windowMs: 60_000,
-  limit: 100,
+  limit: DEFAULT_LIMIT,
   keyStrategy: 'ip',
   skipPaths: ['/health', '/liveness', '/metrics', '/api/v1/metrics'],
 };
