@@ -846,6 +846,35 @@ export class SQLiteService {
     return { ok: info.changes > 0 };
   }
 
+  // ─── SP-PLC-1: plc_reactor_bindings CRUD ─────────────────
+  // 一个 unit 一个 PLC 的 1:1 绑定 (PK=plc_id),应用层警告不强约束。
+
+  listPlcReactorBindings(): PlcReactorBindingRow[] {
+    return this.db.prepare('SELECT * FROM plc_reactor_bindings').all() as PlcReactorBindingRow[];
+  }
+
+  getPlcReactorBinding(plcId: string): PlcReactorBindingRow | undefined {
+    return this.db.prepare('SELECT * FROM plc_reactor_bindings WHERE plc_id = ?').get(plcId) as PlcReactorBindingRow | undefined;
+  }
+
+  /** 通过 reactor_id 反查绑定的 PLC ID 列表(可多个,UI 警告但不阻) */
+  getPlcReactorBindingsByReactor(reactorId: string): PlcReactorBindingRow[] {
+    return this.db.prepare('SELECT * FROM plc_reactor_bindings WHERE reactor_id = ?').all(reactorId) as PlcReactorBindingRow[];
+  }
+
+  /** Upsert: plc_id 存在则替换 reactor_id,不存在则插入 */
+  upsertPlcReactorBinding(b: { plc_id: string; reactor_id: string; created_by?: string }): void {
+    this.db.prepare(`INSERT INTO plc_reactor_bindings (plc_id, reactor_id, created_by)
+      VALUES (?, ?, ?)
+      ON CONFLICT(plc_id) DO UPDATE SET reactor_id = excluded.reactor_id
+    `).run(b.plc_id, b.reactor_id, b.created_by ?? 'unknown');
+  }
+
+  deletePlcReactorBinding(plcId: string): { ok: boolean } {
+    const info = this.db.prepare('DELETE FROM plc_reactor_bindings WHERE plc_id = ?').run(plcId);
+    return { ok: info.changes > 0 };
+  }
+
   // ─── DoE 研究 CRUD ───────────────────────────────────────
 
   createDoeStudy(study: {
@@ -1640,6 +1669,14 @@ export interface PhaseInstanceRow {
   label: string | null;
   params_override: string;
   notes: string;
+  created_at: string;
+  created_by: string;
+}
+
+// SP-PLC-1: PLC ↔ Reactor 1:1 binding row.
+export interface PlcReactorBindingRow {
+  plc_id: string;
+  reactor_id: string;
   created_at: string;
   created_by: string;
 }

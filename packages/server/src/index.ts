@@ -807,26 +807,74 @@ function stopHeartbeat(id: string): void {
 
 // ── PLC 连接 CRUD ──
 
+// SP-PLC-1: GET 列表附带 reactor_id (从 plc_reactor_bindings JOIN)
 apiRouter.get('/plc/connections', (_req, res) => {
-  res.json(varManager.getConnections());
+  const conns = varManager.getConnections();
+  const bindings = sqlite.listPlcReactorBindings();
+  const reactorByPlc = new Map<string, string>(bindings.map(b => [b.plc_id, b.reactor_id]));
+  res.json(conns.map((c: any) => ({ ...c, reactor_id: reactorByPlc.get(c.id) ?? null })));
 });
 
 // SP-FX-47 F-04 (HIGH): PLC 拓扑写操作 admin only
+// SP-PLC-1: 接受 reactor_id,同步写入 plc_reactor_bindings
 apiRouter.post('/plc/connections', requireRole('admin'), (req, res) => {
-  const conn = { id: crypto.randomUUID(), ...req.body };
+  const { reactor_id, ...rest } = req.body ?? {};
+  const conn = { id: crypto.randomUUID(), ...rest };
   varManager.upsertConnection(conn);
-  res.json(conn);
+  if (reactor_id) {
+    if (sqlite.getReactorConfig(reactor_id)) {
+      sqlite.upsertPlcReactorBinding({ plc_id: conn.id, reactor_id, created_by: (req as any).user?.user_id });
+    }
+  }
+  res.json({ ...conn, reactor_id: reactor_id ?? null });
 });
 
 apiRouter.put('/plc/connections/:id', requireRole('admin'), (req, res) => {
-  varManager.upsertConnection({ ...req.body, id: req.params.id });
+  const { reactor_id, ...rest } = req.body ?? {};
+  varManager.upsertConnection({ ...rest, id: req.params.id });
+  if (reactor_id === null || reactor_id === '') {
+    sqlite.deletePlcReactorBinding(req.params.id);
+  } else if (reactor_id) {
+    if (!sqlite.getReactorConfig(reactor_id)) {
+      return res.status(400).json({ error: `reactor_id '${reactor_id}' 不存在` });
+    }
+    sqlite.upsertPlcReactorBinding({ plc_id: req.params.id, reactor_id, created_by: (req as any).user?.user_id });
+  }
   res.json({ success: true });
 });
 
 apiRouter.delete('/plc/connections/:id', requireRole('admin'), (req, res) => {
   stopHeartbeat(req.params.id);
   varManager.deleteConnection(req.params.id);
+  sqlite.deletePlcReactorBinding(req.params.id);
   res.json({ success: true });
+});
+
+// SP-PLC-1: 独立 /api/v1/plc-reactor-bindings CRUD (供单独查询/管理)
+apiRouter.get('/plc-reactor-bindings', (_req, res) => {
+  res.json(sqlite.listPlcReactorBindings());
+});
+
+apiRouter.get('/plc-reactor-bindings/:plcId', (req, res) => {
+  const b = sqlite.getPlcReactorBinding(req.params.plcId);
+  if (!b) return res.status(404).json({ error: 'binding 不存在' });
+  res.json(b);
+});
+
+apiRouter.put('/plc-reactor-bindings/:plcId', requireRole('admin'), (req, res) => {
+  const { reactor_id } = req.body ?? {};
+  if (!reactor_id) return res.status(400).json({ error: '缺少 reactor_id' });
+  if (!sqlite.getReactorConfig(reactor_id)) return res.status(400).json({ error: `reactor_id '${reactor_id}' 不存在` });
+  // 应用层警告: 该 reactor 已被其他 PLC 绑定
+  const existing = sqlite.getPlcReactorBindingsByReactor(reactor_id).filter(b => b.plc_id !== req.params.plcId);
+  sqlite.upsertPlcReactorBinding({ plc_id: req.params.plcId, reactor_id, created_by: (req as any).user?.user_id });
+  res.json({ success: true, warnings: existing.length > 0 ? [`reactor '${reactor_id}' 已被其他 PLC 绑定: ${existing.map(e => e.plc_id).join(', ')}`] : [] });
+});
+
+apiRouter.delete('/plc-reactor-bindings/:plcId', requireRole('admin'), (req, res) => {
+  const r = sqlite.deletePlcReactorBinding(req.params.plcId);
+  if (!r.ok) return res.status(404).json({ error: 'binding 不存在' });
+  res.status(204).end();
 });
 
 // ── PLC 连接测试 (只读) ──
