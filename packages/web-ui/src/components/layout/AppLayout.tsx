@@ -11,7 +11,7 @@ import {
   Database, Bot, Settings, Wifi, WifiOff, Blocks, ChevronDown,
   Gauge, Users, Bell, User, Activity, Droplets, LogOut, Key, FileText, FlaskConical,
   ShieldCheck, Sigma, Shield, TrendingUp, Brain, Workflow, Building2, Sun, Moon, Monitor, BarChart3,
-  ChevronUp, X, Menu,
+  ChevronUp, X, Menu, Link2,
 } from 'lucide-react';
 import { useTheme, type ThemeMode } from '@/hooks/useTheme';
 import { LocaleSwitcher } from './LocaleSwitcher';
@@ -27,6 +27,7 @@ function buildNavItems(t: (key: string) => string) {
     ]},
     { href: '/recipes', icon: BookOpen, label: t('nav.recipes'), children: [
       { href: '/recipes/review-queue', icon: ShieldCheck, label: t('nav.review-queue') },
+      { href: '/phase-instances', icon: Link2, label: t('nav.phase-instances') },
       { href: '/doe', icon: Sigma, label: t('nav.doe') },
     ]},
     { href: '/analysis', icon: LineChart, label: t('nav.analysis'), children: [

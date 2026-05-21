@@ -101,6 +101,7 @@
   "nav.device-config": "设备配置",
   "nav.plc-config": "PLC通讯配置",
   "nav.phase-templates": "Phase模板配置",
+  "nav.phase-instances": "Phase实例绑定",
   "nav.calibration": "传感器校准",
   "nav.formula-config": "公式配置",
   "nav.interlock-config": "连锁/故障配置",

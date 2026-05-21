@@ -101,6 +101,7 @@
   "nav.device-config": "Device Config",
   "nav.plc-config": "PLC Communication",
   "nav.phase-templates": "Phase Templates",
+  "nav.phase-instances": "Phase Instance Bindings",
   "nav.calibration": "Sensor Calibration",
   "nav.formula-config": "Formula Config",
   "nav.interlock-config": "Interlock / Fault Config",
