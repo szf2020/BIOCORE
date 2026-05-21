@@ -52,10 +52,11 @@ describe('ViewListPanel mobile sticky toolbar (SP-FX-25)', () => {
     expect(grid).toBeTruthy();
   });
 
-  it('sticky toolbar 包含 view-search-bar', () => {
+  // SP-FX-FF.48: SearchBar 整个组件取消, sticky toolbar 只剩 ViewListToolbar。
+  it('sticky toolbar 不再包含 view-search-bar', () => {
     const { getByTestId } = render(<ViewListPanel projectId="default" />);
     const toolbar = getByTestId('sticky-toolbar-container');
     const searchBar = toolbar.querySelector('[data-testid="view-search-bar"]');
-    expect(searchBar).toBeTruthy();
+    expect(searchBar).toBeNull();
   });
 });

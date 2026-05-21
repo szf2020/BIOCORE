@@ -198,22 +198,17 @@ describe('ViewListPanel', () => {
     });
   });
 
-  describe('SP-FX-21: SearchBar integration', () => {
-    it('renders ViewListSearchBar component', () => {
-      render(<ViewListPanel projectId="p1" />);
-      expect(screen.getByTestId('view-search-bar')).toBeTruthy();
-    });
-
-    it('tag chips are rendered for views with prefix names', () => {
+  // SP-FX-FF.48: SearchBar (search input + sort + tag chips) 整个组件取消。
+  describe('search bar removed', () => {
+    it('does not render view-search-bar element', () => {
       mocks.views = [
         { view_id: 'v1', name: 'demo_alpha', is_template: 0, display_order: 0 },
         { view_id: 'v2', name: 'prod_beta', is_template: 0, display_order: 1 },
       ];
       render(<ViewListPanel projectId="p1" />);
-      // Both views have underscore prefixes → tag chips should appear
-      expect(screen.getByTestId('view-search-bar')).toBeTruthy();
-      expect(screen.getByTestId('tag-chip-demo')).toBeTruthy();
-      expect(screen.getByTestId('tag-chip-prod')).toBeTruthy();
+      expect(screen.queryByTestId('view-search-bar')).toBeNull();
+      expect(screen.queryByTestId('tag-chip-demo')).toBeNull();
+      expect(screen.queryByTestId('tag-chip-prod')).toBeNull();
     });
   });
 });

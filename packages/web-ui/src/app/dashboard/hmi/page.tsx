@@ -66,11 +66,6 @@ export default function HmiPage() {
     }));
   }, [reactorIds, reactorStates]);
 
-  const scadaListUrl = useMemo(() => {
-    const q = selectedReactor ? `?reactor=${encodeURIComponent(selectedReactor)}` : '';
-    return `/scada2${q}`;
-  }, [selectedReactor]);
-
   return (
     <div className="flex flex-col h-[calc(100vh-70px)] bg-slate-50">
       <header className="flex items-center gap-2 px-4 py-2 bg-white border-b shadow-sm overflow-x-auto">
@@ -106,12 +101,6 @@ export default function HmiPage() {
           );
         })}
 
-        <Link
-          href={scadaListUrl}
-          className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded text-sm shrink-0 border bg-blue-500 text-white border-blue-600 hover:bg-blue-600"
-        >
-          打开画面集
-        </Link>
       </header>
 
       <main className="flex-1 overflow-auto bg-slate-100">
